@@ -1,18 +1,13 @@
 import { StyleSheet } from "react-native";
 
 import { Text, View } from "../../components/Themed";
+import { ForageView } from "../../components/ForageView";
 
 export default function TabOneScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Basket</Text>
       {/* Loading Screen with logo */}
-
-      <View
-        style={styles.separator}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
-      />
+      <ForageView />
     </View>
   );
 }
@@ -20,8 +15,9 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingTop: "40%",
+    paddingLeft: "10%",
+    paddingRight: "10%",
   },
   title: {
     fontSize: 20,
