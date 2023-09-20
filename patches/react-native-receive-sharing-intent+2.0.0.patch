@@ -38,7 +38,7 @@ index 735c191..91dab4b 100644
  
      clearReceivedFiles(){
 -        this.isClear = true;
-+        ReceiveSharingIntent.clearFileNames();
++        if (ReceiveSharingIntent) ReceiveSharingIntent.clearFileNames();
      }
  
      

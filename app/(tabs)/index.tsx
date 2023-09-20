@@ -2,8 +2,12 @@ import { StyleSheet } from "react-native";
 
 import { Text, View } from "../../components/Themed";
 import { ForageView } from "../../components/ForageView";
+import useShareIntent from "../../hooks/useShareIntent";
 
 export default function TabOneScreen() {
+  const { shareIntent, resetShareIntent } = useShareIntent();
+  console.log(shareIntent);
+
   return (
     <View style={styles.container}>
       {/* Loading Screen with logo */}
