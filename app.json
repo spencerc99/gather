@@ -13,7 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "supply.basket"
@@ -23,7 +25,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#efdbb6"
       },
-      "permissions": ["android.permission.RECORD_AUDIO"]
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "supply.basket"
     },
     "web": {
       "bundler": "metro",
@@ -58,7 +63,24 @@
         "origin": false
       },
       "eas": {
-        "projectId": "8ef1dc4e-ad39-4061-ae11-4fbe7df6f21e"
+        "projectId": "8ef1dc4e-ad39-4061-ae11-4fbe7df6f21e",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ShareExtension",
+                  "bundleIdentifier": "supply.basket.share-extension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.supply.basket"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       }
     }
   }

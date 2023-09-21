@@ -1,7 +1,10 @@
 import { Button, StyleSheet, TextInput, Image } from "react-native";
 import { View, Text } from "./Themed";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
+import { DatabaseContext } from "../utils/db";
+import { router, useLocalSearchParams } from "expo-router";
+import useShareIntent from "../hooks/useShareIntent";
 
 enum Step {
   Gather,
@@ -13,8 +16,27 @@ export function ForageView() {
   const [titleValue, setTitleValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   const [image, setImage] = useState<null | string>(null);
-  const [mimeType, setMimeType] = useState(null);
+  const [mimeType, setMimeType] = useState<null | string>(null);
   const [step, setStep] = useState(Step.Gather);
+  const { addBlock, shareIntent } = useContext(DatabaseContext);
+
+  const hasImageShareIntent =
+    shareIntent !== null && typeof shareIntent !== "string";
+  const hasTextShareIntent =
+    shareIntent !== null && typeof shareIntent === "string";
+
+  useEffect(() => {
+    // TODO: handle if already has a value? store in stack or just override
+    if (hasTextShareIntent && !textValue) {
+      setTextValue(shareIntent);
+    } else if (hasImageShareIntent && !image) {
+      setImage(shareIntent.uri);
+      setMimeType(shareIntent.mimeType);
+      setTitleValue(shareIntent.fileName);
+    }
+  }, [shareIntent]);
+
+  // TODO: allow for multiple images, prob need to use something like this https://github.com/mdjfs/expo-image-multiple-picker
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -28,6 +50,7 @@ export function ForageView() {
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
+    // TODO: save this to filesystem before full save?
   };
 
   function renderStep() {
@@ -61,7 +84,16 @@ export function ForageView() {
             <Button
               title="Gather"
               onPress={() => {
-                setStep(Step.GatherDetail);
+                addBlock({
+                  title: titleValue,
+                  description: descriptionValue,
+                  content: textValue,
+                  type: "text",
+                  source: "local",
+                  createdBy: "spencer-did",
+                });
+                router.replace("/feed");
+                // setStep(Step.GatherDetail);
               }}
             ></Button>
             {/* TODO: access photos */}

@@ -25,7 +25,7 @@ export default function TabLayout() {
     >
       {/* TODO: figure out bottom tabs */}
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: "Basket",
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
@@ -46,9 +46,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="feed"
         options={{
-          title: "Tab Two",
+          title: "Feed",
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
         }}
       />

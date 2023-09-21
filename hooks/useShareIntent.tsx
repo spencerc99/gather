@@ -1,13 +1,21 @@
 // Copied from https://github.com/achorein/expo-share-intent-demo/blob/main/hooks/useShareIntent.js
 import { useEffect, useRef, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import Constants from "expo-constants";
 
 import ReceiveSharingIntent from "react-native-receive-sharing-intent";
 
+export type ShareIntent =
+  | string
+  | { uri: string; mimeType: string; fileName: string };
+
+export function isShareIntentUrl(pathname: string) {
+  return pathname.includes(`dataurl=${Constants.expoConfig?.scheme}sharekey`);
+}
+
 export default function useShareIntent() {
   const appState = useRef(AppState.currentState);
-  const [shareIntent, setShareIntent] = useState(null);
+  const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -15,7 +23,6 @@ export default function useShareIntent() {
         appState.current === "active" &&
         ["inactive", "background"].includes(nextAppState)
       ) {
-        console.log("useShareIntent[to-background] reset intent");
         setShareIntent(null);
       }
 
@@ -27,31 +34,27 @@ export default function useShareIntent() {
   }, []);
 
   useEffect(() => {
-    console.log("useShareIntent[mount]", Constants.expoConfig.scheme);
+    if (Platform.OS === "web") {
+      return;
+    }
     ReceiveSharingIntent?.getReceivedFiles(
       (data) => {
         const intent = data[0];
         if (intent.weblink || intent.text) {
           const link = intent.weblink || intent.text || "";
-          console.log("useShareIntent[text/url]", link);
-          setShareIntent(JSON.stringify(link));
+          setShareIntent(link);
         } else if (intent.filePath) {
-          console.log("useShareIntent[file]", {
-            uri: intent.contentUri || intent.filePath,
-            mimeType: intent.mimeType,
-            fileName: intent.fileName,
-          });
           setShareIntent({
             uri: intent.contentUri || intent.filePath,
             mimeType: intent.mimeType,
             fileName: intent.fileName,
           });
         } else {
-          console.log("useShareIntent[mount] share type not handled", data);
+          console.warn("useShareIntent[mount] share type not handled", data);
         }
       },
       (err) => {
-        console.log("useShareIntent[mount] error", err);
+        console.error("useShareIntent[mount] error", err);
       },
       Constants.expoConfig.scheme
     );
