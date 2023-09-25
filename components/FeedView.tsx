@@ -21,21 +21,21 @@ export function FeedView() {
             },
           ]
         : []),
-      // {
-      //   text: "Share",
-      //   icon: () => <FontAwesome name="share" size={18} />,
-      //   onPress: () => {},
-      // },
-      // {
-      //   text: "Connect",
-      //   icon: () => <Icon name="share" size={18} />,
-      //   onPress: () => {},
-      // },
+      {
+        text: "Share",
+        icon: () => <FontAwesome name="share" size={18} />,
+        onPress: () => {},
+      },
+      {
+        text: "Connect",
+        icon: () => <FontAwesome name="link" size={18} />,
+        onPress: () => {},
+      },
       {
         text: "Delete",
         icon: () => <FontAwesome name={"trash"} size={18} />,
-        withSeparator: true,
         isDestructive: true,
+        // TODO: add confirmation dialog
         onPress: () => deleteBlock(id),
       },
     ];

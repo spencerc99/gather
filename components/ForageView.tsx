@@ -16,7 +16,7 @@ export function ForageView() {
   const [titleValue, setTitleValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
   const [image, setImage] = useState<null | string>(null);
-  const [mimeType, setMimeType] = useState<null | string>(null);
+  const [mimeType, setMimeType] = useState<null | MimeType>(null);
   const [step, setStep] = useState(Step.Gather);
   const { addBlock, shareIntent } = useContext(DatabaseContext);
 
@@ -31,7 +31,7 @@ export function ForageView() {
       setTextValue(shareIntent);
     } else if (hasImageShareIntent && !image) {
       setImage(shareIntent.uri);
-      setMimeType(shareIntent.mimeType);
+      setMimeType(shareIntent.mimeType as MimeType);
       setTitleValue(shareIntent.fileName);
     }
   }, [shareIntent]);
@@ -49,9 +49,36 @@ export function ForageView() {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
+      // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+      setMimeType(
+        result.assets[0].type === "image" ? MimeType[".png"] : MimeType[".mov"]
+      );
     }
-    // TODO: save this to filesystem before full save?
   };
+
+  function onSaveResult() {
+    if (!textValue && !image) {
+      return;
+    }
+
+    addBlock({
+      title: titleValue,
+      description: descriptionValue,
+      source: "local",
+      createdBy: "spencer-did",
+      ...(textValue
+        ? {
+            content: textValue,
+            type: MimeType[".txt"],
+          }
+        : {
+            content: image!,
+            type: mimeType!,
+          }),
+    });
+
+    router.replace("/feed");
+  }
 
   function renderStep() {
     switch (step) {
@@ -64,6 +91,8 @@ export function ForageView() {
               title="Pick an image from camera roll"
               onPress={pickImage}
             />
+            {/* TODO: Add document picker */}
+            {/* <Button title="Record" onPress={recordAudio} /> */}
             {image && (
               <Image
                 source={{ uri: image }}
@@ -84,15 +113,7 @@ export function ForageView() {
             <Button
               title="Gather"
               onPress={() => {
-                addBlock({
-                  title: titleValue,
-                  description: descriptionValue,
-                  content: textValue,
-                  type: MimeType[".txt"],
-                  source: "local",
-                  createdBy: "spencer-did",
-                });
-                router.replace("/feed");
+                onSaveResult();
                 // setStep(Step.GatherDetail);
               }}
             ></Button>

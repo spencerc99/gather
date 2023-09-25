@@ -16,6 +16,7 @@ export enum MimeType {
   ".jsonld" = "application/ld+json",
   ".mid" = "audio/midi",
   ".mjs" = "text/javascript",
+  ".mov" = "video/quicktime",
   ".mp3" = "audio/mpeg",
   ".mpeg" = "video/mpeg",
   ".opus" = "audio/opus",
