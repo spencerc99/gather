@@ -1,0 +1,37 @@
+diff --git a/node_modules/react-native-hold-menu/src/components/backdrop/Backdrop.tsx b/node_modules/react-native-hold-menu/src/components/backdrop/Backdrop.tsx
+index dc5fa35..a49a507 100644
+--- a/node_modules/react-native-hold-menu/src/components/backdrop/Backdrop.tsx
++++ b/node_modules/react-native-hold-menu/src/components/backdrop/Backdrop.tsx
+@@ -114,19 +114,19 @@ const BackdropComponent = () => {
+ 
+   return (
+     <TapGestureHandler onHandlerStateChange={tapGestureEvent}>
+-      <AnimatedBlurView
+-        // @ts-ignore
+-        tint="default"
+-        animatedProps={animatedContainerProps}
+-        style={[styles.container, animatedContainerStyle]}
+-      >
+-        <Animated.View
+-          style={[
+-            { ...StyleSheet.absoluteFillObject },
+-            animatedInnerContainerStyle,
+-          ]}
+-        />
+-      </AnimatedBlurView>
++      {/* from https://github.com/expo/expo/issues/23539 */}
++      <Animated.View style={[styles.container, animatedContainerStyle]}>
++        <AnimatedBlurView
++          // @ts-ignore
++          tint="default"
++          animatedProps={animatedContainerProps}
++          style={[styles.container]}
++        >
++          <Animated.View
++            style={[{ ...StyleSheet.absoluteFillObject }, animatedInnerContainerStyle]}
++          />
++        </AnimatedBlurView>
++    </Animated.View>
+     </TapGestureHandler>
+   );
+ };

@@ -73,13 +73,17 @@ export interface Block extends BlockInsertInfo {
 
 interface DatabaseContextProps {
   addBlock: (block: BlockInsertInfo) => void;
+  deleteBlock: (id: string) => void;
   blocks: Block[];
+
+  // share intent
   setShareIntent: (intent: ShareIntent | null) => void;
   shareIntent: ShareIntent | null;
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
   addBlock: () => {},
+  deleteBlock: () => {},
   blocks: [],
   setShareIntent: () => {},
   shareIntent: null,
@@ -154,6 +158,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
   };
 
+  const deleteBlock = async (id: string) => {
+    await db.transactionAsync(async (tx) => {
+      const result = await tx.executeSqlAsync(
+        `
+        DELETE FROM blocks WHERE id = ?;`,
+        [id]
+      );
+      setBlocks(blocks.filter((block) => block.id !== id));
+    });
+  };
+
   const [blocks, setBlocks] = useState<Block[]>([...TestBlocks]);
 
   function fetchBlocks() {
@@ -189,6 +204,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       value={{
         addBlock,
         blocks,
+        deleteBlock,
         setShareIntent,
         shareIntent,
       }}

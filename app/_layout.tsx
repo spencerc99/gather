@@ -5,10 +5,12 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack, router, useNavigation } from "expo-router";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 import { DatabaseProvider } from "../utils/db";
+import { HoldMenuProvider } from "react-native-hold-menu";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -49,15 +51,21 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <DatabaseProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-        </Stack>
-      </DatabaseProvider>
+      <HoldMenuProvider
+        theme={colorScheme || undefined}
+        safeAreaInsets={insets}
+      >
+        <DatabaseProvider>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+          </Stack>
+        </DatabaseProvider>
+      </HoldMenuProvider>
     </ThemeProvider>
   );
 }

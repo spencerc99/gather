@@ -3,8 +3,8 @@ import { View, Text } from "./Themed";
 import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
-import { router, useLocalSearchParams } from "expo-router";
-import useShareIntent from "../hooks/useShareIntent";
+import { router } from "expo-router";
+import { MimeType } from "../utils/mimeTypes";
 
 enum Step {
   Gather,
@@ -88,7 +88,7 @@ export function ForageView() {
                   title: titleValue,
                   description: descriptionValue,
                   content: textValue,
-                  type: "text",
+                  type: MimeType[".txt"],
                   source: "local",
                   createdBy: "spencer-did",
                 });

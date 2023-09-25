@@ -16,7 +16,7 @@ export default function NotFoundScreen() {
       setShareIntent(shareIntent);
       resetShareIntent();
       router.replace({
-        pathname: "/(tabs)/home",
+        pathname: "/home",
       });
     }
   }, [shareIntent]);
@@ -25,7 +25,11 @@ export default function NotFoundScreen() {
     <>
       {/* TODO: show the splash screen here instead */}
       {isShareIntentUrl(pathname) ? (
-        <Text>Loading...</Text>
+        <>
+          <Text>Loading...</Text>
+          {/* TODO: remove */}
+          <Text>{JSON.stringify(shareIntent)}</Text>
+        </>
       ) : (
         <>
           <Stack.Screen options={{ title: "Oops!" }} />
@@ -38,7 +42,7 @@ export default function NotFoundScreen() {
                 if (router.canGoBack()) {
                   router.back();
                 } else {
-                  router.replace({ pathname: "/(tabs)/home" });
+                  router.replace({ pathname: "/home" });
                 }
               }}
             >
