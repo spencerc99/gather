@@ -5,6 +5,9 @@ import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
 import { router } from "expo-router";
 import { MimeType } from "../utils/mimeTypes";
+import { Audio } from "expo-av";
+import { Recording } from "expo-av/build/Audio";
+import { MediaView } from "./MediaView";
 
 enum Step {
   Gather,
@@ -15,10 +18,11 @@ export function ForageView() {
   const [textValue, setTextValue] = useState("");
   const [titleValue, setTitleValue] = useState("");
   const [descriptionValue, setDescriptionValue] = useState("");
-  const [image, setImage] = useState<null | string>(null);
+  const [media, setMedia] = useState<null | string>(null);
   const [mimeType, setMimeType] = useState<null | MimeType>(null);
   const [step, setStep] = useState(Step.Gather);
   const { addBlock, shareIntent } = useContext(DatabaseContext);
+  const [recording, setRecording] = useState<undefined | Recording>();
 
   const hasImageShareIntent =
     shareIntent !== null && typeof shareIntent !== "string";
@@ -29,8 +33,8 @@ export function ForageView() {
     // TODO: handle if already has a value? store in stack or just override
     if (hasTextShareIntent && !textValue) {
       setTextValue(shareIntent);
-    } else if (hasImageShareIntent && !image) {
-      setImage(shareIntent.uri);
+    } else if (hasImageShareIntent && !media) {
+      setMedia(shareIntent.uri);
       setMimeType(shareIntent.mimeType as MimeType);
       setTitleValue(shareIntent.fileName);
     }
@@ -48,7 +52,7 @@ export function ForageView() {
     console.log(result);
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      setMedia(result.assets[0].uri);
       // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
       setMimeType(
         result.assets[0].type === "image" ? MimeType[".png"] : MimeType[".mov"]
@@ -57,7 +61,7 @@ export function ForageView() {
   };
 
   function onSaveResult() {
-    if (!textValue && !image) {
+    if (!textValue && !media) {
       return;
     }
 
@@ -72,12 +76,51 @@ export function ForageView() {
             type: MimeType[".txt"],
           }
         : {
-            content: image!,
+            content: media!,
             type: mimeType!,
           }),
     });
 
     router.replace("/feed");
+  }
+
+  async function startRecording() {
+    try {
+      if (mimeType === MimeType[".ma4"]) {
+        setMedia(null);
+        setMimeType(null);
+      }
+      console.log("Requesting permissions..");
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      console.log("Starting recording..");
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      console.log("Recording started");
+    } catch (err) {
+      console.error("Failed to start recording", err);
+    }
+  }
+
+  async function stopRecording() {
+    console.log("Stopping recording..");
+    if (!recording) {
+      return;
+    }
+    setRecording(undefined);
+    await recording.stopAndUnloadAsync();
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+    });
+    const uri = recording.getURI();
+    setMedia(uri);
+    setMimeType(MimeType[".ma4"]);
   }
 
   function renderStep() {
@@ -92,13 +135,11 @@ export function ForageView() {
               onPress={pickImage}
             />
             {/* TODO: Add document picker */}
-            {/* <Button title="Record" onPress={recordAudio} /> */}
-            {image && (
-              <Image
-                source={{ uri: image }}
-                style={{ width: 200, height: 200 }}
-              />
-            )}
+            <Button
+              title={recording ? "Stop Recording" : "Start Recording"}
+              onPress={recording ? stopRecording : startRecording}
+            />
+            {media && <MediaView media={media} mimeType={mimeType!} />}
             {/* TODO: make this autogrow like imessage input */}
             <TextInput
               placeholder="Gather..."
@@ -117,7 +158,6 @@ export function ForageView() {
                 // setStep(Step.GatherDetail);
               }}
             ></Button>
-            {/* TODO: access photos */}
             {/* TODO: access camera */}
           </View>
         );

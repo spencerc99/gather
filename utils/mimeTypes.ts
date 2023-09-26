@@ -18,6 +18,7 @@ export enum MimeType {
   ".mjs" = "text/javascript",
   ".mov" = "video/quicktime",
   ".mp3" = "audio/mpeg",
+  ".ma4" = "audio/mp4",
   ".mpeg" = "video/mpeg",
   ".opus" = "audio/opus",
   ".otf" = "font/otf",
