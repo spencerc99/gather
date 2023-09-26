@@ -8,9 +8,11 @@ import { useState, useEffect } from "react";
 export function MediaView({
   media,
   mimeType,
+  style,
 }: {
   media: string;
   mimeType: MimeType;
+  style?: object;
 }) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -65,11 +67,22 @@ export function MediaView({
       case MimeType[".jpeg"]:
       case MimeType[".png"]:
         return (
-          <Image source={{ uri: media }} style={{ width: 200, height: 200 }} />
+          <Image
+            source={{ uri: media }}
+            style={style ? style : { width: 200, height: 200 }}
+          />
         );
       case MimeType[".ma4"]:
         return (
-          <Pressable onPress={(e) => (isPlaying ? pauseSound() : playSound())}>
+          <Pressable
+            onPress={(e) => (isPlaying ? pauseSound() : playSound())}
+            style={{
+              ...style,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <View>
               <FontAwesome
                 name={isPlaying ? "pause" : "play"}

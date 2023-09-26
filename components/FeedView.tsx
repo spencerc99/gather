@@ -2,9 +2,10 @@ import { useContext } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { View, Text } from "./Themed";
 import { StyleSheet, Image } from "react-native";
-import { isImageType } from "../utils/mimeTypes";
+import { MimeType } from "../utils/mimeTypes";
 import { HoldItem } from "react-native-hold-menu";
 import { FontAwesome } from "@expo/vector-icons";
+import { MediaView } from "./MediaView";
 
 export function FeedView() {
   const { blocks, deleteBlock } = useContext(DatabaseContext);
@@ -40,15 +41,26 @@ export function FeedView() {
       },
     ];
 
+    function renderContent() {
+      switch (type) {
+        case MimeType[".txt"]:
+          return <Text style={styles.contentText}>{content}</Text>;
+        default:
+          return (
+            <MediaView
+              media={content}
+              mimeType={type}
+              style={styles.contentImg}
+            />
+          );
+      }
+    }
+
     return (
       // TODO: HoldItem library is broken with expo 49 rn... https://github.com/enesozturk/react-native-hold-menu/issues/111
       <HoldItem items={blockMenuItems} key={id} closeOnTap>
         <View style={styles.block} key={id}>
-          {isImageType(type) ? (
-            <Image source={{ uri: content }} style={styles.contentImg} />
-          ) : (
-            <Text style={styles.contentText}>{content}</Text>
-          )}
+          {renderContent()}
         </View>
       </HoldItem>
     );
