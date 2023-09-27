@@ -6,7 +6,6 @@ import { ForageView } from "../../../components/ForageView";
 export default function TabOneScreen() {
   return (
     <View style={styles.container}>
-      {/* Loading Screen with logo */}
       <ForageView />
     </View>
   );

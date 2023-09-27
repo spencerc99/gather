@@ -3,6 +3,7 @@ import * as SQLite from "expo-sqlite";
 import { PropsWithChildren, createContext, useEffect, useState } from "react";
 import { MimeType } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
+import { Collection, CollectionInsertInfo } from "./dataTypes";
 // TODO: remove
 const TestBlocks: Block[] = [
   {
@@ -26,6 +27,19 @@ const TestBlocks: Block[] = [
     connections: [],
     createdAt: new Date("2023-09-18"),
     updatedAt: new Date("2023-09-18"),
+  },
+];
+
+const TestCollections: Collection[] = [
+  {
+    id: "123",
+    title: "Uncategorized",
+    description: "A collection of all blocks that have not been categorized",
+    createdBy: "spencer-did",
+    updatedAt: new Date("2023-09-18"),
+    createdAt: new Date("2023-09-18"),
+    collaborators: ["spencer-did"],
+    numItems: 2,
   },
 ];
 
@@ -72,9 +86,11 @@ export interface Block extends BlockInsertInfo {
 }
 
 interface DatabaseContextProps {
-  addBlock: (block: BlockInsertInfo) => void;
-  deleteBlock: (id: string) => void;
   blocks: Block[];
+  createBlock: (block: BlockInsertInfo) => void;
+  deleteBlock: (id: string) => void;
+  collections: Collection[];
+  createCollection: (collection: CollectionInsertInfo) => void;
 
   // share intent
   setShareIntent: (intent: ShareIntent | null) => void;
@@ -82,9 +98,12 @@ interface DatabaseContextProps {
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
-  addBlock: () => {},
-  deleteBlock: () => {},
   blocks: [],
+  createBlock: () => {},
+  deleteBlock: () => {},
+  collections: [],
+  createCollection: () => {},
+
   setShareIntent: () => {},
   shareIntent: null,
 });
@@ -120,10 +139,20 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             created_by TEXT NOT NULL
         );`
       );
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS collections (
+            id integer PRIMARY KEY AUTOINCREMENT,
+            title varchar(128) NOT NULL,
+            description TEXT,
+            created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_by TEXT NOT NULL
+        );`
+      );
     });
   }, []);
 
-  const addBlock = async (block: BlockInsertInfo) => {
+  const createBlock = async (block: BlockInsertInfo) => {
     await db.transactionAsync(async (tx) => {
       const result = await tx.executeSqlAsync(
         `
@@ -170,6 +199,32 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
 
   const [blocks, setBlocks] = useState<Block[]>([...TestBlocks]);
+  const [collections, setCollections] = useState<Collection[]>([
+    ...TestCollections,
+  ]);
+
+  const createCollection = async (collection: CollectionInsertInfo) => {
+    await db.transactionAsync(async (tx) => {
+      const result = await tx.executeSqlAsync(
+        `
+        INSERT INTO collections (
+            title,
+            description,
+            created_by
+        ) VALUES (
+            ?,
+            ?,
+            ?
+        );`,
+        [
+          collection.title,
+          collection.description || "null",
+          collection.createdBy,
+        ]
+      );
+      fetchCollections();
+    });
+  };
 
   function fetchBlocks() {
     db.transaction((tx) => {
@@ -193,6 +248,32 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
   }
 
+  function fetchCollections() {
+    db.transaction((tx) => {
+      tx.executeSql(
+        `SELECT * FROM collections;`,
+        [],
+        (_, { rows: { _array } }) => {
+          setCollections([
+            ..._array.map(
+              (collection) =>
+                ({
+                  ...collection,
+                  createdAt: collection.created_timestamp,
+                  updatedAt: collection.updated_timestamp,
+                  createdBy: collection.created_by,
+                  // TODO: add collaborators and numItems
+                  numItems: 2,
+                  collaborators: ["spencer-did"],
+                } as Collection)
+            ),
+            ...TestCollections,
+          ]);
+        }
+      );
+    });
+  }
+
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
 
   useEffect(() => {
@@ -202,11 +283,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   return (
     <DatabaseContext.Provider
       value={{
-        addBlock,
+        createBlock: createBlock,
         blocks,
         deleteBlock,
         setShareIntent,
         shareIntent,
+        collections,
+        createCollection,
       }}
     >
       {children}

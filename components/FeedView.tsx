@@ -57,7 +57,6 @@ export function FeedView() {
     }
 
     return (
-      // TODO: HoldItem library is broken with expo 49 rn... https://github.com/enesozturk/react-native-hold-menu/issues/111
       <HoldItem items={blockMenuItems} key={id} closeOnTap>
         <View style={styles.block} key={id}>
           {renderContent()}

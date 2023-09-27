@@ -21,7 +21,7 @@ export function ForageView() {
   const [media, setMedia] = useState<null | string>(null);
   const [mimeType, setMimeType] = useState<null | MimeType>(null);
   const [step, setStep] = useState(Step.Gather);
-  const { addBlock, shareIntent } = useContext(DatabaseContext);
+  const { createBlock: addBlock, shareIntent } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
 
   const hasImageShareIntent =
