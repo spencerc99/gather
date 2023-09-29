@@ -3,13 +3,12 @@
  * https://docs.expo.io/guides/color-schemes/
  */
 
+import { useColorScheme, Pressable, PressableProps } from "react-native";
 import {
   Text as DefaultText,
-  useColorScheme,
   View as DefaultView,
-  Pressable,
-  PressableProps,
-} from "react-native";
+  Button as DefaultButton,
+} from "tamagui";
 
 import Colors from "../constants/Styles";
 import { Link, LinkProps } from "expo-router";
@@ -19,8 +18,8 @@ type ThemeProps = {
   darkColor?: string;
 };
 
-export type TextProps = ThemeProps & DefaultText["props"];
-export type ViewProps = ThemeProps & DefaultView["props"];
+export type TextProps = ThemeProps & (typeof DefaultText)["props"];
+export type ViewProps = ThemeProps & (typeof DefaultView)["props"];
 export type ButtonProps = ThemeProps &
   PressableProps & {
     title: string;
@@ -71,9 +70,9 @@ export function Button(props: ButtonProps) {
     "button"
   );
   return (
-    <Pressable style={[buttonStyles, style]} {...otherProps}>
+    <DefaultButton style={[style]} {...otherProps}>
       <Text style={titleStyle}>{title}</Text>
-    </Pressable>
+    </DefaultButton>
   );
 }
 
