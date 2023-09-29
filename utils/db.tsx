@@ -234,8 +234,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             (block) =>
               ({
                 ...block,
-                createdAt: block.created_timestamp,
-                updatedAt: block.updated_timestamp,
+                createdAt: new Date(block.created_timestamp),
+                updatedAt: new Date(block.updated_timestamp),
                 createdBy: block.created_by,
                 remoteSourceType: block.remote_source_type,
                 // TODO: add connections
@@ -259,8 +259,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               (collection) =>
                 ({
                   ...collection,
-                  createdAt: collection.created_timestamp,
-                  updatedAt: collection.updated_timestamp,
+                  createdAt: new Date(collection.created_timestamp),
+                  updatedAt: new Date(collection.updated_timestamp),
                   createdBy: collection.created_by,
                   // TODO: add collaborators and numItems
                   numItems: 2,
@@ -277,7 +277,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
 
   useEffect(() => {
-    fetchBlocks();
+    void fetchBlocks();
+    void fetchCollections();
   }, []);
 
   return (
