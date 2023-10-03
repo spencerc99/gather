@@ -1,100 +1,69 @@
-/**
- * Learn more about Light and Dark modes:
- * https://docs.expo.io/guides/color-schemes/
- */
-
-import { useColorScheme, Pressable, PressableProps } from "react-native";
 import {
   Text as DefaultText,
-  View as DefaultView,
   Button as DefaultButton,
+  ButtonProps as DefaultButtonProps,
+  styled,
+  Theme,
+  TextProps as DefaultTextProps,
+  InputProps,
+  TextAreaProps,
+  View as DefaultView,
+  Input as DefaultInput,
+  TextArea as DefaultTextArea,
 } from "tamagui";
 
-import Colors from "../constants/Styles";
 import { Link, LinkProps } from "expo-router";
 
-type ThemeProps = {
-  lightColor?: string;
-  darkColor?: string;
+export type TextProps = DefaultTextProps;
+export type ButtonProps = DefaultButtonProps & {
+  title: string;
+  titleStyle?: object;
 };
-
-export type TextProps = ThemeProps & (typeof DefaultText)["props"];
-export type ViewProps = ThemeProps & (typeof DefaultView)["props"];
-export type ButtonProps = ThemeProps &
-  PressableProps & {
-    title: string;
-    titleStyle?: object;
-  };
-export type LinkButtonProps = ThemeProps &
-  Omit<PressableProps, "onPress"> & {
-    title: string;
-    titleStyle?: object;
-  } & Pick<LinkProps<any>, "href">;
-
-export function useThemeColor(
-  props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
-) {
-  const theme = useColorScheme() ?? "light";
-  const colorFromProps = props[theme];
-
-  if (colorFromProps) {
-    return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
-  }
-}
+export type LinkButtonProps = Omit<DefaultButtonProps, "onPress"> & {
+  title: string;
+  titleStyle?: object;
+} & Pick<LinkProps<any>, "href">;
 
 export function Text(props: TextProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
+  const { style, ...otherProps } = props;
 
-  return <DefaultText style={[{ color }, style]} {...otherProps} />;
+  return <DefaultText style={style} {...otherProps} />;
 }
 
-export function View(props: ViewProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
-  const backgroundColor = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    "background"
-  );
+export function View(props: any) {
+  const { style, ...otherProps } = props;
 
-  return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
+  return <DefaultView style={style} {...otherProps} />;
 }
+const PressableButton = styled(DefaultButton, {
+  backgroundColor: "$background",
+});
 
 export function Button(props: ButtonProps) {
-  const { style, lightColor, darkColor, title, titleStyle, ...otherProps } =
-    props;
-  const buttonStyles = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    "button"
-  );
+  const { style, title, titleStyle, ...otherProps } = props;
   return (
-    <DefaultButton style={[style]} {...otherProps}>
-      <Text style={titleStyle}>{title}</Text>
-    </DefaultButton>
+    <Theme name="blue">
+      <PressableButton {...otherProps}>{title}</PressableButton>
+    </Theme>
   );
 }
 
 export function LinkButton(props: LinkButtonProps) {
-  const {
-    style,
-    lightColor,
-    darkColor,
-    title,
-    titleStyle,
-    href,
-    ...otherProps
-  } = props;
-  const buttonStyles = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    "button"
-  );
+  const { style, title, titleStyle, href, ...otherProps } = props;
   return (
-    <Link href={href} asChild style={[buttonStyles, style]} {...otherProps}>
-      <Pressable>
-        <Text style={titleStyle}>{title}</Text>
-      </Pressable>
+    // @ts-ignore
+    <Link {...otherProps} href={href} asChild={true} style={[style as any]}>
+      <Button title={title} titleStyle={titleStyle} />
     </Link>
   );
+}
+
+export function Input(props: InputProps) {
+  const { ...otherProps } = props;
+  return <DefaultInput borderWidth={2} {...otherProps} />;
+}
+
+export function TextArea(props: TextAreaProps) {
+  const { ...otherProps } = props;
+  return <DefaultTextArea borderWidth={2} {...otherProps} />;
 }

@@ -1,5 +1,6 @@
-import { Button, StyleSheet, TextInput, Image } from "react-native";
-import { View, Text } from "./Themed";
+import { StyleSheet, Image, Pressable } from "react-native";
+import { Text, Input, Button, TextArea } from "./Themed";
+import { View } from "tamagui";
 import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
@@ -8,6 +9,9 @@ import { MimeType } from "../utils/mimeTypes";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import { MediaView } from "./MediaView";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { CollectionSummary } from "./CollectionSummary";
+import { Collection } from "../utils/dataTypes";
 
 enum Step {
   Gather,
@@ -21,7 +25,11 @@ export function ForageView() {
   const [media, setMedia] = useState<null | string>(null);
   const [mimeType, setMimeType] = useState<null | MimeType>(null);
   const [step, setStep] = useState(Step.Gather);
-  const { createBlock: addBlock, shareIntent } = useContext(DatabaseContext);
+  const {
+    createBlock: addBlock,
+    shareIntent,
+    collections,
+  } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
 
   const hasImageShareIntent =
@@ -123,6 +131,21 @@ export function ForageView() {
     setMimeType(MimeType[".ma4"]);
   }
 
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+
+  function toggleCollection(collection: Collection) {
+    if (selectedCollections.includes(collection.id)) {
+      setSelectedCollections(
+        selectedCollections.filter((id) => id !== collection.id)
+      );
+    } else {
+      setSelectedCollections([...selectedCollections, collection.id]);
+    }
+  }
+  const sortedCollections = collections.sort((a, b) =>
+    selectedCollections.includes(a.id) ? -1 : 1
+  );
+
   function renderStep() {
     switch (step) {
       case Step.Gather:
@@ -141,7 +164,7 @@ export function ForageView() {
             />
             {media && <MediaView media={media} mimeType={mimeType!} />}
             {/* TODO: make this autogrow like imessage input */}
-            <TextInput
+            <TextArea
               placeholder="Gather..."
               multiline
               editable
@@ -176,7 +199,7 @@ export function ForageView() {
               <Button title="Skip" onPress={() => {}}></Button>
             </View>
             <View style={styles.contentContainer}>
-              <TextInput
+              <Input
                 placeholder="title"
                 multiline
                 editable
@@ -185,7 +208,7 @@ export function ForageView() {
                 value={titleValue}
                 style={styles.input}
               />
-              <TextInput
+              <TextArea
                 placeholder="description"
                 multiline
                 editable
@@ -194,6 +217,23 @@ export function ForageView() {
                 value={descriptionValue}
                 style={styles.textarea}
               />
+              <KeyboardAwareScrollView>
+                {sortedCollections.map((collection) => (
+                  <Pressable
+                    onPress={() => toggleCollection(collection)}
+                    style={
+                      selectedCollections.includes(collection.id)
+                        ? {
+                            backgroundColor: "blue",
+                            borderWidth: 2,
+                          }
+                        : {}
+                    }
+                  >
+                    <CollectionSummary collection={collection} />
+                  </Pressable>
+                ))}
+              </KeyboardAwareScrollView>
               <Button
                 title="Gather"
                 onPress={() => {
