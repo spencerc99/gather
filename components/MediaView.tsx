@@ -1,6 +1,7 @@
 import { FontAwesome } from "@expo/vector-icons";
 import { MimeType } from "../utils/mimeTypes";
-import { View, Text } from "./Themed";
+import { Text } from "./common";
+import { View } from "tamagui";
 import { Pressable, Image } from "react-native";
 import { Audio } from "expo-av";
 import { useState, useEffect } from "react";

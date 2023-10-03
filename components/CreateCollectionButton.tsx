@@ -1,4 +1,4 @@
-import { LinkButton } from "./Themed";
+import { LinkButton } from "./common";
 
 export function CreateCollectionButton() {
   return (

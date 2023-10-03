@@ -1,13 +1,13 @@
 import { StyleSheet } from "react-native";
 
-import { View } from "../../../components/Themed";
 import { FeedView } from "../../../components/FeedView";
+import { ScrollView } from "tamagui";
 
-export default function TabTwoScreen() {
+export default function FeedPage() {
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <FeedView />
-    </View>
+    </ScrollView>
   );
 }
 

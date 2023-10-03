@@ -1,21 +1,21 @@
 import { StyleSheet } from "react-native";
-import { View } from "../../../components/Themed";
 import { useContext } from "react";
 import { DatabaseContext } from "../../../utils/db";
 import { CollectionSummary } from "../../../components/CollectionSummary";
 import { CreateCollectionButton } from "../../../components/CreateCollectionButton";
+import { ScrollView } from "tamagui";
 
-export default function TabOneScreen() {
+export default function ProfileScreen() {
   const { collections } = useContext(DatabaseContext);
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {/* TODO: show profile information */}
       {<CreateCollectionButton />}
       {collections.map((collection) => (
         <CollectionSummary key={collection.id} collection={collection} />
       ))}
-    </View>
+    </ScrollView>
   );
 }
 

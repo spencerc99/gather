@@ -1,5 +1,6 @@
 import { Block } from "../utils/db";
-import { View, Text } from "./Themed";
+import { View } from "tamagui";
+import { Text } from "./common";
 import { StyleSheet, Image } from "react-native";
 
 export function BlockDetailView({

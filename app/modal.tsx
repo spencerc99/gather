@@ -1,8 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { Platform, StyleSheet } from "react-native";
-
-import { Button, Text, View } from "../components/Themed";
-import { TextInput } from "react-native-gesture-handler";
+import { View } from "tamagui";
+import { Button, Text, TextArea, Input } from "../components/common";
 import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { currentUser } from "../utils/user";
@@ -29,12 +28,12 @@ function CreateCollectionModal() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create Collection</Text>
-      <TextInput
+      <Input
         placeholder="I want to remember this"
         value={title}
         onChangeText={(text) => setTitle(text)}
       />
-      <TextInput
+      <TextArea
         placeholder="a channel for remembering"
         value={description}
         onChangeText={(text) => setDescription(text)}

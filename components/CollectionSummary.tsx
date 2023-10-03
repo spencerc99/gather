@@ -1,6 +1,7 @@
 import { StyleSheet } from "react-native";
 import { Collection } from "../utils/dataTypes";
-import { Text, View } from "./Themed";
+import { Text } from "./common";
+import { View } from "tamagui";
 
 export function CollectionSummary({ collection }: { collection: Collection }) {
   const { title, updatedAt, createdBy, numItems } = collection;

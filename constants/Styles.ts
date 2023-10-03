@@ -1,3 +1,4 @@
+// TODO: reconcile this with tamagui, just need to figure out the tint stuff for tabs
 const tintColorLight = "#2f95dc";
 const tintColorDark = "#fff";
 

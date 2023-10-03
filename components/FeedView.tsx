@@ -1,11 +1,13 @@
 import { useContext } from "react";
 import { Block, DatabaseContext } from "../utils/db";
-import { View, Text } from "./Themed";
+import { Text } from "./common";
+import { View } from "tamagui";
 import { StyleSheet, Image } from "react-native";
 import { MimeType } from "../utils/mimeTypes";
 import { HoldItem } from "react-native-hold-menu";
 import { FontAwesome } from "@expo/vector-icons";
 import { MediaView } from "./MediaView";
+import { YStack } from "tamagui";
 
 export function FeedView() {
   const { blocks, deleteBlock } = useContext(DatabaseContext);

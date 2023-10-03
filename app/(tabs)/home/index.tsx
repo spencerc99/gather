@@ -1,9 +1,8 @@
 import { StyleSheet } from "react-native";
-
-import { Text, View } from "../../../components/Themed";
 import { ForageView } from "../../../components/ForageView";
+import { View } from "tamagui";
 
-export default function TabOneScreen() {
+export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ForageView />

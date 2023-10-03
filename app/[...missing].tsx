@@ -1,9 +1,10 @@
 import { Stack, usePathname, useRouter } from "expo-router";
 import { StyleSheet } from "react-native";
-import { Text, View } from "../components/Themed";
+import { Text } from "../components/common";
 import useShareIntent, { isShareIntentUrl } from "../hooks/useShareIntent";
 import { useContext, useEffect } from "react";
 import { DatabaseContext } from "../utils/db";
+import { View } from "tamagui";
 
 export default function NotFoundScreen() {
   const pathname = usePathname();
