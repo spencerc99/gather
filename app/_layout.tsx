@@ -5,12 +5,15 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack, router, useNavigation } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 import { DatabaseProvider } from "../utils/db";
 import { HoldMenuProvider } from "react-native-hold-menu";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TamaguiProvider, Theme } from "tamagui";
+
+import { config } from "../tamagui.config";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -27,7 +30,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    Inter: require("@tamagui/font-inter/otf/Inter-Medium.otf"),
+    InterLight: require("@tamagui/font-inter/otf/Inter-Light.otf"),
+    InterBold: require("@tamagui/font-inter/otf/Inter-Bold.otf"),
     ...FontAwesome.font,
   });
 
@@ -55,17 +60,27 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <HoldMenuProvider
-        theme={colorScheme || undefined}
-        safeAreaInsets={insets}
-      >
-        <DatabaseProvider>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-          </Stack>
-        </DatabaseProvider>
-      </HoldMenuProvider>
+      <TamaguiProvider config={config}>
+        <Theme name={colorScheme === "dark" ? "dark" : "light"}>
+          <HoldMenuProvider
+            theme={colorScheme || undefined}
+            safeAreaInsets={insets}
+          >
+            <DatabaseProvider>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="modal"
+                  options={{
+                    presentation: "modal",
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
+            </DatabaseProvider>
+          </HoldMenuProvider>
+        </Theme>
+      </TamaguiProvider>
     </ThemeProvider>
   );
 }

@@ -91,6 +91,7 @@ interface DatabaseContextProps {
   deleteBlock: (id: string) => void;
   collections: Collection[];
   createCollection: (collection: CollectionInsertInfo) => void;
+  getCollectionItems: (collectionId: string) => Block[];
 
   // share intent
   setShareIntent: (intent: ShareIntent | null) => void;
@@ -103,6 +104,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   deleteBlock: () => {},
   collections: [],
   createCollection: () => {},
+  getCollectionItems: () => [],
 
   setShareIntent: () => {},
   shareIntent: null,
@@ -147,6 +149,19 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             created_by TEXT NOT NULL
+        );`
+      );
+      tx.executeSql(
+        `DROP TABLE connections;
+         CREATE TABLE IF NOT EXISTS connections(
+            block_id integer NOT NULL,
+            collection_id integer NOT NULL,
+            creation_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            modification_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            PRIMARY KEY (block_id, collection_id),
+            FOREIGN KEY (block_id) REFERENCES blocks(id),
+            FOREIGN KEY (collection_id) REFERENCES collections(id)
         );`
       );
     });
@@ -271,6 +286,25 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ]);
         }
       );
+    });
+  }
+
+  async function getCollectionItems(collectionId: string) {
+    return await db.transactionAsync(async (tx) => {
+      const result = await tx.executeSqlAsync(
+        `
+        SELECT * FROM blocks
+        INNER JOIN connections ON blocks.id = connections.block_id
+        WHERE connections.collection_id = ?;`,
+        [collectionId]
+      );
+      return result.rows.map((block) => ({
+        ...block,
+        createdAt: new Date(block.created_timestamp),
+        updatedAt: new Date(block.updated_timestamp),
+        createdBy: block.created_by,
+        remoteSourceType: block.remote_source_type,
+      }));
     });
   }
 

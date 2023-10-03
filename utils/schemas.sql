@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 CREATE TABLE IF NOT EXISTS connections(
     block_id bigint NOT NULL,
-    collection
+    collection_id bigint NOT NULL,
     creation_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modification_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
