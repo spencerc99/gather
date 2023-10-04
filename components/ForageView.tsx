@@ -6,7 +6,13 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { Text, Input, Button, TextArea, Icon } from "./Themed";
+import {
+  StyledText,
+  StyledInput,
+  StyledButton,
+  StyledTextArea,
+  Icon,
+} from "./Themed";
 import { View, XStack, YStack } from "tamagui";
 import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
@@ -177,10 +183,12 @@ export function ForageView() {
           >
             <ScrollView contentContainerStyle={styles.contentContainer}>
               {/* radial menu? */}
-              <Text style={styles.title}>What have you collected today?</Text>
+              <StyledText style={styles.title}>
+                What have you collected today?
+              </StyledText>
               {/* TODO: make this autogrow like imessage input */}
               {!media && (
-                <TextArea
+                <StyledTextArea
                   placeholder="Gather..."
                   width="100%"
                   editable
@@ -193,7 +201,7 @@ export function ForageView() {
               {media && (
                 <View width={200} height={200} marginHorizontal="auto">
                   <MediaView media={media} mimeType={mimeType!} />
-                  <Button
+                  <StyledButton
                     icon={<Icon name="remove" />}
                     circular
                     size="$2"
@@ -214,18 +222,18 @@ export function ForageView() {
                 width="100%"
                 marginBottom={8}
               >
-                <Button
+                <StyledButton
                   title={<Icon name="photo" />}
                   onPress={pickImage}
                   theme="orange"
                 />
-                <Button
+                <StyledButton
                   title={<Icon name="file" />}
                   onPress={pickFile}
                   theme="purple"
                 />
                 {/* TODO: access camera */}
-                <Button
+                <StyledButton
                   title={
                     recording ? (
                       <Icon name="stop" />
@@ -237,7 +245,7 @@ export function ForageView() {
                   onPress={recording ? stopRecording : startRecording}
                 />
               </XStack>
-              <Button
+              <StyledButton
                 title="Gather"
                 width="100%"
                 size="$4"
@@ -245,7 +253,7 @@ export function ForageView() {
                   setStep(Step.GatherDetail);
                 }}
                 disabled={!textValue && !media}
-              ></Button>
+              ></StyledButton>
             </ScrollView>
           </KeyboardAvoidingView>
         );
@@ -256,28 +264,28 @@ export function ForageView() {
         return (
           <View>
             <View style={styles.breadCrumbs}>
-              <Button
+              <StyledButton
                 title="Back"
                 color="$blue"
                 chromeless
                 onPress={() => {
                   setStep(Step.Gather);
                 }}
-              ></Button>
-              <Button
+              ></StyledButton>
+              <StyledButton
                 color="$blue"
                 title="Skip"
                 textAlign="right"
                 chromeless
                 onPress={() => {}}
-              ></Button>
+              ></StyledButton>
             </View>
             <KeyboardAwareScrollView>
               <YStack space="$2">
                 <View maxWidth={"100%"} maxHeight={200}>
                   <BlockContent content={chosenContent} type={mimeType!} />
                 </View>
-                <Input
+                <StyledInput
                   placeholder="title"
                   multiline
                   editable
@@ -285,7 +293,7 @@ export function ForageView() {
                   onChangeText={(text) => setTitleValue(text)}
                   value={titleValue}
                 />
-                <TextArea
+                <StyledTextArea
                   placeholder="description"
                   multiline
                   editable
@@ -293,12 +301,12 @@ export function ForageView() {
                   onChangeText={(text) => setDescriptionValue(text)}
                   value={descriptionValue}
                 />
-                <Button
+                <StyledButton
                   title="Gather"
                   onPress={() => {
                     onSaveResult();
                   }}
-                ></Button>
+                ></StyledButton>
               </YStack>
               <KeyboardAwareScrollView
                 contentContainerStyle={styles.detailStepContainer}

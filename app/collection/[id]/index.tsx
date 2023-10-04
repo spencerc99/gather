@@ -4,7 +4,7 @@ import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../../../utils/db";
 import { Spinner } from "tamagui";
 import { Collection } from "../../../utils/dataTypes";
-import { Button, Icon } from "../../../components/Themed";
+import { StyledButton, Icon } from "../../../components/Themed";
 
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -29,7 +29,7 @@ export default function CollectionDetailScreen() {
           title: "",
           headerRight: (props) => {
             return (
-              <Button
+              <StyledButton
                 title=""
                 icon={<Icon name="gear" size={24} />}
                 color={props.tintColor}

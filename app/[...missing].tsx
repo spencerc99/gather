@@ -1,6 +1,6 @@
 import { Stack, usePathname, useRouter } from "expo-router";
 import { StyleSheet } from "react-native";
-import { Text, View } from "../components/Themed";
+import { StyledText, StyledView } from "../components/Themed";
 import useShareIntent, { isShareIntentUrl } from "../hooks/useShareIntent";
 import { useContext, useEffect } from "react";
 import { DatabaseContext } from "../utils/db";
@@ -26,18 +26,20 @@ export default function NotFoundScreen() {
       {/* TODO: show the splash screen here instead */}
       {isShareIntentUrl(pathname) ? (
         <>
-          <Text>Loading...</Text>
+          <StyledText>Loading...</StyledText>
           {/* TODO: remove */}
-          <Text>{JSON.stringify(shareIntent)}</Text>
+          <StyledText>{JSON.stringify(shareIntent)}</StyledText>
         </>
       ) : (
         <>
           <Stack.Screen options={{ title: "Oops!" }} />
-          <View style={styles.container}>
-            <Text style={styles.title}>This screen doesn't exist.</Text>
-            <Text>tried to navigate to: {pathname}</Text>
+          <StyledView style={styles.container}>
+            <StyledText style={styles.title}>
+              This screen doesn't exist.
+            </StyledText>
+            <StyledText>tried to navigate to: {pathname}</StyledText>
 
-            <Text
+            <StyledText
               style={styles.linkText}
               onPress={() => {
                 if (router.canGoBack()) {
@@ -48,8 +50,8 @@ export default function NotFoundScreen() {
               }}
             >
               Go back.
-            </Text>
-          </View>
+            </StyledText>
+          </StyledView>
         </>
       )}
     </>

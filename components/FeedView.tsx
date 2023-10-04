@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { Block, DatabaseContext } from "../utils/db";
-import { View } from "./Themed";
+import { StyledView } from "./Themed";
 import { Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { Link } from "expo-router";
@@ -24,7 +24,7 @@ export function FeedView() {
       </Link>
     );
   }
-  return <View style={styles.feed}>{blocks.map(renderBlock)}</View>;
+  return <StyledView style={styles.feed}>{blocks.map(renderBlock)}</StyledView>;
 }
 
 const styles = StyleSheet.create({

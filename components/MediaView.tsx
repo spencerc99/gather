@@ -1,5 +1,5 @@
 import { MimeType } from "../utils/mimeTypes";
-import { View, Text, Icon } from "./Themed";
+import { StyledView, StyledText, Icon } from "./Themed";
 import { Pressable, Image } from "react-native";
 import { Audio } from "expo-av";
 import { useState, useEffect } from "react";
@@ -62,7 +62,7 @@ export function MediaView({
   function renderMedia() {
     switch (mimeType) {
       case MimeType[".txt"]:
-        return <Text>{media}</Text>;
+        return <StyledText>{media}</StyledText>;
       case MimeType[".jpeg"]:
       case MimeType[".png"]:
         return (
@@ -82,9 +82,9 @@ export function MediaView({
               justifyContent: "center",
             }}
           >
-            <View>
+            <StyledView>
               <Icon name={isPlaying ? "pause" : "play"} size={24} />
-            </View>
+            </StyledView>
           </Pressable>
         );
       default:

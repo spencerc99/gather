@@ -2,7 +2,12 @@ import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
 import { Platform, StyleSheet } from "react-native";
 import { View, YStack } from "tamagui";
-import { Button, Text, TextArea, Input } from "../components/Themed";
+import {
+  StyledButton,
+  StyledText,
+  StyledTextArea,
+  StyledInput,
+} from "../components/Themed";
 import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { currentUser } from "../utils/user";
@@ -28,18 +33,18 @@ function CreateCollectionModal() {
 
   return (
     <YStack style={styles.createCollection}>
-      <Text style={styles.title}>Create Collection</Text>
-      <Input
+      <StyledText style={styles.title}>Create Collection</StyledText>
+      <StyledInput
         placeholder="I want to remember this"
         value={title}
         onChangeText={(text) => setTitle(text)}
       />
-      <TextArea
+      <StyledTextArea
         placeholder="a channel for remembering"
         value={description}
         onChangeText={(text) => setDescription(text)}
       />
-      <Button
+      <StyledButton
         title="Create"
         onPress={() => {
           createCollection({ title, description, createdBy: user.id });

@@ -22,13 +22,13 @@ export type LinkButtonProps = Omit<DefaultButtonProps, "onPress"> & {
   titleStyle?: object;
 } & Pick<LinkProps<any>, "href">;
 
-export function Text(props: TextProps) {
+export function StyledText(props: TextProps) {
   const { style, ...otherProps } = props;
 
   return <DefaultText style={style} {...otherProps} />;
 }
 
-export function View(props: any) {
+export function StyledView(props: any) {
   const { style, ...otherProps } = props;
 
   return <DefaultView style={style} {...otherProps} />;
@@ -73,7 +73,7 @@ const PressableButton = styled(DefaultButton, {
   },
 });
 
-export function Button(props: ButtonProps) {
+export function StyledButton(props: ButtonProps) {
   const { style, title, children, ...otherProps } = props;
   return <PressableButton {...otherProps}>{title || children}</PressableButton>;
 }
@@ -83,27 +83,27 @@ export function LinkButton(props: LinkButtonProps) {
   return (
     // @ts-ignore
     <Link {...otherProps} href={href} asChild={true} style={[style as any]}>
-      <Button title={title} titleStyle={titleStyle} />
+      <StyledButton title={title} titleStyle={titleStyle} />
     </Link>
   );
 }
 
-export const Input = styled(DefaultInput, {
+export const StyledInput = styled(DefaultInput, {
   width: "100%",
 });
-export const TextArea = styled(DefaultTextArea, {
+export const StyledTextArea = styled(DefaultTextArea, {
   width: "100%",
   multiline: true,
   // TODO: once figure out how to fix the number of default lines reove this
   minHeight: 150,
 });
 
-export const StyledIcon = styled(FontAwesome, {
+export const IconComponent = styled(FontAwesome, {
   color: "$color",
   // TODO: 18 is not working here why????
   size: 18,
 } as any);
 
-export function Icon(props: GetProps<typeof StyledIcon>) {
-  return <StyledIcon size={18} {...props} />;
+export function Icon(props: GetProps<typeof IconComponent>) {
+  return <IconComponent size={18} {...props} />;
 }

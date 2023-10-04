@@ -1,5 +1,5 @@
 import { ScrollView, Spinner, YStack } from "tamagui";
-import { Button, Text } from "../../../components/Themed";
+import { StyledButton, StyledText } from "../../../components/Themed";
 import { useLocalSearchParams } from "expo-router";
 import { useState, useContext, useEffect } from "react";
 import { Collection } from "../../../utils/dataTypes";
@@ -30,14 +30,14 @@ export default function CollectionSettingsScreen() {
     <ScrollView padding="10%">
       <YStack alignItems="center">
         {/* TODO: make these editable */}
-        <Text fontSize="$lg" fontWeight="bold">
+        <StyledText fontSize="$lg" fontWeight="bold">
           {title}
-        </Text>
-        <Text color="$gray9">{description}</Text>
+        </StyledText>
+        <StyledText color="$gray9">{description}</StyledText>
 
-        <Button theme="red" onPress={() => onPressDelete()}>
+        <StyledButton theme="red" onPress={() => onPressDelete()}>
           Delete
-        </Button>
+        </StyledButton>
       </YStack>
     </ScrollView>
   );

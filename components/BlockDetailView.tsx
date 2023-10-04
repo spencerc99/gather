@@ -1,5 +1,5 @@
 import { Block } from "../utils/db";
-import { View, Text } from "./Themed";
+import { StyledView, StyledText } from "./Themed";
 import { StyleSheet, Image } from "react-native";
 import { MimeType } from "../utils/mimeTypes";
 import { MediaView } from "./MediaView";
@@ -18,25 +18,25 @@ export function BlockDetailView({ block }: { block: Block }) {
   } = block;
 
   return (
-    <View style={styles.block} space="$2">
+    <StyledView style={styles.block} space="$2">
       {/* block details */}
-      <Text style={styles.title}>{title}</Text>
+      <StyledText style={styles.title}>{title}</StyledText>
       {/* {renderContent()} */}
       <BlockSummary
         block={block}
         style={{ width: "100%", height: "auto", aspectRatio: "1/1" }}
       />
       {/* TODO: don't show hold item actions and render them inline instead */}
-      <Text alignSelf="flex-end">By: {createdBy}</Text>
-      <Text style={styles.description}>{description}</Text>
-      <View style={styles.metadata}>
-        <Text>Created: {createdAt.toISOString()}</Text>
-        <Text>Updated: {updatedAt.toISOString()}</Text>
-      </View>
+      <StyledText alignSelf="flex-end">By: {createdBy}</StyledText>
+      <StyledText style={styles.description}>{description}</StyledText>
+      <StyledView style={styles.metadata}>
+        <StyledText>Created: {createdAt.toISOString()}</StyledText>
+        <StyledText>Updated: {updatedAt.toISOString()}</StyledText>
+      </StyledView>
 
       {/* Connect button */}
       {/* Connections */}
-    </View>
+    </StyledView>
   );
 }
 

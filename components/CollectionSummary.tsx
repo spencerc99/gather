@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { Collection } from "../utils/dataTypes";
-import { Text, View } from "./Themed";
+import { StyledText, StyledView } from "./Themed";
 import { useTheme } from "tamagui";
 
 export function CollectionSummary({ collection }: { collection: Collection }) {
@@ -8,15 +8,17 @@ export function CollectionSummary({ collection }: { collection: Collection }) {
   const theme = useTheme();
 
   return (
-    <View style={styles.contentContainer} borderColor={theme.color.get()}>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.metaContainer}>
-        <Text>
+    <StyledView style={styles.contentContainer} borderColor={theme.color.get()}>
+      <StyledText style={styles.title}>{title}</StyledText>
+      <StyledView style={styles.metaContainer}>
+        <StyledText>
           {createdBy} | {numItems} items
-        </Text>
-        <Text style={styles.floatRight}>{updatedAt.toDateString()}</Text>
-      </View>
-    </View>
+        </StyledText>
+        <StyledText style={styles.floatRight}>
+          {updatedAt.toDateString()}
+        </StyledText>
+      </StyledView>
+    </StyledView>
   );
 }
 
