@@ -1,5 +1,4 @@
 import { StyleSheet } from "react-native";
-
 import { FeedView } from "../../../components/FeedView";
 import { ScrollView } from "tamagui";
 

@@ -1,13 +1,14 @@
 import { StyleSheet } from "react-native";
 import { Collection } from "../utils/dataTypes";
 import { Text, View } from "./Themed";
+import { useTheme } from "tamagui";
 
 export function CollectionSummary({ collection }: { collection: Collection }) {
   const { title, updatedAt, createdBy, numItems } = collection;
+  const theme = useTheme();
 
   return (
-    // TODO: add a pressable to navigate to the collection detail view
-    <View style={styles.contentContainer}>
+    <View style={styles.contentContainer} borderColor={theme.color.get()}>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.metaContainer}>
         <Text>

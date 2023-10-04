@@ -1,5 +1,12 @@
-import { StyleSheet, Image, Pressable } from "react-native";
-import { Text, Input, Button, TextArea } from "./Themed";
+import {
+  StyleSheet,
+  Image,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { Text, Input, Button, TextArea, Icon } from "./Themed";
 import { View, XStack, YStack } from "tamagui";
 import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
@@ -12,7 +19,9 @@ import { MediaView } from "./MediaView";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { CollectionSummary } from "./CollectionSummary";
 import { Collection } from "../utils/dataTypes";
-import { FontAwesome } from "@expo/vector-icons";
+import { BlockSummary } from "./BlockSummary";
+import { BlockContent } from "./BlockContent";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 enum Step {
   Gather,
@@ -151,123 +160,168 @@ export function ForageView() {
     selectedCollections.includes(a.id) ? -1 : 1
   );
 
+  const insets = useSafeAreaInsets();
+
   function renderStep() {
     switch (step) {
       case Step.Gather:
         return (
-          <KeyboardAwareScrollView
-            contentContainerStyle={styles.contentContainer}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            // Account for header height https://stackoverflow.com/questions/48420468/keyboardavoidingview-not-working-properly
+            keyboardVerticalOffset={insets.top}
+            style={{
+              height: "100%",
+              flex: 1,
+            }}
           >
-            {/* radial menu? */}
-            <Text style={styles.title}>What have you collected today?</Text>
-            {/* TODO: make this autogrow like imessage input */}
-            <TextArea
-              placeholder="Gather..."
-              width="100%"
-              editable
-              maxLength={2000}
-              onChangeText={(text) => setTextValue(text)}
-              value={textValue}
-              style={styles.textarea}
-            />
-            {media && <MediaView media={media} mimeType={mimeType!} />}
-            <XStack
-              alignItems="flex-start"
-              gap={4}
-              width="100%"
-              marginBottom={8}
-            >
+            <ScrollView contentContainerStyle={styles.contentContainer}>
+              {/* radial menu? */}
+              <Text style={styles.title}>What have you collected today?</Text>
+              {/* TODO: make this autogrow like imessage input */}
+              {!media && (
+                <TextArea
+                  placeholder="Gather..."
+                  width="100%"
+                  editable
+                  maxLength={2000}
+                  onChangeText={(text) => setTextValue(text)}
+                  value={textValue}
+                  margin="$2"
+                />
+              )}
+              {media && (
+                <View width={200} height={200} marginHorizontal="auto">
+                  <MediaView media={media} mimeType={mimeType!} />
+                  <Button
+                    icon={<Icon name="remove" />}
+                    circular
+                    size="$2"
+                    theme="red"
+                    position="absolute"
+                    top={2}
+                    right={2}
+                    onPress={() => {
+                      setMedia(null);
+                      setMimeType(textValue ? MimeType[".txt"] : null);
+                    }}
+                  />
+                </View>
+              )}
+              <XStack
+                alignItems="flex-start"
+                gap={4}
+                width="100%"
+                marginBottom={8}
+              >
+                <Button
+                  title={<Icon name="photo" />}
+                  onPress={pickImage}
+                  theme="orange"
+                />
+                <Button
+                  title={<Icon name="file" />}
+                  onPress={pickFile}
+                  theme="purple"
+                />
+                {/* TODO: access camera */}
+                <Button
+                  title={
+                    recording ? (
+                      <Icon name="stop" />
+                    ) : (
+                      <Icon name="microphone" />
+                    )
+                  }
+                  theme="green"
+                  onPress={recording ? stopRecording : startRecording}
+                />
+              </XStack>
               <Button
-                title={<FontAwesome size={18} name="photo" />}
-                onPress={pickImage}
-              />
-              <Button
-                title={<FontAwesome size={18} name="file" />}
-                onPress={pickFile}
-              />
-              <Button
-                title={
-                  recording ? (
-                    <FontAwesome size={18} name="stop" />
-                  ) : (
-                    <FontAwesome size={18} name="microphone" />
-                  )
-                }
-                onPress={recording ? stopRecording : startRecording}
-              />
-            </XStack>
-            <Button
-              title="Gather"
-              width="100%"
-              size="$4"
-              onPress={() => {
-                setStep(Step.GatherDetail);
-              }}
-              disabled={!textValue && !media}
-            ></Button>
-            {/* TODO: access camera */}
-          </KeyboardAwareScrollView>
+                title="Gather"
+                width="100%"
+                size="$4"
+                onPress={() => {
+                  setStep(Step.GatherDetail);
+                }}
+                disabled={!textValue && !media}
+              ></Button>
+            </ScrollView>
+          </KeyboardAvoidingView>
         );
       case Step.GatherDetail:
+        const chosenContent = media || textValue;
         // optional enter details like title, description, etc.
         // what to do about bulk adds? maybe step by step and then skip button in top right corner
         return (
-          <>
+          <View>
             <View style={styles.breadCrumbs}>
               <Button
                 title="Back"
+                color="$blue"
+                chromeless
                 onPress={() => {
                   setStep(Step.Gather);
                 }}
               ></Button>
-              <Button title="Skip" onPress={() => {}}></Button>
-            </View>
-            <YStack>
-              <Input
-                placeholder="title"
-                multiline
-                editable
-                maxLength={120}
-                onChangeText={(text) => setTitleValue(text)}
-                value={titleValue}
-              />
-              <TextArea
-                placeholder="description"
-                multiline
-                editable
-                maxLength={2000}
-                onChangeText={(text) => setDescriptionValue(text)}
-                value={descriptionValue}
-                style={styles.textarea}
-              />
-            </YStack>
-            <KeyboardAwareScrollView
-              contentContainerStyle={styles.detailStepContainer}
-            >
-              {sortedCollections.map((collection) => (
-                <Pressable
-                  onPress={() => toggleCollection(collection)}
-                  style={
-                    selectedCollections.includes(collection.id)
-                      ? {
-                          backgroundColor: "blue",
-                          borderWidth: 2,
-                        }
-                      : {}
-                  }
-                >
-                  <CollectionSummary collection={collection} />
-                </Pressable>
-              ))}
               <Button
-                title="Gather"
-                onPress={() => {
-                  onSaveResult();
-                }}
+                color="$blue"
+                title="Skip"
+                textAlign="right"
+                chromeless
+                onPress={() => {}}
               ></Button>
-              {/* Render basket view and animate the item going into the collection? */}
+            </View>
+            <KeyboardAwareScrollView>
+              <YStack space="$2">
+                <View maxWidth={"100%"} maxHeight={200}>
+                  <BlockContent content={chosenContent} type={mimeType!} />
+                </View>
+                <Input
+                  placeholder="title"
+                  multiline
+                  editable
+                  maxLength={120}
+                  onChangeText={(text) => setTitleValue(text)}
+                  value={titleValue}
+                />
+                <TextArea
+                  placeholder="description"
+                  multiline
+                  editable
+                  maxLength={2000}
+                  onChangeText={(text) => setDescriptionValue(text)}
+                  value={descriptionValue}
+                />
+                <Button
+                  title="Gather"
+                  onPress={() => {
+                    onSaveResult();
+                  }}
+                ></Button>
+              </YStack>
+              <KeyboardAwareScrollView
+                contentContainerStyle={styles.detailStepContainer}
+              >
+                {sortedCollections.map((collection) => (
+                  <Pressable
+                    onPress={() => toggleCollection(collection)}
+                    style={
+                      selectedCollections.includes(collection.id)
+                        ? {
+                            backgroundColor: "blue",
+                            borderWidth: 2,
+                          }
+                        : {}
+                    }
+                  >
+                    <CollectionSummary collection={collection} />
+                  </Pressable>
+                ))}
+                {/* Render basket view and animate the item going into the collection? */}
+              </KeyboardAwareScrollView>
             </KeyboardAwareScrollView>
-          </>
+          </View>
         );
     }
   }
@@ -281,20 +335,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   contentContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    padding: "10%",
+    height: "100%",
   },
   detailStepContainer: {
     display: "flex",
     alignItems: "center",
   },
-  textarea: {
-    margin: 10,
-  },
   breadCrumbs: {
-    position: "absolute",
-    top: 0,
-    left: 0,
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",

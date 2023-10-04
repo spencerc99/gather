@@ -1,6 +1,5 @@
-import { FontAwesome } from "@expo/vector-icons";
 import { MimeType } from "../utils/mimeTypes";
-import { View, Text } from "./Themed";
+import { View, Text, Icon } from "./Themed";
 import { Pressable, Image } from "react-native";
 import { Audio } from "expo-av";
 import { useState, useEffect } from "react";
@@ -84,11 +83,7 @@ export function MediaView({
             }}
           >
             <View>
-              <FontAwesome
-                name={isPlaying ? "pause" : "play"}
-                size={24}
-                color="black"
-              />
+              <Icon name={isPlaying ? "pause" : "play"} size={24} />
             </View>
           </Pressable>
         );

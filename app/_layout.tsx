@@ -5,14 +5,13 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
+import { Link, SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 import { DatabaseProvider } from "../utils/db";
 import { HoldMenuProvider } from "react-native-hold-menu";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TamaguiProvider, Theme } from "tamagui";
-
 import { config } from "../tamagui.config";
 
 export {
@@ -80,7 +79,21 @@ function RootLayoutNav() {
                   name="collection/[id]"
                   options={{
                     presentation: "card",
-                    headerShown: false,
+                    title: "",
+                  }}
+                />
+                <Stack.Screen
+                  name="collection/[id]/settings"
+                  options={{
+                    presentation: "modal",
+                    title: "Collection Settings",
+                  }}
+                />
+                <Stack.Screen
+                  name="block/[id]"
+                  options={{
+                    presentation: "card",
+                    title: "",
                   }}
                 />
               </Stack>

@@ -3,20 +3,19 @@ import {
   Button as DefaultButton,
   ButtonProps as DefaultButtonProps,
   styled,
-  Theme,
   TextProps as DefaultTextProps,
-  InputProps,
-  TextAreaProps,
   View as DefaultView,
   Input as DefaultInput,
   TextArea as DefaultTextArea,
+  GetProps,
 } from "tamagui";
 
 import { Link, LinkProps } from "expo-router";
+import { FontAwesome } from "@expo/vector-icons";
 
 export type TextProps = DefaultTextProps;
 export type ButtonProps = DefaultButtonProps & {
-  title: string | React.ReactNode;
+  title?: string | React.ReactNode;
 };
 export type LinkButtonProps = Omit<DefaultButtonProps, "onPress"> & {
   title: string;
@@ -36,6 +35,7 @@ export function View(props: any) {
 }
 
 const PressableButton = styled(DefaultButton, {
+  theme: "blue",
   backgroundColor: "$background",
   // taken from https://github.com/tamagui/tamagui/issues/1156
   variants: {
@@ -74,12 +74,8 @@ const PressableButton = styled(DefaultButton, {
 });
 
 export function Button(props: ButtonProps) {
-  const { style, title, ...otherProps } = props;
-  return (
-    <Theme name="blue">
-      <PressableButton {...otherProps}>{title}</PressableButton>
-    </Theme>
-  );
+  const { style, title, children, ...otherProps } = props;
+  return <PressableButton {...otherProps}>{title || children}</PressableButton>;
 }
 
 export function LinkButton(props: LinkButtonProps) {
@@ -96,5 +92,18 @@ export const Input = styled(DefaultInput, {
   width: "100%",
 });
 export const TextArea = styled(DefaultTextArea, {
-  unstyled: false,
+  width: "100%",
+  multiline: true,
+  // TODO: once figure out how to fix the number of default lines reove this
+  minHeight: 150,
 });
+
+export const StyledIcon = styled(FontAwesome, {
+  color: "$color",
+  // TODO: 18 is not working here why????
+  size: 18,
+} as any);
+
+export function Icon(props: GetProps<typeof StyledIcon>) {
+  return <StyledIcon size={18} {...props} />;
+}

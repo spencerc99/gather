@@ -4,44 +4,6 @@ import { PropsWithChildren, createContext, useEffect, useState } from "react";
 import { MimeType } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
 import { Collection, CollectionInsertInfo } from "./dataTypes";
-// TODO: remove
-const TestBlocks: Block[] = [
-  {
-    id: "1123",
-    title: "Test Block",
-    description: "This is a test block",
-    content: "https://picsum.photos/200",
-    type: MimeType[".jpeg"],
-    createdBy: "spencer-did",
-    connections: [],
-    createdAt: new Date("2023-09-18"),
-    updatedAt: new Date("2023-09-18"),
-  },
-  {
-    id: "1123123",
-    title: "Mary Oliver on living",
-    description: "",
-    content: "Listen, are you breathing just a little, and calling it a life?",
-    type: MimeType[".txt"],
-    createdBy: "spencer-did",
-    connections: [],
-    createdAt: new Date("2023-09-18"),
-    updatedAt: new Date("2023-09-18"),
-  },
-];
-
-const TestCollections: Collection[] = [
-  {
-    id: "123",
-    title: "Uncategorized",
-    description: "A collection of all blocks that have not been categorized",
-    createdBy: "spencer-did",
-    updatedAt: new Date("2023-09-18"),
-    createdAt: new Date("2023-09-18"),
-    collaborators: ["spencer-did"],
-    numItems: 2,
-  },
-];
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -88,11 +50,13 @@ export interface Block extends BlockInsertInfo {
 interface DatabaseContextProps {
   blocks: Block[];
   createBlock: (block: BlockInsertInfo) => void;
+  getBlock: (blockId: string) => Promise<Block>;
   deleteBlock: (id: string) => void;
   collections: Collection[];
   createCollection: (collection: CollectionInsertInfo) => void;
   getCollectionItems: (collectionId: string) => Promise<Block[]>;
   getCollection: (collectionId: string) => Promise<Collection>;
+  deleteCollection: (id: string) => void;
 
   // share intent
   setShareIntent: (intent: ShareIntent | null) => void;
@@ -102,10 +66,16 @@ interface DatabaseContextProps {
 export const DatabaseContext = createContext<DatabaseContextProps>({
   blocks: [],
   createBlock: () => {},
+  getBlock: async () => {
+    throw new Error("not yet loaded");
+  },
   deleteBlock: () => {},
   collections: [],
   createCollection: () => {},
-  getCollection: async () => null,
+  getCollection: async () => {
+    throw new Error("not yet loaded");
+  },
+  deleteCollection: () => {},
   getCollectionItems: async () => [],
 
   setShareIntent: () => {},
@@ -154,8 +124,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         );`
       );
       tx.executeSql(
-        `DROP TABLE connections;
-         CREATE TABLE IF NOT EXISTS connections(
+        `CREATE TABLE IF NOT EXISTS connections(
             block_id integer NOT NULL,
             collection_id integer NOT NULL,
             creation_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -192,11 +161,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         );`,
         [
           block.title,
-          block.description || "null",
+          // @ts-ignore expo sqlite types are broken
+          block.description || null,
           block.content,
           block.type,
-          block.source || "null",
-          block.remoteSourceType || "null",
+          // @ts-ignore expo sqlite types are broken
+          block.source || null,
+          // @ts-ignore expo sqlite types are broken
+          block.remoteSourceType || null,
           block.createdBy,
         ]
       );
@@ -215,10 +187,19 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
   };
 
-  const [blocks, setBlocks] = useState<Block[]>([...TestBlocks]);
-  const [collections, setCollections] = useState<Collection[]>([
-    ...TestCollections,
-  ]);
+  const deleteCollection = async (id: string) => {
+    await db.transactionAsync(async (tx) => {
+      await tx.executeSqlAsync(
+        `
+        DELETE FROM collections WHERE id = ?;`,
+        [id]
+      );
+      setCollections(collections.filter((collection) => collection.id !== id));
+    });
+  };
+
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
 
   const createCollection = async (collection: CollectionInsertInfo) => {
     await db.transactionAsync(async (tx) => {
@@ -235,7 +216,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         );`,
         [
           collection.title,
-          collection.description || "null",
+          // @ts-ignore expo sqlite types are broken
+          collection.description || null,
           collection.createdBy,
         ]
       );
@@ -259,7 +241,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 connections: [],
               } as Block)
           ),
-          ...TestBlocks,
+          ,
         ]);
       });
     });
@@ -284,15 +266,34 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   collaborators: ["spencer-did"],
                 } as Collection)
             ),
-            ...TestCollections,
           ]);
         }
       );
     });
   }
 
-  function getCollection(collectionId: string) {
-    return collections.find((collection) => collection.id === collectionId);
+  async function getCollection(collectionId: string) {
+    const maybeCollection = collections.find(
+      (collection) => collection.id.toString() === collectionId.toString()
+    );
+    if (!maybeCollection) {
+      throw new Error(
+        `Collection ${collectionId} not found! Only have ${collections.map(
+          (c) => c.id
+        )}`
+      );
+    }
+    return maybeCollection;
+  }
+
+  async function getBlock(blockId: string) {
+    const maybeBlock = blocks.find(
+      (block) => block.id.toString() === blockId.toString()
+    );
+    if (!maybeBlock) {
+      throw new Error(`Block ${blockId} not found!`);
+    }
+    return maybeBlock;
   }
 
   async function getCollectionItems(collectionId: string): Promise<Block[]> {
@@ -336,12 +337,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       value={{
         createBlock: createBlock,
         blocks,
+        getBlock,
         deleteBlock,
         setShareIntent,
         shareIntent,
         collections,
         createCollection,
         getCollection,
+        deleteCollection,
         getCollectionItems,
       }}
     >

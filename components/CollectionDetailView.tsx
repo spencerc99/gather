@@ -9,7 +9,16 @@ export function CollectionDetailView({
 }: {
   collection: Collection;
 }) {
-  const { id, title, description } = collection;
+  const {
+    id,
+    title,
+    description,
+    createdAt,
+    createdBy,
+    collaborators,
+    updatedAt,
+    numItems,
+  } = collection;
   const { getCollectionItems } = useContext(DatabaseContext);
   const [blocks, setBlocks] = useState<Block[] | null>(null);
 
@@ -18,10 +27,20 @@ export function CollectionDetailView({
   }, [id]);
 
   return (
-    <YStack>
-      <Text fontSize="$lg">{title}</Text>
-      <Text>{description}</Text>
-      {/* load collection items */}
+    <YStack padding="10%">
+      <Text fontSize="$lg" fontWeight="bold">
+        {title}
+      </Text>
+      <Text color="$gray9">{description}</Text>
+      <Text>
+        by <Text fontWeight="bold">{createdBy}</Text>
+      </Text>
+      <Text>Created at: {createdAt.toISOString()}</Text>
+      <Text>Updated at: {updatedAt.toISOString()}</Text>
+      <Text>Collaborators: {collaborators}</Text>
+      <Text>Total: {numItems}</Text>
+
+      {/* insert search bar */}
       {blocks === null ? (
         <Spinner />
       ) : (

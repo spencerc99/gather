@@ -1,14 +1,28 @@
 import { useContext } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { View } from "./Themed";
-import { StyleSheet } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
+import { Link } from "expo-router";
 
 export function FeedView() {
   const { blocks } = useContext(DatabaseContext);
 
   function renderBlock(block: Block) {
-    return <BlockSummary block={block} key={block.id} />;
+    return (
+      <Link
+        href={{
+          pathname: "/block/[id]",
+          params: { id: block.id },
+        }}
+        key={block.id}
+        asChild
+      >
+        <Pressable>
+          <BlockSummary block={block} />
+        </Pressable>
+      </Link>
+    );
   }
   return <View style={styles.feed}>{blocks.map(renderBlock)}</View>;
 }

@@ -1,4 +1,5 @@
 import { StatusBar } from "expo-status-bar";
+import { router } from "expo-router";
 import { Platform, StyleSheet } from "react-native";
 import { View, YStack } from "tamagui";
 import { Button, Text, TextArea, Input } from "../components/Themed";
@@ -40,9 +41,10 @@ function CreateCollectionModal() {
       />
       <Button
         title="Create"
-        onPress={() =>
-          createCollection({ title, description, createdBy: user.id })
-        }
+        onPress={() => {
+          createCollection({ title, description, createdBy: user.id });
+          router.replace("..");
+        }}
         disabled={!title}
         style={{ marginLeft: "auto" }}
         size="$4"
