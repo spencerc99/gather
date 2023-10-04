@@ -18,7 +18,7 @@ export default function ProfileScreen() {
           // TODO: styling is messing up without "asChild" but then the link doesn't work
           <Link
             href={{
-              pathname: "/collection/[id]",
+              pathname: "/(tabs)/collection/[id]",
               params: { id: collection.id },
             }}
             key={collection.id}

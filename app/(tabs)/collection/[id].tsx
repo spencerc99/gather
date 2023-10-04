@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from "expo-router";
-import { CollectionDetailView } from "../../components/CollectionDetailView";
+import { CollectionDetailView } from "../../../components/CollectionDetailView";
 import { useContext, useEffect, useState } from "react";
-import { DatabaseContext } from "../../utils/db";
+import { DatabaseContext } from "../../../utils/db";
 import { Spinner } from "tamagui";
-import { Collection } from "../../utils/dataTypes";
+import { Collection } from "../../../utils/dataTypes";
 
 export function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();

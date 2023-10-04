@@ -26,7 +26,7 @@ function CreateCollectionModal() {
   const user = currentUser();
 
   return (
-    <YStack style={styles.container}>
+    <YStack style={styles.createCollection}>
       <Text style={styles.title}>Create Collection</Text>
       <Input
         placeholder="I want to remember this"
@@ -45,6 +45,7 @@ function CreateCollectionModal() {
         }
         disabled={!title}
         style={{ marginLeft: "auto" }}
+        size="$4"
       />
     </YStack>
   );
@@ -52,10 +53,12 @@ function CreateCollectionModal() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    display: "flex",
     flexDirection: "column",
+    justifyContent: "center",
+    padding: "10%",
+  },
+  createCollection: {
     gap: 8,
   },
   title: {
