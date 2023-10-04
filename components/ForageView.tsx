@@ -1,6 +1,6 @@
 import { StyleSheet, Image, Pressable } from "react-native";
 import { Text, Input, Button, TextArea } from "./Themed";
-import { View } from "tamagui";
+import { View, XStack, YStack } from "tamagui";
 import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
@@ -12,6 +12,7 @@ import { MediaView } from "./MediaView";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { CollectionSummary } from "./CollectionSummary";
 import { Collection } from "../utils/dataTypes";
+import { FontAwesome } from "@expo/vector-icons";
 
 enum Step {
   Gather,
@@ -66,6 +67,10 @@ export function ForageView() {
         result.assets[0].type === "image" ? MimeType[".png"] : MimeType[".mov"]
       );
     }
+  };
+
+  const pickFile = async () => {
+    // TODO: do DocumentPicker here
   };
 
   function onSaveResult() {
@@ -150,39 +155,58 @@ export function ForageView() {
     switch (step) {
       case Step.Gather:
         return (
-          <View style={styles.contentContainer}>
+          <KeyboardAwareScrollView
+            contentContainerStyle={styles.contentContainer}
+          >
             {/* radial menu? */}
             <Text style={styles.title}>What have you collected today?</Text>
-            <Button
-              title="Pick an image from camera roll"
-              onPress={pickImage}
-            />
-            {/* TODO: Add document picker */}
-            <Button
-              title={recording ? "Stop Recording" : "Start Recording"}
-              onPress={recording ? stopRecording : startRecording}
-            />
-            {media && <MediaView media={media} mimeType={mimeType!} />}
             {/* TODO: make this autogrow like imessage input */}
             <TextArea
               placeholder="Gather..."
-              multiline
+              width="100%"
               editable
               maxLength={2000}
               onChangeText={(text) => setTextValue(text)}
               value={textValue}
               style={styles.textarea}
             />
-
+            {media && <MediaView media={media} mimeType={mimeType!} />}
+            <XStack
+              alignItems="flex-start"
+              gap={4}
+              width="100%"
+              marginBottom={8}
+            >
+              <Button
+                title={<FontAwesome size={18} name="photo" />}
+                onPress={pickImage}
+              />
+              <Button
+                title={<FontAwesome size={18} name="file" />}
+                onPress={pickFile}
+              />
+              <Button
+                title={
+                  recording ? (
+                    <FontAwesome size={18} name="stop" />
+                  ) : (
+                    <FontAwesome size={18} name="microphone" />
+                  )
+                }
+                onPress={recording ? stopRecording : startRecording}
+              />
+            </XStack>
             <Button
               title="Gather"
+              width="100%"
+              size="$4"
               onPress={() => {
-                onSaveResult();
-                // setStep(Step.GatherDetail);
+                setStep(Step.GatherDetail);
               }}
+              disabled={!textValue && !media}
             ></Button>
             {/* TODO: access camera */}
-          </View>
+          </KeyboardAwareScrollView>
         );
       case Step.GatherDetail:
         // optional enter details like title, description, etc.
@@ -198,7 +222,7 @@ export function ForageView() {
               ></Button>
               <Button title="Skip" onPress={() => {}}></Button>
             </View>
-            <View style={styles.contentContainer}>
+            <YStack>
               <Input
                 placeholder="title"
                 multiline
@@ -206,7 +230,6 @@ export function ForageView() {
                 maxLength={120}
                 onChangeText={(text) => setTitleValue(text)}
                 value={titleValue}
-                style={styles.input}
               />
               <TextArea
                 placeholder="description"
@@ -217,31 +240,33 @@ export function ForageView() {
                 value={descriptionValue}
                 style={styles.textarea}
               />
-              <KeyboardAwareScrollView>
-                {sortedCollections.map((collection) => (
-                  <Pressable
-                    onPress={() => toggleCollection(collection)}
-                    style={
-                      selectedCollections.includes(collection.id)
-                        ? {
-                            backgroundColor: "blue",
-                            borderWidth: 2,
-                          }
-                        : {}
-                    }
-                  >
-                    <CollectionSummary collection={collection} />
-                  </Pressable>
-                ))}
-              </KeyboardAwareScrollView>
+            </YStack>
+            <KeyboardAwareScrollView
+              contentContainerStyle={styles.detailStepContainer}
+            >
+              {sortedCollections.map((collection) => (
+                <Pressable
+                  onPress={() => toggleCollection(collection)}
+                  style={
+                    selectedCollections.includes(collection.id)
+                      ? {
+                          backgroundColor: "blue",
+                          borderWidth: 2,
+                        }
+                      : {}
+                  }
+                >
+                  <CollectionSummary collection={collection} />
+                </Pressable>
+              ))}
               <Button
                 title="Gather"
                 onPress={() => {
-                  setStep(Step.GatherDetail);
+                  onSaveResult();
                 }}
               ></Button>
               {/* Render basket view and animate the item going into the collection? */}
-            </View>
+            </KeyboardAwareScrollView>
           </>
         );
     }
@@ -259,18 +284,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  input: {
-    borderWidth: 1,
-    padding: 10,
-    height: 40,
-    width: 250,
+  detailStepContainer: {
+    display: "flex",
+    alignItems: "center",
   },
   textarea: {
-    borderWidth: 1,
-    padding: 10,
     margin: 10,
-    height: 100,
-    width: 250,
   },
   breadCrumbs: {
     position: "absolute",

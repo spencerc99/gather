@@ -91,7 +91,8 @@ interface DatabaseContextProps {
   deleteBlock: (id: string) => void;
   collections: Collection[];
   createCollection: (collection: CollectionInsertInfo) => void;
-  getCollectionItems: (collectionId: string) => Block[];
+  getCollectionItems: (collectionId: string) => Promise<Block[]>;
+  getCollection: (collectionId: string) => Promise<Collection>;
 
   // share intent
   setShareIntent: (intent: ShareIntent | null) => void;
@@ -104,7 +105,8 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   deleteBlock: () => {},
   collections: [],
   createCollection: () => {},
-  getCollectionItems: () => [],
+  getCollection: async () => null,
+  getCollectionItems: async () => [],
 
   setShareIntent: () => {},
   shareIntent: null,
@@ -289,23 +291,37 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
   }
 
-  async function getCollectionItems(collectionId: string) {
-    return await db.transactionAsync(async (tx) => {
-      const result = await tx.executeSqlAsync(
-        `
+  function getCollection(collectionId: string) {
+    return collections.find((collection) => collection.id === collectionId);
+  }
+
+  async function getCollectionItems(collectionId: string): Promise<Block[]> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `
         SELECT * FROM blocks
         INNER JOIN connections ON blocks.id = connections.block_id
         WHERE connections.collection_id = ?;`,
-        [collectionId]
-      );
-      return result.rows.map((block) => ({
-        ...block,
-        createdAt: new Date(block.created_timestamp),
-        updatedAt: new Date(block.updated_timestamp),
-        createdBy: block.created_by,
-        remoteSourceType: block.remote_source_type,
-      }));
-    });
+          args: [collectionId],
+        },
+      ],
+      true
+    );
+    if ("error" in result) {
+      throw result.error;
+    }
+
+    return result.rows.map(
+      (block) =>
+        ({
+          ...block,
+          createdAt: new Date(block.created_timestamp),
+          updatedAt: new Date(block.updated_timestamp),
+          createdBy: block.created_by,
+          remoteSourceType: block.remote_source_type,
+        } as Block)
+    );
   }
 
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
@@ -325,6 +341,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         shareIntent,
         collections,
         createCollection,
+        getCollection,
+        getCollectionItems,
       }}
     >
       {children}

@@ -1,6 +1,6 @@
 import { LinkButton } from "./Themed";
 
-export function CreateCollectionButton() {
+export function CreateCollectionButton({ disabled }: { disabled?: boolean }) {
   return (
     <LinkButton
       href="/modal"
@@ -11,6 +11,7 @@ export function CreateCollectionButton() {
         justifyContent: "center",
         alignItems: "center",
       }}
+      disabled={disabled}
     />
   );
 }

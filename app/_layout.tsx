@@ -76,6 +76,13 @@ function RootLayoutNav() {
                     headerShown: false,
                   }}
                 />
+                <Stack.Screen
+                  name="collection/[id]"
+                  options={{
+                    presentation: "card",
+                    headerShown: false,
+                  }}
+                />
               </Stack>
             </DatabaseProvider>
           </HoldMenuProvider>

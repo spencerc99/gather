@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { Platform, StyleSheet } from "react-native";
-import { View } from "tamagui";
+import { View, YStack } from "tamagui";
 import { Button, Text, TextArea, Input } from "../components/Themed";
 import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
@@ -26,7 +26,7 @@ function CreateCollectionModal() {
   const user = currentUser();
 
   return (
-    <View style={styles.container}>
+    <YStack style={styles.container}>
       <Text style={styles.title}>Create Collection</Text>
       <Input
         placeholder="I want to remember this"
@@ -46,7 +46,7 @@ function CreateCollectionModal() {
         disabled={!title}
         style={{ marginLeft: "auto" }}
       />
-    </View>
+    </YStack>
   );
 }
 

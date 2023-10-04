@@ -35,6 +35,7 @@ export default function NotFoundScreen() {
           <Stack.Screen options={{ title: "Oops!" }} />
           <View style={styles.container}>
             <Text style={styles.title}>This screen doesn't exist.</Text>
+            <Text>tried to navigate to: {pathname}</Text>
 
             <Text
               style={styles.linkText}

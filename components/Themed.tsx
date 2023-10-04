@@ -16,8 +16,7 @@ import { Link, LinkProps } from "expo-router";
 
 export type TextProps = DefaultTextProps;
 export type ButtonProps = DefaultButtonProps & {
-  title: string;
-  titleStyle?: object;
+  title: string | React.ReactNode;
 };
 export type LinkButtonProps = Omit<DefaultButtonProps, "onPress"> & {
   title: string;
@@ -35,12 +34,47 @@ export function View(props: any) {
 
   return <DefaultView style={style} {...otherProps} />;
 }
+
 const PressableButton = styled(DefaultButton, {
   backgroundColor: "$background",
+  // taken from https://github.com/tamagui/tamagui/issues/1156
+  variants: {
+    disabled: {
+      true: {
+        opacity: 0.5,
+        pointerEvents: "none",
+      },
+    },
+    type: {
+      contained: {
+        backgroundColor: "$background",
+        color: "$color",
+      },
+      outlined: (_, { props }: { props: any }) => {
+        return {
+          // TODO: figure out what active is coming from
+          backgroundColor: props.active
+            ? "$lightColor"
+            : "$backgroundSecondary",
+          color: props.active ? "$color" : "$secondaryColor",
+          borderColor: props.active ? "$lightColor" : "$borderColor",
+        };
+      },
+      text: {
+        borderWidth: 0,
+        backgroundColor: "transparent",
+        color: "$secondaryColor",
+      },
+    },
+  } as const,
+
+  defaultVariants: {
+    type: "contained",
+  },
 });
 
 export function Button(props: ButtonProps) {
-  const { style, title, titleStyle, ...otherProps } = props;
+  const { style, title, ...otherProps } = props;
   return (
     <Theme name="blue">
       <PressableButton {...otherProps}>{title}</PressableButton>
@@ -58,12 +92,9 @@ export function LinkButton(props: LinkButtonProps) {
   );
 }
 
-export function Input(props: InputProps) {
-  const { ...otherProps } = props;
-  return <DefaultInput borderWidth={2} {...otherProps} />;
-}
-
-export function TextArea(props: TextAreaProps) {
-  const { ...otherProps } = props;
-  return <DefaultTextArea borderWidth={2} {...otherProps} />;
-}
+export const Input = styled(DefaultInput, {
+  width: "100%",
+});
+export const TextArea = styled(DefaultTextArea, {
+  unstyled: false,
+});
