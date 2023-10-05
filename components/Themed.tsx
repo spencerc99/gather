@@ -123,7 +123,13 @@ export function InputWithIcon({
 }) {
   return (
     <Stack>
-      <YStack position="absolute" left="$1" height="100%">
+      <YStack
+        position="absolute"
+        left="$1"
+        height="100%"
+        alignItems="center"
+        justifyContent="center"
+      >
         <Icon name={icon} size={iconSize} />
       </YStack>
       <StyledInput {...props} paddingLeft="$4" />

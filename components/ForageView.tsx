@@ -32,6 +32,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 enum Step {
   Gather,
+  // TODO: turn this into a route that is a card stack to support native navigation
   GatherDetail,
 }
 
@@ -111,9 +112,11 @@ export function ForageView() {
       collectionsToConnect: selectedCollections,
     });
 
+    router.replace("/home");
     alert("Saved!");
   }
 
+  // TODO: fix this to actually pick up the sound
   async function startRecording() {
     try {
       if (mimeType === MimeType[".ma4"]) {
@@ -191,14 +194,16 @@ export function ForageView() {
               <StyledText style={styles.title}>
                 What have you collected today?
               </StyledText>
-              {/* TODO: make this autogrow like imessage input */}
               {!media && (
                 <StyledTextArea
                   placeholder="Gather..."
                   width="100%"
                   editable
                   maxLength={2000}
-                  onChangeText={(text) => setTextValue(text)}
+                  onChangeText={(text) => {
+                    setTextValue(text);
+                    setMimeType(MimeType[".txt"]);
+                  }}
                   value={textValue}
                   margin="$2"
                 />
@@ -294,6 +299,7 @@ export function ForageView() {
               }}
             >
               <YStack space="$2">
+                {/* TODO: make this look beter */}
                 <View maxWidth={"100%"} maxHeight={200}>
                   <BlockContent content={chosenContent} type={mimeType!} />
                 </View>
@@ -317,7 +323,7 @@ export function ForageView() {
                   icon="search"
                   placeholder="Search..."
                   width="100%"
-                  backgroundColor="$backgroundSecondary"
+                  backgroundColor="$gray4"
                   value={searchValue}
                   onChangeText={(text) => setSearchValue(text)}
                 />

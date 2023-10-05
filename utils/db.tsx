@@ -134,7 +134,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             block_id integer NOT NULL,
             collection_id integer NOT NULL,
             creation_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            modification_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
             PRIMARY KEY (block_id, collection_id),
             FOREIGN KEY (block_id) REFERENCES blocks(id),
@@ -186,6 +185,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }
 
       if (connections?.length) {
+        console.log("INSERT ID", result.insertId);
         await addConnections(String(result.insertId!), connections);
       }
 
@@ -329,6 +329,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if ("error" in result) {
       throw result.error;
     }
+    console.log("getting collection items...");
+    console.log(result.rows);
 
     return result.rows.map(
       (block) =>
@@ -343,14 +345,21 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   async function addConnections(blockId: string, collectionIds: string[]) {
-    await db.execAsync(
+    const result = await db.execAsync(
       collectionIds.map((collectionId) => ({
-        sql: `INSERT INTO collections (block_id, collection_id)
-              SELECT VALUES (?, ?);`,
+        sql: `INSERT INTO connections (block_id, collection_id)
+              VALUES (?, ?);`,
         args: [blockId, collectionId],
       })),
       false
     );
+
+    const errors: SQLite.ResultSetError[] = result.filter(
+      (result) => "error" in result
+    );
+    if (errors.length) {
+      throw errors[0].error;
+    }
   }
 
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
