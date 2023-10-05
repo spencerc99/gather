@@ -30,7 +30,6 @@ export default function CollectionDetailScreen() {
           headerRight: (props) => {
             return (
               <StyledButton
-                title=""
                 icon={<Icon name="gear" size={24} />}
                 color={props.tintColor}
                 chromeless

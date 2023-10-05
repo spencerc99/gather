@@ -1,4 +1,4 @@
-import { View, Text, YStack, Spinner } from "tamagui";
+import { View, Text, YStack, Spinner, XStack } from "tamagui";
 import { Collection } from "../utils/dataTypes";
 import { useContext, useEffect, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
@@ -39,12 +39,15 @@ export function CollectionDetailView({
       <Text>Updated at: {updatedAt.toISOString()}</Text>
       <Text>Collaborators: {collaborators}</Text>
       <Text>Total: {numItems}</Text>
-
       {/* insert search bar */}
       {blocks === null ? (
         <Spinner />
       ) : (
-        blocks.map((block) => <BlockSummary block={block} />)
+        <XStack flexWrap="wrap" space="$2">
+          {blocks.map((block) => (
+            <BlockSummary block={block} />
+          ))}
+        </XStack>
       )}
     </YStack>
   );

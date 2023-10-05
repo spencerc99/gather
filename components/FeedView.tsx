@@ -24,6 +24,8 @@ export function FeedView() {
       </Link>
     );
   }
+
+  // TODO: use tabs to render blocks + collections
   return <StyledView style={styles.feed}>{blocks.map(renderBlock)}</StyledView>;
 }
 

@@ -29,6 +29,7 @@ import { Collection } from "../utils/dataTypes";
 import { BlockSummary } from "./BlockSummary";
 import { BlockContent } from "./BlockContent";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CreateCollectionButton } from "./CreateCollectionButton";
 
 enum Step {
   Gather,
@@ -233,18 +234,18 @@ export function ForageView() {
                 marginBottom={8}
               >
                 <StyledButton
-                  title={<Icon name="photo" />}
+                  icon={<Icon name="photo" />}
                   onPress={pickImage}
                   theme="orange"
                 />
                 <StyledButton
-                  title={<Icon name="file" />}
+                  icon={<Icon name="file" />}
                   onPress={pickFile}
                   theme="purple"
                 />
                 {/* TODO: access camera */}
                 <StyledButton
-                  title={
+                  icon={
                     recording ? (
                       <Icon name="stop" />
                     ) : (
@@ -256,14 +257,15 @@ export function ForageView() {
                 />
               </XStack>
               <StyledButton
-                title="Gather"
                 width="100%"
                 size="$4"
                 onPress={() => {
                   setStep(Step.GatherDetail);
                 }}
                 disabled={!textValue && !media}
-              ></StyledButton>
+              >
+                Gather
+              </StyledButton>
             </ScrollView>
           </KeyboardAvoidingView>
         );
@@ -272,100 +274,103 @@ export function ForageView() {
         // optional enter details like title, description, etc.
         // what to do about bulk adds? maybe step by step and then skip button in top right corner
         return (
-          <View style={{ height: "100%", flex: 1 }}>
+          <View style={{ height: "100%", flex: 1, paddingBottom: 48 }}>
             <View style={styles.breadCrumbs}>
               <StyledButton
-                title="Back"
                 textProps={{ color: "$blue" }}
                 chromeless
                 onPress={() => {
                   setStep(Step.Gather);
                 }}
-              ></StyledButton>
-              <StyledButton
-                textProps={{ color: "$blue" }}
-                title="Skip"
-                textAlign="right"
-                chromeless
-                onPress={() => {}}
-              ></StyledButton>
+              >
+                Back
+              </StyledButton>
             </View>
-            <KeyboardAwareScrollView
+            <ScrollView
               contentContainerStyle={{
                 ...styles.parentContainer,
-                height: "100%",
-                justifyContent: "space-between",
-                paddingBottom: 4,
+                height: undefined,
               }}
             >
-              <YStack space="$2">
-                {/* TODO: make this look beter */}
-                <View maxWidth={"100%"} maxHeight={200}>
-                  <BlockContent content={chosenContent} type={mimeType!} />
-                </View>
-                <StyledInput
-                  placeholder="title"
-                  multiline
-                  editable
-                  maxLength={120}
-                  onChangeText={(text) => setTitleValue(text)}
-                  value={titleValue}
-                />
-                <StyledTextArea
-                  placeholder="description"
-                  multiline
-                  editable
-                  maxLength={2000}
-                  onChangeText={(text) => setDescriptionValue(text)}
-                  value={descriptionValue}
-                />
-                <InputWithIcon
-                  icon="search"
-                  placeholder="Search..."
-                  width="100%"
-                  backgroundColor="$gray4"
-                  value={searchValue}
-                  onChangeText={(text) => setSearchValue(text)}
-                />
-                <ScrollView>
-                  <YStack space="$1">
-                    {collections
-                      .filter((c) =>
-                        `${c.title}\n${c.description}}`.includes(
-                          `${searchValue}`
-                        )
-                      )
-                      .map((collection) => (
-                        <Pressable
-                          key={collection.id}
-                          onPress={() => toggleCollection(collection)}
-                        >
-                          <CollectionSummary
-                            collection={collection}
-                            viewProps={
-                              selectedCollections.includes(collection.id)
-                                ? {
-                                    backgroundColor: "$green4",
-                                    borderWidth: 2,
-                                    borderColor: "$green10",
-                                  }
-                                : undefined
-                            }
-                          />
-                        </Pressable>
-                      ))}
-                  </YStack>
-                </ScrollView>
-              </YStack>
-              {/* Render basket view and animate the item going into the collection? */}
-              <StyledButton
-                title="Gather"
-                marginTop="$1"
-                onPress={() => {
-                  onSaveResult();
+              <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                // Account for header height https://stackoverflow.com/questions/48420468/keyboardavoidingview-not-working-properly
+                keyboardVerticalOffset={insets.top}
+                style={{
+                  flex: 1,
                 }}
-              ></StyledButton>
-            </KeyboardAwareScrollView>
+              >
+                <YStack space="$2">
+                  {/* TODO: make this look beter */}
+                  <View maxWidth={"100%"} maxHeight={200}>
+                    <BlockContent content={chosenContent} type={mimeType!} />
+                  </View>
+                  <StyledInput
+                    placeholder="title"
+                    maxLength={120}
+                    onChangeText={(text) => setTitleValue(text)}
+                    value={titleValue}
+                  />
+                  <StyledTextArea
+                    placeholder="description"
+                    minHeight={undefined}
+                    maxLength={2000}
+                    onChangeText={(text) => setDescriptionValue(text)}
+                    value={descriptionValue}
+                  />
+                  <InputWithIcon
+                    icon="search"
+                    placeholder="Search..."
+                    width="100%"
+                    backgroundColor="$gray4"
+                    value={searchValue}
+                    onChangeText={(text) => setSearchValue(text)}
+                  />
+                  <ScrollView>
+                    <YStack space="$1">
+                      <CreateCollectionButton />
+                      {collections
+                        .filter((c) =>
+                          `${c.title}\n${c.description}}`.includes(
+                            `${searchValue}`
+                          )
+                        )
+                        .map((collection) => (
+                          <Pressable
+                            key={collection.id}
+                            onPress={() => toggleCollection(collection)}
+                          >
+                            <CollectionSummary
+                              collection={collection}
+                              viewProps={
+                                selectedCollections.includes(collection.id)
+                                  ? {
+                                      backgroundColor: "$green4",
+                                      borderWidth: 2,
+                                      borderColor: "$green10",
+                                    }
+                                  : undefined
+                              }
+                            />
+                          </Pressable>
+                        ))}
+                    </YStack>
+                  </ScrollView>
+                </YStack>
+                {/* Render basket view and animate the item going into the collection? */}
+              </KeyboardAvoidingView>
+            </ScrollView>
+            <StyledButton
+              position="absolute"
+              bottom={4}
+              width="90%"
+              left="5%"
+              onPress={() => {
+                onSaveResult();
+              }}
+            >
+              Gather
+            </StyledButton>
           </View>
         );
     }

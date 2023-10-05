@@ -4,6 +4,7 @@ import { HoldItem } from "react-native-hold-menu";
 import { useContext } from "react";
 import { Icon, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
+import { useTheme } from "tamagui";
 
 export function BlockSummary({
   block,
@@ -53,9 +54,15 @@ export function BlockSummary({
     return <BlockContent content={content} type={type} />;
   }
 
+  const theme = useTheme();
+
   return (
     <HoldItem items={blockMenuItems} key={id} closeOnTap>
-      <StyledView style={[styles.block, style]} key={id}>
+      <StyledView
+        style={[styles.block, style]}
+        key={id}
+        borderColor={theme.color.get()}
+      >
         {renderContent()}
       </StyledView>
     </HoldItem>

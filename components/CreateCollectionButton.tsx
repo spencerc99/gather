@@ -4,7 +4,6 @@ export function CreateCollectionButton({ disabled }: { disabled?: boolean }) {
   return (
     <LinkButton
       href="/modal"
-      title="Create Collection"
       style={{
         width: "100%",
         display: "flex",
@@ -12,6 +11,8 @@ export function CreateCollectionButton({ disabled }: { disabled?: boolean }) {
         alignItems: "center",
       }}
       disabled={disabled}
-    />
+    >
+      Create Collection
+    </LinkButton>
   );
 }

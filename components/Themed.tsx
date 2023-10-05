@@ -8,7 +8,6 @@ import {
   Input as DefaultInput,
   TextArea as DefaultTextArea,
   GetProps,
-  InputFrame,
   Stack,
   YStack,
 } from "tamagui";
@@ -17,13 +16,11 @@ import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 
 export type TextProps = DefaultTextProps;
-export type ButtonProps = DefaultButtonProps & {
-  title?: string | React.ReactNode;
-};
-export type LinkButtonProps = Omit<DefaultButtonProps, "onPress"> & {
-  title: string;
-  titleStyle?: object;
-} & Pick<LinkProps<any>, "href">;
+export type ButtonProps = DefaultButtonProps & {};
+export type LinkButtonProps = Omit<DefaultButtonProps, "onPress"> & {} & Pick<
+    LinkProps<any>,
+    "href"
+  >;
 
 export function StyledText(props: TextProps) {
   const { style, ...otherProps } = props;
@@ -77,16 +74,15 @@ const PressableButton = styled(DefaultButton, {
 });
 
 export function StyledButton(props: ButtonProps) {
-  const { style, title, children, ...otherProps } = props;
-  return <PressableButton {...otherProps}>{title || children}</PressableButton>;
+  return <PressableButton {...props}></PressableButton>;
 }
 
 export function LinkButton(props: LinkButtonProps) {
-  const { style, title, titleStyle, href, ...otherProps } = props;
+  const { href, children, ...otherProps } = props;
   return (
     // @ts-ignore
-    <Link {...otherProps} href={href} asChild={true} style={[style as any]}>
-      <StyledButton title={title} titleStyle={titleStyle} />
+    <Link {...otherProps} href={href} asChild={true}>
+      <StyledButton>{children}</StyledButton>
     </Link>
   );
 }
@@ -122,7 +118,7 @@ export function InputWithIcon({
   iconSize?: GetProps<typeof IconComponent>["size"];
 }) {
   return (
-    <Stack>
+    <Stack position="relative">
       <YStack
         position="absolute"
         left="$1"

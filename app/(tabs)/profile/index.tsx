@@ -9,6 +9,7 @@ import { Link } from "expo-router";
 export default function ProfileScreen() {
   const { collections } = useContext(DatabaseContext);
 
+  // TODO: change this to show events, group them by date.
   return (
     <ScrollView style={styles.container}>
       {/* TODO: show profile information */}

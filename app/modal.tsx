@@ -45,7 +45,6 @@ function CreateCollectionModal() {
         onChangeText={(text) => setDescription(text)}
       />
       <StyledButton
-        title="Create"
         onPress={() => {
           createCollection({ title, description, createdBy: user.id });
           router.replace("..");
@@ -53,7 +52,9 @@ function CreateCollectionModal() {
         disabled={!title}
         style={{ marginLeft: "auto" }}
         size="$4"
-      />
+      >
+        Create
+      </StyledButton>
     </YStack>
   );
 }
