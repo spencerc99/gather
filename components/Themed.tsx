@@ -1,32 +1,47 @@
 import {
-  Text as DefaultText,
+  Text,
   Button as DefaultButton,
-  ButtonProps as DefaultButtonProps,
+  ButtonProps,
   styled,
-  TextProps as DefaultTextProps,
   View as DefaultView,
   Input as DefaultInput,
   TextArea as DefaultTextArea,
   GetProps,
   Stack,
   YStack,
+  Paragraph,
 } from "tamagui";
 
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 
-export type TextProps = DefaultTextProps;
-export type ButtonProps = DefaultButtonProps & {};
-export type LinkButtonProps = Omit<DefaultButtonProps, "onPress"> & {} & Pick<
+export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
     "href"
   >;
 
-export function StyledText(props: TextProps) {
-  const { style, ...otherProps } = props;
+const TextVariants = {
+  title: {
+    true: {
+      fontSize: "$4",
+      // for some reason "bold" even though accepted by types does not work here...
+      fontWeight: "700",
+    },
+  },
+  metadata: {
+    true: {
+      color: "$gray9",
+    },
+  },
+} as const;
 
-  return <DefaultText style={style} {...otherProps} />;
-}
+export const StyledText = styled(Text, {
+  variants: TextVariants,
+});
+
+export const StyledParagraph = styled(Paragraph, {
+  variants: TextVariants,
+});
 
 export function StyledView(props: any) {
   const { style, ...otherProps } = props;

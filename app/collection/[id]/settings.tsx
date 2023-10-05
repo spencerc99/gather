@@ -30,9 +30,7 @@ export default function CollectionSettingsScreen() {
     <ScrollView padding="10%">
       <YStack alignItems="center">
         {/* TODO: make these editable */}
-        <StyledText fontSize="$lg" fontWeight="bold">
-          {title}
-        </StyledText>
+        <StyledText title>{title}</StyledText>
         <StyledText color="$gray9">{description}</StyledText>
 
         <StyledButton theme="red" onPress={() => onPressDelete()}>

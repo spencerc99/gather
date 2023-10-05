@@ -28,14 +28,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Gather",
+          title: "Home",
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerRight: () => (
-            <Link href="/modal" asChild>
+            <Link href="/internal" asChild>
               <Pressable>
                 {({ pressed }) => (
                   <FontAwesome
-                    name="info-circle"
+                    name="bug"
                     size={25}
                     color={theme.color.get()}
                     style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
@@ -49,8 +49,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="feed"
         options={{
-          title: "Feed",
-          tabBarIcon: ({ color }) => <TabBarIcon name="feed" color={color} />,
+          title: "Discover",
+          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
         }}
       />
       <Tabs.Screen

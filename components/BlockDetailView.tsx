@@ -1,8 +1,6 @@
 import { Block } from "../utils/db";
-import { StyledView, StyledText } from "./Themed";
-import { StyleSheet, Image } from "react-native";
-import { MimeType } from "../utils/mimeTypes";
-import { MediaView } from "./MediaView";
+import { StyledView, StyledParagraph } from "./Themed";
+import { StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 
 export function BlockDetailView({ block }: { block: Block }) {
@@ -20,18 +18,22 @@ export function BlockDetailView({ block }: { block: Block }) {
   return (
     <StyledView style={styles.block} space="$2">
       {/* block details */}
-      <StyledText style={styles.title}>{title}</StyledText>
+      <StyledParagraph title>{title}</StyledParagraph>
       {/* {renderContent()} */}
       <BlockSummary
         block={block}
         style={{ width: "100%", height: "auto", aspectRatio: "1/1" }}
       />
       {/* TODO: don't show hold item actions and render them inline instead */}
-      <StyledText alignSelf="flex-end">By: {createdBy}</StyledText>
-      <StyledText style={styles.description}>{description}</StyledText>
+      <StyledParagraph alignSelf="flex-end">By: {createdBy}</StyledParagraph>
+      <StyledParagraph>{description}</StyledParagraph>
       <StyledView style={styles.metadata}>
-        <StyledText>Created: {createdAt.toISOString()}</StyledText>
-        <StyledText>Updated: {updatedAt.toISOString()}</StyledText>
+        <StyledParagraph metadata>
+          Created: {createdAt.toLocaleTimeString()}
+        </StyledParagraph>
+        <StyledParagraph metadata>
+          Updated: {updatedAt.toLocaleTimeString()}
+        </StyledParagraph>
       </StyledView>
 
       {/* Connect button */}
@@ -45,13 +47,6 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
   },
-  description: {},
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  contentText: {},
-  contentImg: {},
   metadata: {
     display: "flex",
     alignSelf: "flex-end",

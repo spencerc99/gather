@@ -4,16 +4,20 @@ import { HoldItem } from "react-native-hold-menu";
 import { useContext } from "react";
 import { Icon, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import { useTheme } from "tamagui";
+import { YStack, useTheme } from "tamagui";
+import { getRelativeDate } from "../utils/date";
 
 export function BlockSummary({
   block,
   style,
 }: {
-  block: Block;
+  block: Pick<
+    Block,
+    "id" | "title" | "content" | "type" | "source" | "createdAt"
+  >;
   style?: object;
 }) {
-  const { id, content, type, source } = block;
+  const { id, content, type, source, title, createdAt } = block;
   const { deleteBlock } = useContext(DatabaseContext);
 
   const blockMenuItems = [
@@ -57,15 +61,20 @@ export function BlockSummary({
   const theme = useTheme();
 
   return (
-    <HoldItem items={blockMenuItems} key={id} closeOnTap>
-      <StyledView
-        style={[styles.block, style]}
-        key={id}
-        borderColor={theme.color.get()}
-      >
-        {renderContent()}
-      </StyledView>
-    </HoldItem>
+    <YStack space="$1" alignItems="center">
+      <HoldItem items={blockMenuItems} key={id} closeOnTap>
+        <StyledView
+          style={[styles.block, style]}
+          key={id}
+          borderColor={theme.color.get()}
+        >
+          {renderContent()}
+        </StyledView>
+      </HoldItem>
+      <StyledText metadata ellipse={true}>
+        {title ? `${title} ` : ""}created {getRelativeDate(createdAt)}
+      </StyledText>
+    </YStack>
   );
 }
 

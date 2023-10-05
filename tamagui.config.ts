@@ -15,8 +15,12 @@ const headingFont = createInterFont({
     7: "none",
   },
   weight: {
+    light: "300",
+    5: "300",
     6: "400",
+    normal: "400",
     7: "700",
+    bold: "700",
   },
   color: {
     6: "$colorFocus",
@@ -46,7 +50,7 @@ const bodyFont = createInterFont(
   },
   {
     sizeSize: (size) => Math.round(size * 1.1),
-    sizeLineHeight: (size) => Math.round(size * 1.1 + (size > 20 ? 10 : 0)),
+    sizeLineHeight: (size) => Math.round(size * 1.1),
   }
 );
 

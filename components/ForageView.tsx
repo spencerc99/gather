@@ -14,7 +14,7 @@ import {
   Icon,
   InputWithIcon,
 } from "./Themed";
-import { View, XStack, YStack } from "tamagui";
+import { SizableText, View, XStack, YStack } from "tamagui";
 import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
@@ -29,7 +29,7 @@ import { Collection } from "../utils/dataTypes";
 import { BlockSummary } from "./BlockSummary";
 import { BlockContent } from "./BlockContent";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CreateCollectionButton } from "./CreateCollectionButton";
+import { currentUser } from "../utils/user";
 
 enum Step {
   Gather,
@@ -48,6 +48,7 @@ export function ForageView() {
     createBlock: addBlock,
     shareIntent,
     collections,
+    createCollection,
   } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
 
@@ -215,7 +216,7 @@ export function ForageView() {
                   <StyledButton
                     icon={<Icon name="remove" />}
                     circular
-                    size="$2"
+                    size="$1"
                     theme="red"
                     position="absolute"
                     top={2}
@@ -328,7 +329,36 @@ export function ForageView() {
                   />
                   <ScrollView>
                     <YStack space="$1">
-                      <CreateCollectionButton />
+                      {searchValue && (
+                        <StyledButton
+                          onPress={async () => {
+                            const newCollectionId = await createCollection({
+                              title: searchValue,
+                              createdBy: currentUser().id,
+                            });
+
+                            setSelectedCollections([
+                              ...selectedCollections,
+                              newCollectionId,
+                            ]);
+                          }}
+                          noTextWrap={true}
+                          height="auto"
+                          paddingVertical={16}
+                        >
+                          <SizableText
+                            userSelect="none"
+                            cursor="pointer"
+                            color="$color"
+                            size="$true"
+                          >
+                            New collection{" "}
+                            <SizableText style={{ fontWeight: 700 }}>
+                              {searchValue}
+                            </SizableText>
+                          </SizableText>
+                        </StyledButton>
+                      )}
                       {collections
                         .filter((c) =>
                           `${c.title}\n${c.description}}`.includes(
@@ -340,6 +370,7 @@ export function ForageView() {
                             key={collection.id}
                             onPress={() => toggleCollection(collection)}
                           >
+                            {/* TODO: bold the matching parts */}
                             <CollectionSummary
                               collection={collection}
                               viewProps={

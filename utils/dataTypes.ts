@@ -14,5 +14,5 @@ export interface Collection {
 
   // mapped out properties
   collaborators: string[]; // of user dids
-  numItems: number;
+  numBlocks: number;
 }

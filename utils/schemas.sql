@@ -63,8 +63,8 @@ CREATE TABLE IF NOT EXISTS users(
 CREATE TABLE IF NOT EXISTS connections(
     block_id bigint NOT NULL,
     collection_id bigint NOT NULL,
-    creation_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    modification_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT NOT NULL,
 
     PRIMARY KEY (block_id, collection_id),
     FOREIGN KEY (block_id) REFERENCES blocks(id),

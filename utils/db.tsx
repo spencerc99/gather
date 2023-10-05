@@ -4,6 +4,8 @@ import { PropsWithChildren, createContext, useEffect, useState } from "react";
 import { MimeType } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
 import { Collection, CollectionInsertInfo } from "./dataTypes";
+import { currentUser } from "./user";
+import { convertDbTimestampToDate } from "./date";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -23,7 +25,7 @@ function openDatabase() {
 const db = openDatabase();
 
 interface BlockInsertInfo {
-  title: string;
+  title?: string;
   description?: string; // long-form description about the object, could include things like tags here and those get automatically extracted?
   content: string; // could be either the data itself or a path to the data if a rich media object
   //   TODO: add type
@@ -55,7 +57,7 @@ interface DatabaseContextProps {
   getBlock: (blockId: string) => Promise<Block>;
   deleteBlock: (id: string) => void;
   collections: Collection[];
-  createCollection: (collection: CollectionInsertInfo) => void;
+  createCollection: (collection: CollectionInsertInfo) => Promise<string>;
   getCollectionItems: (collectionId: string) => Promise<Block[]>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => void;
@@ -65,6 +67,10 @@ interface DatabaseContextProps {
   // share intent
   setShareIntent: (intent: ShareIntent | null) => void;
   shareIntent: ShareIntent | null;
+
+  // TODO: remove this once apis solidify
+  db: SQLite.SQLiteDatabase;
+  initDatabases: () => Promise<void>;
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
@@ -75,7 +81,9 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   },
   deleteBlock: () => {},
   collections: [],
-  createCollection: () => {},
+  createCollection: async () => {
+    throw new Error("not yet loaded");
+  },
   getCollection: async () => {
     throw new Error("not yet loaded");
   },
@@ -86,29 +94,46 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
 
   setShareIntent: () => {},
   shareIntent: null,
+
+  db,
+  initDatabases: async () => {},
 });
 
-function mapSnakeCaseToCamelCaseProperties(obj: object): object {
+export function mapSnakeCaseToCamelCaseProperties<
+  T extends { [column: string]: any }
+>(obj: { [column: string]: any }): T {
   const newObj = {};
   for (const key in obj) {
     const newKey = key.replace(/([-_][a-z])/gi, ($1) => {
       return $1.toUpperCase().replace("-", "").replace("_", "");
     });
+    // if (typeof T[newKey] === typeof Date) {
+    //   // @ts-ignore
+    //   newObj[newKey] = convertDbTimestampToDate(obj[key]);
+    //   continue;
+    // }
+
     // @ts-ignore
     newObj[newKey] = obj[key];
   }
+  console.log(newObj);
   return newObj;
 }
 
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   useEffect(() => {
-    db.transaction((tx) => {
+    void initDatabases();
+  }, []);
+
+  async function initDatabases() {
+    await db.transactionAsync(async (tx) => {
       // Set up tables
       // TODO: figure out id scheme
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS blocks (
+      const [...results] = await Promise.all([
+        tx.executeSqlAsync(
+          `CREATE TABLE IF NOT EXISTS blocks (
             id integer PRIMARY KEY AUTOINCREMENT,
-            title varchar(128) NOT NULL,
+            title varchar(128),
             content TEXT NOT NULL,
             description TEXT,
             type varchar(128) NOT NULL,
@@ -118,9 +143,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             created_by TEXT NOT NULL
         );`
-      );
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS collections (
+        ),
+        tx.executeSqlAsync(
+          `CREATE TABLE IF NOT EXISTS collections (
             id integer PRIMARY KEY AUTOINCREMENT,
             title varchar(128) NOT NULL,
             description TEXT,
@@ -128,20 +153,31 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             created_by TEXT NOT NULL
         );`
-      );
-      tx.executeSql(
+        ),
+      ]);
+
+      if (results.some((result) => "error" in result)) {
+        throw results.find((result) => "error" in result)?.error;
+      }
+
+      const result = await tx.executeSqlAsync(
         `CREATE TABLE IF NOT EXISTS connections(
             block_id integer NOT NULL,
             collection_id integer NOT NULL,
-            creation_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_by TEXT NOT NULL,
 
             PRIMARY KEY (block_id, collection_id),
             FOREIGN KEY (block_id) REFERENCES blocks(id),
             FOREIGN KEY (collection_id) REFERENCES collections(id)
         );`
       );
+
+      if ("error" in result) {
+        throw result.error;
+      }
     });
-  }, []);
+  }
 
   const createBlock = async ({
     collectionsToConnect: connections,
@@ -168,7 +204,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             ?
         );`,
         [
-          block.title,
+          // @ts-ignore expo sqlite types are broken
+          block.title || null,
           // @ts-ignore expo sqlite types are broken
           block.description || null,
           block.content,
@@ -219,9 +256,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const [collections, setCollections] = useState<Collection[]>([]);
 
   const createCollection = async (collection: CollectionInsertInfo) => {
-    await db.transactionAsync(async (tx) => {
-      const result = await tx.executeSqlAsync(
-        `
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `
         INSERT INTO collections (
             title,
             description,
@@ -231,62 +269,89 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             ?,
             ?
         );`,
-        [
-          collection.title,
-          // @ts-ignore expo sqlite types are broken
-          collection.description || null,
-          collection.createdBy,
-        ]
-      );
-      fetchCollections();
-    });
+          args: [
+            collection.title,
+            // @ts-ignore expo sqlite types are broken
+            collection.description || null,
+            collection.createdBy,
+          ],
+        },
+      ],
+      false
+    );
+
+    if ("error" in result) {
+      throw result.error;
+    }
+
+    fetchCollections();
+
+    return result.insertId!.toString();
   };
 
   function fetchBlocks() {
     db.transaction((tx) => {
       tx.executeSql(`SELECT * FROM blocks;`, [], (_, { rows: { _array } }) => {
-        setBlocks([
-          ..._array.map(
+        setBlocks(
+          _array.map(
             (block) =>
               ({
                 ...block,
-                createdAt: new Date(block.created_timestamp),
-                updatedAt: new Date(block.updated_timestamp),
+                createdAt: convertDbTimestampToDate(block.created_timestamp),
+                updatedAt: convertDbTimestampToDate(block.updated_timestamp),
                 createdBy: block.created_by,
                 remoteSourceType: block.remote_source_type,
                 // TODO: add connections
                 connections: [],
               } as Block)
-          ),
-          ,
-        ]);
+          )
+        );
       });
     });
   }
 
   function fetchCollections() {
-    db.transaction((tx) => {
-      tx.executeSql(
-        `SELECT * FROM collections;`,
-        [],
-        (_, { rows: { _array } }) => {
-          setCollections([
-            ..._array.map(
-              (collection) =>
-                ({
-                  ...collection,
-                  createdAt: new Date(collection.created_timestamp),
-                  updatedAt: new Date(collection.updated_timestamp),
-                  createdBy: collection.created_by,
-                  // TODO: add collaborators and numItems
-                  numItems: 2,
-                  collaborators: ["spencer-did"],
-                } as Collection)
-            ),
-          ]);
-        }
-      );
-    });
+    db.transaction(
+      (tx) => {
+        tx.executeSql(
+          `SELECT 
+          collections.id,
+          collections.title,
+          collections.description,
+          collections.created_timestamp,
+          collections.updated_timestamp,
+          collections.created_by,
+          COUNT(connections.block_id) as num_blocks
+         FROM collections
+         LEFT JOIN connections ON collections.id = connections.collection_id
+         GROUP BY 1,2,3,4,5,6;`,
+          [],
+          (_, { rows: { _array } }) => {
+            setCollections([
+              ..._array.map(
+                (collection) =>
+                  ({
+                    ...collection,
+                    createdAt: convertDbTimestampToDate(
+                      collection.created_timestamp
+                    ),
+                    updatedAt: convertDbTimestampToDate(
+                      collection.updated_timestamp
+                    ),
+                    createdBy: collection.created_by,
+                    numBlocks: collection.num_blocks,
+                    // TODO: add collaborators
+                    collaborators: ["spencer-did"],
+                  } as Collection)
+              ),
+            ]);
+          }
+        );
+      },
+      (err) => {
+        console.error(err);
+      }
+    );
   }
 
   async function getCollection(collectionId: string) {
@@ -329,15 +394,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if ("error" in result) {
       throw result.error;
     }
-    console.log("getting collection items...");
-    console.log(result.rows);
 
     return result.rows.map(
       (block) =>
         ({
           ...block,
-          createdAt: new Date(block.created_timestamp),
-          updatedAt: new Date(block.updated_timestamp),
+          createdAt: convertDbTimestampToDate(block.created_timestamp),
+          updatedAt: convertDbTimestampToDate(block.updated_timestamp),
           createdBy: block.created_by,
           remoteSourceType: block.remote_source_type,
         } as Block)
@@ -347,9 +410,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   async function addConnections(blockId: string, collectionIds: string[]) {
     const result = await db.execAsync(
       collectionIds.map((collectionId) => ({
-        sql: `INSERT INTO connections (block_id, collection_id)
-              VALUES (?, ?);`,
-        args: [blockId, collectionId],
+        sql: `INSERT INTO connections (block_id, collection_id, created_by)
+              VALUES (?, ?, ?);`,
+        args: [blockId, collectionId, currentUser().id],
       })),
       false
     );
@@ -384,6 +447,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         addConnections,
         deleteCollection,
         getCollectionItems,
+        db,
+        initDatabases,
       }}
     >
       {children}

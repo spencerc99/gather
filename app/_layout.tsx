@@ -76,7 +76,14 @@ function RootLayoutNav() {
                   }}
                 />
                 <Stack.Screen
-                  name="collection/[id]"
+                  name="internal"
+                  options={{
+                    presentation: "modal",
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="collection/[id]/index"
                   options={{
                     presentation: "card",
                     title: "",

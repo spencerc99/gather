@@ -45,8 +45,8 @@ function CreateCollectionModal() {
         onChangeText={(text) => setDescription(text)}
       />
       <StyledButton
-        onPress={() => {
-          createCollection({ title, description, createdBy: user.id });
+        onPress={async () => {
+          await createCollection({ title, description, createdBy: user.id });
           router.replace("..");
         }}
         disabled={!title}
