@@ -101,20 +101,20 @@ export function ForageView() {
       description: descriptionValue,
       source: "local",
       createdBy: "spencer-did",
-      ...(textValue
+      ...(media
         ? {
-            content: textValue,
-            type: MimeType[".txt"],
-          }
-        : {
             content: media!,
             type: mimeType!,
+          }
+        : {
+            content: textValue,
+            type: MimeType[".txt"],
           }),
       collectionsToConnect: selectedCollections,
     });
 
     router.replace("/home");
-    alert("Saved!");
+    alert(`Saved to ${selectedCollections.length} collections!`);
   }
 
   // TODO: fix this to actually pick up the sound
@@ -276,7 +276,6 @@ export function ForageView() {
         const chosenContent = media || textValue;
         // optional enter details like title, description, etc.
         // what to do about bulk adds? maybe step by step and then skip button in top right corner
-        console.log(selectedCollections);
         return (
           <View style={{ height: "100%", flex: 1, paddingBottom: 48 }}>
             <View style={styles.breadCrumbs}>
@@ -347,7 +346,6 @@ export function ForageView() {
                               title: searchValue,
                               createdBy: currentUser().id,
                             });
-                            console.log("NEW COLLECTION ID", newCollectionId);
 
                             setSelectedCollections([
                               ...selectedCollections,
