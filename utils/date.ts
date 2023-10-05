@@ -38,5 +38,5 @@ export function getRelativeDate(date: Date) {
   if (minutes > 0) {
     return `${minutes} minutes ago`;
   }
-  return `${seconds} seconds ago`;
+  return `< a minute ago`;
 }

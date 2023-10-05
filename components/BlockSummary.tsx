@@ -67,6 +67,7 @@ export function BlockSummary({
           style={[styles.block, style]}
           key={id}
           borderColor={theme.color.get()}
+          backgroundColor={theme.background.get()}
         >
           {renderContent()}
         </StyledView>

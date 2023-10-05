@@ -116,7 +116,6 @@ export function mapSnakeCaseToCamelCaseProperties<
     // @ts-ignore
     newObj[newKey] = obj[key];
   }
-  console.log(newObj);
   return newObj;
 }
 
@@ -297,6 +296,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             (block) =>
               ({
                 ...block,
+                // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
+                id: block.id.toString(),
                 createdAt: convertDbTimestampToDate(block.created_timestamp),
                 updatedAt: convertDbTimestampToDate(block.updated_timestamp),
                 createdBy: block.created_by,
@@ -332,6 +333,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 (collection) =>
                   ({
                     ...collection,
+                    // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
+                    id: collection.id.toString(),
                     createdAt: convertDbTimestampToDate(
                       collection.created_timestamp
                     ),

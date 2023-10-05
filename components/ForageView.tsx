@@ -274,6 +274,7 @@ export function ForageView() {
         const chosenContent = media || textValue;
         // optional enter details like title, description, etc.
         // what to do about bulk adds? maybe step by step and then skip button in top right corner
+        console.log(selectedCollections);
         return (
           <View style={{ height: "100%", flex: 1, paddingBottom: 48 }}>
             <View style={styles.breadCrumbs}>
@@ -336,6 +337,7 @@ export function ForageView() {
                               title: searchValue,
                               createdBy: currentUser().id,
                             });
+                            console.log("NEW COLLECTION ID", newCollectionId);
 
                             setSelectedCollections([
                               ...selectedCollections,
@@ -414,7 +416,8 @@ const styles = StyleSheet.create({
   parentContainer: {
     flex: 1,
     flexDirection: "column",
-    padding: "10%",
+    paddingHorizontal: "5%",
+    paddingVertical: "10%",
     height: "100%",
   },
   title: {

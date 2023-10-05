@@ -7,13 +7,16 @@ import {
 import { CollectionSummary } from "../../../components/CollectionSummary";
 import { CreateCollectionButton } from "../../../components/CreateCollectionButton";
 import {
+  Avatar,
   ScrollView,
   Separator,
   SizableText,
   Tabs,
   TabsContentProps,
+  Theme,
   XStack,
   YStack,
+  useTheme,
 } from "tamagui";
 import { Link } from "expo-router";
 import { FeedView } from "../../../components/FeedView";
@@ -21,65 +24,90 @@ import { StyledParagraph } from "../../../components/Themed";
 import { convertDbTimestampToDate, getRelativeDate } from "../../../utils/date";
 import { BlockSummary } from "../../../components/BlockSummary";
 import { MimeType } from "../../../utils/mimeTypes";
+import { currentUser } from "../../../utils/user";
 
 export default function ProfileScreen() {
   // TODO: change this to show events, group them by date.
   /* TODO: show profile information */
+
+  const user = currentUser();
+
   return (
-    <Tabs
-      defaultValue="timeline"
-      orientation="horizontal"
-      flexDirection="column"
-      borderRadius="$4"
-      borderWidth="$0.25"
-      height="100%"
-      overflow="hidden"
-      borderColor="$borderColor"
-    >
-      <Tabs.List
-        separator={<Separator vertical />}
-        disablePassBorderRadius="bottom"
+    <>
+      {/* TODO: finish user info */}
+      <YStack space="$2" padding="$4" alignItems="center">
+        <Avatar size="$6" circular>
+          {/* <Avatar.Image
+            // accessibilityLabel={user.name}
+            // src={user.imgSrc}
+            src={
+              "https://images.unsplash.com/photo-1548142813-c348350df52b?&w=150&h=150&dpr=2&q=80"
+            }
+          /> */}
+          <Avatar.Fallback backgroundColor="$orange8" />
+        </Avatar>
+        <StyledParagraph title>{user.id}</StyledParagraph>
+        <StyledParagraph metadata>
+          joined {getRelativeDate(new Date("2023-10-01"))}
+        </StyledParagraph>
+      </YStack>
+      <Tabs
+        defaultValue="timeline"
+        orientation="horizontal"
+        flexDirection="column"
+        borderRadius="$4"
+        borderWidth="$0.25"
+        height="100%"
+        overflow="hidden"
+        borderColor="$borderColor"
       >
-        <Tabs.Tab flex={1} value="timeline">
-          <SizableText>Timeline</SizableText>
-        </Tabs.Tab>
-        <Tabs.Tab flex={1} value="collections">
-          <SizableText>Collections</SizableText>
-        </Tabs.Tab>
-        <Tabs.Tab flex={1} value="blocks">
-          <SizableText>Blocks</SizableText>
-        </Tabs.Tab>
-      </Tabs.List>
-      <Separator />
-      <TabsContent value="timeline">
-        <TimelineView />
-      </TabsContent>
+        <Theme name="green">
+          <Tabs.List
+            separator={<Separator vertical />}
+            disablePassBorderRadius="bottom"
+          >
+            <Tabs.Tab flex={1} value="timeline">
+              <SizableText>Timeline</SizableText>
+            </Tabs.Tab>
+            <Tabs.Tab flex={1} value="collections">
+              <SizableText>Collections</SizableText>
+            </Tabs.Tab>
+            <Tabs.Tab flex={1} value="blocks">
+              <SizableText>Blocks</SizableText>
+            </Tabs.Tab>
+          </Tabs.List>
+        </Theme>
+        <Separator />
+        <TabsContent value="timeline">
+          <TimelineView />
+        </TabsContent>
 
-      <TabsContent value="collections">
-        <CollectionsView />
-      </TabsContent>
+        <TabsContent value="collections">
+          <CollectionsView />
+        </TabsContent>
 
-      <TabsContent value="blocks">
-        <FeedView />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="blocks">
+          <FeedView />
+        </TabsContent>
+      </Tabs>
+    </>
   );
 }
 
 const TabsContent = (props: TabsContentProps) => {
   return (
     <Tabs.Content
-      backgroundColor="$background"
+      backgroundColor="$green4"
       height="100%"
       flex={1}
-      borderColor="$background"
+      borderColor="$green4"
       borderRadius="$2"
       borderTopLeftRadius={0}
       borderTopRightRadius={0}
       borderWidth="$2"
       {...props}
     >
-      <ScrollView flex={1} style={styles.container}>
+      <ScrollView flex={1} style={styles.container} backgroundColor="inherit">
         {props.children}
       </ScrollView>
     </Tabs.Content>
@@ -150,12 +178,16 @@ export function TimelineView() {
     );
   }
 
+  const theme = useTheme();
+
   function renderEvent(event: Event) {
     return (
       <YStack
+        key={event.createdAt.getTime()}
         borderWidth={1}
         borderRadius={4}
-        borderColor="$borderColor"
+        borderColor={theme.color.get()}
+        backgroundColor={theme.background.get()}
         space="$2"
         padding="$3"
         width="100%"
@@ -206,7 +238,7 @@ export function CollectionsView() {
             asChild
           >
             <Pressable style={styles.contentContainer}>
-              <CollectionSummary key={collection.id} collection={collection} />
+              <CollectionSummary collection={collection} />
             </Pressable>
           </Link>
         ))}
@@ -225,7 +257,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingBottom: 48,
     gap: 8,
-    paddingTop: 16,
   },
   contentContainer: {
     display: "flex",

@@ -17,6 +17,7 @@ export function CollectionSummary({
     <StyledView
       style={styles.contentContainer}
       borderColor={theme.color.get()}
+      backgroundColor={theme.background.get()}
       {...viewProps}
     >
       <StyledParagraph title>{title}</StyledParagraph>
