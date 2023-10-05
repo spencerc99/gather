@@ -31,7 +31,6 @@ export function FeedView() {
 
 const styles = StyleSheet.create({
   feed: {
-    marginTop: 32,
     display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",

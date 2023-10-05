@@ -4,7 +4,6 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
 } from "react-native";
 import {
   StyledText,
@@ -14,7 +13,7 @@ import {
   Icon,
   InputWithIcon,
 } from "./Themed";
-import { SizableText, View, XStack, YStack } from "tamagui";
+import { SizableText, View, XStack, YStack, ScrollView } from "tamagui";
 import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
@@ -191,7 +190,10 @@ export function ForageView() {
               flex: 1,
             }}
           >
-            <ScrollView contentContainerStyle={styles.contentContainer}>
+            <ScrollView
+              flex={1}
+              contentContainerStyle={styles.contentContainer}
+            >
               {/* radial menu? */}
               <StyledText style={styles.title}>
                 What have you collected today?
@@ -289,9 +291,9 @@ export function ForageView() {
               </StyledButton>
             </View>
             <ScrollView
+              flex={1}
               contentContainerStyle={{
                 ...styles.parentContainer,
-                height: undefined,
               }}
             >
               <KeyboardAvoidingView
@@ -299,6 +301,9 @@ export function ForageView() {
                 // Account for header height https://stackoverflow.com/questions/48420468/keyboardavoidingview-not-working-properly
                 keyboardVerticalOffset={insets.top}
                 style={{
+                  flex: 1,
+                }}
+                contentContainerStyle={{
                   flex: 1,
                 }}
               >
@@ -328,7 +333,12 @@ export function ForageView() {
                     value={searchValue}
                     onChangeText={(text) => setSearchValue(text)}
                   />
-                  <ScrollView>
+                  <ScrollView
+                    contentContainerStyle={{
+                      // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
+                      paddingBottom: 164,
+                    }}
+                  >
                     <YStack space="$1">
                       {searchValue && (
                         <StyledButton
@@ -425,11 +435,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   contentContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
     padding: "10%",
-    height: "100%",
   },
   detailStepContainer: {
     display: "flex",

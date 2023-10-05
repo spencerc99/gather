@@ -78,17 +78,27 @@ export default function ProfileScreen() {
           </Tabs.List>
         </Theme>
         <Separator />
-        <TabsContent value="timeline">
-          <TimelineView />
-        </TabsContent>
+        <ScrollView
+          backgroundColor="$green4"
+          minHeight="100%"
+          flex={1}
+          contentContainerStyle={{
+            // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
+            paddingBottom: 128,
+          }}
+        >
+          <TabsContent value="timeline">
+            <TimelineView />
+          </TabsContent>
 
-        <TabsContent value="collections">
-          <CollectionsView />
-        </TabsContent>
+          <TabsContent value="collections">
+            <CollectionsView />
+          </TabsContent>
 
-        <TabsContent value="blocks">
-          <FeedView />
-        </TabsContent>
+          <TabsContent value="blocks">
+            <FeedView />
+          </TabsContent>
+        </ScrollView>
       </Tabs>
     </>
   );
@@ -98,18 +108,18 @@ const TabsContent = (props: TabsContentProps) => {
   return (
     <Tabs.Content
       backgroundColor="$green4"
-      height="100%"
       flex={1}
+      paddingHorizontal="5%"
+      paddingTop="5%"
       borderColor="$green4"
       borderRadius="$2"
       borderTopLeftRadius={0}
       borderTopRightRadius={0}
       borderWidth="$2"
+      paddingBottom={64}
       {...props}
     >
-      <ScrollView flex={1} style={styles.container} backgroundColor="inherit">
-        {props.children}
-      </ScrollView>
+      {props.children}
     </Tabs.Content>
   );
 };
@@ -250,7 +260,6 @@ export function CollectionsView() {
 const styles = StyleSheet.create({
   container: {
     padding: "10%",
-    height: "100%",
   },
   collections: {
     flex: 1,

@@ -4,7 +4,10 @@ import { ScrollView } from "tamagui";
 
 export default function FeedPage() {
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingTop: 32 }}
+    >
       <FeedView />
     </ScrollView>
   );

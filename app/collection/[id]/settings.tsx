@@ -1,6 +1,6 @@
 import { ScrollView, Spinner, YStack } from "tamagui";
 import { StyledButton, StyledText } from "../../../components/Themed";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useContext, useEffect } from "react";
 import { Collection } from "../../../utils/dataTypes";
 import { DatabaseContext } from "../../../utils/db";
@@ -9,6 +9,7 @@ export default function CollectionSettingsScreen() {
   const { id } = useLocalSearchParams();
   const [collection, setCollection] = useState<Collection | null>(null);
   const { getCollection, deleteCollection } = useContext(DatabaseContext);
+  const router = useRouter();
 
   useEffect(() => {
     getCollection(id.toString()).then((collection) =>
@@ -24,6 +25,8 @@ export default function CollectionSettingsScreen() {
   //   TODO: add confirmation dialog https://tamagui.dev/docs/components/alert-dialog/1.0.0
   function onPressDelete() {
     deleteCollection(id.toString());
+    alert("Collection deleted!");
+    router.replace("..");
   }
 
   return (

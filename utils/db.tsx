@@ -15,6 +15,14 @@ function openDatabase() {
           executeSql: () => {},
         };
       },
+      transactionAsync: () => {
+        return {
+          executeSqlAsync: () => {},
+        };
+      },
+      execAsync: () => {
+        return [{ rows: [] }];
+      },
     } as unknown as SQLite.SQLiteDatabase;
   }
 
