@@ -32,6 +32,8 @@ interface BlockInsertInfo {
   //   TODO: add type
   remoteSourceType?: string; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
   createdBy: string; // DID of the person who made it?
+
+  collectionsToConnect?: string[]; // IDs of collections that this block is in
 }
 
 interface BlockConnection {
@@ -40,7 +42,7 @@ interface BlockConnection {
   createdAt: Date;
 }
 
-export interface Block extends BlockInsertInfo {
+export interface Block extends Omit<BlockInsertInfo, "connections"> {
   id: string;
   connections: BlockConnection[];
   createdAt: Date;
@@ -57,6 +59,8 @@ interface DatabaseContextProps {
   getCollectionItems: (collectionId: string) => Promise<Block[]>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => void;
+
+  addConnections(blockId: string, collectionIds: string[]): Promise<void>;
 
   // share intent
   setShareIntent: (intent: ShareIntent | null) => void;
@@ -77,6 +81,8 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   },
   deleteCollection: () => {},
   getCollectionItems: async () => [],
+
+  addConnections: async () => {},
 
   setShareIntent: () => {},
   shareIntent: null,
@@ -138,7 +144,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
   }, []);
 
-  const createBlock = async (block: BlockInsertInfo) => {
+  const createBlock = async ({
+    collectionsToConnect: connections,
+    ...block
+  }: BlockInsertInfo) => {
     await db.transactionAsync(async (tx) => {
       const result = await tx.executeSqlAsync(
         `
@@ -172,6 +181,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           block.createdBy,
         ]
       );
+      if ("error" in result) {
+        throw result.error;
+      }
+
+      if (connections?.length) {
+        await addConnections(String(result.insertId!), connections);
+      }
+
       fetchBlocks();
     });
   };
@@ -325,6 +342,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
   }
 
+  async function addConnections(blockId: string, collectionIds: string[]) {
+    await db.execAsync(
+      collectionIds.map((collectionId) => ({
+        sql: `INSERT INTO collections (block_id, collection_id)
+              SELECT VALUES (?, ?);`,
+        args: [blockId, collectionId],
+      })),
+      false
+    );
+  }
+
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
 
   useEffect(() => {
@@ -335,7 +363,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   return (
     <DatabaseContext.Provider
       value={{
-        createBlock: createBlock,
+        createBlock,
         blocks,
         getBlock,
         deleteBlock,
@@ -344,6 +372,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         collections,
         createCollection,
         getCollection,
+        addConnections,
         deleteCollection,
         getCollectionItems,
       }}

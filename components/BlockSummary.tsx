@@ -29,12 +29,16 @@ export function BlockSummary({
     {
       text: "Share",
       icon: () => <Icon name="share" />,
-      onPress: () => {},
+      onPress: () => {
+        // TODO: copy deep link to clipboard
+      },
     },
     {
       text: "Connect",
       icon: () => <Icon name="link" />,
-      onPress: () => {},
+      onPress: () => {
+        // TODO: bring up the connections modal
+      },
     },
     {
       text: "Delete",

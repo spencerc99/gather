@@ -8,6 +8,9 @@ import {
   Input as DefaultInput,
   TextArea as DefaultTextArea,
   GetProps,
+  InputFrame,
+  Stack,
+  YStack,
 } from "tamagui";
 
 import { Link, LinkProps } from "expo-router";
@@ -90,6 +93,8 @@ export function LinkButton(props: LinkButtonProps) {
 
 export const StyledInput = styled(DefaultInput, {
   width: "100%",
+
+  variants: {} as const,
 });
 export const StyledTextArea = styled(DefaultTextArea, {
   width: "100%",
@@ -106,4 +111,22 @@ export const IconComponent = styled(FontAwesome, {
 
 export function Icon(props: GetProps<typeof IconComponent>) {
   return <IconComponent size={18} {...props} />;
+}
+
+export function InputWithIcon({
+  icon,
+  iconSize,
+  ...props
+}: GetProps<typeof StyledInput> & {
+  icon: GetProps<typeof IconComponent>["name"];
+  iconSize?: GetProps<typeof IconComponent>["size"];
+}) {
+  return (
+    <Stack>
+      <YStack position="absolute" left="$1" height="100%">
+        <Icon name={icon} size={iconSize} />
+      </YStack>
+      <StyledInput {...props} paddingLeft="$4" />
+    </Stack>
+  );
 }

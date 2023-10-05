@@ -1,14 +1,24 @@
 import { StyleSheet } from "react-native";
 import { Collection } from "../utils/dataTypes";
 import { StyledText, StyledView } from "./Themed";
-import { useTheme } from "tamagui";
+import { GetProps, useTheme } from "tamagui";
 
-export function CollectionSummary({ collection }: { collection: Collection }) {
+export function CollectionSummary({
+  collection,
+  viewProps = {},
+}: {
+  collection: Collection;
+  viewProps?: GetProps<typeof StyledView>;
+}) {
   const { title, updatedAt, createdBy, numItems } = collection;
   const theme = useTheme();
 
   return (
-    <StyledView style={styles.contentContainer} borderColor={theme.color.get()}>
+    <StyledView
+      style={styles.contentContainer}
+      borderColor={theme.color.get()}
+      {...viewProps}
+    >
       <StyledText style={styles.title}>{title}</StyledText>
       <StyledView style={styles.metaContainer}>
         <StyledText>

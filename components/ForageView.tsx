@@ -12,6 +12,7 @@ import {
   StyledButton,
   StyledTextArea,
   Icon,
+  InputWithIcon,
 } from "./Themed";
 import { View, XStack, YStack } from "tamagui";
 import { useContext, useEffect, useState } from "react";
@@ -107,9 +108,10 @@ export function ForageView() {
             content: media!,
             type: mimeType!,
           }),
+      collectionsToConnect: selectedCollections,
     });
 
-    router.replace("/feed");
+    alert("Saved!");
   }
 
   async function startRecording() {
@@ -162,11 +164,14 @@ export function ForageView() {
       setSelectedCollections([...selectedCollections, collection.id]);
     }
   }
-  const sortedCollections = collections.sort((a, b) =>
-    selectedCollections.includes(a.id) ? -1 : 1
-  );
+
+  // const sortedCollections = collections.sort((a, b) =>
+  //   selectedCollections.includes(a.id) ? -1 : 1
+  // );
 
   const insets = useSafeAreaInsets();
+
+  const [searchValue, setSearchValue] = useState("");
 
   function renderStep() {
     switch (step) {
@@ -262,25 +267,32 @@ export function ForageView() {
         // optional enter details like title, description, etc.
         // what to do about bulk adds? maybe step by step and then skip button in top right corner
         return (
-          <View>
+          <View style={{ height: "100%", flex: 1 }}>
             <View style={styles.breadCrumbs}>
               <StyledButton
                 title="Back"
-                color="$blue"
+                textProps={{ color: "$blue" }}
                 chromeless
                 onPress={() => {
                   setStep(Step.Gather);
                 }}
               ></StyledButton>
               <StyledButton
-                color="$blue"
+                textProps={{ color: "$blue" }}
                 title="Skip"
                 textAlign="right"
                 chromeless
                 onPress={() => {}}
               ></StyledButton>
             </View>
-            <KeyboardAwareScrollView>
+            <KeyboardAwareScrollView
+              contentContainerStyle={{
+                ...styles.parentContainer,
+                height: "100%",
+                justifyContent: "space-between",
+                paddingBottom: 4,
+              }}
+            >
               <YStack space="$2">
                 <View maxWidth={"100%"} maxHeight={200}>
                   <BlockContent content={chosenContent} type={mimeType!} />
@@ -301,33 +313,52 @@ export function ForageView() {
                   onChangeText={(text) => setDescriptionValue(text)}
                   value={descriptionValue}
                 />
-                <StyledButton
-                  title="Gather"
-                  onPress={() => {
-                    onSaveResult();
-                  }}
-                ></StyledButton>
+                <InputWithIcon
+                  icon="search"
+                  placeholder="Search..."
+                  width="100%"
+                  backgroundColor="$backgroundSecondary"
+                  value={searchValue}
+                  onChangeText={(text) => setSearchValue(text)}
+                />
+                <ScrollView>
+                  <YStack space="$1">
+                    {collections
+                      .filter((c) =>
+                        `${c.title}\n${c.description}}`.includes(
+                          `${searchValue}`
+                        )
+                      )
+                      .map((collection) => (
+                        <Pressable
+                          key={collection.id}
+                          onPress={() => toggleCollection(collection)}
+                        >
+                          <CollectionSummary
+                            collection={collection}
+                            viewProps={
+                              selectedCollections.includes(collection.id)
+                                ? {
+                                    backgroundColor: "$green4",
+                                    borderWidth: 2,
+                                    borderColor: "$green10",
+                                  }
+                                : undefined
+                            }
+                          />
+                        </Pressable>
+                      ))}
+                  </YStack>
+                </ScrollView>
               </YStack>
-              <KeyboardAwareScrollView
-                contentContainerStyle={styles.detailStepContainer}
-              >
-                {sortedCollections.map((collection) => (
-                  <Pressable
-                    onPress={() => toggleCollection(collection)}
-                    style={
-                      selectedCollections.includes(collection.id)
-                        ? {
-                            backgroundColor: "blue",
-                            borderWidth: 2,
-                          }
-                        : {}
-                    }
-                  >
-                    <CollectionSummary collection={collection} />
-                  </Pressable>
-                ))}
-                {/* Render basket view and animate the item going into the collection? */}
-              </KeyboardAwareScrollView>
+              {/* Render basket view and animate the item going into the collection? */}
+              <StyledButton
+                title="Gather"
+                marginTop="$1"
+                onPress={() => {
+                  onSaveResult();
+                }}
+              ></StyledButton>
             </KeyboardAwareScrollView>
           </View>
         );
@@ -338,14 +369,20 @@ export function ForageView() {
 }
 
 const styles = StyleSheet.create({
+  parentContainer: {
+    flex: 1,
+    flexDirection: "column",
+    padding: "10%",
+    height: "100%",
+  },
   title: {
     fontSize: 20,
     fontWeight: "bold",
   },
   contentContainer: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
     padding: "10%",
     height: "100%",
   },
