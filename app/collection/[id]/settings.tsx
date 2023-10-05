@@ -26,7 +26,7 @@ export default function CollectionSettingsScreen() {
   function onPressDelete() {
     deleteCollection(id.toString());
     alert("Collection deleted!");
-    router.replace("..");
+    router.back();
   }
 
   return (
