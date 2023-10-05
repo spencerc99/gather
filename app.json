@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "basket",
-    "slug": "basket",
+    "name": "gather",
+    "slug": "gather",
     "privacy": "unlisted",
     "version": "1.0.2",
     "orientation": "portrait",
@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "supply.basket",
+      "bundleIdentifier": "net.tiny-inter.gather",
       "usesNonExemptEncryption": false,
       "splash": {
         "image": "./assets/images/splash.png",
@@ -30,7 +30,7 @@
         "backgroundColor": "#efdbb6"
       },
       "permissions": ["android.permission.RECORD_AUDIO"],
-      "package": "supply.basket"
+      "package": "net.tiny-inter.gather"
     },
     "web": {
       "bundler": "metro",
