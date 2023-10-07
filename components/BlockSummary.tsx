@@ -9,12 +9,14 @@ import { getRelativeDate } from "../utils/date";
 
 export function BlockSummary({
   block,
+  hideMetadata,
   style,
 }: {
   block: Pick<
     Block,
     "id" | "title" | "content" | "type" | "source" | "createdAt"
   >;
+  hideMetadata?: boolean;
   style?: object;
 }) {
   const { id, content, type, source, title, createdAt } = block;
@@ -72,9 +74,11 @@ export function BlockSummary({
           {renderContent()}
         </StyledView>
       </HoldItem>
-      <StyledText metadata ellipse={true}>
-        {title ? `${title} ` : ""}created {getRelativeDate(createdAt)}
-      </StyledText>
+      {!hideMetadata && (
+        <StyledText metadata ellipse={true}>
+          {title ? `${title}` : `created ${getRelativeDate(createdAt)}`}
+        </StyledText>
+      )}
     </YStack>
   );
 }

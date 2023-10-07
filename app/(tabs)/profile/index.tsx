@@ -217,6 +217,7 @@ export function TimelineView() {
               source: event.blockSource,
               createdAt: event.blockCreatedAt,
             }}
+            hideMetadata={true}
           />
         </XStack>
       </YStack>
