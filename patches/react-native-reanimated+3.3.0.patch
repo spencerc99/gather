@@ -1,0 +1,28 @@
+diff --git a/node_modules/react-native-reanimated/src/reanimated2/shareables.ts b/node_modules/react-native-reanimated/src/reanimated2/shareables.ts
+index 4f358f4..1378fbd 100644
+--- a/node_modules/react-native-reanimated/src/reanimated2/shareables.ts
++++ b/node_modules/react-native-reanimated/src/reanimated2/shareables.ts
+@@ -21,6 +21,7 @@ const _shareableFlag = Symbol('shareable flag');
+ const MAGIC_KEY = 'REANIMATED_MAGIC_KEY';
+ 
+ function isHostObject(value: any): boolean {
++  "worklet";
+   // We could use JSI to determine whether an object is a host object, however
+   // the below workaround works well and is way faster than an additional JSI call.
+   // We use the fact that host objects have broken implementation of `hasOwnProperty`
+@@ -213,6 +214,15 @@ export function makeShareableCloneOnUIRecursive<T>(value: T): ShareableRef<T> {
+   function cloneRecursive<T>(value: T): ShareableRef<T> {
+     const type = typeof value;
+     if ((type === 'object' || type === 'function') && value !== null) {
++      // apply https://github.com/software-mansion/react-native-reanimated/commit/e76311f05c661787ffcc14bb9ab71d7403d680e7
++      // @ts-expect-error
++      if (value?.__remoteFunction) {
++        // @ts-expect-error
++        return value.__remoteFunction;
++      }
++      if (isHostObject(value as object)) {
++        return value as ShareableRef<T>;
++      }
+       let toAdapt: any;
+       if (Array.isArray(value)) {
+         toAdapt = value.map((element) => cloneRecursive(element));

@@ -6,23 +6,20 @@ import { BlockSummary } from "./BlockSummary";
 import { getRelativeDate } from "../utils/date";
 
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
-  const {
-    db,
-    blocks: allBlocks,
-    getCollectionItems,
-  } = useContext(DatabaseContext);
+  const { blocks: allBlocks, getCollectionItems } = useContext(DatabaseContext);
 
   const [blocks, setBlocks] = useState<Block[]>([]);
   useEffect(() => {
     void fetchBlocks();
-  }, [collectionId]);
+  }, [collectionId, allBlocks]);
 
   async function fetchBlocks() {
-    const blocks = collectionId
-      ? await getCollectionItems(collectionId)
-      : allBlocks;
-
-    setBlocks(blocks);
+    if (!collectionId) {
+      setBlocks(allBlocks);
+      return;
+    }
+    const collectionBlocks = await getCollectionItems(collectionId);
+    setBlocks(collectionBlocks);
   }
 
   const sortedBlocks = useMemo(
@@ -44,8 +41,10 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
         style={{
           width: "auto",
         }}
+        marginLeft="$1"
       >
         <XStack justifyContent="flex-end">
+          {/* TODO: add Select hold menu item to multiselect */}
           <BlockSummary
             block={block}
             style={{
@@ -59,7 +58,16 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   }
 
   return (
-    <YStack paddingBottom="$4" space="$4" width="100%">
+    <YStack
+      paddingBottom="$4"
+      space="$4"
+      width="100%"
+      alignItems="flex-start"
+      marginTop="$2"
+    >
+      <StyledParagraph alignSelf="center">
+        ~ that's all we could find ~
+      </StyledParagraph>
       {sortedBlocks.map(renderBlock)}
     </YStack>
   );

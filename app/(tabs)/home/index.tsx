@@ -8,7 +8,6 @@ export default function HomeScreen() {
       defaultValue="unsorted"
       orientation="horizontal"
       flexDirection="column"
-      borderRadius="$4"
       borderWidth="$0.25"
       height="100%"
       overflow="hidden"
@@ -17,6 +16,7 @@ export default function HomeScreen() {
       <Tabs.List
         separator={<Separator vertical />}
         disablePassBorderRadius="bottom"
+        boxShadow="0px 4px 4px 4px rgba(0, 0, 0, 0.4)"
       >
         <Theme name="blue">
           <Tabs.Tab flex={1} value="unsorted">

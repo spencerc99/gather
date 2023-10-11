@@ -18,10 +18,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { currentUser } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
 
+interface PickedMedia {
+  uri: string;
+  type: MimeType;
+}
+
 export function TextForageView({ collectionId }: { collectionId?: string }) {
   const [textValue, setTextValue] = useState("");
-  const [media, setMedia] = useState<null | string>(null);
-  const [mimeType, setMimeType] = useState<null | MimeType>(null);
+  const [medias, setMedias] = useState<PickedMedia[]>([]);
   const { createBlock: addBlock } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
 
@@ -30,18 +34,19 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
+      allowsMultipleSelection: true,
       quality: 1,
     });
 
-    console.log(result);
-
     if (!result.canceled) {
-      setMedia(result.assets[0].uri);
-      // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
-      setMimeType(
-        result.assets[0].type === "image" ? MimeType[".png"] : MimeType[".mov"]
-      );
+      setMedias([
+        ...medias,
+        ...result.assets.map((asset) => ({
+          uri: asset.uri,
+          // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+          type: asset.type === "image" ? MimeType[".png"] : MimeType[".mov"],
+        })),
+      ]);
     }
   };
 
@@ -49,39 +54,42 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     // TODO: do DocumentPicker here
   };
 
+  function removeMedia(idx: number) {
+    setMedias(medias.filter((_, i) => i !== idx));
+  }
+
   function onSaveResult() {
-    if (!textValue && !media) {
+    if (!textValue && !medias.length) {
       return;
     }
 
-    addBlock({
-      createdBy: currentUser().id,
-      ...(media
-        ? {
-            content: media!,
-            type: mimeType!,
-          }
-        : {
-            content: textValue,
-            type: MimeType[".txt"],
-          }),
-      collectionsToConnect: collectionId ? [collectionId] : [],
-    });
+    if (medias.length) {
+      for (const { uri, type } of medias) {
+        addBlock({
+          createdBy: currentUser().id,
+          content: uri,
+          type,
+          collectionsToConnect: collectionId ? [collectionId] : [],
+        });
+      }
+    } else {
+      addBlock({
+        createdBy: currentUser().id,
+        content: textValue,
+        type: MimeType[".txt"],
+        collectionsToConnect: collectionId ? [collectionId] : [],
+      });
+    }
 
     // router.replace("/home");
     // alert(`Saved to ${selectedCollections.length} collections!`);
     setTextValue("");
-    setMedia(null);
-    setMimeType(null);
+    setMedias([]);
   }
 
   // TODO: fix this to actually pick up the sound
   async function startRecording() {
     try {
-      if (mimeType === MimeType[".ma4"]) {
-        setMedia(null);
-        setMimeType(null);
-      }
       console.log("Requesting permissions..");
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
@@ -111,8 +119,13 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       allowsRecordingIOS: false,
     });
     const uri = recording.getURI();
-    setMedia(uri);
-    setMimeType(MimeType[".ma4"]);
+    setMedias([
+      ...medias,
+      {
+        uri: uri!,
+        type: MimeType[".ma4"],
+      },
+    ]);
   }
 
   const insets = useSafeAreaInsets();
@@ -127,7 +140,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
         contentContainerStyle={{
           height: "100%",
         }}
-        keyboardVerticalOffset={insets.top + 80}
+        keyboardVerticalOffset={insets.top + 96}
       >
         <ScrollView
           style={{
@@ -138,9 +151,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           }}
           scrollEventThrottle={60}
           ref={scrollRef}
-          onContentSizeChange={() =>
-            scrollRef.current?.scrollToEnd({ animated: true })
-          }
+          onContentSizeChange={() => scrollRef.current?.scrollToEnd()}
         >
           <Theme name="pink">
             <BlockTexts collectionId={collectionId} />
@@ -153,26 +164,33 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           borderTopStartRadius={4}
           paddingTop="$2"
           borderColor="$grey9"
-          boxShadow="0px -4px 4px 4px rgba(0, 0, 0, 0.4)"
+          // boxShadow="0px -4px 4px 4px rgba(0, 0, 0, 0.4)"
+          elevation="$2"
+          backgroundColor="$background"
         >
           <XStack space="$1" width="100%">
-            {media && (
-              <View width={200} height={200} marginHorizontal="auto">
-                <MediaView media={media} mimeType={mimeType!} />
-                <StyledButton
-                  icon={<Icon name="remove" />}
-                  circular
-                  size="$1"
-                  theme="red"
-                  position="absolute"
-                  top={2}
-                  right={2}
-                  onPress={() => {
-                    setMedia(null);
-                    setMimeType(textValue ? MimeType[".txt"] : null);
-                  }}
-                />
-              </View>
+            {medias.length > 0 && (
+              <ScrollView horizontal={true}>
+                <XStack flexWrap="wrap">
+                  {medias.map(({ uri, type }, idx) => (
+                    <View width={200} height={200} key={uri}>
+                      <MediaView media={uri} mimeType={type} />
+                      <StyledButton
+                        icon={<Icon name="remove" size={12} />}
+                        size="$1.5"
+                        theme="red"
+                        circular
+                        position="absolute"
+                        top={2}
+                        right={2}
+                        onPress={() => {
+                          removeMedia(idx);
+                        }}
+                      />
+                    </View>
+                  ))}
+                </XStack>
+              </ScrollView>
             )}
           </XStack>
           <XStack alignItems="flex-start" gap={4} width="100%" marginBottom={8}>
@@ -196,7 +214,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               onPress={recording ? stopRecording : startRecording}
             />
           </XStack>
-          <XStack alignItems="center" justifyContent="center">
+          <XStack alignItems="center" justifyContent="center" padding="$2">
             <StyledTextArea
               placeholder="Gather..."
               minHeight={undefined}
@@ -208,10 +226,8 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               maxLength={2000}
               onChangeText={(text) => {
                 setTextValue(text);
-                setMimeType(MimeType[".txt"]);
               }}
               value={textValue}
-              margin="$2"
             />
             <StyledButton
               size="$4"
@@ -219,7 +235,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                 onSaveResult();
               }}
               chromeless
-              disabled={!textValue && !media}
+              disabled={!textValue && !medias.length}
             >
               <Icon name="arrow-circle-up" theme="green" size={30} />
             </StyledButton>
