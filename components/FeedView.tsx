@@ -4,11 +4,11 @@ import {
   DatabaseContext,
   mapSnakeCaseToCamelCaseProperties,
 } from "../utils/db";
-import { StyledParagraph, StyledView } from "./Themed";
+import { StyledView } from "./Themed";
 import { Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { Link } from "expo-router";
-import { YStack, useTheme } from "tamagui";
+import { H2 } from "tamagui";
 import { convertDbTimestampToDate } from "../utils/date";
 
 export function FeedView() {
@@ -94,25 +94,14 @@ export function UncategorizedView() {
     );
   }
 
-  const theme = useTheme();
-
   function renderBlock(block: Block) {
-    return (
-      <YStack
-        key={block.createdAt.getTime()}
-        borderWidth={1}
-        borderRadius={4}
-        borderColor={theme.color.get()}
-        backgroundColor={theme.background.get()}
-        space="$2"
-        padding="$3"
-        width="100%"
-      >
-        {/* {event.createdBy}  */}
-        <BlockSummary block={block} />
-      </YStack>
-    );
+    return <BlockSummary block={block} />;
   }
 
-  return <StyledView style={styles.feed}>{events.map(renderBlock)}</StyledView>;
+  return (
+    <>
+      <H2>Uncategorized</H2>
+      <StyledView style={styles.feed}>{events.map(renderBlock)}</StyledView>
+    </>
+  );
 }

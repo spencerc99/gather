@@ -116,12 +116,13 @@ export const StyledTextArea = styled(DefaultTextArea, {
 
 export const IconComponent = styled(FontAwesome, {
   color: "$color",
+  backgroundColor: "$background",
   // TODO: 18 is not working here why????
   size: 18,
 } as any);
 
 export function Icon(props: GetProps<typeof IconComponent>) {
-  return <IconComponent size={18} {...props} />;
+  return <IconComponent size={18 || props.size} {...props} />;
 }
 
 export function InputWithIcon({

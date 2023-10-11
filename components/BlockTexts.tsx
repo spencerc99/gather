@@ -5,8 +5,26 @@ import { StyledParagraph } from "./Themed";
 import { BlockSummary } from "./BlockSummary";
 import { getRelativeDate } from "../utils/date";
 
-export function BlockTexts() {
-  const { db, blocks } = useContext(DatabaseContext);
+export function BlockTexts({ collectionId }: { collectionId?: string }) {
+  const {
+    db,
+    blocks: allBlocks,
+    getCollectionItems,
+  } = useContext(DatabaseContext);
+
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  useEffect(() => {
+    void fetchBlocks();
+  }, [collectionId]);
+
+  async function fetchBlocks() {
+    const blocks = collectionId
+      ? await getCollectionItems(collectionId)
+      : allBlocks;
+
+    setBlocks(blocks);
+  }
+
   const sortedBlocks = useMemo(
     () => blocks.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
     [blocks]

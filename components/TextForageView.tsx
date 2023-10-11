@@ -3,41 +3,26 @@ import {
   KeyboardAvoidingView,
   SafeAreaView,
   Keyboard,
+  ScrollView,
 } from "react-native";
 import { StyledButton, StyledTextArea, Icon } from "./Themed";
-import { SizableText, View, XStack, YStack, ScrollView, Theme } from "tamagui";
-import { useContext, useEffect, useState } from "react";
+import { View, XStack, YStack, Theme } from "tamagui";
+import { useContext, useRef, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
-import { router } from "expo-router";
 import { MimeType } from "../utils/mimeTypes";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import { MediaView } from "./MediaView";
-import { Collection } from "../utils/dataTypes";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { currentUser } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
 
-enum Step {
-  Gather,
-  // TODO: turn this into a route that is a card stack to support native navigation
-  GatherDetail,
-}
-
-export function TextForageView() {
+export function TextForageView({ collectionId }: { collectionId?: string }) {
   const [textValue, setTextValue] = useState("");
-  const [titleValue, setTitleValue] = useState("");
-  const [descriptionValue, setDescriptionValue] = useState("");
   const [media, setMedia] = useState<null | string>(null);
   const [mimeType, setMimeType] = useState<null | MimeType>(null);
-  const [step, setStep] = useState(Step.Gather);
-  const {
-    createBlock: addBlock,
-    shareIntent,
-    collections,
-    createCollection,
-  } = useContext(DatabaseContext);
+  const { createBlock: addBlock } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
 
   // TODO: allow for multiple images, prob need to use something like this https://github.com/mdjfs/expo-image-multiple-picker
@@ -70,8 +55,6 @@ export function TextForageView() {
     }
 
     addBlock({
-      title: titleValue,
-      description: descriptionValue,
       createdBy: currentUser().id,
       ...(media
         ? {
@@ -82,11 +65,14 @@ export function TextForageView() {
             content: textValue,
             type: MimeType[".txt"],
           }),
-      collectionsToConnect: selectedCollections,
+      collectionsToConnect: collectionId ? [collectionId] : [],
     });
 
     // router.replace("/home");
     // alert(`Saved to ${selectedCollections.length} collections!`);
+    setTextValue("");
+    setMedia(null);
+    setMimeType(null);
   }
 
   // TODO: fix this to actually pick up the sound
@@ -129,141 +115,118 @@ export function TextForageView() {
     setMimeType(MimeType[".ma4"]);
   }
 
-  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
-
-  function toggleCollection(collection: Collection) {
-    if (selectedCollections.includes(collection.id)) {
-      setSelectedCollections(
-        selectedCollections.filter((id) => id !== collection.id)
-      );
-    } else {
-      setSelectedCollections([...selectedCollections, collection.id]);
-    }
-  }
-
-  // const sortedCollections = collections.sort((a, b) =>
-  //   selectedCollections.includes(a.id) ? -1 : 1
-  // );
-
   const insets = useSafeAreaInsets();
 
-  const [searchValue, setSearchValue] = useState("");
+  const scrollRef = useRef<ScrollView>(null);
 
   function renderStep() {
-    switch (step) {
-      case Step.Gather:
-        return (
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior="height"
-            contentContainerStyle={{
-              height: "100%",
-            }}
-            keyboardVerticalOffset={insets.top + 40}
-          >
-            <ScrollView
-              style={{
-                overflowY: "visible",
-              }}
-              onScroll={() => {
-                Keyboard.dismiss();
-              }}
-            >
-              {/* TODO: figure out how to invert this? */}
-              <Theme name="blue">
-                <BlockTexts />
-              </Theme>
-              {/* radial menu? */}
-              <YStack space="$1" width="100%" alignItems="stretch">
-                <XStack space="$1">
-                  {media && (
-                    <View width={200} height={200} marginHorizontal="auto">
-                      <MediaView media={media} mimeType={mimeType!} />
-                      <StyledButton
-                        icon={<Icon name="remove" />}
-                        circular
-                        size="$1"
-                        theme="red"
-                        position="absolute"
-                        top={2}
-                        right={2}
-                        onPress={() => {
-                          setMedia(null);
-                          setMimeType(textValue ? MimeType[".txt"] : null);
-                        }}
-                      />
-                    </View>
-                  )}
-                </XStack>
-              </YStack>
-            </ScrollView>
-            <YStack
-              flexGrow={1}
-              borderTopWidth={1}
-              borderTopEndRadius={4}
-              borderTopStartRadius={4}
-              paddingTop="$2"
-              borderColor="$grey9"
-              boxShadow="0px 0px -4px rgba(0, 0, 0, 0.25)"
-            >
-              <XStack
-                alignItems="flex-start"
-                gap={4}
-                width="100%"
-                marginBottom={8}
-              >
+    return (
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior="height"
+        contentContainerStyle={{
+          height: "100%",
+        }}
+        keyboardVerticalOffset={insets.top + 80}
+      >
+        <ScrollView
+          style={{
+            overflowY: "visible",
+          }}
+          onScroll={() => {
+            Keyboard.dismiss();
+          }}
+          scrollEventThrottle={60}
+          ref={scrollRef}
+          onContentSizeChange={() =>
+            scrollRef.current?.scrollToEnd({ animated: true })
+          }
+        >
+          <Theme name="pink">
+            <BlockTexts collectionId={collectionId} />
+          </Theme>
+        </ScrollView>
+        <YStack
+          flexGrow={1}
+          borderTopWidth={1}
+          borderTopEndRadius={4}
+          borderTopStartRadius={4}
+          paddingTop="$2"
+          borderColor="$grey9"
+          boxShadow="0px -4px 4px 4px rgba(0, 0, 0, 0.4)"
+        >
+          <XStack space="$1" width="100%">
+            {media && (
+              <View width={200} height={200} marginHorizontal="auto">
+                <MediaView media={media} mimeType={mimeType!} />
                 <StyledButton
-                  icon={<Icon name="photo" />}
-                  onPress={pickImage}
-                  theme="orange"
-                />
-                <StyledButton
-                  icon={<Icon name="file" />}
-                  onPress={pickFile}
-                  theme="purple"
-                />
-                {/* TODO: access camera */}
-                <StyledButton
-                  icon={
-                    recording ? (
-                      <Icon name="stop" />
-                    ) : (
-                      <Icon name="microphone" />
-                    )
-                  }
-                  theme="green"
-                  onPress={recording ? stopRecording : startRecording}
-                />
-              </XStack>
-              <XStack alignItems="center" justifyContent="center">
-                <StyledTextArea
-                  placeholder="Gather..."
-                  minHeight={undefined}
-                  flex={1}
-                  maxLength={2000}
-                  onChangeText={(text) => {
-                    setTextValue(text);
-                    setMimeType(MimeType[".txt"]);
-                  }}
-                  value={textValue}
-                  margin="$2"
-                />
-                <StyledButton
-                  size="$2"
+                  icon={<Icon name="remove" />}
+                  circular
+                  size="$1"
+                  theme="red"
+                  position="absolute"
+                  top={2}
+                  right={2}
                   onPress={() => {
-                    onSaveResult();
+                    setMedia(null);
+                    setMimeType(textValue ? MimeType[".txt"] : null);
                   }}
-                  theme="green"
-                  chromeless
-                  disabled={!textValue && !media}
-                >
-                  <Icon name="arrow-circle-up" />
-                </StyledButton>
-              </XStack>
-            </YStack>
-          </KeyboardAvoidingView>
-        );
-    }
+                />
+              </View>
+            )}
+          </XStack>
+          <XStack alignItems="flex-start" gap={4} width="100%" marginBottom={8}>
+            {/* radial menu? */}
+            <StyledButton
+              icon={<Icon name="photo" />}
+              onPress={pickImage}
+              theme="orange"
+            />
+            <StyledButton
+              icon={<Icon name="file" />}
+              onPress={pickFile}
+              theme="purple"
+            />
+            {/* TODO: access camera */}
+            <StyledButton
+              icon={
+                recording ? <Icon name="stop" /> : <Icon name="microphone" />
+              }
+              theme="green"
+              onPress={recording ? stopRecording : startRecording}
+            />
+          </XStack>
+          <XStack alignItems="center" justifyContent="center">
+            <StyledTextArea
+              placeholder="Gather..."
+              minHeight={undefined}
+              flex={1}
+              // TODO: this dismisses the keyboard beacuse of the onscroll handler
+              // onFocus={() => {
+              //   scrollRef.current?.scrollToEnd({ animated: true });
+              // }}
+              maxLength={2000}
+              onChangeText={(text) => {
+                setTextValue(text);
+                setMimeType(MimeType[".txt"]);
+              }}
+              value={textValue}
+              margin="$2"
+            />
+            <StyledButton
+              size="$4"
+              onPress={() => {
+                onSaveResult();
+              }}
+              chromeless
+              disabled={!textValue && !media}
+            >
+              <Icon name="arrow-circle-up" theme="green" size={30} />
+            </StyledButton>
+          </XStack>
+        </YStack>
+      </KeyboardAvoidingView>
+    );
   }
 
   return (
