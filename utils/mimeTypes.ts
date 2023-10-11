@@ -11,6 +11,7 @@ export enum MimeType {
   ".gif" = "image/gif",
   ".htm" = "text/html",
   ".html" = "text/html",
+  ".jpg" = "image/jpeg",
   ".jpeg" = "image/jpeg",
   ".json" = "application/json",
   ".jsonld" = "application/ld+json",

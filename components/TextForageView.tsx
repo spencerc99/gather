@@ -17,6 +17,7 @@ import { MediaView } from "./MediaView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { currentUser } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
+import { getFsPathForImageResult } from "../utils/blobs";
 
 interface PickedMedia {
   uri: string;
@@ -44,7 +45,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
         ...result.assets.map((asset) => ({
           uri: asset.uri,
           // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
-          type: asset.type === "image" ? MimeType[".png"] : MimeType[".mov"],
+          type: asset.type === "image" ? MimeType[".jpg"] : MimeType[".mov"],
         })),
       ]);
     }
@@ -58,20 +59,24 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     setMedias(medias.filter((_, i) => i !== idx));
   }
 
-  function onSaveResult() {
+  async function onSaveResult() {
     if (!textValue && !medias.length) {
       return;
     }
 
     if (medias.length) {
-      for (const { uri, type } of medias) {
-        addBlock({
-          createdBy: currentUser().id,
-          content: uri,
-          type,
-          collectionsToConnect: collectionId ? [collectionId] : [],
-        });
-      }
+      await Promise.all(
+        medias.map(async ({ uri, type }) => {
+          const fileUri = await getFsPathForImageResult(uri);
+          return addBlock({
+            createdBy: currentUser().id,
+            content: fileUri,
+            // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+            type,
+            collectionsToConnect: collectionId ? [collectionId] : [],
+          });
+        })
+      );
     } else {
       addBlock({
         createdBy: currentUser().id,
@@ -231,8 +236,8 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             />
             <StyledButton
               size="$4"
-              onPress={() => {
-                onSaveResult();
+              onPress={async () => {
+                await onSaveResult();
               }}
               chromeless
               disabled={!textValue && !medias.length}

@@ -6,6 +6,7 @@ import { ShareIntent } from "../hooks/useShareIntent";
 import { Collection, CollectionInsertInfo } from "./dataTypes";
 import { currentUser } from "./user";
 import { convertDbTimestampToDate } from "./date";
+import { intiializeFilesystemFolder } from "./blobs";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -238,6 +239,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
 
   const deleteBlock = async (id: string) => {
+    // TODO: get the image path and delete it from the local filesystem too
     await db.transactionAsync(async (tx) => {
       const result = await tx.executeSqlAsync(
         `
@@ -441,6 +443,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   useEffect(() => {
     void fetchBlocks();
     void fetchCollections();
+    void intiializeFilesystemFolder();
   }, []);
 
   return (
