@@ -6,9 +6,32 @@ import { Spinner } from "tamagui";
 import { Collection } from "../../../utils/dataTypes";
 import { StyledButton, Icon } from "../../../components/Themed";
 
+export function CollectionGearHeaderLink({
+  id,
+  tintColor,
+}: {
+  id: string;
+  tintColor?: string;
+}) {
+  const router = useRouter();
+
+  return (
+    <StyledButton
+      icon={<Icon name="gear" size={24} />}
+      color={tintColor}
+      chromeless
+      onPress={() => {
+        router.push({
+          pathname: "/collection/[id]/settings",
+          params: { id: id.toString() },
+        });
+      }}
+    />
+  );
+}
+
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();
-  const router = useRouter();
   const [collection, setCollection] = useState<Collection | null>(null);
   const { getCollection } = useContext(DatabaseContext);
 
@@ -29,16 +52,9 @@ export default function CollectionDetailScreen() {
           title: "",
           headerRight: (props) => {
             return (
-              <StyledButton
-                icon={<Icon name="gear" size={24} />}
-                color={props.tintColor}
-                chromeless
-                onPress={() => {
-                  router.push({
-                    pathname: "/collection/[id]/settings",
-                    params: { id: collection.id },
-                  });
-                }}
+              <CollectionGearHeaderLink
+                id={collection.id}
+                tintColor={props.tintColor}
               />
             );
           },

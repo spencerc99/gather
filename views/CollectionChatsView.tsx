@@ -11,6 +11,8 @@ export function CollectionChatsView() {
 
   return (
     <YStack>
+      {/* TODO: add an add collection that enters and search bar? */}
+      {/* Sort by last message, add some thing about last message */}
       {collections.map((collection) => (
         <Link
           href={{
