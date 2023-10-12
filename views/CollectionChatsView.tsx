@@ -36,6 +36,7 @@ export function CollectionChatsView() {
                 title: searchValue,
                 createdBy: currentUser().id,
               });
+              setSearchValue("");
               router.push({
                 pathname: "/collection/[id]/chat",
                 params: { id: newCollectionId },
