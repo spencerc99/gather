@@ -242,7 +242,7 @@ export function CollectionsView() {
           // TODO: styling is messing up without "asChild" but then the link doesn't work
           <Link
             href={{
-              pathname: "/collection/[id]",
+              pathname: "/collection/[id]/",
               params: { id: collection.id },
             }}
             key={collection.id}

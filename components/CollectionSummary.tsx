@@ -33,7 +33,7 @@ export function CollectionSummary({
   );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   contentContainer: {
     display: "flex",
     flexDirection: "column",

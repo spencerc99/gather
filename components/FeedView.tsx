@@ -14,11 +14,13 @@ import { convertDbTimestampToDate } from "../utils/date";
 export function FeedView() {
   const { blocks } = useContext(DatabaseContext);
 
+  blocks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
   function renderBlock(block: Block) {
     return (
       <Link
         href={{
-          pathname: "/block/[id]",
+          pathname: "/block/[id]/",
           params: { id: block.id },
         }}
         key={block.id}

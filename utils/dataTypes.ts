@@ -16,3 +16,13 @@ export interface Collection {
   collaborators: string[]; // of user dids
   numBlocks: number;
 }
+
+export interface Connection {
+  blockId: string;
+  collectionId: string;
+  createdTimestamp: Date;
+  createdBy: string;
+
+  // derived
+  collectionTitle: string;
+}

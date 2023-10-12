@@ -97,10 +97,16 @@ function RootLayoutNav() {
                   }}
                 />
                 <Stack.Screen
-                  name="block/[id]"
+                  name="block/[id]/index"
                   options={{
                     presentation: "card",
                     title: "",
+                  }}
+                />
+                <Stack.Screen
+                  name="block/[id]/connect"
+                  options={{
+                    presentation: "modal",
                   }}
                 />
               </Stack>

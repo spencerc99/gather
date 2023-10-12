@@ -1,8 +1,8 @@
 import { useLocalSearchParams } from "expo-router";
-import { BlockDetailView } from "../../components/BlockDetailView";
+import { BlockDetailView } from "../../../components/BlockDetailView";
 import { useContext, useEffect, useState } from "react";
-import { Block, DatabaseContext } from "../../utils/db";
-import { Spinner, YStack } from "tamagui";
+import { Block, DatabaseContext } from "../../../utils/db";
+import { ScrollView, Spinner, YStack } from "tamagui";
 
 export default function BlockDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -18,8 +18,12 @@ export default function BlockDetailScreen() {
   }
 
   return (
-    <YStack padding="10%">
+    <ScrollView
+      contentContainerStyle={{
+        padding: "10%",
+      }}
+    >
       <BlockDetailView block={block} />
-    </YStack>
+    </ScrollView>
   );
 }

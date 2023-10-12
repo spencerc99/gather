@@ -6,6 +6,7 @@ import { Icon, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
 import { YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
+import { useRouter } from "expo-router";
 
 export function BlockSummary({
   block,
@@ -21,6 +22,7 @@ export function BlockSummary({
 }) {
   const { id, content, type, source, title, createdAt } = block;
   const { deleteBlock } = useContext(DatabaseContext);
+  const router = useRouter();
 
   const blockMenuItems = [
     { text: "Actions", isTitle: true },
@@ -44,7 +46,10 @@ export function BlockSummary({
       text: "Connect",
       icon: () => <Icon name="link" />,
       onPress: () => {
-        // TODO: bring up the connections modal
+        router.push({
+          pathname: "/block/[id]/connect",
+          params: { id },
+        });
       },
     },
     {

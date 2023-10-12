@@ -137,7 +137,8 @@ export function InputWithIcon({
     <Stack position="relative">
       <YStack
         position="absolute"
-        left="$1"
+        zIndex={1}
+        left="$1.5"
         height="100%"
         alignItems="center"
         justifyContent="center"

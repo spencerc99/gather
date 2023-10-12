@@ -3,7 +3,7 @@ import * as SQLite from "expo-sqlite";
 import { PropsWithChildren, createContext, useEffect, useState } from "react";
 import { MimeType } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
-import { Collection, CollectionInsertInfo } from "./dataTypes";
+import { Collection, CollectionInsertInfo, Connection } from "./dataTypes";
 import { currentUser } from "./user";
 import { convertDbTimestampToDate } from "./date";
 import { intiializeFilesystemFolder } from "./blobs";
@@ -65,6 +65,9 @@ interface DatabaseContextProps {
   createBlock: (block: BlockInsertInfo) => void;
   getBlock: (blockId: string) => Promise<Block>;
   deleteBlock: (id: string) => void;
+
+  getConnectionsForBlock: (blockId: string) => Promise<Connection[]>;
+
   collections: Collection[];
   createCollection: (collection: CollectionInsertInfo) => Promise<string>;
   getCollectionItems: (collectionId: string) => Promise<Block[]>;
@@ -89,6 +92,9 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
     throw new Error("not yet loaded");
   },
   deleteBlock: () => {},
+
+  getConnectionsForBlock: async () => [],
+
   collections: [],
   createCollection: async () => {
     throw new Error("not yet loaded");
@@ -424,7 +430,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const result = await db.execAsync(
       collectionIds.map((collectionId) => ({
         sql: `INSERT INTO connections (block_id, collection_id, created_by)
-              VALUES (?, ?, ?);`,
+              VALUES (?, ?, ?)
+              ON CONFLICT(block_id, collection_id) DO NOTHING;`,
         args: [blockId, collectionId, currentUser().id],
       })),
       false
@@ -436,6 +443,39 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (errors.length) {
       throw errors[0].error;
     }
+  }
+
+  async function getConnectionsForBlock(
+    blockId: string
+  ): Promise<Connection[]> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `SELECT  connections.block_id, 
+                        connections.collection_id, 
+                        connections.created_timestamp, 
+                        connections.created_by, 
+                        collections.title
+                FROM connections 
+                INNER JOIN collections ON connections.collection_id = collections.id
+                WHERE block_id = ?`,
+          args: [blockId],
+        },
+      ],
+      true
+    );
+
+    if ("error" in result) {
+      throw result.error;
+    }
+
+    return result.rows.map((connection) => ({
+      ...mapSnakeCaseToCamelCaseProperties(connection),
+      blockId: connection.block_id.toString(),
+      collectionId: connection.collection_id.toString(),
+      createdTimestamp: convertDbTimestampToDate(connection.created_timestamp),
+      collectionTitle: connection.title,
+    }));
   }
 
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
@@ -455,6 +495,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         deleteBlock,
         setShareIntent,
         shareIntent,
+        getConnectionsForBlock,
         collections,
         createCollection,
         getCollection,

@@ -1,7 +1,11 @@
-import { Block } from "../utils/db";
-import { StyledView, StyledParagraph } from "./Themed";
+import { Block, DatabaseContext } from "../utils/db";
+import { StyledView, StyledParagraph, StyledButton, Icon } from "./Themed";
 import { StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
+import { useContext, useEffect, useState } from "react";
+import { ConnectionSummary } from "./ConnectionSummary";
+import { Connection } from "../utils/dataTypes";
+import { ScrollView, YStack } from "tamagui";
 
 export function BlockDetailView({ block }: { block: Block }) {
   const {
@@ -15,8 +19,17 @@ export function BlockDetailView({ block }: { block: Block }) {
     updatedAt,
   } = block;
 
+  const [connections, setConnections] = useState<Connection[]>([]);
+
+  const { getConnectionsForBlock } = useContext(DatabaseContext);
+  useEffect(() => {
+    getConnectionsForBlock(id.toString()).then((connections) => {
+      setConnections(connections);
+    });
+  }, [id]);
+
   return (
-    <StyledView style={styles.block} space="$2">
+    <YStack space="$2">
       {/* block details */}
       <StyledParagraph title>{title}</StyledParagraph>
       {/* {renderContent()} */}
@@ -35,18 +48,18 @@ export function BlockDetailView({ block }: { block: Block }) {
           Updated: {updatedAt.toLocaleTimeString()}
         </StyledParagraph>
       </StyledView>
-
-      {/* Connect button */}
-      {/* Connections */}
-    </StyledView>
+      <StyledButton icon={<Icon name="link" />}>Connect</StyledButton>
+      {connections.map((connection) => (
+        <ConnectionSummary
+          key={connection.collectionId}
+          connection={connection}
+        />
+      ))}
+    </YStack>
   );
 }
 
 const styles = StyleSheet.create({
-  block: {
-    display: "flex",
-    flexDirection: "column",
-  },
   metadata: {
     display: "flex",
     alignSelf: "flex-end",

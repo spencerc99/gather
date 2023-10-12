@@ -144,8 +144,10 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
         behavior="height"
         contentContainerStyle={{
           height: "100%",
+          justifyContent: "space-between",
+          flex: 1,
         }}
-        keyboardVerticalOffset={insets.top + 96}
+        keyboardVerticalOffset={insets.top + 84}
       >
         <ScrollView
           style={{
@@ -163,7 +165,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           </Theme>
         </ScrollView>
         <YStack
-          flexGrow={1}
+          height="auto"
           borderTopWidth={1}
           borderTopEndRadius={4}
           borderTopStartRadius={4}
