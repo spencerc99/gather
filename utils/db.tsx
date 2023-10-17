@@ -33,6 +33,10 @@ function openDatabase() {
 
 const db = openDatabase();
 
+function inParam(sql: string, arr: (string | number | null)[]) {
+  return sql.replace("?#", arr.map(() => "?").join(","));
+}
+
 interface BlockInsertInfo {
   title?: string;
   description?: string; // long-form description about the object, could include things like tags here and those get automatically extracted?
@@ -75,6 +79,7 @@ interface DatabaseContextProps {
   deleteCollection: (id: string) => void;
 
   addConnections(blockId: string, collectionIds: string[]): Promise<void>;
+  replaceConnections(blockId: string, collectionIds: string[]): Promise<void>;
 
   // share intent
   setShareIntent: (intent: ShareIntent | null) => void;
@@ -106,6 +111,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   getCollectionItems: async () => [],
 
   addConnections: async () => {},
+  replaceConnections: async () => {},
 
   setShareIntent: () => {},
   shareIntent: null,
@@ -445,6 +451,34 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
   }
 
+  async function replaceConnections(blockId: string, collectionIds: string[]) {
+    const result = await db.execAsync(
+      [
+        ...collectionIds.map((collectionId) => ({
+          sql: `INSERT INTO connections (block_id, collection_id, created_by)
+              VALUES (?, ?, ?)
+              ON CONFLICT(block_id, collection_id) DO NOTHING;`,
+          args: [blockId, collectionId, currentUser().id],
+        })),
+        {
+          sql: inParam(
+            `DELETE FROM connections WHERE block_id = ? AND collection_id NOT IN (?#);`,
+            collectionIds
+          ),
+          args: [blockId],
+        },
+      ],
+      false
+    );
+
+    const errors: SQLite.ResultSetError[] = result.filter(
+      (result) => "error" in result
+    );
+    if (errors.length) {
+      throw errors[0].error;
+    }
+  }
+
   async function getConnectionsForBlock(
     blockId: string
   ): Promise<Connection[]> {
@@ -500,6 +534,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         createCollection,
         getCollection,
         addConnections,
+        replaceConnections,
         deleteCollection,
         getCollectionItems,
         db,

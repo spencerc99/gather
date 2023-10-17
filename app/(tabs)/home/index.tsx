@@ -20,10 +20,10 @@ export default function HomeScreen() {
       >
         <Theme name="blue">
           <Tabs.Tab flex={1} value="unsorted">
-            <SizableText>Unsorted</SizableText>
+            <SizableText>All</SizableText>
           </Tabs.Tab>
           <Tabs.Tab flex={1} value="collections">
-            <SizableText>All</SizableText>
+            <SizableText>Collections</SizableText>
           </Tabs.Tab>
         </Theme>
       </Tabs.List>

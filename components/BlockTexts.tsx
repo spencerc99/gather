@@ -1,9 +1,10 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { XStack, YStack, useTheme } from "tamagui";
-import { StyledParagraph } from "./Themed";
-import { BlockSummary } from "./BlockSummary";
-import { getRelativeDate } from "../utils/date";
+import { Icon, StyledButton, StyledParagraph } from "./Themed";
+import { BlockSummary, BlockTextSummary } from "./BlockSummary";
+import { Swipeable } from "react-native-gesture-handler";
+import { useRouter } from "expo-router";
 
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
   const { blocks: allBlocks, getCollectionItems } = useContext(DatabaseContext);
@@ -26,48 +27,49 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     () => blocks.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
     [blocks]
   );
-  const theme = useTheme();
+  const router = useRouter();
 
   function renderBlock(block: Block) {
     return (
-      <YStack
-        key={block.createdAt.getTime()}
-        borderWidth={1}
-        borderRadius={4}
-        borderColor={theme.color.get()}
-        backgroundColor={theme.background.get()}
-        space="$2"
-        padding="$3"
-        style={{
-          width: "auto",
+      <Swipeable
+        key={block.id}
+        containerStyle={{
+          overflow: "visible",
         }}
-        marginLeft="$1"
+        friction={2}
+        renderRightActions={() => (
+          <YStack alignItems="center" justifyContent="center" padding="$2">
+            <StyledButton circular>
+              <Icon name="link" />
+            </StyledButton>
+          </YStack>
+        )}
+        onSwipeableOpen={(direction, swipeable) => {
+          if (direction === "left") {
+            return;
+          }
+          router.push({
+            pathname: "/block/[id]/connect",
+            params: { id: block.id },
+          });
+          swipeable.close();
+        }}
       >
-        <XStack justifyContent="flex-end">
-          {/* TODO: add Select hold menu item to multiselect */}
-          <BlockSummary
-            block={block}
-            style={{
-              borderWidth: 0,
-              backgroundColor: "inherit",
-            }}
-          />
-        </XStack>
-      </YStack>
+        {/* TODO: add Select hold menu item to multiselect */}
+        <BlockTextSummary block={block} />
+      </Swipeable>
     );
   }
 
   return (
     <YStack
       paddingBottom="$4"
+      paddingHorizontal="$2"
       space="$4"
       width="100%"
-      alignItems="flex-start"
       marginTop="$2"
+      alignItems="flex-end"
     >
-      <StyledParagraph alignSelf="center">
-        ~ that's all we could find ~
-      </StyledParagraph>
       {sortedBlocks.map(renderBlock)}
     </YStack>
   );

@@ -149,3 +149,23 @@ export function InputWithIcon({
     </Stack>
   );
 }
+
+export function SearchBarInput({
+  searchValue,
+  setSearchValue,
+  ...props
+}: GetProps<typeof StyledInput> & {
+  searchValue: string;
+  setSearchValue: (newValue: string) => void;
+}) {
+  return (
+    <InputWithIcon
+      icon="search"
+      placeholder="Search..."
+      width="100%"
+      backgroundColor="$gray4"
+      value={searchValue}
+      onChangeText={(text) => setSearchValue(text)}
+    />
+  );
+}

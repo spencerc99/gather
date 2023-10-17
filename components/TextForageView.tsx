@@ -30,13 +30,13 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
   const { createBlock: addBlock } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
 
-  // TODO: allow for multiple images, prob need to use something like this https://github.com/mdjfs/expo-image-multiple-picker
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       quality: 1,
+      orderedSelection: true,
     });
 
     if (!result.canceled) {
@@ -86,8 +86,6 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       });
     }
 
-    // router.replace("/home");
-    // alert(`Saved to ${selectedCollections.length} collections!`);
     setTextValue("");
     setMedias([]);
   }
@@ -147,6 +145,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           justifyContent: "space-between",
           flex: 1,
         }}
+        // NOTE: this needs to adjust based on the height of YStack below
         keyboardVerticalOffset={insets.top + 84}
       >
         <ScrollView
@@ -169,9 +168,9 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           borderTopWidth={1}
           borderTopEndRadius={4}
           borderTopStartRadius={4}
+          borderRadius={4}
           paddingTop="$2"
-          borderColor="$grey9"
-          // boxShadow="0px -4px 4px 4px rgba(0, 0, 0, 0.4)"
+          borderColor="$gray9"
           elevation="$2"
           backgroundColor="$background"
         >
@@ -180,8 +179,17 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               <ScrollView horizontal={true}>
                 <XStack flexWrap="wrap">
                   {medias.map(({ uri, type }, idx) => (
-                    <View width={200} height={200} key={uri}>
-                      <MediaView media={uri} mimeType={type} />
+                    <View width={200} height={200} key={uri} borderRadius={4}>
+                      <MediaView
+                        media={uri}
+                        mimeType={type}
+                        style={{
+                          width: 200,
+                          height: 200,
+                          aspectRatio: 1,
+                          resizeMode: "cover",
+                        }}
+                      />
                       <StyledButton
                         icon={<Icon name="remove" size={12} />}
                         size="$1.5"
@@ -202,26 +210,31 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           </XStack>
           <XStack alignItems="flex-start" gap={4} width="100%" marginBottom={8}>
             {/* radial menu? */}
-            <StyledButton
+            {/* <StyledButton
               icon={<Icon name="photo" />}
               onPress={pickImage}
               theme="orange"
-            />
-            <StyledButton
+            /> */}
+            {/* <StyledButton
               icon={<Icon name="file" />}
               onPress={pickFile}
               theme="purple"
-            />
+            /> */}
             {/* TODO: access camera */}
-            <StyledButton
+            {/* <StyledButton
               icon={
                 recording ? <Icon name="stop" /> : <Icon name="microphone" />
               }
               theme="green"
               onPress={recording ? stopRecording : startRecording}
-            />
+            /> */}
           </XStack>
           <XStack alignItems="center" justifyContent="center" padding="$2">
+            <StyledButton
+              icon={<Icon size={24} name="photo" />}
+              onPress={pickImage}
+              chromeless
+            />
             <StyledTextArea
               placeholder="Gather..."
               minHeight={undefined}
@@ -242,9 +255,10 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                 await onSaveResult();
               }}
               chromeless
+              theme="green"
               disabled={!textValue && !medias.length}
             >
-              <Icon name="arrow-circle-up" theme="green" size={30} />
+              <Icon name="arrow-circle-up" size={30} color="$green10" />
             </StyledButton>
           </XStack>
         </YStack>
@@ -262,33 +276,3 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  parentContainer: {
-    flex: 1,
-    flexDirection: "column",
-    paddingHorizontal: "5%",
-    paddingVertical: "10%",
-    height: "100%",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  contentContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "10%",
-  },
-  detailStepContainer: {
-    display: "flex",
-    alignItems: "center",
-  },
-  breadCrumbs: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-});

@@ -9,7 +9,7 @@ import { areArraysEqual } from "../../../utils/common";
 export default function BlockConnectModal() {
   const { id } = useLocalSearchParams();
   const [block, setBlock] = useState<Block | null>(null);
-  const { getBlock, addConnections, getConnectionsForBlock } =
+  const { getBlock, replaceConnections, getConnectionsForBlock } =
     useContext(DatabaseContext);
   const [initialConnectedCollections, setInitialConnectedCollections] =
     useState<string[]>([]);
@@ -37,7 +37,7 @@ export default function BlockConnectModal() {
       return;
     }
 
-    await addConnections(block.id, selectedCollections);
+    await replaceConnections(block.id, selectedCollections);
     router.replace("..");
   }
 
@@ -49,7 +49,6 @@ export default function BlockConnectModal() {
         }}
       />
       <StyledView paddingHorizontal="$2" height="100%">
-        {/* TODO: fix this scrolling */}
         <SelectConnectionsList
           selectedCollections={selectedCollections}
           setSelectedCollections={setSelectedCollections}

@@ -4,11 +4,11 @@ import {
   DatabaseContext,
   mapSnakeCaseToCamelCaseProperties,
 } from "../utils/db";
-import { StyledView } from "./Themed";
+import { SearchBarInput, StyledView } from "./Themed";
 import { Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { Link } from "expo-router";
-import { H2 } from "tamagui";
+import { H2, YStack } from "tamagui";
 import { convertDbTimestampToDate } from "../utils/date";
 
 export function FeedView() {
@@ -97,13 +97,32 @@ export function UncategorizedView() {
   }
 
   function renderBlock(block: Block) {
-    return <BlockSummary block={block} />;
+    return <BlockSummary block={block} key={block.id} />;
   }
+
+  const [searchValue, setSearchValue] = useState("");
+
+  const filteredBlocks = events.filter((block) =>
+    // TODO: handle date search
+    [block.title, block.content, block.source, block.description]
+      .filter((b) => Boolean(b))
+      .join("\n")
+      .toLocaleLowerCase()
+      .includes(searchValue.toLocaleLowerCase())
+  );
 
   return (
     <>
       <H2>Uncategorized</H2>
-      <StyledView style={styles.feed}>{events.map(renderBlock)}</StyledView>
+      <YStack space="$2" paddingHorizontal="$2">
+        <SearchBarInput
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+        />
+        <StyledView style={styles.feed}>
+          {filteredBlocks.map(renderBlock)}
+        </StyledView>
+      </YStack>
     </>
   );
 }

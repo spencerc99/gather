@@ -2,19 +2,36 @@ import { MimeType } from "../utils/mimeTypes";
 import { StyledView, StyledText, Icon } from "./Themed";
 import { Pressable, Image } from "react-native";
 import { Audio } from "expo-av";
-import { useState, useEffect } from "react";
+import { useState, useEffect, PropsWithChildren } from "react";
 
 export function MediaView({
   media,
   mimeType,
   style,
-}: {
+  children,
+}: PropsWithChildren<{
   media: string;
   mimeType: MimeType;
   style?: object;
-}) {
+}>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState(
+    "aspectRatio" in style ? style.aspectRatio : 1
+  );
+
+  useEffect(() => {
+    if (
+      (mimeType !== MimeType[".jpeg"] && mimeType !== MimeType[".png"]) ||
+      "aspectRatio" in style
+    ) {
+      return;
+    }
+
+    Image.getSize(media, (width, height) => {
+      setAspectRatio(width / height);
+    });
+  }, [media]);
 
   async function playSound() {
     console.log("play");
@@ -68,7 +85,19 @@ export function MediaView({
         return (
           <Image
             source={{ uri: media }}
-            style={style ? style : { width: 200, height: 200 }}
+            resizeMode="center"
+            style={[
+              {
+                flex: 1,
+                alignSelf: "stretch",
+                aspectRatio,
+                width: "100%",
+                height: "auto",
+                maxWidth: "100%",
+                maxHeight: "100%",
+              },
+              style,
+            ]}
           />
         );
       case MimeType[".ma4"]:
@@ -92,5 +121,10 @@ export function MediaView({
     }
   }
 
-  return renderMedia();
+  return (
+    <StyledView>
+      {renderMedia()}
+      {children}
+    </StyledView>
+  );
 }

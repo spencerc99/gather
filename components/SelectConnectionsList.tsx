@@ -76,7 +76,9 @@ export function SelectConnectionsList({
           )}
           {collections
             .filter((c) =>
-              `${c.title}\n${c.description}}`.includes(`${searchValue}`)
+              `${c.title}\n${c.description}}`
+                .toLocaleLowerCase()
+                .includes(searchValue.toLocaleLowerCase())
             )
             .map((collection) => (
               <Pressable

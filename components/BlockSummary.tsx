@@ -35,13 +35,13 @@ export function BlockSummary({
           },
         ]
       : []),
-    {
-      text: "Share",
-      icon: () => <Icon name="share" />,
-      onPress: () => {
-        // TODO: copy deep link to clipboard
-      },
-    },
+    // {
+    //   text: "Share",
+    //   icon: () => <Icon name="share" />,
+    //   onPress: () => {
+    //     // TODO: copy deep link to clipboard
+    //   },
+    // },
     {
       text: "Connect",
       icon: () => <Icon name="link" />,
@@ -62,14 +62,24 @@ export function BlockSummary({
   ];
 
   function renderContent() {
-    return <BlockContent content={content} type={type} />;
+    return (
+      <BlockContent
+        content={content}
+        type={type}
+        style={{
+          maxWidth: 150,
+          maxHeight: 150,
+          aspectRatio: 1,
+        }}
+      />
+    );
   }
 
   const theme = useTheme();
 
   return (
-    <YStack space="$1" alignItems="center">
-      <HoldItem items={blockMenuItems} key={id} closeOnTap>
+    <YStack space="$1" alignItems="center" key={id}>
+      <HoldItem items={blockMenuItems} closeOnTap>
         <StyledView
           style={[styles.block, style]}
           key={id}
@@ -100,3 +110,93 @@ const styles = StyleSheet.create({
     padding: 12,
   },
 });
+
+export function BlockTextSummary({
+  block,
+  hideMetadata,
+  style,
+}: {
+  block: Pick<
+    Block,
+    "id" | "title" | "content" | "type" | "source" | "createdAt"
+  >;
+  hideMetadata?: boolean;
+  style?: object;
+}) {
+  const { deleteBlock } = useContext(DatabaseContext);
+  const { id, content, type, source, title, createdAt } = block;
+  const theme = useTheme();
+  const router = useRouter();
+
+  const blockMenuItems = [
+    { text: "Actions", isTitle: true },
+    ...(source
+      ? [
+          {
+            text: "View Source",
+            icon: () => <Icon name={"external-link"} />,
+            onPress: () => console.log("View Source"),
+          },
+        ]
+      : []),
+    // {
+    //   text: "Share",
+    //   icon: () => <Icon name="share" />,
+    //   onPress: () => {
+    //     // TODO: copy deep link to clipboard
+    //   },
+    // },
+    {
+      text: "Connect",
+      icon: () => <Icon name="link" />,
+      onPress: () => {
+        router.push({
+          pathname: "/block/[id]/connect",
+          params: { id },
+        });
+      },
+    },
+    {
+      text: "Delete",
+      icon: () => <Icon name={"trash"} />,
+      isDestructive: true,
+      // TODO: add confirmation dialog
+      onPress: () => deleteBlock(id),
+    },
+  ];
+
+  function renderContent() {
+    return (
+      <BlockContent
+        key={id}
+        content={content}
+        type={type}
+        style={{
+          maxWidth: 250,
+          borderRadius: 4,
+        }}
+        textContainerProps={{
+          borderWidth: 1,
+          borderRadius: 4,
+          borderColor: theme.color.get(),
+          space: "$2",
+          padding: "$3",
+          width: "100%",
+        }}
+      />
+    );
+  }
+
+  return (
+    <YStack space="$1">
+      <HoldItem items={blockMenuItems} closeOnTap>
+        {renderContent()}
+      </HoldItem>
+      {!hideMetadata && (
+        <StyledText metadata ellipse={true} textAlign="right">
+          {getRelativeDate(createdAt)}
+        </StyledText>
+      )}
+    </YStack>
+  );
+}
