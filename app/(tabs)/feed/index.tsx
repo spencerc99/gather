@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { FeedView } from "../../../components/FeedView";
-import { ScrollView } from "tamagui";
+import { H2, ScrollView } from "tamagui";
 
 export default function FeedPage() {
   return (
@@ -8,6 +8,7 @@ export default function FeedPage() {
       style={styles.container}
       contentContainerStyle={{ paddingTop: 32 }}
     >
+      <H2>All Blocks</H2>
       <FeedView />
     </ScrollView>
   );

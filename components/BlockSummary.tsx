@@ -1,14 +1,16 @@
 import { Block, DatabaseContext } from "../utils/db";
+import * as WebBrowser from "expo-web-browser";
 import { MimeType } from "../utils/mimeTypes";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
 import { useContext } from "react";
 import { Icon, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import { TextProps, YStack, useTheme, Anchor } from "tamagui";
+import { TextProps, YStack, useTheme, styled } from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
+import { ExternalLink } from "./ExternalLink";
 
 export function BlockSummary({
   block,
@@ -33,7 +35,11 @@ export function BlockSummary({
             text: "View Source",
             icon: () => <Icon name={"external-link"} />,
             onPress: () => {
-              Linking.openURL(source);
+              if (Platform.OS === "web") {
+                Linking.openURL(source);
+              } else {
+                WebBrowser.openBrowserAsync(source);
+              }
             },
           },
         ]
@@ -64,31 +70,19 @@ export function BlockSummary({
     },
   ];
 
-  function renderContent() {
-    return (
-      <BlockContent
-        {...block}
-        style={{
-          aspectRatio: 1,
-          ...blockStyle,
-        }}
-      />
-    );
-  }
-
   const theme = useTheme();
 
   return (
     <YStack space="$1" alignItems="center" key={id}>
       <HoldItem items={blockMenuItems} closeOnTap>
-        <StyledView
-          style={[styles.block, style]}
-          key={id}
-          borderColor={theme.color.get()}
-          backgroundColor={theme.background.get()}
-        >
-          {renderContent()}
-        </StyledView>
+        <BlockContent
+          {...block}
+          containerStyle={style}
+          mediaStyle={{
+            aspectRatio: 1,
+            ...blockStyle,
+          }}
+        />
       </HoldItem>
       {!hideMetadata && (
         <StyledText metadata ellipse={true}>
@@ -99,18 +93,21 @@ export function BlockSummary({
   );
 }
 
-const styles = StyleSheet.create({
-  block: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    width: 150,
-    height: 150,
-    padding: 12,
-  },
-});
+// export const BlockSummary = styled(BlockSummaryBase, {
+//   variants: {
+//     size: {
+//       small: {
+//         style: { width: 60, height: 60 },
+//       },
+//       medium: {
+//         style: { width: 150, height: 150 },
+//       },
+//       large: {
+//         style: { width: 400, height: 400 },
+//       },
+//     },
+//   } as const,
+// });
 
 export function BlockTextSummary({
   block,
@@ -168,7 +165,7 @@ export function BlockTextSummary({
       <BlockContent
         key={id}
         {...block}
-        style={{
+        mediaStyle={{
           width: 250,
           borderRadius: 4,
         }}
@@ -185,7 +182,7 @@ export function BlockTextSummary({
     switch (type) {
       case MimeType["link"]:
         return (
-          <Anchor href={source}>
+          <ExternalLink href={source!}>
             <YStack>
               {content}
               <YStack alignItems="flex-end" paddingBottom="$1">
@@ -193,7 +190,7 @@ export function BlockTextSummary({
                 <StyledText metadata>{source}</StyledText>
               </YStack>
             </YStack>
-          </Anchor>
+          </ExternalLink>
         );
       default:
         return content;
@@ -225,14 +222,16 @@ export function BlockMetadata({
 
   let metadata;
   switch (type) {
-    case MimeType["link"]:
-      metadata = (
-        <>
-          from <Anchor href={source}>{source}</Anchor>
-        </>
-      );
+    // case MimeType["link"]:
+    //   metadata = (
+    //     <>
+    //       from <ExternalLink href={source!}>{source}</ExternalLink>
+    //     </>
+    //   );
+    //   break;
     default:
       metadata = getRelativeDate(createdAt);
+      break;
   }
 
   return (

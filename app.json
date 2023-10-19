@@ -17,7 +17,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "net.tiny-inter.gather",
-      "usesNonExemptEncryption": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "splash": {
         "image": "./assets/images/splash.png",
         "resizeMode": "contain",

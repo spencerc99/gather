@@ -19,7 +19,7 @@ export function MediaView({
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
   const [aspectRatio, setAspectRatio] = useState(
-    "aspectRatio" in style ? style.aspectRatio : 1
+    "aspectRatio" in style ? style.aspectRatio : undefined
   );
 
   useEffect(() => {

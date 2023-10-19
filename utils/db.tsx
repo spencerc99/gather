@@ -140,6 +140,29 @@ export function mapSnakeCaseToCamelCaseProperties<
   return newObj;
 }
 
+function handleSqlErrors(
+  results:
+    | (SQLite.ResultSet | SQLite.ResultSetError)[]
+    | SQLite.ResultSet
+    | SQLite.ResultSetError
+): results is SQLite.ResultSet {
+  const errors: SQLite.ResultSetError[] = ([] as any[])
+    .concat(results)
+    .filter((result) => "error" in result);
+  if (errors.length) {
+    if (errors.length === 1) {
+      throw errors[0].error;
+    }
+
+    throw new Error(
+      `${errors.length} error(s): ${errors
+        .map((e) => e.error.message)
+        .join("\n")}`
+    );
+  }
+  return true;
+}
+
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   useEffect(() => {
     void initDatabases();
@@ -176,10 +199,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         ),
       ]);
 
-      if (results.some((result) => "error" in result)) {
-        throw results.find((result) => "error" in result)?.error;
-      }
-
       const result = await tx.executeSqlAsync(
         `CREATE TABLE IF NOT EXISTS connections(
             block_id integer NOT NULL,
@@ -192,10 +211,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             FOREIGN KEY (collection_id) REFERENCES collections(id)
         );`
       );
-
-      if ("error" in result) {
-        throw result.error;
-      }
     });
   }
 
@@ -222,7 +237,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             ?,
             ?,
             ?
-        );`,
+        )
+        RETURNING *;`,
         [
           // @ts-ignore expo sqlite types are broken
           block.title || null,
@@ -245,17 +261,21 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         console.log("INSERT ID", result.insertId);
         await addConnections(String(result.insertId!), connections);
       }
+
+      console.log(result.rows);
+      // TODO: change this to just fetch the new row info
+      fetchBlocks();
     });
   };
 
   const deleteBlock = async (id: string) => {
     // TODO: get the image path and delete it from the local filesystem too
     await db.transactionAsync(async (tx) => {
-      const result = await tx.executeSqlAsync(
-        `
-        DELETE FROM blocks WHERE id = ?;`,
-        [id]
-      );
+      await tx.executeSqlAsync(`DELETE FROM blocks WHERE id = ?;`, [id]);
+      await tx.executeSqlAsync(`DELETE FROM connections where block_id = ?;`, [
+        id,
+      ]);
+
       setBlocks(blocks.filter((block) => block.id !== id));
     });
   };
@@ -265,6 +285,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       await tx.executeSqlAsync(
         `
         DELETE FROM collections WHERE id = ?;`,
+        [id]
+      );
+      await tx.executeSqlAsync(
+        `
+        DELETE FROM connections WHERE collection_id = ?;`,
         [id]
       );
       setCollections(collections.filter((collection) => collection.id !== id));
@@ -439,12 +464,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       false
     );
 
-    const errors: SQLite.ResultSetError[] = result.filter(
-      (result) => "error" in result
-    );
-    if (errors.length) {
-      throw errors[0].error;
-    }
+    handleSqlErrors(result);
   }
 
   async function replaceConnections(blockId: string, collectionIds: string[]) {
@@ -468,12 +488,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       false
     );
 
-    const errors: SQLite.ResultSetError[] = result.filter(
-      (result) => "error" in result
-    );
-    if (errors.length) {
-      throw errors[0].error;
-    }
+    handleSqlErrors(result);
 
     await fetchCollections();
   }
@@ -498,6 +513,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       true
     );
 
+    // TODO: have handleSqlERrors properly handle the type here
     if ("error" in result) {
       throw result.error;
     }

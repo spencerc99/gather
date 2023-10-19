@@ -24,7 +24,8 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   }
 
   const sortedBlocks = useMemo(
-    () => blocks.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
+    () =>
+      [...blocks].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
     [blocks]
   );
   const router = useRouter();

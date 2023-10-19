@@ -9,7 +9,9 @@ import { H2, YStack } from "tamagui";
 export function FeedView() {
   const { blocks } = useContext(DatabaseContext);
 
-  blocks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const sortedBlocks = [...blocks].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  );
 
   function renderBlock(block: Block) {
     return (
@@ -28,6 +30,7 @@ export function FeedView() {
               maxWidth: 150,
               maxHeight: 150,
             }}
+            style={{ maxHeight: 180 }}
           />
         </Pressable>
       </Link>
@@ -36,7 +39,7 @@ export function FeedView() {
 
   const [searchValue, setSearchValue] = useState("");
 
-  const filteredBlocks = blocks.filter((block) =>
+  const filteredBlocks = sortedBlocks.filter((block) =>
     // TODO: handle date search
     [block.title, block.content, block.source, block.description]
       .filter((b) => Boolean(b))
@@ -48,7 +51,6 @@ export function FeedView() {
   // TODO: use tabs to render blocks + collections
   return (
     <>
-      <H2>All Blocks</H2>
       <YStack space="$2" paddingHorizontal="$2">
         <SearchBarInput
           searchValue={searchValue}

@@ -175,7 +175,9 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           }}
           scrollEventThrottle={60}
           ref={scrollRef}
-          onContentSizeChange={() => scrollRef.current?.scrollToEnd()}
+          onContentSizeChange={() =>
+            scrollRef.current?.scrollToEnd({ animated: false })
+          }
         >
           <Theme name="pink">
             <BlockTexts collectionId={collectionId} />
