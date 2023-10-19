@@ -7,11 +7,13 @@ import { useState, useEffect, PropsWithChildren } from "react";
 export function MediaView({
   media,
   mimeType,
-  style,
+  alt,
+  style = {},
   children,
 }: PropsWithChildren<{
   media: string;
   mimeType: MimeType;
+  alt?: string;
   style?: object;
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
@@ -22,7 +24,9 @@ export function MediaView({
 
   useEffect(() => {
     if (
-      (mimeType !== MimeType[".jpeg"] && mimeType !== MimeType[".png"]) ||
+      (mimeType !== MimeType[".jpeg"] &&
+        mimeType !== MimeType[".png"] &&
+        mimeType !== MimeType["link"]) ||
       "aspectRatio" in style
     ) {
       return;
@@ -82,21 +86,20 @@ export function MediaView({
         return <StyledText>{media}</StyledText>;
       case MimeType[".jpeg"]:
       case MimeType[".png"]:
+      case MimeType["link"]:
         return (
           <Image
             source={{ uri: media }}
-            resizeMode="center"
+            resizeMode="contain"
+            loadingIndicatorSource={require("../assets/images/loading-image.gif")}
+            alt={alt}
             style={[
+              // @ts-ignore
               {
-                flex: 1,
-                alignSelf: "stretch",
                 aspectRatio,
                 width: "100%",
-                height: "auto",
-                maxWidth: "100%",
-                maxHeight: "100%",
+                ...style,
               },
-              style,
             ]}
           />
         );
@@ -117,7 +120,7 @@ export function MediaView({
           </Pressable>
         );
       default:
-        return null;
+        throw new Error("Unexpected MimeType found!");
     }
   }
 

@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { currentUser } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
 import { getFsPathForImageResult } from "../utils/blobs";
+import { extractDataFromUrl, isUrl } from "../utils/url";
 
 interface PickedMedia {
   uri: string;
@@ -77,13 +78,30 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           });
         })
       );
-    } else {
-      addBlock({
-        createdBy: currentUser().id,
-        content: textValue,
-        type: MimeType[".txt"],
-        collectionsToConnect: collectionId ? [collectionId] : [],
-      });
+    }
+
+    if (textValue) {
+      if (isUrl(textValue)) {
+        const { title, description, images, url, domain, favicon } =
+          await extractDataFromUrl(textValue);
+        await addBlock({
+          createdBy: currentUser().id,
+          // TODO: try to capture a picture of the url always
+          content: images?.[0] || favicon || url,
+          title,
+          description,
+          source: url,
+          type: MimeType["link"],
+          collectionsToConnect: collectionId ? [collectionId] : [],
+        });
+      } else {
+        await addBlock({
+          createdBy: currentUser().id,
+          content: textValue,
+          type: MimeType[".txt"],
+          collectionsToConnect: collectionId ? [collectionId] : [],
+        });
+      }
     }
 
     setTextValue("");
@@ -179,15 +197,14 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               <ScrollView horizontal={true}>
                 <XStack flexWrap="wrap">
                   {medias.map(({ uri, type }, idx) => (
-                    <View width={200} height={200} key={uri} borderRadius={4}>
+                    <YStack width={150} height={150} key={uri} borderRadius={8}>
                       <MediaView
                         media={uri}
                         mimeType={type}
                         style={{
-                          width: 200,
-                          height: 200,
                           aspectRatio: 1,
                           resizeMode: "cover",
+                          borderRadius: 8,
                         }}
                       />
                       <StyledButton
@@ -202,7 +219,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                           removeMedia(idx);
                         }}
                       />
-                    </View>
+                    </YStack>
                   ))}
                 </XStack>
               </ScrollView>
@@ -252,7 +269,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             <StyledButton
               size="$4"
               onPress={async () => {
-                await onSaveResult();
+                void onSaveResult();
               }}
               chromeless
               theme="green"

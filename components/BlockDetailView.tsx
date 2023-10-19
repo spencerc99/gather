@@ -49,6 +49,7 @@ export function BlockDetailView({ block }: { block: Block }) {
         </StyledParagraph>
       </StyledView>
       <StyledButton icon={<Icon name="link" />}>Connect</StyledButton>
+      {/* TODO: separate by your connections vs. friends vs world? */}
       {connections.map((connection) => (
         <ConnectionSummary
           key={connection.collectionId}

@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { UncategorizedView } from "../../../components/FeedView";
+import { FeedView } from "../../../components/FeedView";
 import { ScrollView } from "tamagui";
 
 export default function FeedPage() {
@@ -8,7 +8,7 @@ export default function FeedPage() {
       style={styles.container}
       contentContainerStyle={{ paddingTop: 32 }}
     >
-      <UncategorizedView />
+      <FeedView />
     </ScrollView>
   );
 }

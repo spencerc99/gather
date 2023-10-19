@@ -1,24 +1,25 @@
 import { Block, DatabaseContext } from "../utils/db";
+import { MimeType } from "../utils/mimeTypes";
 import { StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
 import { useContext } from "react";
 import { Icon, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import { YStack, useTheme } from "tamagui";
+import { TextProps, YStack, useTheme, Anchor } from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { useRouter } from "expo-router";
+import * as Linking from "expo-linking";
 
 export function BlockSummary({
   block,
   hideMetadata,
   style,
+  blockStyle,
 }: {
-  block: Pick<
-    Block,
-    "id" | "title" | "content" | "type" | "source" | "createdAt"
-  >;
+  block: Block;
   hideMetadata?: boolean;
   style?: object;
+  blockStyle?: object;
 }) {
   const { id, content, type, source, title, createdAt } = block;
   const { deleteBlock } = useContext(DatabaseContext);
@@ -31,7 +32,9 @@ export function BlockSummary({
           {
             text: "View Source",
             icon: () => <Icon name={"external-link"} />,
-            onPress: () => console.log("View Source"),
+            onPress: () => {
+              Linking.openURL(source);
+            },
           },
         ]
       : []),
@@ -64,12 +67,10 @@ export function BlockSummary({
   function renderContent() {
     return (
       <BlockContent
-        content={content}
-        type={type}
+        {...block}
         style={{
-          maxWidth: 150,
-          maxHeight: 150,
           aspectRatio: 1,
+          ...blockStyle,
         }}
       />
     );
@@ -116,10 +117,7 @@ export function BlockTextSummary({
   hideMetadata,
   style,
 }: {
-  block: Pick<
-    Block,
-    "id" | "title" | "content" | "type" | "source" | "createdAt"
-  >;
+  block: Block;
   hideMetadata?: boolean;
   style?: object;
 }) {
@@ -166,13 +164,12 @@ export function BlockTextSummary({
   ];
 
   function renderContent() {
-    return (
+    const content = (
       <BlockContent
         key={id}
-        content={content}
-        type={type}
+        {...block}
         style={{
-          maxWidth: 250,
+          width: 250,
           borderRadius: 4,
         }}
         textContainerProps={{
@@ -185,18 +182,62 @@ export function BlockTextSummary({
         }}
       />
     );
+    switch (type) {
+      case MimeType["link"]:
+        return (
+          <Anchor href={source}>
+            <YStack>
+              {content}
+              <YStack alignItems="flex-end" paddingBottom="$1">
+                <StyledText>{title}</StyledText>
+                <StyledText metadata>{source}</StyledText>
+              </YStack>
+            </YStack>
+          </Anchor>
+        );
+      default:
+        return content;
+    }
   }
 
   return (
     <YStack space="$1">
       <HoldItem items={blockMenuItems} closeOnTap>
-        {renderContent()}
+        <StyledView backgroundColor="$gray6" borderRadius="$4">
+          {renderContent()}
+        </StyledView>
       </HoldItem>
       {!hideMetadata && (
-        <StyledText metadata ellipse={true} textAlign="right">
-          {getRelativeDate(createdAt)}
-        </StyledText>
+        <BlockMetadata block={block} textProps={{ textAlign: "right" }} />
       )}
     </YStack>
+  );
+}
+
+export function BlockMetadata({
+  block,
+  textProps,
+}: {
+  block: Block;
+  textProps?: TextProps;
+}) {
+  const { type, createdAt, source } = block;
+
+  let metadata;
+  switch (type) {
+    case MimeType["link"]:
+      metadata = (
+        <>
+          from <Anchor href={source}>{source}</Anchor>
+        </>
+      );
+    default:
+      metadata = getRelativeDate(createdAt);
+  }
+
+  return (
+    <StyledText metadata ellipse={true} textAlign="right">
+      {metadata}
+    </StyledText>
   );
 }

@@ -6,6 +6,7 @@ import { CollectionSummary } from "../components/CollectionSummary";
 import { Link, useRouter } from "expo-router";
 import { Pressable } from "react-native";
 import { currentUser } from "../utils/user";
+import { CreateCollectionButton } from "../components/CreateCollectionButton";
 
 export function CollectionChatsView() {
   const { collections, createCollection } = useContext(DatabaseContext);
@@ -87,6 +88,7 @@ export function CollectionChatsView() {
               </Pressable>
             </Link>
           ))}
+        {!searchValue && <CreateCollectionButton />}
       </ScrollView>
     </YStack>
   );

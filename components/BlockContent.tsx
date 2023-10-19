@@ -6,9 +6,11 @@ import { MediaView } from "./MediaView";
 export function BlockContent({
   type,
   content,
+  title,
+  description,
   style,
   textContainerProps = {},
-}: Pick<Block, "type" | "content"> & {
+}: Block & {
   style?: object;
   textContainerProps?: YStackProps;
 }) {
@@ -19,10 +21,23 @@ export function BlockContent({
           <Paragraph>{content}</Paragraph>
         </YStack>
       );
+    case MimeType["link"]:
+      return (
+        <MediaView
+          media={content}
+          mimeType={type}
+          style={style}
+          alt={`Image ${title} ${description}`}
+        />
+      );
     default:
       return (
-        // width+height 100% so dumb, only needed because react native for some reason default renders a wrapper div and then the image tag..
-        <MediaView media={content} mimeType={type} style={style} />
+        <MediaView
+          media={content}
+          mimeType={type}
+          style={style}
+          alt={`Image ${title} ${description}`}
+        />
       );
   }
 }

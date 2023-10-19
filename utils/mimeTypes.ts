@@ -1,4 +1,16 @@
+export enum ContentType {
+  Image = "image",
+  Video = "video",
+  Audio = "audio",
+  Document = "document",
+  Text = "text",
+  Link = "link",
+}
+
+// TODO: convert mimetype to contentype
 export enum MimeType {
+  // TODO:
+  "link" = "link",
   ".aac" = "audio/aac",
   ".avi" = "video/x-msvideo",
   ".bin" = "application/octet-stream",

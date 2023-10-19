@@ -41,7 +41,7 @@ export function EditBlock({ block }: { block: Block }) {
           <YStack space="$2">
             {/* TODO: make this look beter */}
             <View maxWidth={"100%"} maxHeight={200}>
-              <BlockContent content={content} type={type} />
+              <BlockContent {...block} />
             </View>
             <StyledInput
               placeholder="title"

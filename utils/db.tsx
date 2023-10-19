@@ -34,7 +34,8 @@ function openDatabase() {
 const db = openDatabase();
 
 function inParam(sql: string, arr: (string | number | null)[]) {
-  return sql.replace("?#", arr.map(() => "?").join(","));
+  // TODO: this needs to handle adding quotes if a string (also this doesn't handle null?)
+  return sql.replace("?#", arr.join(","));
 }
 
 interface BlockInsertInfo {
@@ -59,7 +60,6 @@ interface BlockConnection {
 
 export interface Block extends Omit<BlockInsertInfo, "connections"> {
   id: string;
-  connections: BlockConnection[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -245,8 +245,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         console.log("INSERT ID", result.insertId);
         await addConnections(String(result.insertId!), connections);
       }
-
-      fetchBlocks();
     });
   };
 
@@ -324,8 +322,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 updatedAt: convertDbTimestampToDate(block.updated_timestamp),
                 createdBy: block.created_by,
                 remoteSourceType: block.remote_source_type,
-                // TODO: add connections
-                connections: [],
               } as Block)
           )
         );
@@ -454,6 +450,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   async function replaceConnections(blockId: string, collectionIds: string[]) {
     const result = await db.execAsync(
       [
+        // TODO: make this into a single query for perf, just stack the values manually
         ...collectionIds.map((collectionId) => ({
           sql: `INSERT INTO connections (block_id, collection_id, created_by)
               VALUES (?, ?, ?)
@@ -477,6 +474,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (errors.length) {
       throw errors[0].error;
     }
+
+    await fetchCollections();
   }
 
   async function getConnectionsForBlock(
