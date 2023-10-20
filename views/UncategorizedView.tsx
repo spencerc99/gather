@@ -4,16 +4,10 @@ import {
   DatabaseContext,
   mapSnakeCaseToCamelCaseProperties,
 } from "../utils/db";
-import { StyledButton, StyledText, StyledView } from "../components/Themed";
-import {
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Pressable,
-  StyleSheet,
-} from "react-native";
+import { StyledButton, StyledText } from "../components/Themed";
+import { Dimensions, Keyboard, KeyboardAvoidingView } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
-import { H2, ScrollView, XStack, YStack } from "tamagui";
+import { YStack } from "tamagui";
 import { convertDbTimestampToDate } from "../utils/date";
 import { Collection } from "../utils/dataTypes";
 import Carousel from "react-native-reanimated-carousel";
@@ -90,69 +84,61 @@ export function UncategorizedView() {
   const width = Dimensions.get("window").width;
 
   return (
-    // <KeyboardAvoidingView
-    //   style={{ flex: 1 }}
-    //   behavior="height"
-    //   contentContainerStyle={{
-    //     height: "100%",
-    //     flex: 1,
-    //   }}
-    // >
-    <Carousel
-      width={width}
-      data={events}
-      scrollAnimationDuration={1000}
-      onScrollBegin={() => {
-        Keyboard.dismiss();
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior="height"
+      contentContainerStyle={{
+        flex: 1,
       }}
-      onSnapToItem={(index) => {
-        const newBlock = events[index];
-        if (selectedCollections.length && currentBlockId) {
-          addConnections(currentBlockId, selectedCollections);
-          setSelectedCollections([]);
-          setEvents(events.filter((block) => block.id !== currentBlockId));
-        }
-        setCurrentBlockId(newBlock.id);
-      }}
-      renderItem={({ item, index }) => (
-        <YStack paddingHorizontal="$2">
-          <YStack
-            paddingVertical="$2"
-            flex={1}
-            alignItems="center"
-            space="$3"
-            minHeight="40%"
-            justifyContent="center"
-          >
-            <StyledText>
-              {index + 1} / {events.length} unsorted
-            </StyledText>
-            {renderBlock(item)}
-          </YStack>
-          <YStack flex={1} flexShrink={1} minHeight="20%">
-            <SelectConnectionsList
-              selectedCollections={
-                item.id === currentBlockId ? selectedCollections : []
-              }
-              setSelectedCollections={setSelectedCollections}
-            />
-          </YStack>
-        </YStack>
-      )}
-    />
-    // {/* <ScrollView horizontal>
-    //     <XStack space="$1">{collections.map(renderCollection)}</XStack>
-    //   </ScrollView> */}
-    // </KeyboardAvoidingView>
+    >
+      <YStack>
+        <Carousel
+          loop={false}
+          width={width}
+          data={events}
+          scrollAnimationDuration={1000}
+          onScrollBegin={() => {
+            Keyboard.dismiss();
+          }}
+          onSnapToItem={(index) => {
+            const newBlock = events[index];
+            if (selectedCollections.length && currentBlockId) {
+              addConnections(currentBlockId, selectedCollections);
+              setSelectedCollections([]);
+              setEvents(events.filter((block) => block.id !== currentBlockId));
+            }
+            setCurrentBlockId(newBlock.id);
+          }}
+          renderItem={({ item, index }) => (
+            <>
+              <YStack
+                paddingVertical="$2"
+                alignItems="center"
+                space="$2"
+                justifyContent="center"
+              >
+                <StyledText>
+                  {index + 1} / {events.length} unsorted
+                </StyledText>
+                {renderBlock(item)}
+              </YStack>
+              <YStack paddingHorizontal="$2">
+                {/* TODO: random padding because the height is overflowing the container for some reason */}
+                <SelectConnectionsList
+                  scrollContainerPaddingBottom={120}
+                  selectedCollections={
+                    item.id === currentBlockId ? selectedCollections : []
+                  }
+                  setSelectedCollections={setSelectedCollections}
+                />
+              </YStack>
+            </>
+          )}
+        />
+        {/* <ScrollView horizontal>
+     <XStack space="$1">{collections.map(renderCollection)}</XStack>
+   </ScrollView> */}
+      </YStack>
+    </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  feed: {
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 8,
-  },
-});

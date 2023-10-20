@@ -80,6 +80,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       );
     }
 
+    // TODO: show error in toast
     if (textValue) {
       if (isUrl(textValue)) {
         const { title, description, images, url, domain, favicon } =
@@ -104,6 +105,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       }
     }
 
+    // TODO: do these immediately without waiting for the async
     setTextValue("");
     setMedias([]);
   }
@@ -272,6 +274,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               size="$4"
               onPress={async () => {
                 void onSaveResult();
+                Keyboard.dismiss();
               }}
               chromeless
               theme="green"

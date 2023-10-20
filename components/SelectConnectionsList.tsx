@@ -10,9 +10,11 @@ import { currentUser } from "../utils/user";
 export function SelectConnectionsList({
   selectedCollections: selectedCollections,
   setSelectedCollections: setSelectedCollections,
+  scrollContainerPaddingBottom,
 }: {
   selectedCollections: string[];
   setSelectedCollections: (selectedCollections: string[]) => void;
+  scrollContainerPaddingBottom?: number;
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
@@ -40,6 +42,7 @@ export function SelectConnectionsList({
       <ScrollView
         contentContainerStyle={{
           overflowY: "scroll",
+          paddingBottom: scrollContainerPaddingBottom,
         }}
       >
         <YStack space="$1">

@@ -277,6 +277,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ]);
 
       setBlocks(blocks.filter((block) => block.id !== id));
+      // TODO: this is only because we rely on items count for each collection and its cached
+      fetchCollections();
     });
   };
 
