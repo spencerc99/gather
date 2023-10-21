@@ -89,6 +89,7 @@ export function UncategorizedView() {
       behavior="height"
       contentContainerStyle={{
         flex: 1,
+        height: "100%",
       }}
     >
       <YStack>
@@ -113,6 +114,7 @@ export function UncategorizedView() {
             <>
               <YStack
                 paddingVertical="$2"
+                minHeight="40%"
                 alignItems="center"
                 space="$2"
                 justifyContent="center"
@@ -122,10 +124,9 @@ export function UncategorizedView() {
                 </StyledText>
                 {renderBlock(item)}
               </YStack>
-              <YStack paddingHorizontal="$2">
+              <YStack paddingHorizontal="$2" flex={1}>
                 {/* TODO: random padding because the height is overflowing the container for some reason */}
                 <SelectConnectionsList
-                  scrollContainerPaddingBottom={120}
                   selectedCollections={
                     item.id === currentBlockId ? selectedCollections : []
                   }

@@ -23,3 +23,12 @@ export async function getFsPathForImageResult(
   await FileSystem.copyAsync({ from: localUri, to: newUri });
   return newUri;
 }
+
+export async function getFsPathForRemoteImage(
+  remoteUri: string,
+  fileName?: string
+): Promise<string> {
+  const localUri = `${PHOTOS_FOLDER}/${uuidv4()}.jpg`;
+  const async = await FileSystem.downloadAsync(remoteUri, localUri);
+  return localUri;
+}

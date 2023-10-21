@@ -1,4 +1,4 @@
-import { getFsPathForImageResult } from "./blobs";
+import { getFsPathForImageResult, getFsPathForRemoteImage } from "./blobs";
 
 const UrlRegex =
   /^(http(s):\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
@@ -33,10 +33,9 @@ export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
   const data = await response.json();
   if (!data.images?.length) {
     // TODO: create a custom service for this? or only do it optionally? how to handle this in local-first context.. maybe never store?
-    const siteImageResp = await fetch(`http://image.thum.io/get/${cleanedUrl}`);
-    const siteImage = await siteImageResp.blob();
-    const siteImageFileUrl = await getFsPathForImageResult(
-      URL.createObjectURL(siteImage)
+    // TODO: pass in url as filename?
+    const siteImageFileUrl = await getFsPathForRemoteImage(
+      `http://image.thum.io/get/${cleanedUrl}`
     );
     data.images = [siteImageFileUrl];
   }
