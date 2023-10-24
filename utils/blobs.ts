@@ -4,7 +4,7 @@ import * as FileSystem from "expo-file-system";
 
 export const PHOTOS_FOLDER = `${FileSystem.documentDirectory || ""}blobs`;
 
-export async function intiializeFilesystemFolder() {
+export async function intializeFilesystemFolder() {
   const info = await FileSystem.getInfoAsync(PHOTOS_FOLDER);
 
   if (info.exists) {

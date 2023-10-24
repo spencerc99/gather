@@ -18,7 +18,7 @@ export interface ArenaChannelInfo {
   follower_count: number;
   contents: RawArenaItem[];
 }
-export type ArenaClass = "Image" | "Text" | "Link";
+export type ArenaClass = "Image" | "Text" | "Link" | "Media" | "Attachment";
 export interface RawArenaItem {
   id: string;
   title: string;
@@ -27,6 +27,7 @@ export interface RawArenaItem {
   description_html: string;
   description: string;
   image: {
+    content_type: string;
     display: { url: string };
     square: { url: string };
     thumb: { url: string };
@@ -40,6 +41,26 @@ export interface RawArenaItem {
   url: string;
   base_class: "Block" | "Channel";
   class: ArenaClass;
+  embed: {
+    url: null;
+    type: string;
+    title: null;
+    author_name: string;
+    author_url: string;
+    source_url: null;
+    thumbnail_url: null;
+    width: number;
+    height: number;
+    html: string;
+  } | null;
+  attachment: {
+    file_name: string;
+    file_size: number;
+    file_size_display: string;
+    content_type: string;
+    extension: string;
+    url: string;
+  };
 }
 
 export function withQueryParams(url: string, params: { [key: string]: any }) {
@@ -127,13 +148,47 @@ export async function getChannelContents(
   return { ...channelInfo, contents: fetchedItems } as ArenaChannelInfo;
 }
 
-export function arenaClassToMimeType(classVal: ArenaClass): MimeType {
+export function arenaClassToMimeType({
+  class: classVal,
+  embed,
+  attachment,
+  image,
+}: RawArenaItem): MimeType {
   switch (classVal) {
     case "Image":
-      return MimeType[".png"];
+      return image!.content_type as MimeType;
+    // TODO: figure this out
+    /**
+ * "attachment": {
+"file_name": "bad793f1615be6750041f44435d6a734.pdf",
+"file_size": 1828021,
+"file_size_display": "1.74 MB",
+"content_type": "application/pdf",
+"extension": "pdf",
+"url": "https://arena-attachments.s3.amazonaws.com/24342276/bad793f1615be6750041f44435d6a734.pdf?1698188778"
+},
+ */
+    case "Attachment":
+      return attachment!.content_type as MimeType;
     case "Text":
       return MimeType[".txt"];
     case "Link":
       return MimeType["link"];
+    /**
+ * "embed": {
+"url": null,
+"type": "video",
+"title": null,
+"author_name": "i luv ur fit",
+"author_url": "https://www.tiktok.com/@iluvurfit",
+"source_url": null,
+"thumbnail_url": null,
+"width": 340,
+"height": 700,
+"html": "<iframe class=\"embedly-embed\" src=\"https://cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fwww.tiktok.com%2Fembed%2Fv2%2F7289096161972145454&wmode=transparent&display_name=tiktok&url=https%3A%2F%2Fwww.tiktok.com%2Ft%2FZT8hD1Bog%2F&image=https%3A%2F%2Fp16-sign.tiktokcdn-us.com%2Fobj%2Ftos-useast5-p-0068-tx%2Fb315ba9606dc43218406892eb4553159_1697124965%3Fx-expires%3D1697605200%26x-signature%3DtCNQfgJ4KixPZxFCJQAGxX39140%253D&key=95f38852bd9b4f51ba7e5c8900281d06&type=text%2Fhtml&schema=tiktok\" width=\"340\" height=\"700\" scrolling=\"no\" title=\"tiktok embed\" frameborder=\"0\" allow=\"autoplay; fullscreen; encrypted-media; picture-in-picture;\" allowfullscreen=\"true\"></iframe>"
+},
+ */
+    case "Media":
+      return MimeType["embed"];
   }
 }

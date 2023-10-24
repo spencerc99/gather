@@ -43,8 +43,12 @@ export default function ModalScreen() {
           const blockId = createBlock({
             title: block.title,
             description: block.description,
-            content: block.image?.display.url || block.content,
-            type: arenaClassToMimeType(block.class),
+            content:
+              block.attachment?.url ||
+              block.embed?.url ||
+              block.image?.display.url ||
+              block.content,
+            type: arenaClassToMimeType(block),
             source: block.source?.url,
             createdBy: currentUser().id,
             remoteSourceType: JSON.stringify({

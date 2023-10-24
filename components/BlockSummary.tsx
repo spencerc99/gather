@@ -185,9 +185,11 @@ export function BlockTextSummary({
           <ExternalLink href={source!}>
             <YStack>
               {content}
-              <YStack alignItems="flex-end" paddingBottom="$1">
-                <StyledText>{title}</StyledText>
-                <StyledText metadata>{source}</StyledText>
+              <YStack alignItems="flex-end" paddingBottom="$1" maxWidth={250}>
+                <StyledText ellipse={true}>{title}</StyledText>
+                <StyledText metadata ellipse={true}>
+                  {source}
+                </StyledText>
               </YStack>
             </YStack>
           </ExternalLink>

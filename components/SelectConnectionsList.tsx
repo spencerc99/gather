@@ -18,6 +18,10 @@ export function SelectConnectionsList({
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
+  // sort by lastConnectedAt descending
+  const sortedCollections = [...collections].sort(
+    (a, b) => b.lastConnectedAt?.getTime() - a.lastConnectedAt?.getTime() || 0
+  );
 
   function toggleCollection(collection: Collection) {
     if (selectedCollections.includes(collection.id)) {
@@ -77,7 +81,7 @@ export function SelectConnectionsList({
               </SizableText>
             </StyledButton>
           )}
-          {collections
+          {sortedCollections
             .filter((c) =>
               `${c.title}\n${c.description}}`
                 .toLocaleLowerCase()

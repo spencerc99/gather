@@ -11,6 +11,7 @@ export enum ContentType {
 export enum MimeType {
   // TODO:
   "link" = "link",
+  "embed" = "embed",
   ".aac" = "audio/aac",
   ".avi" = "video/x-msvideo",
   ".bin" = "application/octet-stream",

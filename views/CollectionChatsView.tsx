@@ -13,6 +13,11 @@ export function CollectionChatsView() {
   const [searchValue, setSearchValue] = useState("");
   const router = useRouter();
 
+  // sort by lastConnectedAt descending
+  const sortedCollections = [...collections].sort(
+    (a, b) => b.lastConnectedAt?.getTime() - a.lastConnectedAt?.getTime() || 0
+  );
+
   return (
     <YStack width="100%" height="100%">
       <YStack margin="$2">
@@ -60,8 +65,8 @@ export function CollectionChatsView() {
             </SizableText>
           </StyledButton>
         )}
-        {/* TODO: Sort by last message, add some thing about last message */}
-        {collections
+        {/* TODO: add some thing about last message */}
+        {sortedCollections
           .filter((c) =>
             `${c.title}\n${c.description}}`.includes(`${searchValue}`)
           )

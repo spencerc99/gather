@@ -12,7 +12,7 @@ import { ShareIntent } from "../hooks/useShareIntent";
 import { Collection, CollectionInsertInfo, Connection } from "./dataTypes";
 import { currentUser } from "./user";
 import { convertDbTimestampToDate } from "./date";
-import { intiializeFilesystemFolder } from "./blobs";
+import { intializeFilesystemFolder } from "./blobs";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -375,6 +375,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           collections.created_timestamp,
           collections.updated_timestamp,
           collections.created_by,
+          MAX(connections.created_timestamp) as last_connected_at,
           COUNT(connections.block_id) as num_blocks
          FROM collections
          LEFT JOIN connections ON collections.id = connections.collection_id
@@ -395,6 +396,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                       collection.updated_timestamp
                     ),
                     createdBy: collection.created_by,
+                    lastConnectedAt: convertDbTimestampToDate(
+                      collection.last_connected_at
+                    ),
                     numBlocks: collection.num_blocks,
                     // TODO: add collaborators
                     collaborators: ["spencer-did"],
@@ -475,6 +479,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
 
     handleSqlErrors(result);
+
+    setCollections(
+      collections.map((c) => {
+        if (collectionIds.includes(c.id)) {
+          return {
+            ...c,
+            lastConnectedAt: new Date(),
+          };
+        }
+        return c;
+      })
+    );
   }
 
   async function replaceConnections(blockId: string, collectionIds: string[]) {
@@ -542,7 +558,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   useEffect(() => {
     void fetchBlocks();
     void fetchCollections();
-    void intiializeFilesystemFolder();
+    void intializeFilesystemFolder();
   }, []);
 
   return (
