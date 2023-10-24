@@ -88,14 +88,19 @@ export default function ModalScreen() {
       >
         Import Channel
       </StyledButton>
-      <ButtonWithConfirm onPress={() => alert("weee")}>
+      {/* <ButtonWithConfirm
+        onPress={() => {
+          console.log("wee??");
+        }}
+      >
         Test Confirm
-      </ButtonWithConfirm>
-      <H3>Databases</H3>
+      </ButtonWithConfirm> */}
+      {/* TODO: bring this back when working */}
+      {/* <H3>Databases</H3>
       <StyledParagraph>
         You might want to reset your database to get the new schemas (sorry no
         migrations lol).
-      </StyledParagraph>
+      </StyledParagraph> */}
       {/* <ButtonWithConfirm
         disabled={isLoading}
         icon={isLoading ? <Progress /> : null}
