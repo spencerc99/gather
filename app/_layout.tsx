@@ -78,8 +78,8 @@ function RootLayoutNav() {
                 <Stack.Screen
                   name="internal"
                   options={{
-                    presentation: "modal",
-                    headerShown: false,
+                    presentation: "card",
+                    title: "",
                   }}
                 />
                 <Stack.Screen

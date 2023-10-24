@@ -1,6 +1,12 @@
 import { Platform } from "react-native";
 import * as SQLite from "expo-sqlite";
-import { PropsWithChildren, createContext, useEffect, useState } from "react";
+import {
+  PropsWithChildren,
+  createContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { MimeType } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
 import { Collection, CollectionInsertInfo, Connection } from "./dataTypes";
@@ -66,6 +72,7 @@ export interface Block extends Omit<BlockInsertInfo, "connections"> {
 
 interface DatabaseContextProps {
   blocks: Block[];
+  localBlocks: Block[];
   createBlock: (block: BlockInsertInfo) => void;
   getBlock: (blockId: string) => Promise<Block>;
   deleteBlock: (id: string) => void;
@@ -92,6 +99,7 @@ interface DatabaseContextProps {
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
   blocks: [],
+  localBlocks: [],
   createBlock: () => {},
   getBlock: async () => {
     throw new Error("not yet loaded");
@@ -542,6 +550,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       value={{
         createBlock,
         blocks,
+        localBlocks: useMemo(() => {
+          return blocks.filter((b) => b.remoteSourceType === null);
+        }, [blocks]),
         getBlock,
         deleteBlock,
         setShareIntent,

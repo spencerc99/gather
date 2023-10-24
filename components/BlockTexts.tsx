@@ -7,7 +7,8 @@ import { Swipeable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
-  const { blocks: allBlocks, getCollectionItems } = useContext(DatabaseContext);
+  const { localBlocks: allBlocks, getCollectionItems } =
+    useContext(DatabaseContext);
 
   const [blocks, setBlocks] = useState<Block[]>([]);
   useEffect(() => {

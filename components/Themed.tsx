@@ -10,6 +10,10 @@ import {
   Stack,
   YStack,
   Paragraph,
+  AlertDialog,
+  XStack,
+  Adapt,
+  Sheet,
 } from "tamagui";
 
 import { Link, LinkProps } from "expo-router";
@@ -92,6 +96,7 @@ export function StyledButton(props: ButtonProps) {
   return <PressableButton {...props}></PressableButton>;
 }
 
+// TODO: remove, consiolidate with button
 export function LinkButton(props: LinkButtonProps) {
   const { href, children, ...otherProps } = props;
   return (
@@ -167,5 +172,94 @@ export function SearchBarInput({
       value={searchValue}
       onChangeText={(text) => setSearchValue(text)}
     />
+  );
+}
+
+export function ButtonWithConfirm({
+  onPress,
+  confirmationTitle = "Are you sure?",
+  confirmationDescription,
+  cancelText = "Cancel",
+  confirmText = "Confirm",
+  ...rest
+}: ButtonProps & {
+  confirmationTitle?: string;
+  confirmationDescription?: string;
+  cancelText?: string;
+  confirmText?: string;
+}) {
+  return (
+    <AlertDialog native modal>
+      <AlertDialog.Trigger asChild>
+        <StyledButton {...rest}></StyledButton>
+      </AlertDialog.Trigger>
+
+      <Adapt when="sm" platform="touch">
+        <Sheet
+          // animation="medium"
+          // zIndex={200000}
+          modal
+          dismissOnSnapToBottom
+          native
+        >
+          <Sheet.Frame padding="$4" gap="$4">
+            <Adapt.Contents />
+          </Sheet.Frame>
+          <Sheet.Overlay
+          // animation="lazy"
+          // enterStyle={{ opacity: 0 }}
+          // exitStyle={{ opacity: 0 }}
+          />
+        </Sheet>
+      </Adapt>
+
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay
+          key="overlay"
+          animation="quick"
+          opacity={0.5}
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
+        />
+        <AlertDialog.Content
+          bordered
+          elevate
+          key="content"
+          animation={[
+            "quick",
+            {
+              opacity: {
+                overshootClamping: true,
+              },
+            },
+          ]}
+          enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+          x={0}
+          scale={1}
+          opacity={1}
+          y={0}
+        >
+          <YStack space>
+            <AlertDialog.Title>{confirmationTitle}</AlertDialog.Title>
+            {confirmationDescription && (
+              <AlertDialog.Description>
+                {confirmationDescription}
+              </AlertDialog.Description>
+            )}
+            <XStack space="$3" justifyContent="flex-end">
+              <AlertDialog.Cancel asChild>
+                <StyledButton>{cancelText}</StyledButton>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <StyledButton onPress={onPress} theme="active">
+                  {confirmText}
+                </StyledButton>
+              </AlertDialog.Action>
+            </XStack>
+          </YStack>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog>
   );
 }
