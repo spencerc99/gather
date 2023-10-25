@@ -345,22 +345,29 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   function fetchBlocks() {
     db.transaction((tx) => {
-      tx.executeSql(`SELECT * FROM blocks;`, [], (_, { rows: { _array } }) => {
-        setBlocks(
-          _array.map(
-            (block) =>
-              ({
-                ...block,
-                // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
-                id: block.id.toString(),
-                createdAt: convertDbTimestampToDate(block.created_timestamp),
-                updatedAt: convertDbTimestampToDate(block.updated_timestamp),
-                createdBy: block.created_by,
-                remoteSourceType: block.remote_source_type,
-              } as Block)
-          )
-        );
-      });
+      tx.executeSql(
+        `SELECT * FROM blocks;`,
+        [],
+        (_, { rows: { _array } }) => {
+          setBlocks(
+            _array.map(
+              (block) =>
+                ({
+                  ...block,
+                  // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
+                  id: block.id.toString(),
+                  createdAt: convertDbTimestampToDate(block.created_timestamp),
+                  updatedAt: convertDbTimestampToDate(block.updated_timestamp),
+                  createdBy: block.created_by,
+                  remoteSourceType: block.remote_source_type,
+                } as Block)
+            )
+          );
+        },
+        (err) => {
+          throw err;
+        }
+      );
     });
   }
 
@@ -409,7 +416,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         );
       },
       (err) => {
-        console.error(err);
+        throw err;
       }
     );
   }

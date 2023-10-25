@@ -15,7 +15,9 @@ export function CollectionChatsView() {
 
   // sort by lastConnectedAt descending
   const sortedCollections = [...collections].sort(
-    (a, b) => b.lastConnectedAt?.getTime() - a.lastConnectedAt?.getTime() || 0
+    (a, b) =>
+      (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
+      (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
   );
 
   return (

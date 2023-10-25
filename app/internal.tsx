@@ -92,19 +92,51 @@ export default function ModalScreen() {
       >
         Import Channel
       </StyledButton>
-      {/* <ButtonWithConfirm
+      <ButtonWithConfirm
         onPress={() => {
           console.log("wee??");
         }}
       >
-        Test Confirm
-      </ButtonWithConfirm> */}
+        Test Confirm (ignore me)
+      </ButtonWithConfirm>
       {/* TODO: bring this back when working */}
-      {/* <H3>Databases</H3>
+      <H3>Databases</H3>
       <StyledParagraph>
         You might want to reset your database to get the new schemas (sorry no
         migrations lol).
-      </StyledParagraph> */}
+      </StyledParagraph>
+      <StyledButton
+        disabled={isLoading}
+        icon={isLoading ? <Progress /> : null}
+        theme="red"
+        backgroundColor="$red8"
+        onPress={async () => {
+          setIsLoading(true);
+          try {
+            const results = await db.execAsync(
+              [
+                { sql: `DROP TABLE IF EXISTS collections;`, args: [] },
+                { sql: `DROP TABLE IF EXISTS blocks;`, args: [] },
+                { sql: `DROP TABLE IF EXISTS connections;`, args: [] },
+              ],
+              false
+            );
+
+            results
+              .filter((result) => "error" in result)
+              .forEach((result) => {
+                throw result;
+              });
+            await initDatabases();
+          } catch (err) {
+            throw err;
+          } finally {
+            setIsLoading(false);
+          }
+        }}
+      >
+        Reset Databases
+      </StyledButton>
       {/* <ButtonWithConfirm
         disabled={isLoading}
         icon={isLoading ? <Progress /> : null}

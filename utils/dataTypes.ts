@@ -15,7 +15,7 @@ export interface Collection {
   // mapped out properties
   collaborators: string[]; // of user dids
   numBlocks: number;
-  lastConnectedAt: Date;
+  lastConnectedAt: Date | null;
 }
 
 export interface Connection {

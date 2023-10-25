@@ -17,8 +17,13 @@ function dateFromUTC(dateAsString: string) {
   );
 }
 
-export function convertDbTimestampToDate(timestamp: string): Date {
+export function convertDbTimestampToDate(
+  timestamp: string | null
+): Date | null {
   // converts from UTC to local time
+  if (!timestamp) {
+    return null;
+  }
   return dateFromUTC(timestamp);
 }
 
