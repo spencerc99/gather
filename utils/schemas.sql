@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS blocks (
     type varchar(128) NOT NULL,
     source TEXT,
     remote_source_type varchar(128),
+    remote_source_info blob, # json encoded
     created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT NOT NULL,
@@ -27,6 +28,8 @@ CREATE TABLE IF NOT EXISTS collections (
     created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT NOT NULL,
+    remote_source_type varchar(128),
+    remote_source_info blob, # json encoded
 
     PRIMARY KEY (id),
     FOREIGN KEY (created_by) REFERENCES users(did)

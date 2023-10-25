@@ -9,7 +9,13 @@ import {
 } from "react";
 import { MimeType } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
-import { Collection, CollectionInsertInfo, Connection } from "./dataTypes";
+import {
+  Collection,
+  CollectionInsertInfo,
+  Connection,
+  RemoteSourceInfo,
+  RemoteSourceType,
+} from "./dataTypes";
 import { currentUser } from "./user";
 import { convertDbTimestampToDate } from "./date";
 import { intializeFilesystemFolder } from "./blobs";
@@ -52,16 +58,11 @@ interface BlockInsertInfo {
   type: MimeType;
   source?: string; // the URL where the object was captured from. If a photo with EXIF data, then the location metadata
   //   TODO: add type
-  remoteSourceType?: string; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
+  remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
+  remoteSourceInfo?: RemoteSourceInfo;
   createdBy: string; // DID of the person who made it?
 
   collectionsToConnect?: string[]; // IDs of collections that this block is in
-}
-
-interface BlockConnection {
-  blockId: string;
-  collectionId: string;
-  createdAt: Date;
 }
 
 export interface Block extends Omit<BlockInsertInfo, "connections"> {
@@ -190,6 +191,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             type varchar(128) NOT NULL,
             source TEXT,
             remote_source_type varchar(128),
+            remote_source_info blob,
             created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             created_by TEXT NOT NULL
@@ -202,7 +204,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             description TEXT,
             created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            created_by TEXT NOT NULL
+            created_by TEXT NOT NULL,
+            remote_source_type varchar(128),
+            remote_source_info blob 
         );`
         ),
       ]);
@@ -236,8 +240,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             type,
             source,
             remote_source_type,
-            created_by
+            created_by,
+            remote_source_info
         ) VALUES (
+            ?,
             ?,
             ?,
             ?,
@@ -259,6 +265,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           // @ts-ignore expo sqlite types are broken
           block.remoteSourceType || null,
           block.createdBy,
+          // @ts-ignore expo sqlite types are broken
+          block.remoteSourceInfo
+            ? JSON.stringify(block.remoteSourceInfo)
+            : null,
         ]
       );
       if ("error" in result) {
@@ -317,8 +327,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         INSERT INTO collections (
             title,
             description,
-            created_by
+            created_by,
+            remote_source_type,
+            remote_source_info
         ) VALUES (
+            ?,
+            ?,
             ?,
             ?,
             ?
@@ -328,6 +342,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             // @ts-ignore expo sqlite types are broken
             collection.description || null,
             collection.createdBy,
+            collection.remoteSourceType || null,
+            // @ts-ignore expo sqlite types are broken
+            collection.remoteSourceInfo
+              ? JSON.stringify(collection.remoteSourceInfo)
+              : null,
           ],
         },
       ],
@@ -350,18 +369,21 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         [],
         (_, { rows: { _array } }) => {
           setBlocks(
-            _array.map(
-              (block) =>
-                ({
-                  ...block,
-                  // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
-                  id: block.id.toString(),
-                  createdAt: convertDbTimestampToDate(block.created_timestamp),
-                  updatedAt: convertDbTimestampToDate(block.updated_timestamp),
-                  createdBy: block.created_by,
-                  remoteSourceType: block.remote_source_type,
-                } as Block)
-            )
+            _array.map((block) => {
+              const blockMappedToCamelCase =
+                mapSnakeCaseToCamelCaseProperties(block);
+              return {
+                ...blockMappedToCamelCase,
+                // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
+                id: block.id.toString(),
+                createdAt: convertDbTimestampToDate(block.created_timestamp),
+                updatedAt: convertDbTimestampToDate(block.updated_timestamp),
+                remoteSourceType: block.remote_source_type as RemoteSourceType,
+                remoteSourceInfo: block.remote_source_info
+                  ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
+                  : null,
+              } as Block;
+            })
           );
         },
         (err) => {
@@ -390,27 +412,35 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           [],
           (_, { rows: { _array } }) => {
             setCollections([
-              ..._array.map(
-                (collection) =>
-                  ({
-                    ...collection,
-                    // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
-                    id: collection.id.toString(),
-                    createdAt: convertDbTimestampToDate(
-                      collection.created_timestamp
-                    ),
-                    updatedAt: convertDbTimestampToDate(
-                      collection.updated_timestamp
-                    ),
-                    createdBy: collection.created_by,
-                    lastConnectedAt: convertDbTimestampToDate(
-                      collection.last_connected_at
-                    ),
-                    numBlocks: collection.num_blocks,
-                    // TODO: add collaborators
-                    collaborators: ["spencer-did"],
-                  } as Collection)
-              ),
+              ..._array.map((collection) => {
+                const mappedCollection =
+                  mapSnakeCaseToCamelCaseProperties(collection);
+                // @ts-ignore
+                return {
+                  ...mappedCollection,
+                  // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
+                  id: collection.id.toString(),
+                  createdAt: convertDbTimestampToDate(
+                    collection.created_timestamp
+                  ),
+                  updatedAt: convertDbTimestampToDate(
+                    collection.updated_timestamp
+                  ),
+                  createdBy: collection.created_by,
+                  lastConnectedAt: convertDbTimestampToDate(
+                    collection.last_connected_at
+                  ),
+                  remoteSourceType:
+                    mappedCollection.remoteSourceType as RemoteSourceType,
+                  remoteSourceInfo: mappedCollection.remoteSourceInfo
+                    ? (JSON.parse(
+                        mappedCollection.remoteSourceInfo
+                      ) as RemoteSourceInfo)
+                    : null,
+                  // TODO: add collaborators
+                  collaborators: ["spencer-did"],
+                } as Collection;
+              }),
             ]);
           }
         );
@@ -498,6 +528,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         return c;
       })
     );
+
+    // TODO: if blockId has remoteSource, then sync to remote source
   }
 
   async function replaceConnections(blockId: string, collectionIds: string[]) {
@@ -555,7 +587,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ...mapSnakeCaseToCamelCaseProperties(connection),
       blockId: connection.block_id.toString(),
       collectionId: connection.collection_id.toString(),
-      createdTimestamp: convertDbTimestampToDate(connection.created_timestamp),
+      createdTimestamp: convertDbTimestampToDate(connection.created_timestamp)!,
       collectionTitle: connection.title,
     }));
   }

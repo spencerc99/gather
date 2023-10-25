@@ -114,7 +114,8 @@ export function UncategorizedView() {
             <>
               <YStack
                 paddingVertical="$2"
-                minHeight="40%"
+                minHeight="50%"
+                maxHeight="70%"
                 alignItems="center"
                 space="$2"
                 justifyContent="center"

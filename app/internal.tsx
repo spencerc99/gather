@@ -1,6 +1,18 @@
 import { StatusBar } from "expo-status-bar";
 import { Platform } from "react-native";
-import { Adapt, H2, H3, Label, Progress, Select, Sheet, View } from "tamagui";
+import {
+  Adapt,
+  AlertDialog,
+  H2,
+  H3,
+  Label,
+  Progress,
+  Select,
+  Sheet,
+  View,
+  XStack,
+  YStack,
+} from "tamagui";
 import { DatabaseContext } from "../utils/db";
 import {
   ButtonWithConfirm,
@@ -12,6 +24,7 @@ import { useContext, useState } from "react";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { arenaClassToMimeType, getChannelContents } from "../utils/arena";
 import { currentUser } from "../utils/user";
+import { RemoteSourceType } from "../utils/dataTypes";
 
 export default function ModalScreen() {
   const { db, initDatabases, createCollection, createBlock } =
@@ -33,7 +46,11 @@ export default function ModalScreen() {
         collectionId = await createCollection({
           title,
           createdBy: currentUser().id,
-          // TODO: needs to handle source provenance
+          remoteSourceType: RemoteSourceType.Arena,
+          remoteSourceInfo: {
+            arenaId: id.toString(),
+            arenaClass: "Collection",
+          },
         });
       }
 
@@ -51,10 +68,11 @@ export default function ModalScreen() {
             type: arenaClassToMimeType(block),
             source: block.source?.url,
             createdBy: currentUser().id,
-            remoteSourceType: JSON.stringify({
-              source: "arena",
-              remoteId: block.id,
-            }),
+            remoteSourceType: RemoteSourceType.Arena,
+            remoteSourceInfo: {
+              arenaId: block.id,
+              arenaClass: "Block",
+            },
             collectionsToConnect: [collectionId!],
           });
           return blockId;
@@ -92,13 +110,83 @@ export default function ModalScreen() {
       >
         Import Channel
       </StyledButton>
-      <ButtonWithConfirm
-        onPress={() => {
-          console.log("wee??");
-        }}
-      >
-        Test Confirm (ignore me)
-      </ButtonWithConfirm>
+
+      <AlertDialog native>
+        <AlertDialog.Trigger asChild>
+          <StyledButton onPress={() => console.log("been pressed")}>
+            HI
+          </StyledButton>
+        </AlertDialog.Trigger>
+
+        <Adapt when="sm" platform="touch">
+          <Sheet
+            // animation="medium"
+            // zIndex={200000}
+            modal
+            dismissOnSnapToBottom
+            native
+          >
+            <Sheet.Frame padding="$4" gap="$4">
+              <Adapt.Contents />
+            </Sheet.Frame>
+            <Sheet.Overlay
+            // animation="lazy"
+            // enterStyle={{ opacity: 0 }}
+            // exitStyle={{ opacity: 0 }}
+            />
+          </Sheet>
+        </Adapt>
+
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay
+          // key="overlay"
+          // animation="quick"
+          // opacity={0.5}
+          // enterStyle={{ opacity: 0 }}
+          // exitStyle={{ opacity: 0 }}
+          />
+          <AlertDialog.Content
+            bordered
+            elevate
+            // key="content"
+            // animation={[
+            //   "quick",
+            //   {
+            //     opacity: {
+            //       overshootClamping: true,
+            //     },
+            //   },
+            // ]}
+            // enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+            // exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+            // x={0}
+            // scale={1}
+            // opacity={1}
+            // y={0}
+          >
+            <YStack space>
+              <AlertDialog.Title>hi</AlertDialog.Title>
+              <AlertDialog.Description>wee</AlertDialog.Description>
+              <XStack space="$3" justifyContent="flex-end">
+                <AlertDialog.Cancel asChild>
+                  <StyledButton>cancelText</StyledButton>
+                </AlertDialog.Cancel>
+                <AlertDialog.Action asChild>
+                  <StyledButton
+                    onPress={() => {
+                      console.log("hello");
+                    }}
+                    theme="active"
+                  >
+                    Confirm
+                  </StyledButton>
+                </AlertDialog.Action>
+              </XStack>
+            </YStack>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog>
+
       {/* TODO: bring this back when working */}
       <H3>Databases</H3>
       <StyledParagraph>

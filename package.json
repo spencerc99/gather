@@ -11,7 +11,8 @@
     "test": "jest --watchAll",
     "postinstall": "patch-package",
     "android": "expo run:android",
-    "build-ios": "EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./builds\" eas build -p ios --local"
+    "build-ios": "EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./builds\" eas build -p ios --local --non-interactive",
+    "eas-build-on-success": "eas submit -p ios --non-interactive"
   },
   "jest": {
     "preset": "jest-expo"

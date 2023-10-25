@@ -2,6 +2,8 @@ export interface CollectionInsertInfo {
   title: string;
   description?: string;
   createdBy: string;
+  remoteSourceType?: RemoteSourceType;
+  remoteSourceInfo?: RemoteSourceInfo;
 }
 
 export interface Collection {
@@ -26,4 +28,17 @@ export interface Connection {
 
   // derived
   collectionTitle: string;
+}
+
+export enum RemoteSourceType {
+  Arena = "Arena",
+}
+
+export type RemoteSourceInfo = RemoteSourceInfoMap[RemoteSourceType];
+
+interface RemoteSourceInfoMap {
+  [RemoteSourceType.Arena]: {
+    arenaId: string;
+    arenaClass: "Block" | "Collection";
+  };
 }

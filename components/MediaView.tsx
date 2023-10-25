@@ -103,6 +103,16 @@ export function MediaView({
             ]}
           />
         );
+      case MimeType["embed"]:
+        return (
+          <iframe
+            src={media}
+            style={{
+              width: "100%",
+              ...style,
+            }}
+          />
+        );
       case MimeType[".ma4"]:
         return (
           <Pressable

@@ -17,6 +17,8 @@ export default function HomeScreen() {
         separator={<Separator vertical />}
         disablePassBorderRadius="bottom"
         boxShadow="0px 4px 4px 4px rgba(0, 0, 0, 0.4)"
+        // NOTE: needed to ensure that content of the texts scrollview doesn't go on top of the tabs (this only happens when behavior = 'position')
+        zIndex={10}
       >
         <Theme name="blue">
           <Tabs.Tab flex={1} value="unsorted">

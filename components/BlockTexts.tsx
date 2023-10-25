@@ -1,18 +1,27 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { XStack, YStack, useTheme } from "tamagui";
 import { Icon, StyledButton, StyledParagraph } from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";
 import { Swipeable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
+import { Keyboard, ScrollView } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
   const { localBlocks: allBlocks, getCollectionItems } =
     useContext(DatabaseContext);
 
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const scrollRef = useRef<ScrollView>(null);
+
   useEffect(() => {
     void fetchBlocks();
+
+    const listener = Keyboard.addListener("keyboardWillShow", () => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+    return () => listener.remove();
   }, [collectionId, allBlocks]);
 
   async function fetchBlocks() {
@@ -64,15 +73,30 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   }
 
   return (
-    <YStack
-      paddingBottom="$4"
-      paddingHorizontal="$2"
-      space="$4"
-      width="100%"
-      marginTop="$2"
-      alignItems="flex-end"
+    <ScrollView
+      style={{
+        overflowY: "visible",
+      }}
+      onScroll={() => {
+        // Keyboard.dismiss();
+      }}
+      scrollEventThrottle={60}
+      ref={scrollRef}
+      onContentSizeChange={() =>
+        scrollRef.current?.scrollToEnd({ animated: false })
+      }
     >
-      {sortedBlocks.map(renderBlock)}
-    </YStack>
+      <YStack
+        paddingBottom="$4"
+        paddingHorizontal="$2"
+        space="$4"
+        width="100%"
+        flexGrow={1}
+        marginTop="$2"
+        alignItems="flex-end"
+      >
+        {sortedBlocks.map(renderBlock)}
+      </YStack>
+    </ScrollView>
   );
 }

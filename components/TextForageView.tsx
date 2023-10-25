@@ -4,6 +4,7 @@ import {
   SafeAreaView,
   Keyboard,
   ScrollView,
+  Platform,
 } from "react-native";
 import { StyledButton, StyledTextArea, Icon } from "./Themed";
 import { View, XStack, YStack, Theme } from "tamagui";
@@ -65,49 +66,54 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       return;
     }
 
-    if (medias.length) {
-      await Promise.all(
-        medias.map(async ({ uri, type }) => {
-          const fileUri = await getFsPathForImageResult(uri);
-          return addBlock({
-            createdBy: currentUser().id,
-            content: fileUri,
-            // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
-            type,
-            collectionsToConnect: collectionId ? [collectionId] : [],
-          });
-        })
-      );
-    }
-
-    // TODO: show error in toast
-    if (textValue) {
-      if (isUrl(textValue)) {
-        const { title, description, images, url, domain, favicon } =
-          await extractDataFromUrl(textValue);
-        await addBlock({
-          createdBy: currentUser().id,
-          // TODO: try to capture a picture of the url always
-          content: images?.[0] || favicon || url,
-          title,
-          description,
-          source: url,
-          type: MimeType["link"],
-          collectionsToConnect: collectionId ? [collectionId] : [],
-        });
-      } else {
-        await addBlock({
-          createdBy: currentUser().id,
-          content: textValue,
-          type: MimeType[".txt"],
-          collectionsToConnect: collectionId ? [collectionId] : [],
-        });
-      }
-    }
-
-    // TODO: do these immediately without waiting for the async
+    const savedMedias = medias;
+    const savedTextValue = textValue;
     setTextValue("");
     setMedias([]);
+
+    try {
+      if (savedMedias.length) {
+        await Promise.all(
+          savedMedias.map(async ({ uri, type }) => {
+            const fileUri = await getFsPathForImageResult(uri);
+            return addBlock({
+              createdBy: currentUser().id,
+              content: fileUri,
+              // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+              type,
+              collectionsToConnect: collectionId ? [collectionId] : [],
+            });
+          })
+        );
+      }
+
+      if (savedTextValue) {
+        // TODO: do this check after insert as text value and then do an update to make it super fast.
+        if (isUrl(savedTextValue)) {
+          const { title, description, images, url, domain, favicon } =
+            await extractDataFromUrl(savedTextValue);
+          await addBlock({
+            createdBy: currentUser().id,
+            // TODO: try to capture a picture of the url always
+            content: images?.[0] || favicon || url,
+            title,
+            description,
+            source: url,
+            type: MimeType["link"],
+            collectionsToConnect: collectionId ? [collectionId] : [],
+          });
+        } else {
+          await addBlock({
+            createdBy: currentUser().id,
+            content: savedTextValue,
+            type: MimeType[".txt"],
+            collectionsToConnect: collectionId ? [collectionId] : [],
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   // TODO: fix this to actually pick up the sound
@@ -153,38 +159,29 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
 
   const insets = useSafeAreaInsets();
 
-  const scrollRef = useRef<ScrollView>(null);
-
-  function renderStep() {
-    return (
+  return (
+    <SafeAreaView
+      style={{
+        flex: 1,
+      }}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior="height"
+        // 'position' makes it push everything up even when the scrollview doesnt have the full height, and also you can't scroll through all of them (scrollView seems to be constrained by the viewport solely)
+        // but the other ones don't properly push up the nested scrollview
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         contentContainerStyle={{
-          height: "100%",
           justifyContent: "space-between",
           flex: 1,
         }}
+        enabled
         // NOTE: this needs to adjust based on the height of YStack below
+        // TODO: make this smaller when there is a collectionId (because tabs don't show)
         keyboardVerticalOffset={insets.top + 84}
       >
-        <ScrollView
-          style={{
-            overflowY: "visible",
-          }}
-          onScroll={() => {
-            Keyboard.dismiss();
-          }}
-          scrollEventThrottle={60}
-          ref={scrollRef}
-          onContentSizeChange={() =>
-            scrollRef.current?.scrollToEnd({ animated: false })
-          }
-        >
-          <Theme name="pink">
-            <BlockTexts collectionId={collectionId} />
-          </Theme>
-        </ScrollView>
+        <Theme name="pink">
+          <BlockTexts collectionId={collectionId} />
+        </Theme>
         <YStack
           height="auto"
           borderTopWidth={1}
@@ -274,7 +271,6 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               size="$4"
               onPress={async () => {
                 void onSaveResult();
-                Keyboard.dismiss();
               }}
               chromeless
               theme="green"
@@ -285,16 +281,6 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           </XStack>
         </YStack>
       </KeyboardAvoidingView>
-    );
-  }
-
-  return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-      }}
-    >
-      {renderStep()}
     </SafeAreaView>
   );
 }
