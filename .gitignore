@@ -43,3 +43,6 @@ expo-env.d.ts
 # native code that is generated
 ios
 android
+
+# local builds
+builds/*.ipa

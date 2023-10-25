@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "postinstall": "patch-package",
-    "android": "expo run:android"
+    "android": "expo run:android",
+    "build-ios": "EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./builds\" eas build -p ios --local"
   },
   "jest": {
     "preset": "jest-expo"
