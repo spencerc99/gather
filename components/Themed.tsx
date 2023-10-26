@@ -14,10 +14,13 @@ import {
   XStack,
   Adapt,
   Sheet,
+  ImageProps,
+  Image,
 } from "tamagui";
 
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
@@ -265,5 +268,37 @@ export function ButtonWithConfirm({
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog>
+  );
+}
+
+export function AspectRatioImage({
+  uri,
+  otherProps,
+}: {
+  uri?: string;
+  otherProps?: Omit<ImageProps, "source">;
+}) {
+  const [aspectRatio, setAspectRatio] = useState(otherProps?.aspectRatio);
+
+  useEffect(() => {
+    if (!uri) {
+      setAspectRatio(1);
+      return;
+    }
+
+    Image.getSize(uri, (width, height) => {
+      setAspectRatio(width / height);
+    });
+  }, [uri]);
+
+  return (
+    <Image
+      source={uri ? { uri } : require("../assets/images/placeholder-image.jpg")}
+      resizeMode="contain"
+      loadingIndicatorSource={require("../assets/images/loading-image.gif")}
+      aspectRatio={aspectRatio}
+      width="100%"
+      {...otherProps}
+    />
   );
 }

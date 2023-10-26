@@ -1,18 +1,16 @@
 export interface CollectionInsertInfo {
   title: string;
   description?: string;
+  thumbnail?: string;
   createdBy: string;
   remoteSourceType?: RemoteSourceType;
   remoteSourceInfo?: RemoteSourceInfo;
 }
 
-export interface Collection {
+export interface Collection extends CollectionInsertInfo {
   id: string;
-  title: string;
-  description?: string;
   createdAt: Date;
   updatedAt: Date;
-  createdBy: string; // DID of the person who made it?
 
   // mapped out properties
   collaborators: string[]; // of user dids

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS collections (
     id bigint DEFAULT nextval('CollectionIdSequence'),
     title varchar(128) NOT NULL,
     description TEXT,
+    thumbnail TEXT,
     created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT NOT NULL,

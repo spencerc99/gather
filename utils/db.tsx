@@ -202,6 +202,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             id integer PRIMARY KEY AUTOINCREMENT,
             title varchar(128) NOT NULL,
             description TEXT,
+            thumbnail TEXT,
             created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             created_by TEXT NOT NULL,
@@ -396,11 +397,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   function fetchCollections() {
     db.transaction(
       (tx) => {
+        // TODO: approprialely coalesce the thumbnail to get the last block image
+        // COALESCE(collections.thumbnail, SELECT content from blocks where blocks.id = last_connected_block_id)
         tx.executeSql(
           `SELECT 
           collections.id,
           collections.title,
           collections.description,
+          collections.thumbnail,
           collections.created_timestamp,
           collections.updated_timestamp,
           collections.created_by,

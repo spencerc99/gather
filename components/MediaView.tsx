@@ -1,5 +1,5 @@
 import { MimeType } from "../utils/mimeTypes";
-import { StyledView, StyledText, Icon } from "./Themed";
+import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
 import { Pressable, Image } from "react-native";
 import { Audio } from "expo-av";
 import { useState, useEffect, PropsWithChildren } from "react";
@@ -18,7 +18,7 @@ export function MediaView({
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState(
+  const [aspectRatio, setAspectRatio] = useState<string | number | undefined>(
     "aspectRatio" in style ? style.aspectRatio : undefined
   );
 
@@ -88,19 +88,12 @@ export function MediaView({
       case MimeType[".png"]:
       case MimeType["link"]:
         return (
-          <Image
-            source={{ uri: media }}
-            resizeMode="contain"
-            loadingIndicatorSource={require("../assets/images/loading-image.gif")}
-            alt={alt}
-            style={[
-              // @ts-ignore
-              {
-                aspectRatio,
-                width: "100%",
-                ...style,
-              },
-            ]}
+          <AspectRatioImage
+            uri={media}
+            otherProps={{
+              aspectRatio,
+              ...style,
+            }}
           />
         );
       case MimeType["embed"]:

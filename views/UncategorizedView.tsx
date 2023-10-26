@@ -5,13 +5,19 @@ import {
   mapSnakeCaseToCamelCaseProperties,
 } from "../utils/db";
 import { StyledButton, StyledText } from "../components/Themed";
-import { Dimensions, Keyboard, KeyboardAvoidingView } from "react-native";
+import {
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
 import { YStack } from "tamagui";
 import { convertDbTimestampToDate } from "../utils/date";
 import { Collection } from "../utils/dataTypes";
 import Carousel from "react-native-reanimated-carousel";
 import { SelectConnectionsList } from "../components/SelectConnectionsList";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function UncategorizedView() {
   const { db, blocks, addConnections } = useContext(DatabaseContext);
@@ -65,82 +71,75 @@ export function UncategorizedView() {
   }
 
   function renderBlock(block: Block) {
-    return <BlockSummary block={block} key={block.id} />;
-  }
-
-  function renderCollection(collection: Collection) {
     return (
-      <StyledButton
-        key={collection.id}
-        paddingHorizontal="$2"
-        paddingVertical="$1"
-        borderRadius="$1"
-        onPress={() => {}}
-      >
-        <StyledText ellipse={true}>{collection.title}</StyledText>
-      </StyledButton>
+      <BlockSummary
+        block={block}
+        key={block.id}
+        style={{
+          maxHeight: "100%",
+        }}
+      />
     );
   }
+
   const width = Dimensions.get("window").width;
+  const insets = useSafeAreaInsets();
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior="height"
+      behavior={Platform.OS === "ios" ? "position" : "height"}
       contentContainerStyle={{
         flex: 1,
-        height: "100%",
       }}
+      keyboardVerticalOffset={insets.top + 84}
     >
-      <YStack>
-        <Carousel
-          loop={false}
-          width={width}
-          data={events}
-          scrollAnimationDuration={1000}
-          onScrollBegin={() => {
-            Keyboard.dismiss();
-          }}
-          onSnapToItem={(index) => {
-            const newBlock = events[index];
-            if (selectedCollections.length && currentBlockId) {
-              addConnections(currentBlockId, selectedCollections);
-              setSelectedCollections([]);
-              setEvents(events.filter((block) => block.id !== currentBlockId));
-            }
-            setCurrentBlockId(newBlock.id);
-          }}
-          renderItem={({ item, index }) => (
-            <>
-              <YStack
-                paddingVertical="$2"
-                minHeight="50%"
-                maxHeight="70%"
-                alignItems="center"
-                space="$2"
-                justifyContent="center"
-              >
-                <StyledText>
-                  {index + 1} / {events.length} unsorted
-                </StyledText>
-                {renderBlock(item)}
-              </YStack>
-              <YStack paddingHorizontal="$2" flex={1}>
-                {/* TODO: random padding because the height is overflowing the container for some reason */}
-                <SelectConnectionsList
-                  selectedCollections={
-                    item.id === currentBlockId ? selectedCollections : []
-                  }
-                  setSelectedCollections={setSelectedCollections}
-                />
-              </YStack>
-            </>
-          )}
-        />
-        {/* <ScrollView horizontal>
-     <XStack space="$1">{collections.map(renderCollection)}</XStack>
-   </ScrollView> */}
-      </YStack>
+      <Carousel
+        loop={false}
+        width={width}
+        data={events}
+        scrollAnimationDuration={1000}
+        onScrollBegin={() => {
+          Keyboard.dismiss();
+        }}
+        onSnapToItem={(index) => {
+          const newBlock = events[index];
+          if (selectedCollections.length && currentBlockId) {
+            addConnections(currentBlockId, selectedCollections);
+            setSelectedCollections([]);
+            setEvents(events.filter((block) => block.id !== currentBlockId));
+          }
+          setCurrentBlockId(newBlock.id);
+        }}
+        renderItem={({ item, index }) => (
+          <>
+            <YStack
+              paddingVertical="$2"
+              // NOTE: minHeight is ideal here for aesthetic but we need to handle
+              // when keyboard comes up for it to shrink
+              minHeight="50%"
+              maxHeight="80%"
+              alignItems="center"
+              space="$2"
+              justifyContent="center"
+            >
+              <StyledText>
+                {index + 1} / {events.length} unsorted
+              </StyledText>
+              {renderBlock(item)}
+            </YStack>
+            <YStack paddingHorizontal="$2">
+              <SelectConnectionsList
+                selectedCollections={
+                  item.id === currentBlockId ? selectedCollections : []
+                }
+                setSelectedCollections={setSelectedCollections}
+                horizontal
+              />
+            </YStack>
+          </>
+        )}
+      />
     </KeyboardAvoidingView>
   );
 }
