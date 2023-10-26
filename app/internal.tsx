@@ -1,14 +1,15 @@
 import { StatusBar } from "expo-status-bar";
-import { Platform } from "react-native";
+import { Keyboard, Platform } from "react-native";
 import {
   Adapt,
   AlertDialog,
   H2,
   H3,
   Label,
-  Progress,
   Select,
   Sheet,
+  Spinner,
+  Theme,
   View,
   XStack,
   YStack,
@@ -19,16 +20,27 @@ import {
   StyledButton,
   StyledInput,
   StyledParagraph,
+  StyledTextArea,
 } from "../components/Themed";
 import { useContext, useState } from "react";
 import { CollectionSelect } from "../components/CollectionSelect";
-import { arenaClassToMimeType, getChannelContents } from "../utils/arena";
+import {
+  ArenaChannelRegex,
+  arenaClassToMimeType,
+  getChannelContents,
+} from "../utils/arena";
 import { currentUser } from "../utils/user";
 import { RemoteSourceType } from "../utils/dataTypes";
 
 export default function ModalScreen() {
-  const { db, initDatabases, createCollection, createBlock } =
-    useContext(DatabaseContext);
+  const {
+    db,
+    initDatabases,
+    fetchBlocks,
+    fetchCollections,
+    createCollection,
+    createBlocks,
+  } = useContext(DatabaseContext);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -38,6 +50,7 @@ export default function ModalScreen() {
   );
 
   async function onImportChannel() {
+    Keyboard.dismiss();
     setIsLoading(true);
     try {
       const { title, id, contents } = await getChannelContents(arenaChannel);
@@ -55,29 +68,30 @@ export default function ModalScreen() {
       }
 
       // add blocks
-      const blockIds = await Promise.all(
-        contents.map(async (block) => {
-          const blockId = createBlock({
-            title: block.title,
-            description: block.description,
-            content:
-              block.attachment?.url ||
-              block.embed?.url ||
-              block.image?.display.url ||
-              block.content,
-            type: arenaClassToMimeType(block),
-            source: block.source?.url,
-            createdBy: currentUser().id,
-            remoteSourceType: RemoteSourceType.Arena,
-            remoteSourceInfo: {
-              arenaId: block.id,
-              arenaClass: "Block",
-            },
-            collectionsToConnect: [collectionId!],
-          });
-          return blockId;
-        })
-      );
+      const blockIds = await createBlocks({
+        blocksToInsert: contents.map((block) => ({
+          title: block.title,
+          description: block.description,
+          content:
+            block.attachment?.url ||
+            // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
+            // it only provides the html iframe code..
+            block.embed?.url ||
+            block.image?.display.url ||
+            block.content,
+          type: arenaClassToMimeType(block),
+          source: block.source?.url,
+          createdBy: currentUser().id,
+          remoteSourceType: RemoteSourceType.Arena,
+          remoteSourceInfo: {
+            arenaId: block.id,
+            arenaClass: "Block",
+          },
+        })),
+        collectionId: collectionId!,
+      });
+      setArenaChannel("");
+      // TODO: add toast saying success with new collection name and how many blocks created
     } catch (error) {
       console.error(error);
       throw error;
@@ -91,10 +105,19 @@ export default function ModalScreen() {
       <H2>Internal Developer Settings</H2>
       <H3>Are.na</H3>
       <Label>Target Are.na channel</Label>
+      {arenaChannel && !ArenaChannelRegex.test(arenaChannel) && (
+        <Theme name="red">
+          <Label>
+            Invalid channel URL. Please go to the channel and copy and paste the
+            url here.
+          </Label>
+        </Theme>
+      )}
       <StyledInput
         value={arenaChannel}
         onChangeText={(text) => setArenaChannel(text)}
         placeholder="https://are.na/spencer-chang/basket-sjuhif_oeqk"
+        autogrow
       />
       <Label>Local collection to import to (optional)</Label>
       <CollectionSelect
@@ -105,97 +128,25 @@ export default function ModalScreen() {
         onPress={async () => {
           await onImportChannel();
         }}
-        disabled={isLoading}
-        icon={isLoading ? <Progress /> : null}
+        disabled={isLoading || !arenaChannel}
+        icon={isLoading ? <Spinner size="small" /> : null}
       >
         Import Channel
       </StyledButton>
-
-      <AlertDialog native>
-        <AlertDialog.Trigger asChild>
-          <StyledButton onPress={() => console.log("been pressed")}>
-            HI
-          </StyledButton>
-        </AlertDialog.Trigger>
-
-        <Adapt when="sm" platform="touch">
-          <Sheet
-            // animation="medium"
-            // zIndex={200000}
-            modal
-            dismissOnSnapToBottom
-            native
-          >
-            <Sheet.Frame padding="$4" gap="$4">
-              <Adapt.Contents />
-            </Sheet.Frame>
-            <Sheet.Overlay
-            // animation="lazy"
-            // enterStyle={{ opacity: 0 }}
-            // exitStyle={{ opacity: 0 }}
-            />
-          </Sheet>
-        </Adapt>
-
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay
-          // key="overlay"
-          // animation="quick"
-          // opacity={0.5}
-          // enterStyle={{ opacity: 0 }}
-          // exitStyle={{ opacity: 0 }}
-          />
-          <AlertDialog.Content
-            bordered
-            elevate
-            // key="content"
-            // animation={[
-            //   "quick",
-            //   {
-            //     opacity: {
-            //       overshootClamping: true,
-            //     },
-            //   },
-            // ]}
-            // enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
-            // exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
-            // x={0}
-            // scale={1}
-            // opacity={1}
-            // y={0}
-          >
-            <YStack space>
-              <AlertDialog.Title>hi</AlertDialog.Title>
-              <AlertDialog.Description>wee</AlertDialog.Description>
-              <XStack space="$3" justifyContent="flex-end">
-                <AlertDialog.Cancel asChild>
-                  <StyledButton>cancelText</StyledButton>
-                </AlertDialog.Cancel>
-                <AlertDialog.Action asChild>
-                  <StyledButton
-                    onPress={() => {
-                      console.log("hello");
-                    }}
-                    theme="active"
-                  >
-                    Confirm
-                  </StyledButton>
-                </AlertDialog.Action>
-              </XStack>
-            </YStack>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog>
-
-      {/* TODO: bring this back when working */}
       <H3>Databases</H3>
+      <StyledButton disabled={isLoading} onPress={fetchCollections}>
+        Refresh Collections
+      </StyledButton>
+      <StyledButton disabled={isLoading} onPress={fetchBlocks}>
+        Refresh Blocks
+      </StyledButton>
       <StyledParagraph>
-        You might want to reset your database to get the new schemas (sorry no
-        migrations lol).
+        Only do this if directed to do it in order to reset your schemas. It
+        will delete all your data.
       </StyledParagraph>
       <StyledButton
         disabled={isLoading}
-        icon={isLoading ? <Progress /> : null}
+        icon={isLoading ? <Spinner size="small" /> : null}
         theme="red"
         backgroundColor="$red8"
         onPress={async () => {
@@ -226,9 +177,10 @@ export default function ModalScreen() {
         Reset Databases
       </StyledButton>
       {/* TODO: add seed collections */}
+      {/* TODO: bring this back when working */}
       {/* <ButtonWithConfirm
         disabled={isLoading}
-        icon={isLoading ? <Progress /> : null}
+        icon={isLoading ? <Spinner size="small" /> : null}
         theme="red"
         backgroundColor="$red8"
         onPress={async () => {

@@ -3,6 +3,7 @@ import { Link, Tabs } from "expo-router";
 import { Pressable, useColorScheme } from "react-native";
 import Colors from "../../constants/Styles";
 import { XStack, useTheme } from "tamagui";
+import { ButtonWithConfirm, Icon } from "../../components/Themed";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/

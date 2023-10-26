@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 import { Collection } from "../utils/dataTypes";
 import { AspectRatioImage, StyledParagraph, StyledView } from "./Themed";
-import { GetProps, YStack, useTheme } from "tamagui";
+import { GetProps, SizableText, YStack, useTheme } from "tamagui";
 
 export function CollectionSummary({
   collection,
@@ -65,27 +65,31 @@ export function CollectionThumbnail({
 
   return (
     <YStack
-      flex={1}
       space="$1"
       borderRadius={8}
       backgroundColor={theme.background.get()}
-      {...viewProps}
       width={100}
+      // TODO: literally have no idea why this is needed. Otherwise it grows BEYOND ITS CONTAINER to become like 400px. what the fuck
+      // i hate react native so much.
       maxHeight={140}
+      borderWidth={1}
+      {...viewProps}
+      paddingBottom="$1"
     >
       <AspectRatioImage
         uri={thumbnail}
         otherProps={{
           aspectRatio: 1,
           resizeMode: "cover",
-          borderRadius: 4,
-          maxWidth: 100,
-          maxHeight: 100,
+          borderRadius: 8,
+          // account for the border lmfao this is insane code.
+          maxWidth: 98,
+          maxHeight: 98,
         }}
       />
-      <StyledParagraph numberOfLines={2} paddingHorizontal="$1">
+      <SizableText numberOfLines={2} paddingHorizontal="$1.5" size="$3">
         {title}
-      </StyledParagraph>
+      </SizableText>
       {/* <StyledParagraph metadata>{numBlocks}</StyledParagraph> */}
     </YStack>
   );

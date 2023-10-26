@@ -18,24 +18,6 @@ export function MediaView({
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState<string | number | undefined>(
-    "aspectRatio" in style ? style.aspectRatio : undefined
-  );
-
-  useEffect(() => {
-    if (
-      (mimeType !== MimeType[".jpeg"] &&
-        mimeType !== MimeType[".png"] &&
-        mimeType !== MimeType["link"]) ||
-      "aspectRatio" in style
-    ) {
-      return;
-    }
-
-    Image.getSize(media, (width, height) => {
-      setAspectRatio(width / height);
-    });
-  }, [media]);
 
   async function playSound() {
     console.log("play");
@@ -91,21 +73,21 @@ export function MediaView({
           <AspectRatioImage
             uri={media}
             otherProps={{
-              aspectRatio,
               ...style,
             }}
           />
         );
       case MimeType["embed"]:
-        return (
-          <iframe
-            src={media}
-            style={{
-              width: "100%",
-              ...style,
-            }}
-          />
-        );
+        return <StyledText>embed {media}</StyledText>;
+      // return (
+      //   <iframe
+      //     src={media}
+      //     style={{
+      //       width: "100%",
+      //       ...style,
+      //     }}
+      //   />
+      // );
       case MimeType[".ma4"]:
         return (
           <Pressable
@@ -123,7 +105,8 @@ export function MediaView({
           </Pressable>
         );
       default:
-        throw new Error("Unexpected MimeType found!");
+        console.error(`Unexpected MimeType ${mimeType} found!`);
+        return <StyledText>Unhandled mimetype {mimeType}</StyledText>;
     }
   }
 

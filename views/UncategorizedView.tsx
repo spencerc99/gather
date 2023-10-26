@@ -4,7 +4,11 @@ import {
   DatabaseContext,
   mapSnakeCaseToCamelCaseProperties,
 } from "../utils/db";
-import { StyledButton, StyledText } from "../components/Themed";
+import {
+  StyledButton,
+  StyledParagraph,
+  StyledText,
+} from "../components/Themed";
 import {
   Dimensions,
   Keyboard,
@@ -12,16 +16,15 @@ import {
   Platform,
 } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
-import { YStack } from "tamagui";
+import { Spinner, Stack, XStack, YStack } from "tamagui";
 import { convertDbTimestampToDate } from "../utils/date";
-import { Collection } from "../utils/dataTypes";
 import Carousel from "react-native-reanimated-carousel";
 import { SelectConnectionsList } from "../components/SelectConnectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function UncategorizedView() {
   const { db, blocks, addConnections } = useContext(DatabaseContext);
-  const [events, setEvents] = useState<Block[]>([]);
+  const [events, setEvents] = useState<Block[] | null>(null);
   const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
 
@@ -85,61 +88,68 @@ export function UncategorizedView() {
   const width = Dimensions.get("window").width;
   const insets = useSafeAreaInsets();
 
-  return (
+  return !events ? (
+    <Spinner size="large" />
+  ) : events.length === 0 ? (
+    <StyledText>No uncategorized blocks</StyledText>
+  ) : (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "position" : "height"}
       contentContainerStyle={{
         flex: 1,
       }}
-      keyboardVerticalOffset={insets.top + 84}
+      keyboardVerticalOffset={insets.top + 60}
     >
-      <Carousel
-        loop={false}
-        width={width}
-        data={events}
-        scrollAnimationDuration={1000}
-        onScrollBegin={() => {
-          Keyboard.dismiss();
-        }}
-        onSnapToItem={(index) => {
-          const newBlock = events[index];
-          if (selectedCollections.length && currentBlockId) {
-            addConnections(currentBlockId, selectedCollections);
-            setSelectedCollections([]);
-            setEvents(events.filter((block) => block.id !== currentBlockId));
-          }
-          setCurrentBlockId(newBlock.id);
-        }}
-        renderItem={({ item, index }) => (
-          <>
-            <YStack
-              paddingVertical="$2"
-              // NOTE: minHeight is ideal here for aesthetic but we need to handle
-              // when keyboard comes up for it to shrink
-              minHeight="50%"
-              maxHeight="80%"
-              alignItems="center"
-              space="$2"
-              justifyContent="center"
-            >
-              <StyledText>
-                {index + 1} / {events.length} unsorted
-              </StyledText>
-              {renderBlock(item)}
-            </YStack>
-            <YStack paddingHorizontal="$2">
-              <SelectConnectionsList
-                selectedCollections={
-                  item.id === currentBlockId ? selectedCollections : []
-                }
-                setSelectedCollections={setSelectedCollections}
-                horizontal
-              />
-            </YStack>
-          </>
-        )}
-      />
+      <YStack flex={1} justifyContent="space-between">
+        <Carousel
+          loop={false}
+          width={width}
+          data={events}
+          scrollAnimationDuration={1000}
+          onScrollBegin={() => {
+            Keyboard.dismiss();
+          }}
+          onSnapToItem={(index) => {
+            const newBlock = events[index];
+            if (selectedCollections.length && currentBlockId) {
+              addConnections(currentBlockId, selectedCollections);
+              setSelectedCollections([]);
+              setEvents(events.filter((block) => block.id !== currentBlockId));
+            }
+            setCurrentBlockId(newBlock.id);
+          }}
+          renderItem={({ item, index }) => (
+            <>
+              <YStack
+                paddingVertical="$2"
+                // NOTE: minHeight is ideal here for aesthetic but we need to handle
+                // when keyboard comes up for it to shrink
+                minHeight="50%"
+                maxHeight="70%"
+                alignItems="center"
+                space="$2"
+                justifyContent="center"
+                flexGrow={1}
+              >
+                <StyledText>
+                  {index + 1} / {events.length} unsorted
+                </StyledText>
+                {renderBlock(item)}
+              </YStack>
+              <Stack height="30%">
+                <SelectConnectionsList
+                  selectedCollections={
+                    item.id === currentBlockId ? selectedCollections : []
+                  }
+                  setSelectedCollections={setSelectedCollections}
+                  horizontal
+                />
+              </Stack>
+            </>
+          )}
+        />
+      </YStack>
     </KeyboardAvoidingView>
   );
 }

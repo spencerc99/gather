@@ -1,4 +1,4 @@
-import { YStack, Spinner, XStack } from "tamagui";
+import { YStack, Spinner, XStack, ScrollView } from "tamagui";
 import { Collection } from "../utils/dataTypes";
 import { useContext, useEffect, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
@@ -28,29 +28,31 @@ export function CollectionDetailView({
   }, [id]);
 
   return (
-    <YStack padding="10%">
-      <StyledParagraph title>{title}</StyledParagraph>
-      <StyledParagraph color="$gray9">{description}</StyledParagraph>
-      <StyledParagraph>
-        by{" "}
-        <StyledParagraph style={{ fontWeight: 700 }}>
-          {createdBy}
+    <ScrollView>
+      <YStack padding="10%">
+        <StyledParagraph title>{title}</StyledParagraph>
+        <StyledParagraph color="$gray9">{description}</StyledParagraph>
+        <StyledParagraph>
+          by{" "}
+          <StyledParagraph style={{ fontWeight: 700 }}>
+            {createdBy}
+          </StyledParagraph>
         </StyledParagraph>
-      </StyledParagraph>
-      <StyledParagraph>Created at: {createdAt.toISOString()}</StyledParagraph>
-      <StyledParagraph>Updated at: {updatedAt.toISOString()}</StyledParagraph>
-      <StyledParagraph>Collaborators: {collaborators}</StyledParagraph>
-      <StyledParagraph>Total: {numItems}</StyledParagraph>
-      {/* insert search bar */}
-      {blocks === null ? (
-        <Spinner />
-      ) : (
-        <XStack flexWrap="wrap" space="$2">
-          {blocks.map((block) => (
-            <BlockSummary block={block} />
-          ))}
-        </XStack>
-      )}
-    </YStack>
+        <StyledParagraph>Created at: {createdAt.toISOString()}</StyledParagraph>
+        <StyledParagraph>Updated at: {updatedAt.toISOString()}</StyledParagraph>
+        <StyledParagraph>Collaborators: {collaborators}</StyledParagraph>
+        <StyledParagraph>Total: {numItems}</StyledParagraph>
+        {/* insert search bar */}
+        {blocks === null ? (
+          <Spinner />
+        ) : (
+          <XStack flexWrap="wrap" space="$2">
+            {blocks.map((block) => (
+              <BlockSummary block={block} />
+            ))}
+          </XStack>
+        )}
+      </YStack>
+    </ScrollView>
   );
 }

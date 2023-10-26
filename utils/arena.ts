@@ -95,7 +95,8 @@ export function nextUrlFromResponse(
 }
 
 const ArenaApiUrlBase = "https://api.are.na/v2/channels/";
-const ArenaChannelRegex = /(?:https:\/\/)?(?:www\.)?are\.na\/[\w-]+\/([\w-]+)/;
+export const ArenaChannelRegex =
+  /(?:https:\/\/)?(?:www\.)?are\.na\/[\w-]+\/([\w-]+)/;
 
 function maybeParseChannelIdentifierFromUrl(maybeChannelUrl: string): string {
   if (ArenaChannelRegex.test(maybeChannelUrl)) {
@@ -188,7 +189,9 @@ export function arenaClassToMimeType({
 "html": "<iframe class=\"embedly-embed\" src=\"https://cdn.embedly.com/widgets/media.html?src=https%3A%2F%2Fwww.tiktok.com%2Fembed%2Fv2%2F7289096161972145454&wmode=transparent&display_name=tiktok&url=https%3A%2F%2Fwww.tiktok.com%2Ft%2FZT8hD1Bog%2F&image=https%3A%2F%2Fp16-sign.tiktokcdn-us.com%2Fobj%2Ftos-useast5-p-0068-tx%2Fb315ba9606dc43218406892eb4553159_1697124965%3Fx-expires%3D1697605200%26x-signature%3DtCNQfgJ4KixPZxFCJQAGxX39140%253D&key=95f38852bd9b4f51ba7e5c8900281d06&type=text%2Fhtml&schema=tiktok\" width=\"340\" height=\"700\" scrolling=\"no\" title=\"tiktok embed\" frameborder=\"0\" allow=\"autoplay; fullscreen; encrypted-media; picture-in-picture;\" allowfullscreen=\"true\"></iframe>"
 },
  */
+    // TODO: actually handle this and use embed, need to figure out what embed url to use since URL is empty, for now it just
+    // shows an image.
     case "Media":
-      return MimeType["embed"];
+      return embed?.url ? MimeType["embed"] : (image!.content_type as MimeType);
   }
 }

@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { InputWithIcon, StyledButton, StyledView } from "../components/Themed";
 import { ScrollView, SizableText, XStack, YStack } from "tamagui";
@@ -14,10 +14,14 @@ export function CollectionChatsView() {
   const router = useRouter();
 
   // sort by lastConnectedAt descending
-  const sortedCollections = [...collections].sort(
-    (a, b) =>
-      (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
-      (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
+  const sortedCollections = useMemo(
+    () =>
+      [...collections].sort(
+        (a, b) =>
+          (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
+          (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
+      ),
+    [collections]
   );
 
   return (

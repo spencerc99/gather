@@ -21,6 +21,7 @@ import {
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
+import { Keyboard } from "react-native";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
@@ -113,7 +114,18 @@ export function LinkButton(props: LinkButtonProps) {
 export const StyledInput = styled(DefaultInput, {
   width: "100%",
 
-  variants: {} as const,
+  variants: {
+    autogrow: {
+      true: {
+        multiline: true,
+        // Handles clicking enter submitting it
+        blurOnSubmit: true,
+        onSubmitEditing: () => {
+          Keyboard.dismiss();
+        },
+      },
+    },
+  } as const,
 });
 export const StyledTextArea = styled(DefaultTextArea, {
   width: "100%",
@@ -203,8 +215,8 @@ export function ButtonWithConfirm({
 
       <Adapt when="sm" platform="touch">
         <Sheet
-          // animation="medium"
-          // zIndex={200000}
+          animation="bouncy"
+          zIndex={200000}
           modal
           dismissOnSnapToBottom
           native
@@ -213,39 +225,39 @@ export function ButtonWithConfirm({
             <Adapt.Contents />
           </Sheet.Frame>
           <Sheet.Overlay
-          // animation="lazy"
-          // enterStyle={{ opacity: 0 }}
-          // exitStyle={{ opacity: 0 }}
+            animation="lazy"
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
           />
         </Sheet>
       </Adapt>
 
       <AlertDialog.Portal>
         <AlertDialog.Overlay
-        // key="overlay"
-        // animation="quick"
-        // opacity={0.5}
-        // enterStyle={{ opacity: 0 }}
-        // exitStyle={{ opacity: 0 }}
+          key="overlay"
+          animation="quick"
+          opacity={0.5}
+          enterStyle={{ opacity: 0 }}
+          exitStyle={{ opacity: 0 }}
         />
         <AlertDialog.Content
           bordered
           elevate
-          // key="content"
-          // animation={[
-          //   "quick",
-          //   {
-          //     opacity: {
-          //       overshootClamping: true,
-          //     },
-          //   },
-          // ]}
-          // enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
-          // exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
-          // x={0}
-          // scale={1}
-          // opacity={1}
-          // y={0}
+          key="content"
+          animation={[
+            "quick",
+            {
+              opacity: {
+                overshootClamping: true,
+              },
+            },
+          ]}
+          enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+          x={0}
+          scale={1}
+          opacity={1}
+          y={0}
         >
           <YStack space>
             <AlertDialog.Title>{confirmationTitle}</AlertDialog.Title>
@@ -297,6 +309,9 @@ export function AspectRatioImage({
       resizeMode="contain"
       loadingIndicatorSource={require("../assets/images/loading-image.gif")}
       aspectRatio={aspectRatio}
+      // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
+      // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling
+      // to the latest react-native image handling undefined width / height for the source
       width="100%"
       {...otherProps}
     />

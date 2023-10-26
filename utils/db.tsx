@@ -50,7 +50,7 @@ function inParam(sql: string, arr: (string | number | null)[]) {
   return sql.replace("?#", arr.join(","));
 }
 
-interface BlockInsertInfo {
+interface DatabaseBlockInsert {
   title?: string;
   description?: string; // long-form description about the object, could include things like tags here and those get automatically extracted?
   content: string; // could be either the data itself or a path to the data if a rich media object
@@ -61,8 +61,15 @@ interface BlockInsertInfo {
   remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
   remoteSourceInfo?: RemoteSourceInfo;
   createdBy: string; // DID of the person who made it?
+}
 
+interface BlockInsertInfo extends DatabaseBlockInsert {
   collectionsToConnect?: string[]; // IDs of collections that this block is in
+}
+
+export interface BlocksInsertInfo {
+  blocksToInsert: DatabaseBlockInsert[];
+  collectionId?: string;
 }
 
 export interface Block extends Omit<BlockInsertInfo, "connections"> {
@@ -71,10 +78,20 @@ export interface Block extends Omit<BlockInsertInfo, "connections"> {
   updatedAt: Date;
 }
 
+const BlockInsertChunkSize = 10;
+function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += chunkSize) {
+    chunks.push(arr.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 interface DatabaseContextProps {
   blocks: Block[];
   localBlocks: Block[];
-  createBlock: (block: BlockInsertInfo) => void;
+  createBlock: (block: BlockInsertInfo) => Promise<string>;
+  createBlocks: (blocks: BlocksInsertInfo) => Promise<string[]>;
   getBlock: (blockId: string) => Promise<Block>;
   deleteBlock: (id: string) => void;
 
@@ -96,12 +113,19 @@ interface DatabaseContextProps {
   // TODO: remove this once apis solidify
   db: SQLite.SQLiteDatabase;
   initDatabases: () => Promise<void>;
+  fetchBlocks: () => void;
+  fetchCollections: () => void;
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
   blocks: [],
   localBlocks: [],
-  createBlock: () => {},
+  createBlock: async () => {
+    throw new Error("not yet loaded");
+  },
+  createBlocks: async () => {
+    throw new Error("not yet loaded");
+  },
   getBlock: async () => {
     throw new Error("not yet loaded");
   },
@@ -127,6 +151,8 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
 
   db,
   initDatabases: async () => {},
+  fetchBlocks: () => {},
+  fetchCollections: () => {},
 });
 
 export function mapSnakeCaseToCamelCaseProperties<
@@ -224,16 +250,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             FOREIGN KEY (collection_id) REFERENCES collections(id)
         );`
       );
+
+      await fetchBlocks();
+      await fetchCollections();
     });
   }
 
-  const createBlock = async ({
-    collectionsToConnect: connections,
-    ...block
-  }: BlockInsertInfo) => {
+  async function insertBlocks(blocksToInsert: DatabaseBlockInsert[]) {
     await db.transactionAsync(async (tx) => {
-      const result = await tx.executeSqlAsync(
-        `
+      const insertChunks = chunkArray(blocksToInsert, BlockInsertChunkSize);
+      for (const chunk of insertChunks) {
+        const result = await tx.executeSqlAsync(
+          `
         INSERT INTO blocks (
             title,
             description,
@@ -243,7 +271,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             remote_source_type,
             created_by,
             remote_source_info
-        ) VALUES (
+        ) VALUES ${chunk
+          .map(
+            (c) => `(
             ?,
             ?,
             ?,
@@ -252,39 +282,121 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             ?,
             ?,
             ?
-        )
+        )`
+          )
+          .join(",\n")}
         RETURNING *;`,
-        [
-          // @ts-ignore expo sqlite types are broken
-          block.title || null,
-          // @ts-ignore expo sqlite types are broken
-          block.description || null,
-          block.content,
-          block.type,
-          // @ts-ignore expo sqlite types are broken
-          block.source || null,
-          // @ts-ignore expo sqlite types are broken
-          block.remoteSourceType || null,
-          block.createdBy,
-          // @ts-ignore expo sqlite types are broken
-          block.remoteSourceInfo
-            ? JSON.stringify(block.remoteSourceInfo)
-            : null,
-        ]
-      );
-      if ("error" in result) {
-        throw result.error;
+          // @ts-ignore
+          [
+            ...chunk.flatMap((block) => [
+              // @ts-ignore expo sqlite types are broken
+              block.title || null,
+              // @ts-ignore expo sqlite types are broken
+              block.description || null,
+              block.content,
+              block.type,
+              // @ts-ignore expo sqlite types are broken
+              block.source || null,
+              // @ts-ignore expo sqlite types are broken
+              block.remoteSourceType || null,
+              block.createdBy,
+              // @ts-ignore expo sqlite types are broken
+              block.remoteSourceInfo
+                ? JSON.stringify(block.remoteSourceInfo)
+                : null,
+            ]),
+          ]
+        );
+        if ("error" in result) {
+          throw result.error;
+        }
+        // TODO: figure out how to get the ids from all of the inserts.
       }
-
-      if (connections?.length) {
-        console.log("INSERT ID", result.insertId);
-        await addConnections(String(result.insertId!), connections);
-      }
-
-      console.log(result.rows);
-      // TODO: change this to just fetch the new row info
-      fetchBlocks();
     });
+  }
+
+  const createBlocks = async ({
+    blocksToInsert,
+    collectionId,
+  }: BlocksInsertInfo): Promise<string[]> => {
+    // TODO: change to use insertBlocks
+    const blockIds = await Promise.all(
+      blocksToInsert.map(async (block) => createBlock(block, true))
+    );
+    fetchBlocks();
+
+    if (collectionId) {
+      await addConnectionsToCollection(collectionId, blockIds);
+    }
+    return blockIds;
+  };
+
+  const createBlock = async (
+    { collectionsToConnect: connections, ...block }: BlockInsertInfo,
+    ignoreFetch?: boolean
+  ): Promise<string> => {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `
+            INSERT INTO blocks (
+                title,
+                description,
+                content,
+                type,
+                source,
+                remote_source_type,
+                created_by,
+                remote_source_info
+            ) VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            )
+            RETURNING *;`,
+          args: [
+            // @ts-ignore expo sqlite types are broken
+            block.title || null,
+            // @ts-ignore expo sqlite types are broken
+            block.description || null,
+            block.content,
+            block.type,
+            // @ts-ignore expo sqlite types are broken
+            block.source || null,
+            // @ts-ignore expo sqlite types are broken
+            block.remoteSourceType || null,
+            block.createdBy,
+            // @ts-ignore expo sqlite types are broken
+            block.remoteSourceInfo
+              ? JSON.stringify(block.remoteSourceInfo)
+              : null,
+          ],
+        },
+      ],
+      false
+    );
+
+    if ("error" in result) {
+      throw result.error;
+    }
+
+    if (connections?.length) {
+      console.log("INSERT ID", result.insertId);
+      await addConnections(String(result.insertId!), connections);
+    }
+
+    console.log(result.rows);
+    // TODO: change this to just fetch the new row info
+    if (!ignoreFetch) {
+      fetchBlocks();
+    }
+
+    return result.insertId!.toString();
   };
 
   const deleteBlock = async (id: string) => {
@@ -397,22 +509,42 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   function fetchCollections() {
     db.transaction(
       (tx) => {
-        // TODO: approprialely coalesce the thumbnail to get the last block image
-        // COALESCE(collections.thumbnail, SELECT content from blocks where blocks.id = last_connected_block_id)
         tx.executeSql(
-          `SELECT 
-          collections.id,
-          collections.title,
-          collections.description,
-          collections.thumbnail,
-          collections.created_timestamp,
-          collections.updated_timestamp,
-          collections.created_by,
-          MAX(connections.created_timestamp) as last_connected_at,
-          COUNT(connections.block_id) as num_blocks
-         FROM collections
-         LEFT JOIN connections ON collections.id = connections.collection_id
-         GROUP BY 1,2,3,4,5,6;`,
+          `WITH block_connections AS (
+              SELECT      id, 
+                          content, 
+                          collection_id, 
+                          connections.created_timestamp as created_timestamp from blocks 
+              LEFT JOIN   connections ON connections.block_id = blocks.id
+              WHERE       blocks.type IN ('${MimeType[".jpeg"]}', '${MimeType[".png"]}', '${MimeType.link}')
+          ),
+          annotated_collections AS (SELECT DISTINCT
+              collections.id,
+              collections.title,
+              collections.description,
+              COALESCE(collections.thumbnail, FIRST_VALUE(block_connections.content) OVER (
+                PARTITION BY collection_id
+                ORDER BY block_connections.created_timestamp DESC
+              )) as thumbnail,
+              collections.created_timestamp,
+              collections.updated_timestamp,
+              collections.created_by
+            FROM collections
+            LEFT JOIN block_connections ON block_connections.collection_id = collections.id
+          )
+          SELECT 
+              annotated_collections.id,
+              annotated_collections.title,
+              annotated_collections.description,
+              annotated_collections.thumbnail,
+              annotated_collections.created_timestamp,
+              annotated_collections.updated_timestamp,
+              annotated_collections.created_by,
+              MAX(connections.created_timestamp) as last_connected_at,
+              COUNT(connections.block_id) as num_blocks
+          FROM      annotated_collections
+          LEFT JOIN connections ON annotated_collections.id = connections.collection_id
+          GROUP BY 1,2,3,4,5,6,7;`,
           [],
           (_, { rows: { _array } }) => {
             setCollections([
@@ -508,6 +640,37 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
   }
 
+  async function addConnectionsToCollection(
+    collectionId: string,
+    blockIds: string[]
+  ) {
+    const result = await db.execAsync(
+      blockIds.map((blockId) => ({
+        sql: `INSERT INTO connections (block_id, collection_id, created_by)
+              VALUES (?, ?, ?)
+              ON CONFLICT(block_id, collection_id) DO NOTHING;`,
+        args: [blockId, collectionId, currentUser().id],
+      })),
+      false
+    );
+
+    handleSqlErrors(result);
+
+    setCollections(
+      collections.map((c) => {
+        if (collectionId === c.id) {
+          return {
+            ...c,
+            lastConnectedAt: new Date(),
+          };
+        }
+        return c;
+      })
+    );
+
+    // TODO: if collectionId has remoteSource, then sync to remote source
+  }
+
   async function addConnections(blockId: string, collectionIds: string[]) {
     const result = await db.execAsync(
       collectionIds.map((collectionId) => ({
@@ -533,7 +696,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       })
     );
 
-    // TODO: if blockId has remoteSource, then sync to remote source
+    // TODO: if collectionIds have remoteSource, then sync to remote source
   }
 
   async function replaceConnections(blockId: string, collectionIds: string[]) {
@@ -608,6 +771,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     <DatabaseContext.Provider
       value={{
         createBlock,
+        createBlocks,
         blocks,
         localBlocks: useMemo(() => {
           return blocks.filter((b) => b.remoteSourceType === null);
@@ -624,8 +788,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         replaceConnections,
         deleteCollection,
         getCollectionItems,
+        // TODO: remove
         db,
         initDatabases,
+        fetchBlocks,
+        fetchCollections,
       }}
     >
       {children}

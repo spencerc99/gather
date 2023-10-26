@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { SearchBarInput, StyledView } from "./Themed";
 import { Pressable, StyleSheet } from "react-native";
@@ -9,8 +9,10 @@ import { H2, YStack } from "tamagui";
 export function FeedView() {
   const { blocks } = useContext(DatabaseContext);
 
-  const sortedBlocks = [...blocks].sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  const sortedBlocks = useMemo(
+    () =>
+      [...blocks].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    [blocks]
   );
 
   function renderBlock(block: Block) {

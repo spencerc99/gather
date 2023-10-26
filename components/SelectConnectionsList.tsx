@@ -41,25 +41,63 @@ export function SelectConnectionsList({
     }
   }
 
+  async function onClickCreateCollection() {
+    /* TODO: after creation, pop toast that it was created, clear search and push to top of collections list? */
+    const newCollectionId = await createCollection({
+      title: searchValue,
+      createdBy: currentUser().id,
+    });
+    setSelectedCollections([...selectedCollections, newCollectionId]);
+  }
+
   function renderCollections() {
+    return sortedCollections
+      .filter((c) =>
+        `${c.title}\n${c.description}}`
+          .toLocaleLowerCase()
+          .includes(searchValue.toLocaleLowerCase())
+      )
+      .map((collection) => {
+        const viewProps = selectedCollections.includes(collection.id)
+          ? {
+              backgroundColor: "$green4",
+              borderWidth: 1,
+              borderColor: "$green10",
+            }
+          : undefined;
+        return (
+          <Pressable
+            key={collection.id}
+            onPress={() => toggleCollection(collection)}
+          >
+            {/* TODO: bold the matching parts */}
+            {horizontal ? (
+              <CollectionThumbnail
+                collection={collection}
+                viewProps={viewProps}
+              />
+            ) : (
+              <CollectionSummary
+                collection={collection}
+                viewProps={viewProps}
+              />
+            )}
+          </Pressable>
+        );
+      });
+  }
+
+  function renderCollectionsList() {
     if (horizontal) {
       return (
         <XStack space="$2" alignItems="center" paddingVertical="$1">
-          {/* TODO: after creation, pop toast that it was created, clear search and push to top of collections list? */}
           {searchValue && (
-            <YStack>
+            // Matches the height of CollectionThumbnail lol
+            <YStack height={140} width={100} justifyContent="center">
               <StyledButton
                 onPress={async () => {
-                  const newCollectionId = await createCollection({
-                    title: searchValue,
-                    createdBy: currentUser().id,
-                  });
-                  setSelectedCollections([
-                    ...selectedCollections,
-                    newCollectionId,
-                  ]);
+                  await onClickCreateCollection();
                 }}
-                noTextWrap={true}
                 icon={<Icon name="plus" />}
               >
                 <SizableText
@@ -74,50 +112,16 @@ export function SelectConnectionsList({
               </StyledButton>
             </YStack>
           )}
-          {sortedCollections
-            .filter((c) =>
-              `${c.title}\n${c.description}}`
-                .toLocaleLowerCase()
-                .includes(searchValue.toLocaleLowerCase())
-            )
-            .map((collection) => (
-              <Pressable
-                key={collection.id}
-                onPress={() => toggleCollection(collection)}
-              >
-                {/* TODO: bold the matching parts */}
-                <CollectionThumbnail
-                  collection={collection}
-                  viewProps={
-                    selectedCollections.includes(collection.id)
-                      ? {
-                          backgroundColor: "$green4",
-                          borderWidth: 1,
-                          borderColor: "$green10",
-                        }
-                      : undefined
-                  }
-                />
-              </Pressable>
-            ))}
+          {renderCollections()}
         </XStack>
       );
     } else {
       return (
         <YStack space="$1">
-          {/* TODO: after creation, pop toast that it was created, clear search and push to top of collections list? */}
           {searchValue && (
             <StyledButton
               onPress={async () => {
-                const newCollectionId = await createCollection({
-                  title: searchValue,
-                  createdBy: currentUser().id,
-                });
-
-                setSelectedCollections([
-                  ...selectedCollections,
-                  newCollectionId,
-                ]);
+                await onClickCreateCollection();
               }}
               noTextWrap={true}
               height="auto"
@@ -136,32 +140,7 @@ export function SelectConnectionsList({
               </SizableText>
             </StyledButton>
           )}
-          {sortedCollections
-            .filter((c) =>
-              `${c.title}\n${c.description}}`
-                .toLocaleLowerCase()
-                .includes(searchValue.toLocaleLowerCase())
-            )
-            .map((collection) => (
-              <Pressable
-                key={collection.id}
-                onPress={() => toggleCollection(collection)}
-              >
-                {/* TODO: bold the matching parts */}
-                <CollectionSummary
-                  collection={collection}
-                  viewProps={
-                    selectedCollections.includes(collection.id)
-                      ? {
-                          backgroundColor: "$green4",
-                          borderWidth: 2,
-                          borderColor: "$green10",
-                        }
-                      : undefined
-                  }
-                />
-              </Pressable>
-            ))}
+          {renderCollections()}
         </YStack>
       );
     }
@@ -178,20 +157,18 @@ export function SelectConnectionsList({
         value={searchValue}
         onChangeText={(text) => setSearchValue(text)}
       />
-      <XStack flexGrow={1} height="100%">
-        <ScrollView
-          contentContainerStyle={
-            horizontal
-              ? {
-                  paddingBottom: scrollContainerPaddingBottom,
-                }
-              : { paddingRight: scrollContainerPaddingBottom }
-          }
-          horizontal={horizontal}
-        >
-          {renderCollections()}
-        </ScrollView>
-      </XStack>
+      <ScrollView
+        contentContainerStyle={
+          horizontal
+            ? {
+                paddingBottom: scrollContainerPaddingBottom,
+              }
+            : { paddingRight: scrollContainerPaddingBottom }
+        }
+        horizontal={horizontal}
+      >
+        {renderCollectionsList()}
+      </ScrollView>
     </Stack>
   );
 }

@@ -6,9 +6,11 @@ import { Icon } from "./Themed";
 export function CollectionSelect({
   selectedCollection,
   setSelectedCollection,
+  collectionPlaceholder,
 }: {
   selectedCollection: string | null;
   setSelectedCollection: (selectedCollection: string | null) => void;
+  collectionPlaceholder?: string;
 }) {
   const { collections } = useContext(DatabaseContext);
 
@@ -21,7 +23,7 @@ export function CollectionSelect({
     >
       <Select.Trigger>
         <Select.Value
-          placeholder="Collection to import..."
+          placeholder={collectionPlaceholder || "New collection"}
           placeholderTextColor="$gray9"
         />
       </Select.Trigger>
@@ -31,12 +33,12 @@ export function CollectionSelect({
           modal
           dismissOnSnapToBottom
           native
-          //   animationConfig={{
-          //     type: "spring",
-          //     damping: 20,
-          //     mass: 1.2,
-          //     stiffness: 250,
-          //   }}
+          animationConfig={{
+            type: "spring",
+            damping: 20,
+            mass: 1.2,
+            stiffness: 250,
+          }}
         >
           <Sheet.Frame>
             <Sheet.ScrollView>
@@ -44,9 +46,9 @@ export function CollectionSelect({
             </Sheet.ScrollView>
           </Sheet.Frame>
           <Sheet.Overlay
-          // animation="lazy"
-          // enterStyle={{ opacity: 0 }}
-          // exitStyle={{ opacity: 0 }}
+            animation="lazy"
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
           />
         </Sheet>
       </Adapt>
@@ -54,10 +56,10 @@ export function CollectionSelect({
       <Select.Content zIndex={200000}>
         <Select.Viewport
           // to do animations:
-          // animation="quick"
-          // animateOnly={['transform', 'opacity']}
-          // enterStyle={{ o: 0, y: -10 }}
-          // exitStyle={{ o: 0, y: 10 }}
+          animation="quick"
+          animateOnly={["transform", "opacity"]}
+          enterStyle={{ o: 0, y: -10 }}
+          exitStyle={{ o: 0, y: 10 }}
           minWidth={200}
         >
           <Select.Group>
