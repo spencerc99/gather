@@ -313,6 +313,8 @@ export function AspectRatioImage({
     <Image
       source={uri ? { uri } : require("../assets/images/placeholder-image.jpg")}
       resizeMode="contain"
+      // TODO: neither of these are working fix...
+      // esp. that images have no width/height initially
       loadingIndicatorSource={require("../assets/images/loading-image.gif")}
       defaultSource={require("../assets/images/placeholder-image.jpg")}
       aspectRatio={aspectRatio}

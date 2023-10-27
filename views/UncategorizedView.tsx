@@ -148,90 +148,97 @@ export function UncategorizedView() {
             Keyboard.dismiss();
           }}
           onSnapToItem={(index) => {
+            if (currentIndex === index) {
+              return;
+            }
+            console.log("CURRINDEX", currentIndex, index);
             if (selectedCollections.length && currentIndex !== null) {
               const currentBlockId = events[currentIndex].id;
               addConnections(currentBlockId, selectedCollections);
               setSelectedCollections([]);
               setEvents(events.filter((block) => block.id !== currentBlockId));
-              if (index > currentIndex) {
+              if (index > currentIndex && currentIndex > 0) {
                 carouselRef.current?.prev({ animated: false });
+                setCurrentIndex(currentIndex - 1);
               }
             }
             setCurrentIndex(index);
           }}
-          renderItem={({ item, index }) =>
-            currentIndex !== index ? (
-              <Spinner size="large" />
-            ) : (
-              <>
-                <StyledText
-                  marginBottom="auto"
-                  textAlign="center"
-                  width="100%"
-                  marginTop="$1"
-                >
-                  {index + 1} / {events.length} unsorted
-                </StyledText>
-                <YStack
-                  paddingVertical="$2"
-                  // NOTE: minHeight is ideal here for aesthetic but we need to handle
-                  // when keyboard comes up for it to shrink
-                  // TODO: make this work, doesn't rn because ther's no listener to re-render when keyboard appears
-                  maxHeight={Keyboard.isVisible() ? "40%" : undefined}
-                  alignItems="center"
+          renderItem={({ item, index }) => (
+            <>
+              <StyledText
+                marginBottom="auto"
+                textAlign="center"
+                width="100%"
+                marginTop="$1"
+              >
+                {index + 1} / {events.length} unsorted
+              </StyledText>
+              <YStack
+                paddingVertical="$2"
+                // NOTE: minHeight is ideal here for aesthetic but we need to handle
+                // when keyboard comes up for it to shrink
+                // TODO: make this work, doesn't rn because ther's no listener to re-render when keyboard appears
+                maxHeight={Keyboard.isVisible() ? "40%" : undefined}
+                alignItems="center"
+                space="$2"
+                justifyContent="center"
+                flexGrow={1}
+              >
+                {renderBlock(item)}
+                <XStack
+                  position="absolute"
+                  bottom={6}
                   space="$2"
-                  justifyContent="center"
-                  flexGrow={1}
+                  opacity={
+                    currentIndex !== null &&
+                    item.id === events[currentIndex]?.id &&
+                    selectedCollections.length > 0
+                      ? 1
+                      : 0
+                  }
                 >
-                  {renderBlock(item)}
-                  <XStack
-                    position="absolute"
-                    bottom={6}
-                    space="$2"
-                    opacity={selectedCollections.length > 0 ? 1 : 0}
-                  >
-                    <StyledButton
-                      elevate
-                      onPress={onClickConnect}
-                      borderRadius={20}
-                      iconAfter={
-                        <StyledText>
-                          ({selectedCollections.length.toString()})
-                        </StyledText>
-                      }
-                    >
-                      Swipe to connect
-                    </StyledButton>
-                    <StyledButton
-                      elevate
-                      theme="red"
-                      circular
-                      onPress={() => {
-                        setSelectedCollections([]);
-                      }}
-                    >
-                      X
-                    </StyledButton>
-                  </XStack>
-                </YStack>
-                <Stack
-                  backgroundColor={theme.background.get()}
-                  paddingHorizontal="$1"
-                >
-                  <SelectConnectionsList
-                    selectedCollections={
-                      currentIndex !== null &&
-                      item.id === events[currentIndex].id
-                        ? selectedCollections
-                        : []
+                  <StyledButton
+                    elevate
+                    onPress={onClickConnect}
+                    borderRadius={20}
+                    iconAfter={
+                      <StyledText>
+                        ({selectedCollections.length.toString()})
+                      </StyledText>
                     }
-                    setSelectedCollections={setSelectedCollections}
-                    horizontal
-                  />
-                </Stack>
-              </>
-            )
-          }
+                  >
+                    Swipe to connect
+                  </StyledButton>
+                  <StyledButton
+                    elevate
+                    theme="red"
+                    circular
+                    onPress={() => {
+                      setSelectedCollections([]);
+                    }}
+                  >
+                    X
+                  </StyledButton>
+                </XStack>
+              </YStack>
+              <Stack
+                backgroundColor={theme.background.get()}
+                paddingHorizontal="$1"
+              >
+                <SelectConnectionsList
+                  selectedCollections={
+                    currentIndex !== null &&
+                    item.id === events[currentIndex]?.id
+                      ? selectedCollections
+                      : []
+                  }
+                  setSelectedCollections={setSelectedCollections}
+                  horizontal
+                />
+              </Stack>
+            </>
+          )}
         />
       </YStack>
     </KeyboardAvoidingView>
