@@ -5,7 +5,6 @@ export enum BlockType {
   Document = "document",
   Text = "text",
   Link = "link",
-  // Embed = "embed",
 }
 
 // TODO: convert mimetype to contentype

@@ -55,7 +55,7 @@ interface DatabaseBlockInsert {
   description?: string; // long-form description about the object, could include things like tags here and those get automatically extracted?
   content: string; // could be either the data itself or a path to the data if a rich media object
   type: BlockType;
-  contentType: MimeType;
+  contentType?: MimeType;
   source?: string; // the URL where the object was captured from. If a photo with EXIF data, then the location metadata
   //   TODO: add type
   remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
@@ -361,6 +361,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 ?,
                 ?,
                 ?,
+                ?,
                 ?
             )
             RETURNING *;`,
@@ -522,7 +523,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                           collection_id, 
                           connections.created_timestamp as created_timestamp from blocks 
               LEFT JOIN   connections ON connections.block_id = blocks.id
-              WHERE       blocks.type IN ('${MimeType[".jpeg"]}', '${MimeType[".png"]}', '${MimeType.link}')
+              WHERE       blocks.type IN ('${BlockType.Image}', '${BlockType.Link}')
           ),
           annotated_collections AS (SELECT DISTINCT
               collections.id,

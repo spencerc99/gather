@@ -11,7 +11,6 @@ import { View, XStack, YStack, Theme } from "tamagui";
 import { useContext, useRef, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
-import { MimeType } from "../utils/mimeTypes";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import { MediaView } from "./MediaView";
@@ -20,10 +19,11 @@ import { currentUser } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
 import { getFsPathForImageResult } from "../utils/blobs";
 import { extractDataFromUrl, isUrl } from "../utils/url";
+import { BlockType } from "../utils/mimeTypes";
 
 interface PickedMedia {
   uri: string;
-  type: MimeType;
+  type: BlockType;
 }
 
 export function TextForageView({ collectionId }: { collectionId?: string }) {
@@ -47,7 +47,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
         ...result.assets.map((asset) => ({
           uri: asset.uri,
           // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
-          type: asset.type === "image" ? MimeType[".jpg"] : MimeType[".mov"],
+          type: asset.type === "image" ? BlockType.Image : BlockType.Video,
         })),
       ]);
     }
@@ -99,14 +99,14 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             title,
             description,
             source: url,
-            type: MimeType["link"],
+            type: BlockType.Link,
             collectionsToConnect: collectionId ? [collectionId] : [],
           });
         } else {
           await addBlock({
             createdBy: currentUser().id,
             content: savedTextValue,
-            type: MimeType[".txt"],
+            type: BlockType.Text,
             collectionsToConnect: collectionId ? [collectionId] : [],
           });
         }
@@ -152,7 +152,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       ...medias,
       {
         uri: uri!,
-        type: MimeType[".ma4"],
+        type: BlockType.Audio,
       },
     ]);
   }
@@ -201,7 +201,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                     <YStack width={150} height={150} key={uri} borderRadius={8}>
                       <MediaView
                         media={uri}
-                        mimeType={type}
+                        blockType={type}
                         style={{
                           aspectRatio: 1,
                           resizeMode: "cover",

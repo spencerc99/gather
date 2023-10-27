@@ -28,6 +28,7 @@ import { CollectionSelect } from "../components/CollectionSelect";
 import {
   ArenaChannelRegex,
   arenaClassToBlockType,
+  arenaClassToMimeType,
   getChannelContents,
 } from "../utils/arena";
 import { currentUser } from "../utils/user";
@@ -81,6 +82,7 @@ export default function ModalScreen() {
             block.image?.display.url ||
             block.content,
           type: arenaClassToBlockType(block),
+          contentType: arenaClassToMimeType(block),
           source: block.source?.url,
           createdBy: currentUser().id,
           remoteSourceType: RemoteSourceType.Arena,
@@ -92,6 +94,9 @@ export default function ModalScreen() {
         collectionId: collectionId!,
       });
       setArenaChannel("");
+      // TODO: this should not be needed because `createCollection` calls it
+      // but for some reason not showing up.. maybe a read-replica thing?
+      fetchCollections();
       // TODO: add toast saying success with new collection name and how many blocks created
     } catch (error) {
       console.error(error);

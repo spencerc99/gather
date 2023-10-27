@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Stack as NavigationStack } from "expo-router";
 import {
   Block,
@@ -94,7 +94,18 @@ export function UncategorizedView() {
   return !events ? (
     <Spinner size="large" />
   ) : events.length === 0 ? (
-    <StyledText>No uncategorized blocks</StyledText>
+    <YStack
+      height="100%"
+      justifyContent="center"
+      alignItems="center"
+      paddingHorizontal="$4"
+      space="$3"
+    >
+      {<CyclingRecentBlocks />}
+      <StyledText textAlign="center" fontSize="$7">
+        No uncategorized items! Text yourself some more and come back later :)
+      </StyledText>
+    </YStack>
   ) : (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -171,5 +182,32 @@ export function UncategorizedView() {
         />
       </YStack>
     </KeyboardAvoidingView>
+  );
+}
+
+function CyclingRecentBlocks() {
+  const { blocks } = useContext(DatabaseContext);
+  const recentBlocks = useMemo(() => {
+    return [...blocks]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 10);
+  }, []);
+  const [currIdx, setCurrIdx] = useState(0);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setCurrIdx(currIdx + 1);
+    }, 500);
+
+    return clearTimeout(timeout);
+  }, [blocks]);
+
+  return !blocks.length ? null : (
+    <BlockSummary
+      block={recentBlocks[currIdx]}
+      blockStyle={{
+        width: 150,
+        height: 150,
+      }}
+    />
   );
 }

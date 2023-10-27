@@ -1,4 +1,4 @@
-import { MimeType } from "../utils/mimeTypes";
+import { BlockType } from "../utils/mimeTypes";
 import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
 import { Pressable, Image } from "react-native";
 import { Audio } from "expo-av";
@@ -6,13 +6,13 @@ import { useState, useEffect, PropsWithChildren } from "react";
 
 export function MediaView({
   media,
-  mimeType,
+  blockType,
   alt,
   style = {},
   children,
 }: PropsWithChildren<{
   media: string;
-  mimeType: MimeType;
+  blockType: BlockType;
   alt?: string;
   style?: object;
 }>) {
@@ -32,7 +32,7 @@ export function MediaView({
   }
 
   async function maybeLoadSound() {
-    if (mimeType !== MimeType[".ma4"]) {
+    if (blockType !== BlockType.Audio) {
       return;
     }
 
@@ -63,12 +63,11 @@ export function MediaView({
   }, [sound]);
 
   function renderMedia() {
-    switch (mimeType) {
-      case MimeType[".txt"]:
+    switch (blockType) {
+      case BlockType.Text:
         return <StyledText>{media}</StyledText>;
-      case MimeType[".jpeg"]:
-      case MimeType[".png"]:
-      case MimeType["link"]:
+      case BlockType.Image:
+      case BlockType.Link:
         return (
           <AspectRatioImage
             uri={media}
@@ -77,18 +76,12 @@ export function MediaView({
             }}
           />
         );
-      case MimeType["embed"]:
-        return <StyledText>embed {media}</StyledText>;
-      // return (
-      //   <iframe
-      //     src={media}
-      //     style={{
-      //       width: "100%",
-      //       ...style,
-      //     }}
-      //   />
-      // );
-      case MimeType[".ma4"]:
+      case BlockType.Document:
+        return <StyledText>Document of {media}</StyledText>;
+      // TODO: use react-native-video for this.
+      case BlockType.Video:
+        return <StyledText>Video of {media}</StyledText>;
+      case BlockType.Audio:
         return (
           <Pressable
             onPress={(e) => (isPlaying ? pauseSound() : playSound())}
@@ -105,8 +98,8 @@ export function MediaView({
           </Pressable>
         );
       default:
-        console.error(`Unexpected MimeType ${mimeType} found!`);
-        return <StyledText>Unhandled mimetype {mimeType}</StyledText>;
+        console.error(`Unexpected BlockType ${blockType} found!`);
+        return <StyledText>Unhandled blocktype {blockType}</StyledText>;
     }
   }
 

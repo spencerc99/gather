@@ -157,7 +157,7 @@ export function arenaClassToBlockType({
 }: RawArenaItem): BlockType {
   switch (classVal) {
     case "Image":
-      return BlockType.Image
+      return BlockType.Image;
     // TODO: figure this out
     /**
  * "attachment": {
@@ -191,6 +191,7 @@ export function arenaClassToBlockType({
  */
     // TODO: actually handle this and use embed, need to figure out what embed url to use since URL is empty, for now it just
     // shows an image.
+    // this should honestly probably be Video Rather than anything with an embed.
     case "Media":
       return embed?.url ? BlockType.Link : BlockType.Image;
   }
@@ -201,21 +202,18 @@ export function arenaClassToMimeType({
   embed,
   attachment,
   image,
-}: RawArenaItem): MimeType {
+}: RawArenaItem): MimeType | undefined {
   switch (classVal) {
     case "Image":
       return image!.content_type as MimeType;
     case "Attachment":
       return attachment!.content_type as MimeType;
     case "Text":
-      return MimeType[".txt"];
     case "Link":
-      return MimeType["link"];
-  
- */
+      return undefined;
     // TODO: actually handle this and use embed, need to figure out what embed url to use since URL is empty, for now it just
     // shows an image.
     case "Media":
-      return embed?.url ? MimeType["embed"] : (image!.content_type as MimeType);
+      return embed?.url ? undefined : (image!.content_type as MimeType);
   }
 }

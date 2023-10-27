@@ -1,6 +1,6 @@
 import { Block, DatabaseContext } from "../utils/db";
 import * as WebBrowser from "expo-web-browser";
-import { MimeType } from "../utils/mimeTypes";
+import { BlockType } from "../utils/mimeTypes";
 import { Platform, StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
 import { useContext } from "react";
@@ -190,7 +190,7 @@ export function BlockTextSummary({
       />
     );
     switch (type) {
-      case MimeType["link"]:
+      case BlockType.Link:
         return (
           <ExternalLink href={source!}>
             <YStack>
@@ -234,7 +234,7 @@ export function BlockMetadata({
 
   let metadata;
   switch (type) {
-    // case MimeType["link"]:
+    // case BlockType.Link:
     //   metadata = (
     //     <>
     //       from <ExternalLink href={source!}>{source}</ExternalLink>

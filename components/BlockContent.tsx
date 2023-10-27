@@ -1,7 +1,13 @@
-import { Paragraph, YStack, YStackProps, useTheme } from "tamagui";
+import {
+  Paragraph,
+  ParagraphProps,
+  YStack,
+  YStackProps,
+  useTheme,
+} from "tamagui";
 import { StyleSheet } from "react-native";
 import { Block } from "../utils/db";
-import { MimeType } from "../utils/mimeTypes";
+import { BlockType } from "../utils/mimeTypes";
 import { MediaView } from "./MediaView";
 
 export function BlockContent({
@@ -12,18 +18,20 @@ export function BlockContent({
   containerStyle,
   mediaStyle: style,
   textContainerProps = {},
-}: Block & {
+  textProps = {},
+}: Pick<Block, "type" | "content" | "title" | "description"> & {
   containerStyle?: object;
   mediaStyle?: object;
   textContainerProps?: YStackProps;
+  textProps?: ParagraphProps;
 }) {
   const theme = useTheme();
   let renderedContent;
   let containerProps = {};
 
   switch (type) {
-    case MimeType[".txt"]:
-      renderedContent = <Paragraph>{content}</Paragraph>;
+    case BlockType.Text:
+      renderedContent = <Paragraph {...textProps}>{content}</Paragraph>;
       containerProps = {
         borderColor: theme.color.get(),
         backgroundColor: theme.background.get(),
@@ -32,11 +40,11 @@ export function BlockContent({
         ...textContainerProps,
       };
       break;
-    case MimeType["link"]:
+    case BlockType.Link:
       renderedContent = (
         <MediaView
           media={content}
-          mimeType={type}
+          blockType={type}
           style={style}
           alt={`Image ${title} ${description}`}
         />
@@ -46,7 +54,7 @@ export function BlockContent({
       renderedContent = (
         <MediaView
           media={content}
-          mimeType={type}
+          blockType={type}
           style={style}
           alt={`Image ${title} ${description}`}
         />
