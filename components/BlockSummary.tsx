@@ -52,6 +52,16 @@ export function BlockSummary({
     //   },
     // },
     {
+      text: "Details",
+      icon: () => <Icon name="expand" />,
+      onPress: () => {
+        router.push({
+          pathname: "/block/[id]/",
+          params: { id },
+        });
+      },
+    },
+    {
       text: "Connect",
       icon: () => <Icon name="link" />,
       onPress: () => {

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS blocks (
     content TEXT NOT NULL,
     description TEXT,
     type varchar(128) NOT NULL,
+    content_type varchar(128),
     source TEXT,
     remote_source_type varchar(128),
     remote_source_info blob, # json encoded

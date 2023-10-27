@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { Stack as NavigationStack } from "expo-router";
 import {
   Block,
   DatabaseContext,
@@ -16,7 +17,7 @@ import {
   Platform,
 } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
-import { Spinner, Stack, XStack, YStack } from "tamagui";
+import { Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
 import { convertDbTimestampToDate } from "../utils/date";
 import Carousel from "react-native-reanimated-carousel";
 import { SelectConnectionsList } from "../components/SelectConnectionsList";
@@ -27,6 +28,7 @@ export function UncategorizedView() {
   const [events, setEvents] = useState<Block[] | null>(null);
   const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [currentIdx, setCurrentIdx] = useState<number>(0);
 
   useEffect(() => {
     void fetchEvents();
@@ -87,6 +89,7 @@ export function UncategorizedView() {
 
   const width = Dimensions.get("window").width;
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
 
   return !events ? (
     <Spinner size="large" />
@@ -96,14 +99,30 @@ export function UncategorizedView() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "position" : "height"}
+      // TODO: try switching back to padding when fixing the keyboard-dynamic height thing below
+      // behavior={Platform.OS === "ios" ? "padding" : "height"}
       contentContainerStyle={{
         flex: 1,
       }}
-      keyboardVerticalOffset={insets.top + 60}
+      keyboardVerticalOffset={insets.top + 84}
     >
+      <NavigationStack.Screen
+        options={{
+          headerTitle: `${currentIdx + 1} / ${events.length} unsorted`,
+          headerShown: true,
+        }}
+      />
       <YStack flex={1} justifyContent="space-between">
         <Carousel
           loop={false}
+          withAnimation={{
+            type: "spring",
+            config: {
+              damping: 15,
+              mass: 1.2,
+              stiffness: 150,
+            },
+          }}
           width={width}
           data={events}
           scrollAnimationDuration={1000}
@@ -111,6 +130,7 @@ export function UncategorizedView() {
             Keyboard.dismiss();
           }}
           onSnapToItem={(index) => {
+            setCurrentIdx(index);
             const newBlock = events[index];
             if (selectedCollections.length && currentBlockId) {
               addConnections(currentBlockId, selectedCollections);
@@ -125,19 +145,19 @@ export function UncategorizedView() {
                 paddingVertical="$2"
                 // NOTE: minHeight is ideal here for aesthetic but we need to handle
                 // when keyboard comes up for it to shrink
-                minHeight="50%"
-                maxHeight="70%"
+                // TODO: make this work, doesn't rn because ther's no listener to re-render when keyboard appears
+                maxHeight={Keyboard.isVisible() ? "40%" : undefined}
                 alignItems="center"
                 space="$2"
                 justifyContent="center"
                 flexGrow={1}
               >
-                <StyledText>
-                  {index + 1} / {events.length} unsorted
-                </StyledText>
                 {renderBlock(item)}
               </YStack>
-              <Stack height="30%">
+              <Stack
+                backgroundColor={theme.background.get()}
+                paddingHorizontal="$1"
+              >
                 <SelectConnectionsList
                   selectedCollections={
                     item.id === currentBlockId ? selectedCollections : []

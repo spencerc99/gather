@@ -19,6 +19,7 @@ import {
   ButtonWithConfirm,
   StyledButton,
   StyledInput,
+  StyledLabel,
   StyledParagraph,
   StyledTextArea,
 } from "../components/Themed";
@@ -26,7 +27,7 @@ import { useContext, useState } from "react";
 import { CollectionSelect } from "../components/CollectionSelect";
 import {
   ArenaChannelRegex,
-  arenaClassToMimeType,
+  arenaClassToBlockType,
   getChannelContents,
 } from "../utils/arena";
 import { currentUser } from "../utils/user";
@@ -79,7 +80,7 @@ export default function ModalScreen() {
             block.embed?.url ||
             block.image?.display.url ||
             block.content,
-          type: arenaClassToMimeType(block),
+          type: arenaClassToBlockType(block),
           source: block.source?.url,
           createdBy: currentUser().id,
           remoteSourceType: RemoteSourceType.Arena,
@@ -105,20 +106,18 @@ export default function ModalScreen() {
       <H2>Internal Developer Settings</H2>
       <H3>Are.na</H3>
       <Label>Target Are.na channel</Label>
-      {arenaChannel && !ArenaChannelRegex.test(arenaChannel) && (
-        <Theme name="red">
-          <Label>
-            Invalid channel URL. Please go to the channel and copy and paste the
-            url here.
-          </Label>
-        </Theme>
-      )}
       <StyledInput
         value={arenaChannel}
         onChangeText={(text) => setArenaChannel(text)}
         placeholder="https://are.na/spencer-chang/basket-sjuhif_oeqk"
         autogrow
       />
+      {arenaChannel && !ArenaChannelRegex.test(arenaChannel) && (
+        <StyledLabel color="$red9" paddingBottom="$1">
+          Invalid channel URL. Please go to the channel and copy and paste the
+          url here.
+        </StyledLabel>
+      )}
       <Label>Local collection to import to (optional)</Label>
       <CollectionSelect
         selectedCollection={selectedCollection}

@@ -16,6 +16,7 @@ import {
   Sheet,
   ImageProps,
   Image,
+  Label,
 } from "tamagui";
 
 import { Link, LinkProps } from "expo-router";
@@ -48,6 +49,11 @@ export const StyledText = styled(Text, {
 });
 
 export const StyledParagraph = styled(Paragraph, {
+  variants: TextVariants,
+});
+
+export const StyledLabel = styled(Label, {
+  color: "$color",
   variants: TextVariants,
 });
 

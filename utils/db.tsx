@@ -7,7 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { MimeType } from "./mimeTypes";
+import { BlockType, MimeType } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {
   Collection,
@@ -54,8 +54,8 @@ interface DatabaseBlockInsert {
   title?: string;
   description?: string; // long-form description about the object, could include things like tags here and those get automatically extracted?
   content: string; // could be either the data itself or a path to the data if a rich media object
-  //   TODO: add type
-  type: MimeType;
+  type: BlockType;
+  contentType: MimeType;
   source?: string; // the URL where the object was captured from. If a photo with EXIF data, then the location metadata
   //   TODO: add type
   remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
@@ -215,6 +215,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             content TEXT NOT NULL,
             description TEXT,
             type varchar(128) NOT NULL,
+            content_type varchar(128),
             source TEXT,
             remote_source_type varchar(128),
             remote_source_info blob,
@@ -267,6 +268,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             description,
             content,
             type,
+            content_type,
             source,
             remote_source_type,
             created_by,
@@ -274,6 +276,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         ) VALUES ${chunk
           .map(
             (c) => `(
+            ?,
             ?,
             ?,
             ?,
@@ -295,6 +298,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               block.description || null,
               block.content,
               block.type,
+              block.contentType,
               // @ts-ignore expo sqlite types are broken
               block.source || null,
               // @ts-ignore expo sqlite types are broken
@@ -344,6 +348,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 description,
                 content,
                 type,
+                content_type,
                 source,
                 remote_source_type,
                 created_by,
@@ -366,6 +371,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             block.description || null,
             block.content,
             block.type,
+            block.contentType,
             // @ts-ignore expo sqlite types are broken
             block.source || null,
             // @ts-ignore expo sqlite types are broken

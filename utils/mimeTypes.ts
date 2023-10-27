@@ -1,10 +1,11 @@
-export enum ContentType {
+export enum BlockType {
   Image = "image",
   Video = "video",
   Audio = "audio",
   Document = "document",
   Text = "text",
   Link = "link",
+  // Embed = "embed",
 }
 
 // TODO: convert mimetype to contentype

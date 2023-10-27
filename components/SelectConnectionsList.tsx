@@ -61,7 +61,7 @@ export function SelectConnectionsList({
         const viewProps = selectedCollections.includes(collection.id)
           ? {
               backgroundColor: "$green4",
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: "$green10",
             }
           : undefined;

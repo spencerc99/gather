@@ -23,7 +23,7 @@ import { FeedView } from "../../components/FeedView";
 import { StyledParagraph } from "../../components/Themed";
 import { convertDbTimestampToDate, getRelativeDate } from "../../utils/date";
 import { BlockSummary } from "../../components/BlockSummary";
-import { MimeType } from "../../utils/mimeTypes";
+import { BlockType } from "../../utils/mimeTypes";
 import { currentUser } from "../../utils/user";
 
 export default function ProfileScreen() {
@@ -127,7 +127,7 @@ const TabsContent = (props: TabsContentProps) => {
 interface Event {
   blockId: string;
   blockContent: string;
-  blockType: MimeType;
+  blockType: BlockType;
   blockTitle?: string;
   blockSource?: string;
   collectionId: string;
