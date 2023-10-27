@@ -71,10 +71,11 @@ export function CollectionThumbnail({
       width={100}
       // TODO: literally have no idea why this is needed. Otherwise it grows BEYOND ITS CONTAINER to become like 400px. what the fuck
       // i hate react native so much.
-      maxHeight={140}
+      height={140}
       borderWidth={1}
       {...viewProps}
       paddingBottom="$1"
+      overflow="hidden"
     >
       <AspectRatioImage
         uri={thumbnail}
@@ -83,8 +84,8 @@ export function CollectionThumbnail({
           resizeMode: "cover",
           borderRadius: 8,
           // account for the border lmfao this is insane code.
-          maxWidth: 98,
-          maxHeight: 98,
+          maxWidth: 100,
+          maxHeight: 100,
         }}
       />
       <SizableText numberOfLines={2} paddingHorizontal="$1.5" size="$3">

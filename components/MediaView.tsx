@@ -1,7 +1,7 @@
 import { BlockType } from "../utils/mimeTypes";
 import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
 import { Pressable, Image } from "react-native";
-import { Audio } from "expo-av";
+import { Audio, ResizeMode, Video } from "expo-av";
 import { useState, useEffect, PropsWithChildren } from "react";
 
 export function MediaView({
@@ -78,9 +78,16 @@ export function MediaView({
         );
       case BlockType.Document:
         return <StyledText>Document of {media}</StyledText>;
-      // TODO: use react-native-video for this.
       case BlockType.Video:
-        return <StyledText>Video of {media}</StyledText>;
+        return (
+          <Video
+            source={{ uri: media }}
+            style={style}
+            useNativeControls
+            resizeMode={ResizeMode.CONTAIN}
+            isLooping={false}
+          />
+        );
       case BlockType.Audio:
         return (
           <Pressable

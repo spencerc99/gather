@@ -314,6 +314,7 @@ export function AspectRatioImage({
       source={uri ? { uri } : require("../assets/images/placeholder-image.jpg")}
       resizeMode="contain"
       loadingIndicatorSource={require("../assets/images/loading-image.gif")}
+      defaultSource={require("../assets/images/placeholder-image.jpg")}
       aspectRatio={aspectRatio}
       // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
       // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling

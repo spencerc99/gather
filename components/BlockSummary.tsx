@@ -15,11 +15,13 @@ import { ExternalLink } from "./ExternalLink";
 export function BlockSummary({
   block,
   hideMetadata,
+  hideHoldMenu,
   style,
   blockStyle,
 }: {
   block: Block;
   hideMetadata?: boolean;
+  hideHoldMenu?: boolean;
   style?: object;
   blockStyle?: object;
 }) {
@@ -52,16 +54,6 @@ export function BlockSummary({
     //   },
     // },
     {
-      text: "Details",
-      icon: () => <Icon name="expand" />,
-      onPress: () => {
-        router.push({
-          pathname: "/block/[id]/",
-          params: { id },
-        });
-      },
-    },
-    {
       text: "Connect",
       icon: () => <Icon name="link" />,
       onPress: () => {
@@ -81,19 +73,26 @@ export function BlockSummary({
   ];
 
   const theme = useTheme();
+  const renderedBlockContent = (
+    <BlockContent
+      {...block}
+      containerStyle={style}
+      mediaStyle={{
+        aspectRatio: 1,
+        ...blockStyle,
+      }}
+    />
+  );
 
   return (
     <YStack space="$1" alignItems="center" key={id}>
-      <HoldItem items={blockMenuItems} closeOnTap>
-        <BlockContent
-          {...block}
-          containerStyle={style}
-          mediaStyle={{
-            aspectRatio: 1,
-            ...blockStyle,
-          }}
-        />
-      </HoldItem>
+      {hideHoldMenu ? (
+        renderedBlockContent
+      ) : (
+        <HoldItem items={blockMenuItems} closeOnTap>
+          {renderedBlockContent}
+        </HoldItem>
+      )}
       {!hideMetadata && (
         <StyledText metadata ellipse={true}>
           {title ? `${title}` : `${getRelativeDate(createdAt)}`}
@@ -144,6 +143,16 @@ export function BlockTextSummary({
           },
         ]
       : []),
+    {
+      text: "Details",
+      icon: () => <Icon name="expand" />,
+      onPress: () => {
+        router.push({
+          pathname: "/block/[id]/",
+          params: { id },
+        });
+      },
+    },
     // {
     //   text: "Share",
     //   icon: () => <Icon name="share" />,

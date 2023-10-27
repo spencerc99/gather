@@ -663,17 +663,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     handleSqlErrors(result);
 
-    setCollections(
-      collections.map((c) => {
-        if (collectionId === c.id) {
-          return {
-            ...c,
-            lastConnectedAt: new Date(),
-          };
-        }
-        return c;
-      })
-    );
+    // setCollections(
+    //   collections.map((c) => {
+    //     if (collectionId === c.id) {
+    //       return {
+    //         ...c,
+    //         lastConnectedAt: new Date(),
+    //       };
+    //     }
+    //     return c;
+    //   })
+    // );
+    void fetchCollections();
 
     // TODO: if collectionId has remoteSource, then sync to remote source
   }
@@ -691,17 +692,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     handleSqlErrors(result);
 
-    setCollections(
-      collections.map((c) => {
-        if (collectionIds.includes(c.id)) {
-          return {
-            ...c,
-            lastConnectedAt: new Date(),
-          };
-        }
-        return c;
-      })
-    );
+    void fetchCollections();
+    // setCollections(
+    //   collections.map((c) => {
+    //     if (collectionIds.includes(c.id)) {
+    //       return {
+    //         ...c,
+    //         lastConnectedAt: new Date(),
+    //       };
+    //     }
+    //     return c;
+    //   })
+    // );
 
     // TODO: if collectionIds have remoteSource, then sync to remote source
   }

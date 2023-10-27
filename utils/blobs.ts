@@ -16,10 +16,12 @@ export async function intializeFilesystemFolder() {
   });
 }
 
-export async function getFsPathForImageResult(
-  localUri: string
+export async function getFsPathForMediaResult(
+  localUri: string,
+  extension: string
 ): Promise<string> {
-  const newUri = `${PHOTOS_FOLDER}/${uuidv4()}.jpg`;
+  const newUri = `${PHOTOS_FOLDER}/${uuidv4()}.${extension}`;
+  console.log(localUri);
   await FileSystem.copyAsync({ from: localUri, to: newUri });
   return newUri;
 }

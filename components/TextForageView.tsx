@@ -17,7 +17,7 @@ import { MediaView } from "./MediaView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { currentUser } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
-import { getFsPathForImageResult } from "../utils/blobs";
+import { getFsPathForMediaResult } from "../utils/blobs";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { BlockType } from "../utils/mimeTypes";
 
@@ -75,7 +75,11 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       if (savedMedias.length) {
         await Promise.all(
           savedMedias.map(async ({ uri, type }) => {
-            const fileUri = await getFsPathForImageResult(uri);
+            // TODO: this is only accounting for iphone.
+            const fileUri = await getFsPathForMediaResult(
+              uri,
+              type === BlockType.Image ? "jpg" : "mp4"
+            );
             return addBlock({
               createdBy: currentUser().id,
               content: fileUri,

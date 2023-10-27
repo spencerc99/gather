@@ -104,44 +104,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     );
   }
 
-  return blocks?.length === 0 && !collectionId ? (
-    <YStack
-      justifyContent="center"
-      alignItems="center"
-      paddingHorizontal="$4"
-      space="$4"
-      flexGrow={1}
-      onTouchStart={() => {
-        Keyboard.dismiss();
-      }}
-    >
-      <XStack alignItems="center">
-        {/* TODO: allow you to zoom in */}
-        {InspoBlocks.map((block, idx) => (
-          <BlockContent
-            key={idx}
-            {...block}
-            containerStyle={{
-              width: 120,
-              height: 120,
-            }}
-            textContainerProps={{
-              padding: 2,
-            }}
-            textProps={{
-              fontSize: "$1",
-            }}
-          />
-        ))}
-      </XStack>
-      <StyledText textAlign="center" fontSize="$7">
-        Your messy space for gathering inspiration, moments, and wonderings
-      </StyledText>
-      <StyledText textAlign="center" fontSize="$7">
-        Treat it like texting yourself
-      </StyledText>
-    </YStack>
-  ) : (
+  return (
     <ScrollView
       style={{
         overflowY: "visible",
@@ -155,17 +118,57 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
         scrollRef.current?.scrollToEnd({ animated: false })
       }
     >
-      <YStack
-        paddingBottom="$4"
-        paddingHorizontal="$2"
-        space="$4"
-        width="100%"
-        flexGrow={1}
-        marginTop="$2"
-        alignItems="flex-end"
-      >
-        {sortedBlocks.map(renderBlock)}
-      </YStack>
+      {blocks?.length === 0 && !collectionId ? (
+        <YStack
+          justifyContent="center"
+          alignItems="center"
+          paddingHorizontal="$4"
+          space="$4"
+          marginTop="30%"
+          flexGrow={1}
+          onTouchStart={() => {
+            Keyboard.dismiss();
+          }}
+        >
+          <XStack alignItems="center">
+            {/* TODO: allow you to zoom in */}
+            {InspoBlocks.map((block, idx) => (
+              <BlockContent
+                key={idx}
+                {...block}
+                containerStyle={{
+                  width: 120,
+                  height: 120,
+                }}
+                textContainerProps={{
+                  padding: 2,
+                }}
+                textProps={{
+                  fontSize: "$1",
+                }}
+              />
+            ))}
+          </XStack>
+          <StyledText textAlign="center" fontSize="$7">
+            Your messy space for gathering inspiration, moments, and wonderings
+          </StyledText>
+          <StyledText textAlign="center" fontSize="$7">
+            Treat it like texting yourself
+          </StyledText>
+        </YStack>
+      ) : (
+        <YStack
+          paddingBottom="$4"
+          paddingHorizontal="$2"
+          space="$4"
+          width="100%"
+          flexGrow={1}
+          marginTop="$2"
+          alignItems="flex-end"
+        >
+          {sortedBlocks.map(renderBlock)}
+        </YStack>
+      )}
     </ScrollView>
   );
 }

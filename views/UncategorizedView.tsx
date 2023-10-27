@@ -1,5 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
-import { Stack as NavigationStack } from "expo-router";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Block,
   DatabaseContext,
@@ -19,19 +18,19 @@ import {
 import { BlockSummary } from "../components/BlockSummary";
 import { Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
 import { convertDbTimestampToDate } from "../utils/date";
-import Carousel from "react-native-reanimated-carousel";
+import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectConnectionsList } from "../components/SelectConnectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function UncategorizedView() {
   const { db, blocks, addConnections } = useContext(DatabaseContext);
   const [events, setEvents] = useState<Block[] | null>(null);
-  const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
-  const [currentIdx, setCurrentIdx] = useState<number>(0);
 
   useEffect(() => {
     void fetchEvents();
+    // TODO: this is insufficient bc you could have unconnected blocks.
   }, [blocks.length]);
 
   async function fetchEvents() {
@@ -64,20 +63,23 @@ export function UncategorizedView() {
       throw events.error;
     }
 
-    setEvents(
-      events.rows.map((event) => {
-        const mapped = mapSnakeCaseToCamelCaseProperties(event);
-        return {
-          ...mapped,
-          createdAt: convertDbTimestampToDate(mapped.createdTimestamp),
-        } as Block;
-      })
-    );
+    const newEvents = events.rows.map((event) => {
+      const mapped = mapSnakeCaseToCamelCaseProperties(event);
+      return {
+        ...mapped,
+        createdAt: convertDbTimestampToDate(mapped.createdTimestamp),
+      } as Block;
+    });
+    setEvents(newEvents);
+    if (newEvents.length) {
+      setCurrentIndex(0);
+    }
   }
 
   function renderBlock(block: Block) {
     return (
       <BlockSummary
+        hideHoldMenu
         block={block}
         key={block.id}
         style={{
@@ -87,9 +89,17 @@ export function UncategorizedView() {
     );
   }
 
+  function onClickConnect() {
+    if (!events) {
+      return;
+    }
+    carouselRef.current?.next();
+  }
+
   const width = Dimensions.get("window").width;
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const carouselRef = useRef<ICarouselInstance>(null);
 
   return !events ? (
     <Spinner size="large" />
@@ -101,7 +111,8 @@ export function UncategorizedView() {
       paddingHorizontal="$4"
       space="$3"
     >
-      {<CyclingRecentBlocks />}
+      {/* TODO: fix this, not sure why it isn't cycling */}
+      {/* {<CyclingRecentBlocks />} */}
       <StyledText textAlign="center" fontSize="$7">
         No uncategorized items! Text yourself some more and come back later :)
       </StyledText>
@@ -115,22 +126,18 @@ export function UncategorizedView() {
       contentContainerStyle={{
         flex: 1,
       }}
-      keyboardVerticalOffset={insets.top + 84}
+      keyboardVerticalOffset={insets.top + 60}
     >
-      <NavigationStack.Screen
-        options={{
-          headerTitle: `${currentIdx + 1} / ${events.length} unsorted`,
-          headerShown: true,
-        }}
-      />
+      {/* TODO: add a undo button to header? */}
       <YStack flex={1} justifyContent="space-between">
         <Carousel
+          ref={carouselRef}
           loop={false}
           withAnimation={{
             type: "spring",
             config: {
               damping: 15,
-              mass: 1.2,
+              mass: 1,
               stiffness: 150,
             },
           }}
@@ -141,44 +148,90 @@ export function UncategorizedView() {
             Keyboard.dismiss();
           }}
           onSnapToItem={(index) => {
-            setCurrentIdx(index);
-            const newBlock = events[index];
-            if (selectedCollections.length && currentBlockId) {
+            if (selectedCollections.length && currentIndex !== null) {
+              const currentBlockId = events[currentIndex].id;
               addConnections(currentBlockId, selectedCollections);
               setSelectedCollections([]);
               setEvents(events.filter((block) => block.id !== currentBlockId));
+              if (index > currentIndex) {
+                carouselRef.current?.prev({ animated: false });
+              }
             }
-            setCurrentBlockId(newBlock.id);
+            setCurrentIndex(index);
           }}
-          renderItem={({ item, index }) => (
-            <>
-              <YStack
-                paddingVertical="$2"
-                // NOTE: minHeight is ideal here for aesthetic but we need to handle
-                // when keyboard comes up for it to shrink
-                // TODO: make this work, doesn't rn because ther's no listener to re-render when keyboard appears
-                maxHeight={Keyboard.isVisible() ? "40%" : undefined}
-                alignItems="center"
-                space="$2"
-                justifyContent="center"
-                flexGrow={1}
-              >
-                {renderBlock(item)}
-              </YStack>
-              <Stack
-                backgroundColor={theme.background.get()}
-                paddingHorizontal="$1"
-              >
-                <SelectConnectionsList
-                  selectedCollections={
-                    item.id === currentBlockId ? selectedCollections : []
-                  }
-                  setSelectedCollections={setSelectedCollections}
-                  horizontal
-                />
-              </Stack>
-            </>
-          )}
+          renderItem={({ item, index }) =>
+            currentIndex !== index ? (
+              <Spinner size="large" />
+            ) : (
+              <>
+                <StyledText
+                  marginBottom="auto"
+                  textAlign="center"
+                  width="100%"
+                  marginTop="$1"
+                >
+                  {index + 1} / {events.length} unsorted
+                </StyledText>
+                <YStack
+                  paddingVertical="$2"
+                  // NOTE: minHeight is ideal here for aesthetic but we need to handle
+                  // when keyboard comes up for it to shrink
+                  // TODO: make this work, doesn't rn because ther's no listener to re-render when keyboard appears
+                  maxHeight={Keyboard.isVisible() ? "40%" : undefined}
+                  alignItems="center"
+                  space="$2"
+                  justifyContent="center"
+                  flexGrow={1}
+                >
+                  {renderBlock(item)}
+                  <XStack
+                    position="absolute"
+                    bottom={6}
+                    space="$2"
+                    opacity={selectedCollections.length > 0 ? 1 : 0}
+                  >
+                    <StyledButton
+                      elevate
+                      onPress={onClickConnect}
+                      borderRadius={20}
+                      iconAfter={
+                        <StyledText>
+                          ({selectedCollections.length.toString()})
+                        </StyledText>
+                      }
+                    >
+                      Swipe to connect
+                    </StyledButton>
+                    <StyledButton
+                      elevate
+                      theme="red"
+                      circular
+                      onPress={() => {
+                        setSelectedCollections([]);
+                      }}
+                    >
+                      X
+                    </StyledButton>
+                  </XStack>
+                </YStack>
+                <Stack
+                  backgroundColor={theme.background.get()}
+                  paddingHorizontal="$1"
+                >
+                  <SelectConnectionsList
+                    selectedCollections={
+                      currentIndex !== null &&
+                      item.id === events[currentIndex].id
+                        ? selectedCollections
+                        : []
+                    }
+                    setSelectedCollections={setSelectedCollections}
+                    horizontal
+                  />
+                </Stack>
+              </>
+            )
+          }
         />
       </YStack>
     </KeyboardAvoidingView>
@@ -191,20 +244,23 @@ function CyclingRecentBlocks() {
     return [...blocks]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 10);
-  }, []);
+  }, [blocks]);
   const [currIdx, setCurrIdx] = useState(0);
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setCurrIdx(currIdx + 1);
-    }, 500);
+      setCurrIdx((newIdx) => (newIdx + 1) % recentBlocks.length);
+    }, 250);
 
     return clearTimeout(timeout);
-  }, [blocks]);
+  }, [recentBlocks]);
 
+  console.log(currIdx);
   return !blocks.length ? null : (
     <BlockSummary
       block={recentBlocks[currIdx]}
-      blockStyle={{
+      hideHoldMenu
+      hideMetadata
+      style={{
         width: 150,
         height: 150,
       }}

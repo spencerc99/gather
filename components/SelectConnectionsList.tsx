@@ -90,7 +90,7 @@ export function SelectConnectionsList({
   function renderCollectionsList() {
     if (horizontal) {
       return (
-        <XStack space="$2" alignItems="center" paddingVertical="$1">
+        <XStack space="$2" alignItems="center" paddingVertical="$2">
           {searchValue && (
             // Matches the height of CollectionThumbnail lol
             <YStack height={140} width={100} justifyContent="center">
@@ -99,6 +99,8 @@ export function SelectConnectionsList({
                   await onClickCreateCollection();
                 }}
                 icon={<Icon name="plus" />}
+                height="auto"
+                minHeight={40}
               >
                 <SizableText
                   userSelect="none"
@@ -166,6 +168,7 @@ export function SelectConnectionsList({
             : { paddingRight: scrollContainerPaddingBottom }
         }
         horizontal={horizontal}
+        keyboardShouldPersistTaps={"handled"}
       >
         {renderCollectionsList()}
       </ScrollView>
