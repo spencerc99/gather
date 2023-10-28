@@ -90,7 +90,16 @@ export function SelectConnectionsList({
   function renderCollectionsList() {
     if (horizontal) {
       return (
-        <XStack space="$2" alignItems="center" paddingVertical="$2">
+        <XStack
+          space="$2"
+          alignItems="center"
+          paddingVertical="$3"
+          // TODO: figure this out
+          onPress={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
           {searchValue && (
             // Matches the height of CollectionThumbnail lol
             <YStack height={140} width={100} justifyContent="center">

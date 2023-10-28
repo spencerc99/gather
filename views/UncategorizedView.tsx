@@ -21,6 +21,7 @@ import { convertDbTimestampToDate } from "../utils/date";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectConnectionsList } from "../components/SelectConnectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 
 export function UncategorizedView() {
   const { db, blocks, addConnections } = useContext(DatabaseContext);
@@ -28,10 +29,10 @@ export function UncategorizedView() {
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
 
-  useEffect(() => {
+  useFocusEffect(() => {
     void fetchEvents();
     // TODO: this is insufficient bc you could have unconnected blocks.
-  }, [blocks.length]);
+  });
 
   async function fetchEvents() {
     const [events] = await db.execAsync(
@@ -92,8 +93,13 @@ export function UncategorizedView() {
   function onClickConnect() {
     if (!events) {
       return;
+    } else if (events.length === 1) {
+      addConnections(events[currentIndex!].id, selectedCollections);
+      setSelectedCollections([]);
+      setEvents([]);
+    } else {
+      carouselRef.current?.next();
     }
-    carouselRef.current?.next();
   }
 
   const width = Dimensions.get("window").width;
@@ -145,21 +151,27 @@ export function UncategorizedView() {
           data={events}
           scrollAnimationDuration={1000}
           onScrollBegin={() => {
+            // TODO: bring this back when you resolve the
+            // propagation from trying to touch the selectcollections input
+            // Keyboard.dismiss();
+          }}
+          // TODO: after solving above can remove this.
+          onScrollEnd={() => {
             Keyboard.dismiss();
           }}
           onSnapToItem={(index) => {
             if (currentIndex === index) {
               return;
             }
-            console.log("CURRINDEX", currentIndex, index);
             if (selectedCollections.length && currentIndex !== null) {
               const currentBlockId = events[currentIndex].id;
               addConnections(currentBlockId, selectedCollections);
               setSelectedCollections([]);
               setEvents(events.filter((block) => block.id !== currentBlockId));
-              if (index > currentIndex && currentIndex > 0) {
+              if (index > currentIndex && index > 0) {
                 carouselRef.current?.prev({ animated: false });
                 setCurrentIndex(currentIndex - 1);
+                return;
               }
             }
             setCurrentIndex(index);
@@ -208,7 +220,7 @@ export function UncategorizedView() {
                       </StyledText>
                     }
                   >
-                    Swipe to connect
+                    {events.length > 1 ? "Swipe to connect" : "Connect"}
                   </StyledButton>
                   <StyledButton
                     elevate

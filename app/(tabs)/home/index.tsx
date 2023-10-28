@@ -8,10 +8,8 @@ export default function HomeScreen() {
       defaultValue="unsorted"
       orientation="horizontal"
       flexDirection="column"
-      borderWidth="$0.25"
       height="100%"
       overflow="hidden"
-      borderColor="$borderColor"
     >
       <Tabs.List
         separator={<Separator vertical />}

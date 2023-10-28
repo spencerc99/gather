@@ -21,7 +21,6 @@ export async function getFsPathForMediaResult(
   extension: string
 ): Promise<string> {
   const newUri = `${PHOTOS_FOLDER}/${uuidv4()}.${extension}`;
-  console.log(localUri);
   await FileSystem.copyAsync({ from: localUri, to: newUri });
   return newUri;
 }
