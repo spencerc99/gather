@@ -3,14 +3,91 @@ import * as WebBrowser from "expo-web-browser";
 import { BlockType } from "../utils/mimeTypes";
 import { Platform, StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { Icon, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import { TextProps, YStack, useTheme, styled } from "tamagui";
+import { TextProps, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { useRouter } from "expo-router";
-import * as Linking from "expo-linking";
 import { ExternalLink } from "./ExternalLink";
+import * as FileSystem from "expo-file-system";
+import * as Clipboard from "expo-clipboard";
+
+function useBlockMenuItems(block: Block) {
+  const { deleteBlock } = useContext(DatabaseContext);
+  const router = useRouter();
+  const { id, source, content, type } = block;
+
+  const blockMenuItems = useMemo(
+    () => [
+      { text: "Actions", isTitle: true },
+      ...(source
+        ? [
+            {
+              text: "View Source",
+              icon: () => <Icon name={"external-link"} />,
+              onPress: () => console.log("View Source"),
+            },
+          ]
+        : []),
+      {
+        text: "Details",
+        icon: () => <Icon name="expand" />,
+        onPress: () => {
+          router.push({
+            pathname: "/block/[id]/",
+            params: { id },
+          });
+        },
+      },
+      ...([BlockType.Audio, BlockType.Document].includes(type)
+        ? []
+        : [
+            {
+              text: "Copy",
+              icon: () => <Icon name="copy" />,
+              onPress: async () => {
+                switch (type) {
+                  case BlockType.Text:
+                    await Clipboard.setStringAsync(content);
+                  case BlockType.Link:
+                    await Clipboard.setUrlAsync(source!);
+                  case BlockType.Image:
+                  case BlockType.Video:
+                    const base64 = await FileSystem.readAsStringAsync(content, {
+                      encoding: "base64",
+                    });
+                    Clipboard.setImageAsync(base64);
+                  case BlockType.Audio:
+                  case BlockType.Document:
+                    throw new Error("unsupported copy");
+                }
+              },
+            },
+          ]),
+      {
+        text: "Connect",
+        icon: () => <Icon name="link" />,
+        onPress: () => {
+          router.push({
+            pathname: "/block/[id]/connect",
+            params: { id },
+          });
+        },
+      },
+      {
+        text: "Delete",
+        icon: () => <Icon name={"trash"} />,
+        isDestructive: true,
+        // TODO: add confirmation dialog
+        onPress: () => deleteBlock(id),
+      },
+    ],
+    [id, source, content, deleteBlock]
+  );
+
+  return blockMenuItems;
+}
 
 export function BlockSummary({
   block,
@@ -25,52 +102,8 @@ export function BlockSummary({
   style?: object;
   blockStyle?: object;
 }) {
-  const { id, content, type, source, title, createdAt } = block;
-  const { deleteBlock } = useContext(DatabaseContext);
-  const router = useRouter();
-
-  const blockMenuItems = [
-    { text: "Actions", isTitle: true },
-    ...(source
-      ? [
-          {
-            text: "View Source",
-            icon: () => <Icon name={"external-link"} />,
-            onPress: () => {
-              if (Platform.OS === "web") {
-                Linking.openURL(source);
-              } else {
-                WebBrowser.openBrowserAsync(source);
-              }
-            },
-          },
-        ]
-      : []),
-    // {
-    //   text: "Share",
-    //   icon: () => <Icon name="share" />,
-    //   onPress: () => {
-    //     // TODO: copy deep link to clipboard
-    //   },
-    // },
-    {
-      text: "Connect",
-      icon: () => <Icon name="link" />,
-      onPress: () => {
-        router.push({
-          pathname: "/block/[id]/connect",
-          params: { id },
-        });
-      },
-    },
-    {
-      text: "Delete",
-      icon: () => <Icon name={"trash"} />,
-      isDestructive: true,
-      // TODO: add confirmation dialog
-      onPress: () => deleteBlock(id),
-    },
-  ];
+  const { id, title, createdAt } = block;
+  const blockMenuItems = useBlockMenuItems(block);
 
   const theme = useTheme();
   const renderedBlockContent = (
@@ -127,57 +160,9 @@ export function BlockTextSummary({
   hideMetadata?: boolean;
   style?: object;
 }) {
-  const { deleteBlock } = useContext(DatabaseContext);
-  const { id, content, type, source, title, createdAt } = block;
+  const { id, type, source, title } = block;
   const theme = useTheme();
-  const router = useRouter();
-
-  const blockMenuItems = [
-    { text: "Actions", isTitle: true },
-    ...(source
-      ? [
-          {
-            text: "View Source",
-            icon: () => <Icon name={"external-link"} />,
-            onPress: () => console.log("View Source"),
-          },
-        ]
-      : []),
-    {
-      text: "Details",
-      icon: () => <Icon name="expand" />,
-      onPress: () => {
-        router.push({
-          pathname: "/block/[id]/",
-          params: { id },
-        });
-      },
-    },
-    // {
-    //   text: "Share",
-    //   icon: () => <Icon name="share" />,
-    //   onPress: () => {
-    //     // TODO: copy deep link to clipboard
-    //   },
-    // },
-    {
-      text: "Connect",
-      icon: () => <Icon name="link" />,
-      onPress: () => {
-        router.push({
-          pathname: "/block/[id]/connect",
-          params: { id },
-        });
-      },
-    },
-    {
-      text: "Delete",
-      icon: () => <Icon name={"trash"} />,
-      isDestructive: true,
-      // TODO: add confirmation dialog
-      onPress: () => deleteBlock(id),
-    },
-  ];
+  const blockMenuItems = useBlockMenuItems(block);
 
   function renderContent() {
     const content = (
