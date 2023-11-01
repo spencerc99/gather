@@ -109,7 +109,13 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
           asChild
         >
           <Pressable>
-            <BlockTextSummary block={block} style={{ maxHeight: 180 }} />
+            <BlockTextSummary
+              block={block}
+              style={{ maxHeight: 250 }}
+              blockStyle={{
+                maxHeight: 250,
+              }}
+            />
           </Pressable>
         </Link>
       </Swipeable>

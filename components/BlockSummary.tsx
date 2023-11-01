@@ -156,10 +156,12 @@ export function BlockTextSummary({
   block,
   hideMetadata,
   style,
+  blockStyle,
 }: {
   block: Block;
   hideMetadata?: boolean;
   style?: object;
+  blockStyle?: object;
 }) {
   const { id, type, source, title } = block;
   const theme = useTheme();
@@ -174,6 +176,7 @@ export function BlockTextSummary({
         mediaStyle={{
           width: 250,
           borderRadius: 4,
+          ...blockStyle,
         }}
         textContainerProps={{
           borderWidth: 1,
