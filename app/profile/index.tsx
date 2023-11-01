@@ -2,6 +2,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { useContext, useEffect, useState } from "react";
 import {
   DatabaseContext,
+  mapBlockContentToPath,
   mapSnakeCaseToCamelCaseProperties,
 } from "../../utils/db";
 import { CollectionSummary } from "../../components/CollectionSummary";
@@ -181,6 +182,10 @@ export function TimelineView() {
         const mapped = mapSnakeCaseToCamelCaseProperties(event);
         return {
           ...mapped,
+          blockContent: mapBlockContentToPath(
+            mapped.blockContent,
+            mapped.blockTyp
+          ),
           createdAt: convertDbTimestampToDate(mapped.createdAt),
           blockCreatedAt: convertDbTimestampToDate(mapped.blockCreatedAt),
         } as Event;
@@ -239,7 +244,6 @@ export function CollectionsView() {
       {<CreateCollectionButton />}
       <YStack style={styles.collections}>
         {collections.map((collection) => (
-          // TODO: styling is messing up without "asChild" but then the link doesn't work
           <Link
             href={{
               pathname: "/collection/[id]/",

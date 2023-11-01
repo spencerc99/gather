@@ -12,6 +12,7 @@ import { useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
+import { PHOTOS_FOLDER } from "../utils/blobs";
 
 function useBlockMenuItems(block: Block) {
   const { deleteBlock } = useContext(DatabaseContext);

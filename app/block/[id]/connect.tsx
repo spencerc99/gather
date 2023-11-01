@@ -53,7 +53,6 @@ export default function BlockConnectModal() {
           selectedCollections={selectedCollections}
           setSelectedCollections={setSelectedCollections}
         />
-        {/* TODO: make this update instead of only add */}
         <StyledButton
           onPress={onConnect}
           width="100%"

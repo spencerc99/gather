@@ -1,8 +1,6 @@
 import {
-  StyleSheet,
   KeyboardAvoidingView,
   SafeAreaView,
-  Keyboard,
   ScrollView,
   Platform,
 } from "react-native";

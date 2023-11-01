@@ -48,7 +48,17 @@ export function BlockDetailView({ block }: { block: Block }) {
           Updated: {updatedAt.toLocaleTimeString()}
         </StyledParagraph>
       </StyledView>
-      <StyledButton icon={<Icon name="link" />}>Connect</StyledButton>
+      <StyledButton
+        icon={<Icon name="link" />}
+        onPress={() => {
+          router.push({
+            pathname: "/block/[id]/connect",
+            params: { id },
+          });
+        }}
+      >
+        Connect
+      </StyledButton>
       {/* TODO: separate by your connections vs. friends vs world? */}
       {connections.map((connection) => (
         <ConnectionSummary

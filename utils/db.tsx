@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import {
   PropsWithChildren,
@@ -18,7 +19,7 @@ import {
 } from "./dataTypes";
 import { currentUser } from "./user";
 import { convertDbTimestampToDate } from "./date";
-import { intializeFilesystemFolder } from "./blobs";
+import { PHOTOS_FOLDER, intializeFilesystemFolder } from "./blobs";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -173,6 +174,27 @@ export function mapSnakeCaseToCamelCaseProperties<
     newObj[newKey] = obj[key];
   }
   return newObj;
+}
+
+export function mapBlockContentToPath(
+  rawBlockContent: string,
+  rawBlockType: BlockType
+): string {
+  if (
+    ![
+      BlockType.Image,
+      BlockType.Link,
+      BlockType.Audio,
+      BlockType.Document,
+      BlockType.Video,
+    ].includes(rawBlockType)
+  ) {
+    return rawBlockContent;
+  }
+
+  return rawBlockContent.startsWith(PHOTOS_FOLDER)
+    ? FileSystem.documentDirectory + rawBlockContent
+    : rawBlockContent;
 }
 
 function handleSqlErrors(
@@ -496,6 +518,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 ...blockMappedToCamelCase,
                 // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
                 id: block.id.toString(),
+                content: mapBlockContentToPath(block.content, block.type),
                 createdAt: convertDbTimestampToDate(block.created_timestamp),
                 updatedAt: convertDbTimestampToDate(block.updated_timestamp),
                 remoteSourceType: block.remote_source_type as RemoteSourceType,

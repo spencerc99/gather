@@ -1,6 +1,7 @@
 import {
   Paragraph,
   ParagraphProps,
+  ScrollView,
   YStack,
   YStackProps,
   useTheme,

@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Block,
   DatabaseContext,
+  mapBlockContentToPath,
   mapSnakeCaseToCamelCaseProperties,
 } from "../utils/db";
 import {
@@ -68,6 +69,7 @@ export function UncategorizedView() {
       const mapped = mapSnakeCaseToCamelCaseProperties(event);
       return {
         ...mapped,
+        content: mapBlockContentToPath(mapped.content, mapped.type),
         createdAt: convertDbTimestampToDate(mapped.createdTimestamp),
       } as Block;
     });
