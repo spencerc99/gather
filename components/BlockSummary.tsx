@@ -170,6 +170,7 @@ export function BlockTextSummary({
       <BlockContent
         key={id}
         {...block}
+        containerStyle={style}
         mediaStyle={{
           width: 250,
           borderRadius: 4,

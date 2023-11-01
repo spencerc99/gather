@@ -2,7 +2,13 @@ import { useCallback, useContext, useMemo, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Collection } from "../utils/dataTypes";
 import { ScrollView, SizableText, Stack, View, XStack, YStack } from "tamagui";
-import { Icon, InputWithIcon, StyledButton, StyledParagraph } from "./Themed";
+import {
+  Icon,
+  InputWithIcon,
+  LinkButton,
+  StyledButton,
+  StyledParagraph,
+} from "./Themed";
 import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
 import { Pressable } from "react-native";
 import { currentUser } from "../utils/user";
@@ -102,12 +108,12 @@ export function SelectCollectionsList({
         >
           {!searchValue && collections.length === 0 && (
             <YStack height={140} width={110} justifyContent="center">
-              <StyledButton
+              <LinkButton
                 href="/modal"
                 icon={<Icon name="plus" />}
                 height="auto"
                 minHeight={40}
-                paddingVertical="$.5"
+                paddingVertical="$1"
               >
                 <SizableText
                   userSelect="none"
@@ -117,7 +123,7 @@ export function SelectCollectionsList({
                 >
                   <SizableText>New collection</SizableText>
                 </SizableText>
-              </StyledButton>
+              </LinkButton>
             </YStack>
           )}
           {searchValue && (
@@ -151,14 +157,14 @@ export function SelectCollectionsList({
         <YStack space="$1">
           {!searchValue && collections.length === 0 && (
             <YStack height={140} width={100} justifyContent="center">
-              <StyledButton
+              <LinkButton
                 href="/modal"
                 icon={<Icon name="plus" />}
                 height="auto"
                 minHeight={40}
               >
                 New collection
-              </StyledButton>
+              </LinkButton>
             </YStack>
           )}
           {searchValue && (

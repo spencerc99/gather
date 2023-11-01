@@ -1,11 +1,12 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "expo-router";
 import { Block, DatabaseContext } from "../utils/db";
 import { Image, XStack, YStack, useTheme } from "tamagui";
 import { Icon, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";
 import { Swipeable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import { Keyboard, ScrollView } from "react-native";
+import { Keyboard, Pressable, ScrollView } from "react-native";
 import { BlockContent } from "./BlockContent";
 import { BlockType } from "../utils/mimeTypes";
 
@@ -99,7 +100,18 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
         }}
       >
         {/* TODO: add Select hold menu item to multiselect */}
-        <BlockTextSummary block={block} />
+        <Link
+          href={{
+            pathname: "/block/[id]/",
+            params: { id: block.id },
+          }}
+          key={block.id}
+          asChild
+        >
+          <Pressable>
+            <BlockTextSummary block={block} style={{ maxHeight: 180 }} />
+          </Pressable>
+        </Link>
       </Swipeable>
     );
   }

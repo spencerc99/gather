@@ -113,8 +113,8 @@ export function LinkButton(props: LinkButtonProps) {
   const { href, children, ...otherProps } = props;
   return (
     // @ts-ignore
-    <Link {...otherProps} href={href} asChild={true}>
-      <StyledButton>{children}</StyledButton>
+    <Link href={href} asChild={true}>
+      <StyledButton {...otherProps}>{children}</StyledButton>
     </Link>
   );
 }

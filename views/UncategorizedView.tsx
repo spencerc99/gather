@@ -32,7 +32,6 @@ export function UncategorizedView() {
 
   useFocusEffect(() => {
     void fetchEvents();
-    // TODO: this is insufficient bc you could have unconnected blocks.
   });
 
   async function fetchEvents() {
@@ -86,7 +85,8 @@ export function UncategorizedView() {
         block={block}
         key={block.id}
         style={{
-          maxHeight: "100%",
+          // TODO: fix this height overflowing
+          maxWidth: "90%",
         }}
       />
     );
@@ -193,7 +193,7 @@ export function UncategorizedView() {
                 // NOTE: minHeight is ideal here for aesthetic but we need to handle
                 // when keyboard comes up for it to shrink
                 // TODO: make this work, doesn't rn because ther's no listener to re-render when keyboard appears
-                maxHeight={Keyboard.isVisible() ? "40%" : undefined}
+                // maxHeight={Keyboard.isVisible() ? "40%" : undefined}
                 alignItems="center"
                 space="$2"
                 justifyContent="center"

@@ -6,6 +6,7 @@ import { useContext, useEffect, useState } from "react";
 import { ConnectionSummary } from "./ConnectionSummary";
 import { Connection } from "../utils/dataTypes";
 import { ScrollView, YStack } from "tamagui";
+import { useRouter } from "expo-router";
 
 export function BlockDetailView({ block }: { block: Block }) {
   const {
@@ -21,6 +22,7 @@ export function BlockDetailView({ block }: { block: Block }) {
 
   const [connections, setConnections] = useState<Connection[]>([]);
 
+  const router = useRouter();
   const { getConnectionsForBlock } = useContext(DatabaseContext);
   useEffect(() => {
     getConnectionsForBlock(id.toString()).then((connections) => {
