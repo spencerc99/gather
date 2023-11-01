@@ -32,7 +32,11 @@ export function BlockContent({
 
   switch (type) {
     case BlockType.Text:
-      renderedContent = <Paragraph {...textProps}>{content}</Paragraph>;
+      renderedContent = (
+        <ScrollView flexShrink={1} flexGrow={0}>
+          <Paragraph {...textProps}>{content}</Paragraph>
+        </ScrollView>
+      );
       containerProps = {
         borderColor: theme.color.get(),
         backgroundColor: theme.background.get(),

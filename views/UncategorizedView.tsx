@@ -20,7 +20,7 @@ import { BlockSummary } from "../components/BlockSummary";
 import { Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
 import { convertDbTimestampToDate } from "../utils/date";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
-import { SelectConnectionsList } from "../components/SelectConnectionsList";
+import { SelectCollectionsList } from "../components/SelectCollectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 
@@ -240,7 +240,7 @@ export function UncategorizedView() {
                 backgroundColor={theme.background.get()}
                 paddingHorizontal="$1"
               >
-                <SelectConnectionsList
+                <SelectCollectionsList
                   selectedCollections={
                     currentIndex !== null &&
                     item.id === events[currentIndex]?.id

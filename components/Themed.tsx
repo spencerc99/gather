@@ -21,8 +21,10 @@ import {
 
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Keyboard } from "react-native";
+import * as FileSystem from "expo-file-system";
+import { PHOTOS_FOLDER } from "../utils/blobs";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
@@ -290,12 +292,19 @@ export function ButtonWithConfirm({
 }
 
 export function AspectRatioImage({
-  uri,
+  uri: initUri,
   otherProps,
 }: {
   uri?: string;
   otherProps?: Omit<ImageProps, "source">;
 }) {
+  const uri = useMemo(
+    () =>
+      initUri && initUri.startsWith(PHOTOS_FOLDER)
+        ? FileSystem.documentDirectory + initUri
+        : initUri,
+    [initUri]
+  );
   const [aspectRatio, setAspectRatio] = useState(otherProps?.aspectRatio);
 
   useEffect(() => {
@@ -311,7 +320,13 @@ export function AspectRatioImage({
 
   return (
     <Image
-      source={uri ? { uri } : require("../assets/images/placeholder-image.jpg")}
+      source={
+        uri
+          ? {
+              uri,
+            }
+          : require("../assets/images/placeholder-image.jpg")
+      }
       resizeMode="contain"
       // TODO: neither of these are working fix...
       // esp. that images have no width/height initially

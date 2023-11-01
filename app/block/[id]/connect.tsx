@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { Block, DatabaseContext } from "../../../utils/db";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Spinner } from "tamagui";
-import { SelectConnectionsList } from "../../../components/SelectConnectionsList";
+import { SelectCollectionsList } from "../../../components/SelectCollectionsList";
 import { StyledButton, StyledView } from "../../../components/Themed";
 import { areArraysEqual } from "../../../utils/common";
 
@@ -49,7 +49,7 @@ export default function BlockConnectModal() {
         }}
       />
       <StyledView paddingHorizontal="$2" height="100%">
-        <SelectConnectionsList
+        <SelectCollectionsList
           selectedCollections={selectedCollections}
           setSelectedCollections={setSelectedCollections}
         />

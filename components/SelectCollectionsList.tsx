@@ -7,7 +7,7 @@ import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
 import { Pressable } from "react-native";
 import { currentUser } from "../utils/user";
 
-export function SelectConnectionsList({
+export function SelectCollectionsList({
   selectedCollections: selectedCollections,
   setSelectedCollections: setSelectedCollections,
   scrollContainerPaddingBottom,
@@ -100,6 +100,26 @@ export function SelectConnectionsList({
             e.stopPropagation();
           }}
         >
+          {!searchValue && collections.length === 0 && (
+            <YStack height={140} width={110} justifyContent="center">
+              <StyledButton
+                href="/modal"
+                icon={<Icon name="plus" />}
+                height="auto"
+                minHeight={40}
+                paddingVertical="$.5"
+              >
+                <SizableText
+                  userSelect="none"
+                  cursor="pointer"
+                  color="$color"
+                  size="$true"
+                >
+                  <SizableText>New collection</SizableText>
+                </SizableText>
+              </StyledButton>
+            </YStack>
+          )}
           {searchValue && (
             // Matches the height of CollectionThumbnail lol
             <YStack height={140} width={100} justifyContent="center">
@@ -129,6 +149,18 @@ export function SelectConnectionsList({
     } else {
       return (
         <YStack space="$1">
+          {!searchValue && collections.length === 0 && (
+            <YStack height={140} width={100} justifyContent="center">
+              <StyledButton
+                href="/modal"
+                icon={<Icon name="plus" />}
+                height="auto"
+                minHeight={40}
+              >
+                New collection
+              </StyledButton>
+            </YStack>
+          )}
           {searchValue && (
             <StyledButton
               onPress={async () => {
@@ -162,7 +194,7 @@ export function SelectConnectionsList({
     <Stack flexDirection={"column"} height="auto">
       <InputWithIcon
         icon="search"
-        placeholder="Search..."
+        placeholder="Search a collection..."
         width="100%"
         backgroundColor="$gray4"
         value={searchValue}

@@ -5,7 +5,7 @@ import { BlockContent } from "./BlockContent";
 import { useContext, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SelectConnectionsList } from "./SelectConnectionsList";
+import { SelectCollectionsList } from "./SelectCollectionsList";
 
 export function EditBlock({ block }: { block: Block }) {
   const { id, content, type, source, title, createdAt } = block;
@@ -56,7 +56,7 @@ export function EditBlock({ block }: { block: Block }) {
               onChangeText={(text) => setDescriptionValue(text)}
               value={descriptionValue}
             />
-            <SelectConnectionsList
+            <SelectCollectionsList
               selectedCollections={selectedCollections}
               setSelectedCollections={setSelectedCollections}
             />
