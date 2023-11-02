@@ -111,7 +111,8 @@ export default function ModalScreen() {
     <View padding="10%" space="$2">
       <H2>Internal Developer Settings</H2>
       <H3>Are.na</H3>
-      <ArenaLogin />
+      {/* TODO: uncomment when feature is done */}
+      {__DEV__ ? <ArenaLogin /> : null}
       <Label>Target Are.na channel</Label>
       <StyledInput
         value={arenaChannel}
