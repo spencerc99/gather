@@ -258,7 +258,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               chromeless
             />
             <StyledTextArea
-              placeholder="Gather..."
+              placeholder="Save a thought, photo, or link..."
               minHeight={undefined}
               flex={1}
               // TODO: this dismisses the keyboard beacuse of the onscroll handler

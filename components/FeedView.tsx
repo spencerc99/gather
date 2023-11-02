@@ -1,10 +1,10 @@
 import { useContext, useMemo, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { SearchBarInput, StyledView } from "./Themed";
-import { Pressable, StyleSheet } from "react-native";
+import { FlatList, Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { Link } from "expo-router";
-import { H2, YStack } from "tamagui";
+import { H2, H3, YStack } from "tamagui";
 
 export function FeedView() {
   const { blocks } = useContext(DatabaseContext);
@@ -26,14 +26,18 @@ export function FeedView() {
         asChild
       >
         <Pressable>
-          <BlockSummary
-            block={block}
-            blockStyle={{
-              maxWidth: 150,
-              maxHeight: 150,
-            }}
-            style={{ maxHeight: 180 }}
-          />
+          <YStack alignItems="center" justifyContent="center">
+            <BlockSummary
+              block={block}
+              blockStyle={{
+                maxWidth: 150,
+                maxHeight: 150,
+              }}
+              style={{
+                maxHeight: 180,
+              }}
+            />
+          </YStack>
         </Pressable>
       </Link>
     );
@@ -58,9 +62,12 @@ export function FeedView() {
           searchValue={searchValue}
           setSearchValue={setSearchValue}
         />
-        <StyledView style={styles.feed}>
-          {filteredBlocks.map(renderBlock)}
-        </StyledView>
+        <H3 textAlign="center">Recent Blocks</H3>
+        <FlatList
+          renderItem={({ item }) => renderBlock(item)}
+          data={filteredBlocks}
+          contentContainerStyle={styles.feed}
+        ></FlatList>
       </YStack>
     </>
   );
@@ -70,7 +77,6 @@ const styles = StyleSheet.create({
   feed: {
     display: "flex",
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "center",
     gap: 8,
   },

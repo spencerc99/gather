@@ -65,14 +65,13 @@ export function CollectionThumbnail({
 
   return (
     <YStack
-      space="$1"
+      space="$2"
       borderRadius={8}
       backgroundColor={theme.background.get()}
       width={100}
       // TODO: literally have no idea why this is needed. Otherwise it grows BEYOND ITS CONTAINER to become like 400px. what the fuck
       // i hate react native so much.
       height={140}
-      borderWidth={1}
       {...viewProps}
       paddingBottom="$1"
       overflow="hidden"

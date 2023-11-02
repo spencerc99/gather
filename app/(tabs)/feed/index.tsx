@@ -1,16 +1,13 @@
 import { StyleSheet } from "react-native";
 import { FeedView } from "../../../components/FeedView";
-import { H2, ScrollView } from "tamagui";
+import { H2, YStack } from "tamagui";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function FeedPage() {
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingTop: 32 }}
-    >
-      <H2>All Blocks</H2>
+    <SafeAreaView style={{ paddingTop: 32, flex: 1 }}>
       <FeedView />
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 

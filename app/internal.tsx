@@ -33,6 +33,7 @@ import {
 } from "../utils/arena";
 import { currentUser } from "../utils/user";
 import { RemoteSourceType } from "../utils/dataTypes";
+import { ArenaLogin } from "../views/ArenaLogin";
 
 export default function ModalScreen() {
   const {
@@ -110,6 +111,7 @@ export default function ModalScreen() {
     <View padding="10%" space="$2">
       <H2>Internal Developer Settings</H2>
       <H3>Are.na</H3>
+      <ArenaLogin />
       <Label>Target Are.na channel</Label>
       <StyledInput
         value={arenaChannel}
