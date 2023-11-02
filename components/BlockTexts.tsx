@@ -111,9 +111,9 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
           <Pressable>
             <BlockTextSummary
               block={block}
-              style={{ maxHeight: 250 }}
+              style={{ maxHeight: 320 }}
               blockStyle={{
-                maxHeight: 250,
+                maxHeight: 320,
               }}
             />
           </Pressable>
