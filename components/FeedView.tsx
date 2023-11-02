@@ -63,11 +63,14 @@ export function FeedView() {
           setSearchValue={setSearchValue}
         />
         <StyledText textAlign="center">Recent Blocks</StyledText>
-        <FlatList
+        {/* <FlatList
           renderItem={({ item }) => renderBlock(item)}
           data={filteredBlocks}
           contentContainerStyle={styles.feed}
-        ></FlatList>
+        ></FlatList> */}
+        <StyledView style={styles.feed}>
+          {filteredBlocks.map(renderBlock)}
+        </StyledView>
       </YStack>
     </>
   );
@@ -78,5 +81,8 @@ const styles = StyleSheet.create({
     display: "flex",
     justifyContent: "center",
     gap: 8,
+    // remove with flatlist
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
 });

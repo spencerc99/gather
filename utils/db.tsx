@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import {
@@ -20,6 +21,7 @@ import {
 import { currentUser } from "./user";
 import { convertDbTimestampToDate } from "./date";
 import { PHOTOS_FOLDER, intializeFilesystemFolder } from "./blobs";
+import { ArenaTokenStorageKey, addBlockToChannel } from "./arena";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -416,7 +418,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     if (connections?.length) {
       console.log("INSERT ID", result.insertId);
-      await addConnections(String(result.insertId!), connections);
+      await addConnections(
+        String(result.insertId!),
+        connections,
+        result.rows[0]
+      );
     }
 
     console.log(result.rows);
@@ -556,6 +562,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 PARTITION BY collection_id
                 ORDER BY block_connections.created_timestamp DESC
               )) as thumbnail,
+              collections.remote_source_type,
+              collections.remote_source_info,
               collections.created_timestamp,
               collections.updated_timestamp,
               collections.created_by
@@ -567,6 +575,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               annotated_collections.title,
               annotated_collections.description,
               annotated_collections.thumbnail,
+              annotated_collections.remote_source_type,
+              annotated_collections.remote_source_info,
               annotated_collections.created_timestamp,
               annotated_collections.updated_timestamp,
               annotated_collections.created_by,
@@ -700,9 +710,39 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     void fetchCollections();
 
     // TODO: if collectionId has remoteSource, then sync to remote source
+    const collectionAddedTo = collections.find((c) => c.id === collectionId);
+    if (
+      !collectionAddedTo?.remoteSourceType ||
+      !collectionAddedTo?.remoteSourceInfo
+    ) {
+      return;
+    }
+
+    // TODO: if adding more types, change this to switch
+    const arenaToken = await SecureStore.getItemAsync(ArenaTokenStorageKey);
+    if (!arenaToken) {
+      return;
+    }
+    // TODO: make this a bulk get blocks
+    const blocks = await Promise.all(
+      blockIds.map((blockId) => getBlock(blockId))
+    );
+    for (const block of blocks) {
+      await addBlockToChannel({
+        channelId: collectionAddedTo.remoteSourceInfo.arenaId,
+        block,
+        arenaToken,
+      });
+    }
   }
 
-  async function addConnections(blockId: string, collectionIds: string[]) {
+  async function addConnections(
+    blockId: string,
+    collectionIds: string[],
+    // TODO: this is wonky and only temporary bc block isn't present when adding connection inside
+    // transaction inside the "addBlock" function
+    blockInfo?: Block
+  ) {
     const result = await db.execAsync(
       collectionIds.map((collectionId) => ({
         sql: `INSERT INTO connections (block_id, collection_id, created_by)
@@ -716,19 +756,31 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     handleSqlErrors(result);
 
     void fetchCollections();
-    // setCollections(
-    //   collections.map((c) => {
-    //     if (collectionIds.includes(c.id)) {
-    //       return {
-    //         ...c,
-    //         lastConnectedAt: new Date(),
-    //       };
-    //     }
-    //     return c;
-    //   })
-    // );
 
+    console.log("collections", collections);
     // TODO: if collectionIds have remoteSource, then sync to remote source
+    // TODO: if collectionId has remoteSource, then sync to remote source
+    const addedCollections = collections.filter(
+      (c) =>
+        collectionIds.includes(c.id) && c.remoteSourceType && c.remoteSourceInfo
+    );
+
+    console.log(addedCollections);
+
+    // TODO: if adding more types, change this to switch
+    const arenaToken = await SecureStore.getItemAsync(ArenaTokenStorageKey);
+    if (!arenaToken) {
+      return;
+    }
+    const block = blockInfo ? blockInfo : await getBlock(blockId);
+    for (const collection of addedCollections) {
+      console.log("adding to channel");
+      await addBlockToChannel({
+        channelId: collection.remoteSourceInfo!.arenaId,
+        block,
+        arenaToken,
+      });
+    }
   }
 
   async function replaceConnections(blockId: string, collectionIds: string[]) {

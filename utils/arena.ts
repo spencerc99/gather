@@ -1,4 +1,11 @@
+import { Block } from "./db";
+import * as FileSystem from "expo-file-system";
 import { BlockType, MimeType } from "./mimeTypes";
+
+export const ArenaClientId = "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE";
+// TODO: move these before open sourcing repo
+export const ArenaClientSecret = "jSpLG7pclKUxa_QcIfg6iv057TMK2Wz-Ma4f99ly9F0";
+export const ArenaTokenStorageKey = "arena-token";
 
 export interface ArenaChannelInfo {
   id: number;
@@ -116,6 +123,7 @@ export function transformChannelUrlToApiUrl(url: string): string {
   return ArenaApiUrlBase + channel;
 }
 
+// TODO: this should use users access token if they added it
 export async function getChannelContents(
   url: string
 ): Promise<ArenaChannelInfo> {
@@ -216,4 +224,49 @@ export function arenaClassToMimeType({
     case "Media":
       return embed?.url ? undefined : (image!.content_type as MimeType);
   }
+}
+
+async function getBodyForBlock(block: Block): Promise<any> {
+  const { type, content, source } = block;
+  switch (type) {
+    case BlockType.Text:
+      return {
+        content,
+      };
+    case BlockType.Image:
+    case BlockType.Document:
+    case BlockType.Audio:
+    case BlockType.Video:
+      const base64 = await FileSystem.readAsStringAsync(content, {
+        encoding: "base64",
+      });
+      // this needs to be uploaded somewhere that are.na can access lol
+      return {
+        source: base64,
+      };
+    case BlockType.Link:
+      return source!;
+  }
+}
+
+export async function addBlockToChannel({
+  channelId,
+  block,
+  arenaToken,
+}: {
+  channelId: string;
+  block: Block;
+  arenaToken: string;
+}) {
+  const body = await getBodyForBlock(block);
+  const resp = await fetch(`${ArenaApiUrlBase}/${channelId}/blocks`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "X-AUTH-TOKEN": arenaToken,
+      Authorization: `Bearer ${arenaToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+  console.log("tried adding to arena channel", resp);
 }

@@ -10,13 +10,13 @@ import {
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import { Spinner, XStack } from "tamagui";
+import {
+  ArenaClientId,
+  ArenaClientSecret,
+  ArenaTokenStorageKey,
+} from "../utils/arena";
 
 const SCHEME = Constants.platform?.scheme;
-
-const ArenaClientId = "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE";
-// TODO: move these before open sourcing repo
-const ArenaClientSecret = "jSpLG7pclKUxa_QcIfg6iv057TMK2Wz-Ma4f99ly9F0";
-const ArenaTokenStorageKey = "arena-token";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -71,7 +71,7 @@ export function ArenaLogin() {
         ellipse
         wordWrap="break-word"
         width="50%"
-        numberOfLines={3}
+        numberOfLines={2}
       >
         Current: {token}
       </StyledParagraph>

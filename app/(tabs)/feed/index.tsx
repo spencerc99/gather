@@ -1,10 +1,13 @@
+import { ScrollView } from "tamagui";
 import { FeedView } from "../../../components/FeedView";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native";
 
 export default function FeedPage() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <FeedView />
+      <ScrollView style={{ flex: 1 }}>
+        <FeedView />
+      </ScrollView>
     </SafeAreaView>
   );
 }
