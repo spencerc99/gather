@@ -110,8 +110,7 @@ export default function ModalScreen() {
   return (
     <View padding="10%" space="$2">
       <H3>Are.na Settings</H3>
-      {/* TODO: uncomment when feature is done */}
-      {__DEV__ ? <ArenaLogin /> : null}
+      <ArenaLogin />
       <Label>Target Are.na channel</Label>
       <StyledInput
         value={arenaChannel}

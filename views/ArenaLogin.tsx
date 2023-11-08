@@ -1,5 +1,9 @@
 import * as WebBrowser from "expo-web-browser";
-import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
+import {
+  exchangeCodeAsync,
+  makeRedirectUri,
+  useAuthRequest,
+} from "expo-auth-session";
 import { Platform } from "react-native";
 import { useEffect, useState } from "react";
 import {
@@ -45,11 +49,13 @@ export function ArenaLogin() {
     },
     discovery
   );
-  const [token, setToken] = useState<string | undefined | null>(undefined);
+  const [accessToken, setAccessToken] = useState<string | undefined | null>(
+    undefined
+  );
 
   useEffect(() => {
     SecureStore.getItemAsync(ArenaTokenStorageKey).then((token) => {
-      setToken(token);
+      setAccessToken(token);
     });
   }, []);
 
@@ -57,18 +63,33 @@ export function ArenaLogin() {
     if (response?.type === "success") {
       const { code } = response.params;
 
-      if (Platform.OS !== "web") {
-        // Securely store the auth on your device
-        SecureStore.setItemAsync(ArenaTokenStorageKey, code);
-      }
-      setToken(code);
+      exchangeCodeAsync(
+        {
+          clientId: ArenaClientId,
+          clientSecret: ArenaClientSecret,
+          code,
+          redirectUri,
+        },
+        discovery
+      )
+        .then((token) => {
+          const { accessToken } = token;
+          if (Platform.OS !== "web") {
+            // Securely store the auth on your device
+            SecureStore.setItemAsync(ArenaTokenStorageKey, accessToken);
+          }
+          setAccessToken(accessToken);
+        })
+        .catch((exchangeError) => {
+          throw exchangeError;
+        });
     }
   }, [response]);
 
   //   TODO: if token already present render the token and make login button smaller.
-  return token === undefined ? (
+  return accessToken === undefined ? (
     <Spinner />
-  ) : token ? (
+  ) : accessToken ? (
     <XStack alignItems="center">
       <StyledParagraph
         ellipse
@@ -76,7 +97,7 @@ export function ArenaLogin() {
         width="50%"
         numberOfLines={2}
       >
-        Current: {token}
+        Current: {accessToken}
       </StyledParagraph>
       <StyledButton
         disabled={!request}
