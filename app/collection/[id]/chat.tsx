@@ -4,8 +4,13 @@ import { CollectionGearHeaderLink } from ".";
 import { useContext } from "react";
 import { DatabaseContext } from "../../../utils/db";
 
-export default function CollectionChatScreen() {
+export default function DefaultCollectionChatScreen() {
   const { id } = useLocalSearchParams();
+
+  return <CollectionChatScreen id={id.toString()} />;
+}
+
+export function CollectionChatScreen({ id }: { id: string }) {
   const { collections } = useContext(DatabaseContext);
 
   return (

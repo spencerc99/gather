@@ -17,10 +17,50 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const headerIcons = <MainHeaderIcons />;
+
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+      }}
+    >
+      <Tabs.Screen
+        name="home"
+        options={{
+          tabBarLabel: "Home",
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          headerRight: () => headerIcons,
+        }}
+      />
+      <Tabs.Screen
+        name="organize"
+        options={{
+          tabBarLabel: "Organize",
+          headerTitle: "",
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="archive" color={color} />
+          ),
+          headerRight: () => headerIcons,
+        }}
+      />
+      <Tabs.Screen
+        name="feed"
+        options={{
+          title: "Discover",
+          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
+          headerRight: () => headerIcons,
+        }}
+      />
+    </Tabs>
+  );
+}
+
+export function MainHeaderIcons() {
   const theme = useTheme();
 
-  const headerIcons = (
-    <XStack space="$4" marginRight="$2">
+  return (
+    <XStack space="$4" paddingRight="$2">
       <Link href="/internal" asChild>
         <Pressable>
           {({ pressed }) => (
@@ -46,43 +86,5 @@ export default function TabLayout() {
         </Pressable>
       </Link> */}
     </XStack>
-  );
-
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-      }}
-    >
-      {/* TODO: figure out bottom tabs */}
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: "Home",
-          headerTitle: "",
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
-          headerRight: () => headerIcons,
-        }}
-      />
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: "Discover",
-          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
-          headerRight: () => headerIcons,
-        }}
-      />
-      <Tabs.Screen
-        name="organize"
-        options={{
-          title: "Organize",
-          headerTitle: "",
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="archive" color={color} />
-          ),
-          headerRight: () => headerIcons,
-        }}
-      />
-    </Tabs>
   );
 }

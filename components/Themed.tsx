@@ -312,6 +312,9 @@ export function AspectRatioImage({
       setAspectRatio(1);
       return;
     }
+    if (otherProps?.aspectRatio) {
+      return;
+    }
 
     Image.getSize(uri, (width, height) => {
       setAspectRatio(width / height);
@@ -320,13 +323,9 @@ export function AspectRatioImage({
 
   return (
     <Image
-      source={
-        uri
-          ? {
-              uri,
-            }
-          : require("../assets/images/placeholder-image.jpg")
-      }
+      source={{
+        uri,
+      }}
       resizeMode="contain"
       // TODO: neither of these are working fix...
       // esp. that images have no width/height initially

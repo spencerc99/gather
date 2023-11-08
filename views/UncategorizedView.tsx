@@ -37,7 +37,6 @@ export function UncategorizedView() {
   const [events, setEvents] = useState<Block[] | null>(null);
 
   const initData = useCallback(() => {
-    console.log("focus effect");
     void fetchEvents();
   }, []);
 

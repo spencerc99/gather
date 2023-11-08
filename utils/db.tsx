@@ -728,12 +728,103 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       blockIds.map((blockId) => getBlock(blockId))
     );
     for (const block of blocks) {
-      await addBlockToChannel({
+      const success = await addBlockToChannel({
         channelId: collectionAddedTo.remoteSourceInfo.arenaId,
         block,
         arenaToken,
       });
+      if (success) {
+      }
     }
+  }
+
+  async function trySyncPendingArenaBlocks() {
+    // TODO: make this work for every provider
+    const arenaToken = await SecureStore.getItemAsync(ArenaTokenStorageKey);
+    if (!arenaToken) {
+      return;
+    }
+
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `SELECT  blocks.*, 
+                        collections.id as collection_id, collections.remote_source_type as collection_remote_source_type, collections.remote_source_info as collection_remote_source_info
+            FROM        blocks
+            INNER JOIN  connections ON connections.block_id = blocks.id
+            LEFT JOIN   collections ON connections.collection_id = collections.id
+            WHERE       collections.remote_source_type IS NOT NULL AND
+                        collections.remote_source_info IS NOT NULL AND
+                        blocks.remote_source_type IS NULL`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+
+    const blocksToSync = await Promise.all(
+      (result as SQLite.ResultSet).rows.map(async (block) => {
+        const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
+        return {
+          ...blockMappedToCamelCase,
+          // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
+          id: block.id.toString(),
+          content: mapBlockContentToPath(block.content, block.type),
+          createdAt: convertDbTimestampToDate(block.created_timestamp),
+          updatedAt: convertDbTimestampToDate(block.updated_timestamp),
+          remoteSourceType: block.remote_source_type as RemoteSourceType,
+          remoteSourceInfo: block.remote_source_info
+            ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
+            : null,
+          collectionRemoteSourceType:
+            blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
+          collectionRemoteSourceInfo:
+            blockMappedToCamelCase.collectionRemoteSourceInfo
+              ? (JSON.parse(
+                  blockMappedToCamelCase.collectionRemoteSourceInfo
+                ) as RemoteSourceInfo)
+              : null,
+        };
+      })
+    );
+
+    for (const blockToSync of blocksToSync) {
+      await syncBlockToArena(
+        blockToSync.collectionRemoteSourceInfo!.arenaId!,
+        // @ts-ignore
+        blockToSync as Block,
+        arenaToken
+      );
+    }
+  }
+
+  async function syncBlockToArena(
+    channelId: string,
+    block: Block,
+    arenaToken: string
+  ) {
+    try {
+      const resp = await addBlockToChannel({ channelId, block, arenaToken });
+      // TODO: need to get the right block id here
+      const newBlockId = "";
+      await db.execAsync(
+        [
+          {
+            sql: "UPDATE blocks SET remote_source_type = ?, remote_source_info = ? WHERE id = ?;",
+            args: [
+              RemoteSourceType.Arena,
+              JSON.stringify({
+                arenaId: newBlockId,
+                arenaClass: "Block",
+              } as RemoteSourceInfo),
+              block.id,
+            ],
+          },
+        ],
+        false
+      );
+    } catch (err) {}
   }
 
   async function addConnections(
@@ -849,6 +940,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     void fetchBlocks();
     void fetchCollections();
     void intializeFilesystemFolder();
+    void trySyncPendingArenaBlocks();
   }, []);
 
   return (

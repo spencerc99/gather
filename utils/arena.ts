@@ -257,7 +257,7 @@ export async function addBlockToChannel({
   channelId: string;
   block: Block;
   arenaToken: string;
-}) {
+}): Promise<string> {
   const url = `${ArenaApiUrlBase}${channelId}/blocks`;
   const body = await getBodyForBlock(block);
   console.log("adding block to channel", channelId, body, arenaToken, url);
@@ -271,5 +271,8 @@ export async function addBlockToChannel({
   });
   if (!resp.ok) {
     console.error(`failed to add block to arena channel ${resp.status}`, resp);
+    throw new Error(`failed to add block to arena channel ${resp.status}`);
   }
+  // TODO: return the id returned here
+  return resp.ok;
 }

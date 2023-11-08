@@ -1,43 +1,63 @@
-import { useContext, useMemo } from "react";
-import { Adapt, PortalProvider, Select, Sheet, YStack } from "tamagui";
+import { useContext, useMemo, useState } from "react";
+import {
+  Adapt,
+  PortalProvider,
+  ScrollView,
+  Select,
+  Sheet,
+  SizableText,
+  YStack,
+} from "tamagui";
 import { DatabaseContext } from "../utils/db";
-import { Icon } from "./Themed";
+import { Icon, InputWithIcon, StyledButton } from "./Themed";
+import { CreateCollectionButton } from "./CreateCollectionButton";
+import { currentUser } from "../utils/user";
+import { CollectionSummary } from "./CollectionSummary";
 
 export function CollectionSelect({
   selectedCollection,
   setSelectedCollection,
-  collectionPlaceholder,
+  collectionPlaceholder = "New collection",
 }: {
   selectedCollection: string | null;
   setSelectedCollection: (selectedCollection: string | null) => void;
   collectionPlaceholder?: string;
 }) {
-  const { collections } = useContext(DatabaseContext);
+  const { collections, createCollection } = useContext(DatabaseContext);
+  const [searchValue, setSearchValue] = useState("");
+
+  // sort by lastConnectedAt descending
+  const sortedCollections = useMemo(
+    () =>
+      [...collections].sort(
+        (a, b) =>
+          (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
+          (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
+      ),
+    [collections]
+  );
 
   return (
     <Select
       native
       onValueChange={setSelectedCollection}
-      value={selectedCollection || undefined}
+      // @ts-ignore
+      value={selectedCollection}
       disablePreventBodyScroll
     >
-      <Select.Trigger>
-        <Select.Value
-          placeholder={collectionPlaceholder || "New collection"}
-          placeholderTextColor="$gray9"
-        />
+      <Select.Trigger elevation="$3">
+        <Select.Value placeholder={collectionPlaceholder} />
       </Select.Trigger>
 
       <Adapt when="sm" platform="touch">
         <Sheet
           modal
-          dismissOnSnapToBottom
           native
           animationConfig={{
             type: "spring",
             damping: 20,
             mass: 1.2,
-            stiffness: 250,
+            stiffness: 150,
           }}
         >
           <Sheet.Frame>
@@ -62,27 +82,94 @@ export function CollectionSelect({
           exitStyle={{ o: 0, y: 10 }}
           minWidth={200}
         >
-          <Select.Group>
-            {/* for longer lists memoizing these is useful */}
-            {useMemo(
-              () =>
-                collections.map((collection, i) => {
-                  return (
-                    <Select.Item
-                      index={i}
-                      key={collection.id}
-                      value={collection.id}
-                    >
-                      <Select.ItemText>{collection.title}</Select.ItemText>
-                      <Select.ItemIndicator marginLeft="auto">
-                        <Icon size={16} name="check" />
-                      </Select.ItemIndicator>
-                    </Select.Item>
-                  );
-                }),
-              [collections]
+          <YStack margin="$2">
+            <InputWithIcon
+              icon="search"
+              placeholder="Search..."
+              backgroundColor="$gray4"
+              value={searchValue}
+              onChangeText={(text) => setSearchValue(text)}
+            />
+          </YStack>
+          <ScrollView
+            contentContainerStyle={{
+              // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
+              paddingBottom: 24,
+            }}
+          >
+            {searchValue && (
+              <StyledButton
+                onPress={async () => {
+                  await createCollection({
+                    title: searchValue,
+                    createdBy: currentUser().id,
+                  });
+                  setSearchValue("");
+                }}
+                noTextWrap={true}
+                height="auto"
+                paddingVertical={16}
+              >
+                <SizableText
+                  userSelect="none"
+                  cursor="pointer"
+                  color="$color"
+                  size="$true"
+                >
+                  New collection{" "}
+                  <SizableText style={{ fontWeight: 700 }}>
+                    {searchValue}
+                  </SizableText>
+                </SizableText>
+              </StyledButton>
             )}
-          </Select.Group>
+            {/* TODO: add some thing about last message */}
+            <Select.Group>
+              {collectionPlaceholder.includes(searchValue) && (
+                <Select.Item
+                  index={0}
+                  // @ts-ignore
+                  value={null}
+                  key={"none"}
+                  backgroundColor={
+                    selectedCollection === null ? "$green4" : undefined
+                  }
+                >
+                  <Select.ItemText>{collectionPlaceholder}</Select.ItemText>
+                </Select.Item>
+              )}
+              {sortedCollections
+                .filter((c) =>
+                  `${c.title}\n${c.description}}`.includes(`${searchValue}`)
+                )
+                .map((collection, idx) => (
+                  <Select.Item
+                    index={idx + 1}
+                    key={collection.id}
+                    value={collection.id}
+                    backgroundColor={
+                      selectedCollection === collection.id
+                        ? "$green4"
+                        : undefined
+                    }
+                  >
+                    <CollectionSummary
+                      collection={collection}
+                      viewProps={{
+                        borderWidth: 0,
+                        paddingHorizontal: 0,
+                        paddingVertical: 0,
+                        backgroundColor: "inherit",
+                      }}
+                    />
+                    <Select.ItemText display="none">
+                      {collection.title}
+                    </Select.ItemText>
+                  </Select.Item>
+                ))}
+            </Select.Group>
+            {!searchValue && <CreateCollectionButton />}
+          </ScrollView>
         </Select.Viewport>
 
         <Select.ScrollDownButton

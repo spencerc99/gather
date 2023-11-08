@@ -1,7 +1,13 @@
 import { StyleSheet } from "react-native";
 import { Collection } from "../utils/dataTypes";
-import { AspectRatioImage, StyledParagraph, StyledView } from "./Themed";
-import { GetProps, SizableText, YStack, useTheme } from "tamagui";
+import {
+  AspectRatioImage,
+  StyledLabel,
+  StyledParagraph,
+  StyledView,
+} from "./Themed";
+import { GetProps, SizableText, XStack, YStack, useTheme } from "tamagui";
+import { getRelativeDate } from "../utils/date";
 
 export function CollectionSummary({
   collection,
@@ -10,38 +16,68 @@ export function CollectionSummary({
   collection: Collection;
   viewProps?: GetProps<typeof StyledView>;
 }) {
-  const { title, updatedAt, createdBy, numBlocks: numItems } = collection;
+  const {
+    title,
+    updatedAt,
+    createdBy,
+    numBlocks: numItems,
+    lastConnectedAt,
+    thumbnail,
+    remoteSourceType,
+  } = collection;
   const theme = useTheme();
 
   return (
-    <StyledView
-      style={styles.contentContainer}
+    <XStack
+      paddingVertical={16}
+      width="100%"
+      paddingHorizontal={12}
+      borderWidth={2}
       borderColor={theme.color.get()}
       backgroundColor={theme.background.get()}
+      space="$3"
       {...viewProps}
     >
-      <StyledParagraph title>{title}</StyledParagraph>
-      <StyledView style={styles.metaContainer}>
-        <StyledParagraph metadata>
-          {createdBy} | {numItems} items
-        </StyledParagraph>
-        <StyledParagraph style={styles.floatRight} metadata>
-          {updatedAt.toDateString()}
-        </StyledParagraph>
-      </StyledView>
-    </StyledView>
+      <YStack flexGrow={1}>
+        <XStack justifyContent="space-between">
+          <StyledParagraph title>{title}</StyledParagraph>
+          {remoteSourceType && (
+            <XStack
+              alignSelf="flex-end"
+              borderWidth={1}
+              paddingHorizontal="$1"
+              borderRadius="$3"
+              borderColor={theme.color.get()}
+            >
+              <StyledLabel>{remoteSourceType}</StyledLabel>
+            </XStack>
+          )}
+        </XStack>
+        <StyledView style={styles.metaContainer}>
+          <StyledParagraph metadata>
+            {/* {createdBy} | {numItems} items */}
+            {numItems} items
+          </StyledParagraph>
+          <StyledParagraph style={styles.floatRight} metadata>
+            {getRelativeDate(lastConnectedAt || updatedAt)}
+          </StyledParagraph>
+        </StyledView>
+      </YStack>
+      <AspectRatioImage
+        uri={thumbnail}
+        otherProps={{
+          aspectRatio: 1,
+          resizeMode: "cover",
+          borderRadius: 8,
+          height: 40,
+          width: 40,
+        }}
+      />
+    </XStack>
   );
 }
 
 export const styles = StyleSheet.create({
-  contentContainer: {
-    display: "flex",
-    flexDirection: "column",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderWidth: 2,
-    width: "100%",
-  },
   metaContainer: {
     display: "flex",
     flexDirection: "row",
