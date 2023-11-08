@@ -6,6 +6,7 @@ import {
   Select,
   Sheet,
   SizableText,
+  SelectTriggerProps,
   YStack,
 } from "tamagui";
 import { DatabaseContext } from "../utils/db";
@@ -18,10 +19,12 @@ export function CollectionSelect({
   selectedCollection,
   setSelectedCollection,
   collectionPlaceholder = "New collection",
+  triggerProps = {},
 }: {
   selectedCollection: string | null;
   setSelectedCollection: (selectedCollection: string | null) => void;
   collectionPlaceholder?: string;
+  triggerProps?: SelectTriggerProps;
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
@@ -45,7 +48,7 @@ export function CollectionSelect({
       value={selectedCollection}
       disablePreventBodyScroll
     >
-      <Select.Trigger elevation="$3">
+      <Select.Trigger elevation="$3" {...triggerProps}>
         <Select.Value placeholder={collectionPlaceholder} />
       </Select.Trigger>
 

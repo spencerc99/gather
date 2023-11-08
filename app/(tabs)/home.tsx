@@ -16,13 +16,15 @@ export default function HomeScreen() {
         options={{
           headerTitle: () => (
             <YStack paddingBottom="$2">
-              <Theme name="orange">
-                <CollectionSelect
-                  selectedCollection={selectedCollection}
-                  setSelectedCollection={setSelectedCollection}
-                  collectionPlaceholder="All collections"
-                />
-              </Theme>
+              <CollectionSelect
+                selectedCollection={selectedCollection}
+                setSelectedCollection={setSelectedCollection}
+                collectionPlaceholder="All collections"
+                triggerProps={{
+                  theme: "orange",
+                  backgroundColor: "$orange4",
+                }}
+              />
             </YStack>
           ),
         }}
