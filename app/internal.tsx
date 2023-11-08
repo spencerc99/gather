@@ -109,8 +109,7 @@ export default function ModalScreen() {
 
   return (
     <View padding="10%" space="$2">
-      <H2>Internal Developer Settings</H2>
-      <H3>Are.na</H3>
+      <H3>Are.na Settings</H3>
       {/* TODO: uncomment when feature is done */}
       {__DEV__ ? <ArenaLogin /> : null}
       <Label>Target Are.na channel</Label>
@@ -140,7 +139,7 @@ export default function ModalScreen() {
       >
         Import Channel
       </StyledButton>
-      <H3>Databases</H3>
+      <H3>Internal Developer Settings</H3>
       <StyledButton disabled={isLoading} onPress={fetchCollections}>
         Refresh Collections
       </StyledButton>

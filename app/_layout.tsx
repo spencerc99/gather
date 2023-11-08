@@ -82,13 +82,13 @@ function RootLayoutNav() {
                     title: "",
                   }}
                 />
-                <Stack.Screen
+                {/* <Stack.Screen
                   name="profile"
                   options={{
                     presentation: "card",
                     title: "",
                   }}
-                />
+                /> */}
                 <Stack.Screen
                   name="collection/[id]/index"
                   options={{

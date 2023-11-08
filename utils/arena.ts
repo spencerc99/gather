@@ -245,7 +245,7 @@ async function getBodyForBlock(block: Block): Promise<any> {
         source: base64,
       };
     case BlockType.Link:
-      return source!;
+      return { source: source! };
   }
 }
 
@@ -258,15 +258,18 @@ export async function addBlockToChannel({
   block: Block;
   arenaToken: string;
 }) {
+  const url = `${ArenaApiUrlBase}${channelId}/blocks`;
   const body = await getBodyForBlock(block);
-  const resp = await fetch(`${ArenaApiUrlBase}/${channelId}/blocks`, {
+  console.log("adding block to channel", channelId, body, arenaToken, url);
+  const resp = await fetch(url, {
     method: "POST",
     body: JSON.stringify(body),
     headers: {
-      "X-AUTH-TOKEN": arenaToken,
       Authorization: `Bearer ${arenaToken}`,
       "Content-Type": "application/json",
     },
   });
-  console.log("tried adding to arena channel", resp);
+  if (!resp.ok) {
+    console.error(`failed to add block to arena channel ${resp.status}`, resp);
+  }
 }

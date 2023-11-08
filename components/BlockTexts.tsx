@@ -6,7 +6,7 @@ import { Icon, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";
 import { Swipeable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import { Keyboard, Pressable, ScrollView } from "react-native";
+import { FlatList, Keyboard, Pressable, ScrollView } from "react-native";
 import { BlockContent } from "./BlockContent";
 import { BlockType } from "../utils/mimeTypes";
 
@@ -44,7 +44,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     useContext(DatabaseContext);
 
   const [blocks, setBlocks] = useState<Block[] | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<FlatList>(null);
 
   useEffect(() => {
     void fetchBlocks();
@@ -66,8 +66,10 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
 
   const sortedBlocks = useMemo(
     () =>
+      // NOTE: this is sorted descending because we use "inverted" prop on FlatList
+      // so it is the reverse of what it should be
       [...(blocks || [])].sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
       ),
     [blocks]
   );
@@ -122,71 +124,78 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     );
   }
 
-  return (
+  return blocks?.length === 0 && !collectionId ? (
     <ScrollView
       style={{
         overflowY: "visible",
       }}
-      onScroll={() => {
-        // Keyboard.dismiss();
-      }}
+    >
+      <YStack
+        justifyContent="center"
+        alignItems="center"
+        paddingHorizontal="$4"
+        space="$4"
+        marginTop="30%"
+        flexGrow={1}
+        onTouchStart={() => {
+          Keyboard.dismiss();
+        }}
+      >
+        <XStack alignItems="center">
+          {/* TODO: allow you to zoom in */}
+          {InspoBlocks.map((block, idx) => (
+            <BlockContent
+              key={idx}
+              {...block}
+              containerStyle={{
+                width: 120,
+                height: 120,
+              }}
+              textContainerProps={{
+                padding: 2,
+              }}
+              textProps={{
+                fontSize: "$1",
+              }}
+            />
+          ))}
+        </XStack>
+        <StyledText textAlign="center" fontSize="$7">
+          Your messy space for gathering inspiration, moments, and wonderings
+        </StyledText>
+        <StyledText textAlign="center" fontSize="$7">
+          Treat it like texting yourself
+        </StyledText>
+      </YStack>
+    </ScrollView>
+  ) : (
+    // <YStack
+    //   paddingBottom="$4"
+    //   paddingHorizontal="$2"
+    //   space="$4"
+    //   width="100%"
+    //   flexGrow={1}
+    //   marginTop="$2"
+    //   alignItems="flex-end"
+    // >
+    <FlatList
+      renderItem={({ item }) => renderBlock(item)}
+      data={sortedBlocks}
       scrollEventThrottle={60}
       ref={scrollRef}
-      onContentSizeChange={() =>
-        scrollRef.current?.scrollToEnd({ animated: false })
-      }
-    >
-      {blocks?.length === 0 && !collectionId ? (
-        <YStack
-          justifyContent="center"
-          alignItems="center"
-          paddingHorizontal="$4"
-          space="$4"
-          marginTop="30%"
-          flexGrow={1}
-          onTouchStart={() => {
-            Keyboard.dismiss();
-          }}
-        >
-          <XStack alignItems="center">
-            {/* TODO: allow you to zoom in */}
-            {InspoBlocks.map((block, idx) => (
-              <BlockContent
-                key={idx}
-                {...block}
-                containerStyle={{
-                  width: 120,
-                  height: 120,
-                }}
-                textContainerProps={{
-                  padding: 2,
-                }}
-                textProps={{
-                  fontSize: "$1",
-                }}
-              />
-            ))}
-          </XStack>
-          <StyledText textAlign="center" fontSize="$7">
-            Your messy space for gathering inspiration, moments, and wonderings
-          </StyledText>
-          <StyledText textAlign="center" fontSize="$7">
-            Treat it like texting yourself
-          </StyledText>
-        </YStack>
-      ) : (
-        <YStack
-          paddingBottom="$4"
-          paddingHorizontal="$2"
-          space="$4"
-          width="100%"
-          flexGrow={1}
-          marginTop="$2"
-          alignItems="flex-end"
-        >
-          {sortedBlocks.map(renderBlock)}
-        </YStack>
-      )}
-    </ScrollView>
+      inverted
+      // onContentSizeChange={() =>
+      //   scrollRef.current?.scrollToEnd({ animated: false })
+      // }
+      contentContainerStyle={{
+        flexGrow: 1,
+        marginTop: 8,
+        paddingBottom: 16,
+        paddingHorizontal: 8,
+        gap: 16,
+        width: "100%",
+        alignItems: "flex-end",
+      }}
+    ></FlatList>
   );
 }

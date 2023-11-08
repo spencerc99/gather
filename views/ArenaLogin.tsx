@@ -38,6 +38,10 @@ export function ArenaLogin() {
       clientId: ArenaClientId,
       clientSecret: ArenaClientSecret,
       redirectUri,
+      codeChallenge: undefined,
+      codeChallengeMethod: undefined,
+      usePKCE: false,
+      state: undefined,
     },
     discovery
   );
@@ -52,7 +56,6 @@ export function ArenaLogin() {
   useEffect(() => {
     if (response?.type === "success") {
       const { code } = response.params;
-      console.log("retrieved access token!", code);
 
       if (Platform.OS !== "web") {
         // Securely store the auth on your device

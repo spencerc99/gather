@@ -32,15 +32,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 
 export function UncategorizedView() {
-  const {
-    db,
-    blocks,
-    addConnections,
-    replaceConnections,
-    getConnectionsForBlock,
-  } = useContext(DatabaseContext);
+  const { db, blocks, addConnections, getConnectionsForBlock } =
+    useContext(DatabaseContext);
   const [events, setEvents] = useState<Block[] | null>(null);
-  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
 
   const initData = useCallback(() => {
     console.log("focus effect");
@@ -88,9 +82,9 @@ export function UncategorizedView() {
       } as Block;
     });
     setEvents(newEvents);
-    if (newEvents.length) {
-      setCurrentIndex(0);
-    }
+    // if (newEvents.length) {
+    //   setCurrentIndex(0);
+    // }
   }
 
   function renderBlock(block: Block) {
@@ -134,11 +128,12 @@ export function UncategorizedView() {
     );
 
     useEffect(() => {
-      getConnectionsForBlock(item.id).then((connections) => {
-        setSelectedCollections(
-          connections.map((connection) => connection.collectionId)
-        );
-      });
+      // TODO: bring back if putting all blocks here
+      // getConnectionsForBlock(item.id).then((connections) => {
+      //   setSelectedCollections(
+      //     connections.map((connection) => connection.collectionId)
+      //   );
+      // });
     }, []);
 
     if (!events) {
@@ -276,7 +271,7 @@ export function UncategorizedView() {
             //     return;
             //   }
             // }
-            setCurrentIndex(index);
+            // setCurrentIndex(index);
           }}
           renderItem={({ item, index }) => CarouselItem({ item, index })}
         />

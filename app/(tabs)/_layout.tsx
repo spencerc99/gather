@@ -25,7 +25,7 @@ export default function TabLayout() {
         <Pressable>
           {({ pressed }) => (
             <FontAwesome
-              name="bug"
+              name="gears"
               size={25}
               color={theme.color.get()}
               style={{ opacity: pressed ? 0.5 : 1 }}
@@ -33,7 +33,7 @@ export default function TabLayout() {
           )}
         </Pressable>
       </Link>
-      <Link href="/profile/" asChild>
+      {/* <Link href="/profile/" asChild>
         <Pressable>
           {({ pressed }) => (
             <FontAwesome
@@ -44,7 +44,7 @@ export default function TabLayout() {
             />
           )}
         </Pressable>
-      </Link>
+      </Link> */}
     </XStack>
   );
 
