@@ -4,6 +4,7 @@ import { CollectionSelect } from "../../components/CollectionSelect";
 import { useState } from "react";
 import { CollectionChatScreen } from "../collection/[id]/chat";
 import { Tabs } from "expo-router";
+import { MainHeaderIcons } from "./_layout";
 
 export default function HomeScreen() {
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
@@ -14,6 +15,7 @@ export default function HomeScreen() {
     <>
       <Tabs.Screen
         options={{
+          headerRight: () => <MainHeaderIcons />,
           headerTitle: () => (
             <YStack paddingBottom="$2">
               <CollectionSelect

@@ -182,7 +182,6 @@ export default function ModalScreen() {
       >
         Reset Databases
       </StyledButton>
-      {/* TODO: add seed collections */}
       {/* TODO: bring this back when working */}
       {/* <ButtonWithConfirm
         disabled={isLoading}
