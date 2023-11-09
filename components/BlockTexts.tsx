@@ -169,24 +169,12 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       </YStack>
     </ScrollView>
   ) : (
-    // <YStack
-    //   paddingBottom="$4"
-    //   paddingHorizontal="$2"
-    //   space="$4"
-    //   width="100%"
-    //   flexGrow={1}
-    //   marginTop="$2"
-    //   alignItems="flex-end"
-    // >
     <FlatList
       renderItem={({ item }) => renderBlock(item)}
       data={sortedBlocks}
       scrollEventThrottle={60}
       ref={scrollRef}
       inverted
-      // onContentSizeChange={() =>
-      //   scrollRef.current?.scrollToEnd({ animated: false })
-      // }
       contentContainerStyle={{
         flexGrow: 1,
         marginTop: 8,

@@ -5,15 +5,10 @@ import { FlatList, Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { Link } from "expo-router";
 import { YStack } from "tamagui";
+import { filterItemsBySearchValue } from "../utils/search";
 
 export function FeedView() {
   const { blocks } = useContext(DatabaseContext);
-
-  const sortedBlocks = useMemo(
-    () =>
-      [...blocks].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    [blocks]
-  );
 
   function renderBlock(block: Block) {
     return (
@@ -45,13 +40,22 @@ export function FeedView() {
 
   const [searchValue, setSearchValue] = useState("");
 
-  const filteredBlocks = sortedBlocks.filter((block) =>
-    // TODO: handle date search
-    [block.title, block.content, block.source, block.description]
-      .filter((b) => Boolean(b))
-      .join("\n")
-      .toLocaleLowerCase()
-      .includes(searchValue.toLocaleLowerCase())
+  const filteredBlocks = useMemo(
+    () =>
+      filterItemsBySearchValue(blocks, searchValue, [
+        "title",
+        "content",
+        "source",
+        "description",
+      ]),
+    [blocks]
+  );
+  const outputBlocks = useMemo(
+    () =>
+      [...filteredBlocks].sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      ),
+    [filteredBlocks]
   );
 
   // TODO: use tabs to render blocks + collections
@@ -65,11 +69,11 @@ export function FeedView() {
         <StyledText textAlign="center">Recent Blocks</StyledText>
         {/* <FlatList
           renderItem={({ item }) => renderBlock(item)}
-          data={filteredBlocks}
+          data={outputBlocks}
           contentContainerStyle={styles.feed}
         ></FlatList> */}
         <StyledView style={styles.feed}>
-          {filteredBlocks.map(renderBlock)}
+          {outputBlocks.map(renderBlock)}
         </StyledView>
       </YStack>
     </>

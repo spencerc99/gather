@@ -114,6 +114,10 @@ interface DatabaseContextProps {
   setShareIntent: (intent: ShareIntent | null) => void;
   shareIntent: ShareIntent | null;
 
+  // arena
+  arenaAccessToken: string | null;
+  updateArenaAccessToken: (newToken: string | null) => void;
+
   // TODO: remove this once apis solidify
   db: SQLite.SQLiteDatabase;
   initDatabases: () => Promise<void>;
@@ -152,6 +156,9 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
 
   setShareIntent: () => {},
   shareIntent: null,
+
+  arenaAccessToken: null,
+  updateArenaAccessToken: () => {},
 
   db,
   initDatabases: async () => {},
@@ -473,6 +480,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
 
   const createCollection = async (collection: CollectionInsertInfo) => {
     const [result] = await db.execAsync(
@@ -730,10 +738,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     void trySyncPendingArenaBlocks();
   }
 
+  async function getArenaAccessToken(): Promise<string | null> {
+    return await SecureStore.getItemAsync(ArenaTokenStorageKey);
+  }
+
   async function trySyncPendingArenaBlocks() {
     // TODO: make this work for every provider
-    const arenaToken = await SecureStore.getItemAsync(ArenaTokenStorageKey);
-    if (!arenaToken) {
+    if (!arenaAccessToken) {
       return;
     }
 
@@ -915,8 +926,23 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     void fetchBlocks();
     void fetchCollections();
     void intializeFilesystemFolder();
-    void trySyncPendingArenaBlocks();
+    void getArenaAccessToken().then((accessToken) => {
+      setArenaAccessToken(accessToken);
+      void trySyncPendingArenaBlocks();
+    });
   }, []);
+
+  async function updateArenaAccessToken(newToken: string | null) {
+    // TODO: handle web
+    if (Platform.OS !== "web") {
+      if (newToken === null) {
+        await SecureStore.deleteItemAsync(ArenaTokenStorageKey);
+      } else {
+        await SecureStore.setItemAsync(ArenaTokenStorageKey, newToken);
+      }
+    }
+    setArenaAccessToken(newToken);
+  }
 
   return (
     <DatabaseContext.Provider
@@ -939,6 +965,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         replaceConnections,
         deleteCollection,
         getCollectionItems,
+        arenaAccessToken,
+        updateArenaAccessToken,
         // TODO: remove
         db,
         initDatabases,

@@ -40,7 +40,9 @@ export function CollectionSummary({
     >
       <YStack flexGrow={1}>
         <XStack justifyContent="space-between">
-          <StyledParagraph title>{title}</StyledParagraph>
+          <StyledParagraph title maxWidth={thumbnail ? "80%" : undefined}>
+            {title}
+          </StyledParagraph>
           {remoteSourceType && (
             <XStack
               alignSelf="flex-end"

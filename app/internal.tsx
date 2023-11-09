@@ -26,14 +26,13 @@ import {
 import { useContext, useState } from "react";
 import { CollectionSelect } from "../components/CollectionSelect";
 import {
-  ArenaChannelRegex,
   arenaClassToBlockType,
   arenaClassToMimeType,
   getChannelContents,
 } from "../utils/arena";
 import { currentUser } from "../utils/user";
 import { RemoteSourceType } from "../utils/dataTypes";
-import { ArenaLogin } from "../views/ArenaLogin";
+import { ArenaLogin, SelectArenaChannel } from "../views/ArenaLogin";
 
 export default function ModalScreen() {
   const {
@@ -113,19 +112,10 @@ export default function ModalScreen() {
       <H3>Are.na Settings</H3>
       <ArenaLogin />
       <Label>Target Are.na channel</Label>
-      {/* TODO: change this to select once logged in */}
-      <StyledInput
-        value={arenaChannel}
-        onChangeText={(text) => setArenaChannel(text)}
-        placeholder="https://are.na/spencer-chang/basket-sjuhif_oeqk"
-        autogrow
+      <SelectArenaChannel
+        setArenaChannel={setArenaChannel}
+        arenaChannel={arenaChannel}
       />
-      {arenaChannel && !ArenaChannelRegex.test(arenaChannel) && (
-        <StyledLabel color="$red9" paddingBottom="$1">
-          Invalid channel URL. Please go to the channel and copy and paste the
-          url here.
-        </StyledLabel>
-      )}
       <Label>Local collection to import to (optional)</Label>
       <CollectionSelect
         selectedCollection={selectedCollection}

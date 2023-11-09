@@ -14,6 +14,7 @@ import { Icon, InputWithIcon, StyledButton } from "./Themed";
 import { CreateCollectionButton } from "./CreateCollectionButton";
 import { currentUser } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
+import { filterItemsBySearchValue } from "../utils/search";
 
 export function CollectionSelect({
   selectedCollection,
@@ -142,35 +143,32 @@ export function CollectionSelect({
                   <Select.ItemText>{collectionPlaceholder}</Select.ItemText>
                 </Select.Item>
               )}
-              {sortedCollections
-                .filter((c) =>
-                  `${c.title}\n${c.description}}`.includes(`${searchValue}`)
-                )
-                .map((collection, idx) => (
-                  <Select.Item
-                    index={idx + 1}
-                    key={collection.id}
-                    value={collection.id}
-                    backgroundColor={
-                      selectedCollection === collection.id
-                        ? "$green4"
-                        : undefined
-                    }
-                  >
-                    <CollectionSummary
-                      collection={collection}
-                      viewProps={{
-                        borderWidth: 0,
-                        paddingHorizontal: 0,
-                        paddingVertical: 0,
-                        backgroundColor: "inherit",
-                      }}
-                    />
-                    <Select.ItemText display="none">
-                      {collection.title}
-                    </Select.ItemText>
-                  </Select.Item>
-                ))}
+              {filterItemsBySearchValue(sortedCollections, searchValue, [
+                "title",
+                "description",
+              ]).map((collection, idx) => (
+                <Select.Item
+                  index={idx + 1}
+                  key={collection.id}
+                  value={collection.id}
+                  backgroundColor={
+                    selectedCollection === collection.id ? "$green4" : undefined
+                  }
+                >
+                  <CollectionSummary
+                    collection={collection}
+                    viewProps={{
+                      borderWidth: 0,
+                      paddingHorizontal: 0,
+                      paddingVertical: 0,
+                      backgroundColor: "inherit",
+                    }}
+                  />
+                  <Select.ItemText display="none">
+                    {collection.title}
+                  </Select.ItemText>
+                </Select.Item>
+              ))}
             </Select.Group>
             {!searchValue && <CreateCollectionButton />}
           </ScrollView>

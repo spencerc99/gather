@@ -7,6 +7,7 @@ import { Link, useRouter } from "expo-router";
 import { Pressable } from "react-native";
 import { currentUser } from "../utils/user";
 import { CreateCollectionButton } from "../components/CreateCollectionButton";
+import { filterItemsBySearchValue } from "../utils/search";
 
 export function CollectionChatsView() {
   const { collections, createCollection } = useContext(DatabaseContext);
@@ -72,33 +73,32 @@ export function CollectionChatsView() {
           </StyledButton>
         )}
         {/* TODO: add some thing about last message */}
-        {sortedCollections
-          .filter((c) =>
-            `${c.title}\n${c.description}}`.includes(`${searchValue}`)
-          )
-          .map((collection, idx) => (
-            <Link
-              href={{
-                pathname: "/collection/[id]/chat",
-                params: { id: collection.id },
-              }}
-              key={collection.id}
-              asChild
-            >
-              <Pressable>
-                <CollectionSummary
-                  collection={collection}
-                  viewProps={{
-                    borderWidth: 1,
-                    borderTopWidth: idx === 0 ? 1 : 0,
-                    borderLeftWidth: 0,
-                    borderRightWidth: 0,
-                    borderColor: "$gray7",
-                  }}
-                />
-              </Pressable>
-            </Link>
-          ))}
+        {filterItemsBySearchValue(sortedCollections, searchValue, [
+          "title",
+          "description",
+        ]).map((collection, idx) => (
+          <Link
+            href={{
+              pathname: "/collection/[id]/chat",
+              params: { id: collection.id },
+            }}
+            key={collection.id}
+            asChild
+          >
+            <Pressable>
+              <CollectionSummary
+                collection={collection}
+                viewProps={{
+                  borderWidth: 1,
+                  borderTopWidth: idx === 0 ? 1 : 0,
+                  borderLeftWidth: 0,
+                  borderRightWidth: 0,
+                  borderColor: "$gray7",
+                }}
+              />
+            </Pressable>
+          </Link>
+        ))}
         {!searchValue && <CreateCollectionButton />}
       </ScrollView>
     </YStack>

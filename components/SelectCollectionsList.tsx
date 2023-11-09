@@ -12,6 +12,7 @@ import {
 import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
 import { Pressable } from "react-native";
 import { currentUser } from "../utils/user";
+import { filterItemsBySearchValue } from "../utils/search";
 
 export function SelectCollectionsList({
   selectedCollections: selectedCollections,
@@ -57,40 +58,34 @@ export function SelectCollectionsList({
   }
 
   function renderCollections() {
-    return sortedCollections
-      .filter((c) =>
-        `${c.title}\n${c.description}}`
-          .toLocaleLowerCase()
-          .includes(searchValue.toLocaleLowerCase())
-      )
-      .map((collection) => {
-        const viewProps = selectedCollections.includes(collection.id)
-          ? {
-              backgroundColor: "$green4",
-              borderWidth: 2,
-              borderColor: "$green10",
-            }
-          : undefined;
-        return (
-          <Pressable
-            key={collection.id}
-            onPress={() => toggleCollection(collection)}
-          >
-            {/* TODO: bold the matching parts */}
-            {horizontal ? (
-              <CollectionThumbnail
-                collection={collection}
-                viewProps={viewProps}
-              />
-            ) : (
-              <CollectionSummary
-                collection={collection}
-                viewProps={viewProps}
-              />
-            )}
-          </Pressable>
-        );
-      });
+    return filterItemsBySearchValue(sortedCollections, searchValue, [
+      "title",
+      "description",
+    ]).map((collection) => {
+      const viewProps = selectedCollections.includes(collection.id)
+        ? {
+            backgroundColor: "$green4",
+            borderWidth: 2,
+            borderColor: "$green10",
+          }
+        : undefined;
+      return (
+        <Pressable
+          key={collection.id}
+          onPress={() => toggleCollection(collection)}
+        >
+          {/* TODO: bold the matching parts */}
+          {horizontal ? (
+            <CollectionThumbnail
+              collection={collection}
+              viewProps={viewProps}
+            />
+          ) : (
+            <CollectionSummary collection={collection} viewProps={viewProps} />
+          )}
+        </Pressable>
+      );
+    });
   }
 
   function renderCollectionsList() {
