@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "expo-router";
 import { Block, DatabaseContext } from "../utils/db";
-import { Image, XStack, YStack, useTheme } from "tamagui";
+import { Image, Spinner, XStack, YStack, useTheme } from "tamagui";
 import { Icon, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";
 import { Swipeable } from "react-native-gesture-handler";
@@ -48,11 +48,6 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
 
   useEffect(() => {
     void fetchBlocks();
-
-    const listener = Keyboard.addListener("keyboardWillShow", () => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    });
-    return () => listener.remove();
   }, [collectionId, allBlocks]);
 
   async function fetchBlocks() {
@@ -127,7 +122,9 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     );
   }
 
-  return blocks?.length === 0 && !collectionId ? (
+  return blocks === null ? (
+    <Spinner size="large" />
+  ) : blocks.length === 0 && !collectionId ? (
     <ScrollView
       style={{
         overflowY: "visible",

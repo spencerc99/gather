@@ -1,10 +1,10 @@
-import { Theme, XStack, YStack } from "tamagui";
+import { YStack } from "tamagui";
 import { TextForageView } from "../../components/TextForageView";
 import { CollectionSelect } from "../../components/CollectionSelect";
-import { useState } from "react";
-import { CollectionChatScreen } from "../collection/[id]/chat";
-import { Tabs } from "expo-router";
+import { useMemo, useState } from "react";
+import { Stack, Tabs } from "expo-router";
 import { MainHeaderIcons } from "./_layout";
+import { CollectionGearHeaderLink } from "../collection/[id]";
 
 export default function HomeScreen() {
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
@@ -15,28 +15,42 @@ export default function HomeScreen() {
     <>
       <Tabs.Screen
         options={{
-          headerRight: () => <MainHeaderIcons />,
-          headerTitle: () => (
-            <YStack paddingBottom="$2">
-              <CollectionSelect
-                selectedCollection={selectedCollection}
-                setSelectedCollection={setSelectedCollection}
-                collectionPlaceholder="All collections"
-                triggerProps={{
-                  theme: "orange",
-                  backgroundColor: "$orange4",
-                }}
-              />
-            </YStack>
-          ),
+          headerRight: () => useMemo(() => <MainHeaderIcons />, []),
+          headerTitle: () =>
+            useMemo(
+              () => (
+                <YStack paddingBottom="$3">
+                  <CollectionSelect
+                    selectedCollection={selectedCollection}
+                    setSelectedCollection={setSelectedCollection}
+                    collectionPlaceholder="All collections"
+                    triggerProps={{
+                      theme: "orange",
+                      backgroundColor: "$orange4",
+                    }}
+                  />
+                </YStack>
+              ),
+              [selectedCollection]
+            ),
         }}
       />
       <YStack height="100%" overflow="hidden">
-        {selectedCollection === null ? (
-          <TextForageView />
-        ) : (
-          <CollectionChatScreen id={selectedCollection} />
+        {selectedCollection !== null && (
+          <Stack.Screen
+            options={{
+              headerRight: (props) => {
+                return (
+                  <CollectionGearHeaderLink
+                    id={selectedCollection}
+                    tintColor={props.tintColor}
+                  />
+                );
+              },
+            }}
+          />
         )}
+        <TextForageView collectionId={selectedCollection || undefined} />
       </YStack>
     </>
   );

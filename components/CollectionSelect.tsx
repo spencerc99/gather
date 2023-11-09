@@ -62,6 +62,7 @@ export function CollectionSelect({
             mass: 1.2,
             stiffness: 150,
           }}
+          dismissOnSnapToBottom
         >
           <Sheet.Frame>
             <Sheet.ScrollView>

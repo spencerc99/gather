@@ -181,7 +181,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
         enabled
         // NOTE: this needs to adjust based on the height of YStack below
         // TODO: make this smaller when there is a collectionId (because tabs don't show)
-        keyboardVerticalOffset={insets.top + 84}
+        keyboardVerticalOffset={insets.top + 44}
       >
         <Theme name="pink">
           <BlockTexts collectionId={collectionId} />
@@ -261,10 +261,6 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               placeholder="Save a thought, photo, or link..."
               minHeight={undefined}
               flex={1}
-              // TODO: this dismisses the keyboard beacuse of the onscroll handler
-              // onFocus={() => {
-              //   scrollRef.current?.scrollToEnd({ animated: true });
-              // }}
               maxLength={2000}
               onChangeText={(text) => {
                 setTextValue(text);

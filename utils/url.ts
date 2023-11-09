@@ -40,7 +40,5 @@ export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
     data.images = [siteImageFileUrl];
   }
 
-  console.log(data);
-
   return data as UrlMetadata;
 }
