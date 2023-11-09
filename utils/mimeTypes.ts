@@ -6,6 +6,12 @@ export enum BlockType {
   Text = "text",
   Link = "link",
 }
+export const FileBlockTypes = [
+  BlockType.Image,
+  BlockType.Document,
+  BlockType.Audio,
+  BlockType.Video,
+];
 
 // TODO: convert mimetype to contentype
 export enum MimeType {

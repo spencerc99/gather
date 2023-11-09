@@ -1,9 +1,9 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Link, Tabs } from "expo-router";
+import { Link, LinkProps, Tabs } from "expo-router";
 import { Pressable, useColorScheme } from "react-native";
 import Colors from "../../constants/Styles";
-import { XStack, useTheme } from "tamagui";
-import { ButtonWithConfirm, Icon } from "../../components/Themed";
+import { XStack, YStack, useTheme } from "tamagui";
+import { IconProps } from "@expo/vector-icons/build/createIconSet";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -86,5 +86,32 @@ export function MainHeaderIcons() {
         </Pressable>
       </Link> */}
     </XStack>
+  );
+}
+
+export function HeaderIcon({
+  href,
+  icon,
+}: {
+  href: LinkProps<any>["href"];
+  icon: IconProps<any>["name"];
+}) {
+  const theme = useTheme();
+
+  return (
+    <YStack paddingHorizontal="$2">
+      <Link href={href} asChild>
+        <Pressable>
+          {({ pressed }) => (
+            <FontAwesome
+              name={icon}
+              size={25}
+              color={theme.color.get()}
+              style={{ opacity: pressed ? 0.5 : 1 }}
+            />
+          )}
+        </Pressable>
+      </Link>
+    </YStack>
   );
 }

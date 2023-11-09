@@ -69,7 +69,10 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       // NOTE: this is sorted descending because we use "inverted" prop on FlatList
       // so it is the reverse of what it should be
       [...(blocks || [])].sort(
-        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        (a, b) =>
+          b.createdAt.getTime() - a.createdAt.getTime() ||
+          new Date(b.remoteSourceInfo?.connectedAt || 0).getTime() -
+            new Date(a.remoteSourceInfo?.connectedAt || 0).getTime()
       ),
     [blocks]
   );

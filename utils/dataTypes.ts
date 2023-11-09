@@ -4,7 +4,7 @@ export interface CollectionInsertInfo {
   thumbnail?: string;
   createdBy: string;
   remoteSourceType?: RemoteSourceType;
-  remoteSourceInfo?: RemoteSourceInfo;
+  remoteSourceInfo?: ArenaChannelCollectionInfo;
 }
 
 export interface Collection extends CollectionInsertInfo {
@@ -34,9 +34,16 @@ export enum RemoteSourceType {
 
 export type RemoteSourceInfo = RemoteSourceInfoMap[RemoteSourceType];
 
+export interface ArenaChannelCollectionInfo {
+  arenaId: string;
+  arenaClass: "Collection";
+}
+export interface ArenaChannelBlockInfo {
+  arenaId: string;
+  arenaClass: "Block";
+  connectedAt: string;
+}
+
 interface RemoteSourceInfoMap {
-  [RemoteSourceType.Arena]: {
-    arenaId: string;
-    arenaClass: "Block" | "Collection";
-  };
+  [RemoteSourceType.Arena]: ArenaChannelCollectionInfo | ArenaChannelBlockInfo;
 }

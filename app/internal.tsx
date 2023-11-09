@@ -90,6 +90,7 @@ export default function ModalScreen() {
           remoteSourceInfo: {
             arenaId: block.id,
             arenaClass: "Block",
+            connectedAt: block.connected_at,
           },
         })),
         collectionId: collectionId!,
@@ -112,6 +113,7 @@ export default function ModalScreen() {
       <H3>Are.na Settings</H3>
       <ArenaLogin />
       <Label>Target Are.na channel</Label>
+      {/* TODO: change this to select once logged in */}
       <StyledInput
         value={arenaChannel}
         onChangeText={(text) => setArenaChannel(text)}

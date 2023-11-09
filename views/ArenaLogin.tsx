@@ -8,12 +8,13 @@ import { Platform } from "react-native";
 import { useEffect, useState } from "react";
 import {
   StyledButton,
+  StyledLabel,
   StyledParagraph,
   StyledText,
 } from "../components/Themed";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
-import { Spinner, XStack } from "tamagui";
+import { Spinner, XStack, YStack } from "tamagui";
 import {
   ArenaClientId,
   ArenaClientSecret,
@@ -90,16 +91,13 @@ export function ArenaLogin() {
   return accessToken === undefined ? (
     <Spinner />
   ) : accessToken ? (
-    <XStack alignItems="center">
-      <StyledParagraph
-        ellipse
-        wordWrap="break-word"
-        width="50%"
-        numberOfLines={2}
-      >
-        Current: {accessToken}
-      </StyledParagraph>
+    <XStack alignItems="center" space="$2" justifyContent="space-between">
+      <YStack flex={1}>
+        <StyledLabel fontWeight="bold">Token</StyledLabel>
+        <StyledParagraph ellipse>{accessToken}</StyledParagraph>
+      </YStack>
       <StyledButton
+        flex={1}
         disabled={!request}
         onPress={() => {
           promptAsync();

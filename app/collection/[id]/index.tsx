@@ -5,6 +5,7 @@ import { DatabaseContext } from "../../../utils/db";
 import { Spinner, useTheme } from "tamagui";
 import { Collection } from "../../../utils/dataTypes";
 import { StyledButton, Icon } from "../../../components/Themed";
+import { HeaderIcon } from "../../(tabs)/_layout";
 
 export function CollectionGearHeaderLink({
   id,
@@ -13,21 +14,13 @@ export function CollectionGearHeaderLink({
   id: string;
   tintColor?: string;
 }) {
-  const router = useRouter();
-
-  const theme = useTheme();
-
   return (
-    <StyledButton
-      icon={<Icon name="gear" size={24} />}
-      color={theme.color.get()}
-      chromeless
-      onPress={() => {
-        router.push({
-          pathname: "/collection/[id]/settings",
-          params: { id: id.toString() },
-        });
+    <HeaderIcon
+      href={{
+        pathname: "/collection/[id]/settings",
+        params: { id: id.toString() },
       }}
+      icon="gear"
     />
   );
 }

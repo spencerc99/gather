@@ -48,6 +48,7 @@ export interface RawArenaItem {
   url: string;
   base_class: "Block" | "Channel";
   class: ArenaClass;
+  connected_at: string;
   embed: {
     url: null;
     type: string;
@@ -234,18 +235,37 @@ async function getBodyForBlock(block: Block): Promise<any> {
         content,
       };
     case BlockType.Image:
-    case BlockType.Document:
-    case BlockType.Audio:
     case BlockType.Video:
       const base64 = await FileSystem.readAsStringAsync(content, {
         encoding: "base64",
       });
-      // this needs to be uploaded somewhere that are.na can access lol
+      // upload to imgur
+      const formData = new FormData();
+      formData.append("type", "base64");
+      if (type === BlockType.Image) {
+        formData.append("image", base64);
+      } else {
+        formData.append("video", base64);
+      }
+      const resp = await fetch("https://api.imgur.com/3/upload", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Client-ID 0d8e6e0a1331d71`,
+        },
+      });
+      const imgurResp = await resp.json();
+      if (!resp.ok) {
+        throw new Error(JSON.stringify(imgurResp));
+      }
       return {
-        source: base64,
+        source: imgurResp.data.link,
       };
     case BlockType.Link:
       return { source: source! };
+    case BlockType.Audio:
+    case BlockType.Document:
+      throw new Error("unsupported type");
   }
 }
 
@@ -269,10 +289,11 @@ export async function addBlockToChannel({
       "Content-Type": "application/json",
     },
   });
+  const response = await resp.json();
   if (!resp.ok) {
     console.error(`failed to add block to arena channel ${resp.status}`, resp);
-    throw new Error(`failed to add block to arena channel ${resp.status}`);
+    throw new Error(JSON.stringify(response));
   }
-  // TODO: return the id returned here
-  return resp.ok;
+
+  return response.id;
 }

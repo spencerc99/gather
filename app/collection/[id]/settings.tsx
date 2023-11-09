@@ -26,7 +26,11 @@ export default function CollectionSettingsScreen() {
   function onPressDelete() {
     deleteCollection(id.toString());
     alert("Collection deleted!");
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/home");
+    }
   }
 
   return (

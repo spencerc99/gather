@@ -9,9 +9,10 @@ import {
   useMemo,
   useState,
 } from "react";
-import { BlockType, MimeType } from "./mimeTypes";
+import { BlockType, FileBlockTypes, MimeType } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {
+  ArenaChannelBlockInfo,
   Collection,
   CollectionInsertInfo,
   Connection,
@@ -62,7 +63,7 @@ interface DatabaseBlockInsert {
   source?: string; // the URL where the object was captured from. If a photo with EXIF data, then the location metadata
   //   TODO: add type
   remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
-  remoteSourceInfo?: RemoteSourceInfo;
+  remoteSourceInfo?: ArenaChannelBlockInfo;
   createdBy: string; // DID of the person who made it?
 }
 
@@ -418,11 +419,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     if (connections?.length) {
       console.log("INSERT ID", result.insertId);
-      await addConnections(
-        String(result.insertId!),
-        connections,
-        result.rows[0]
-      );
+      await addConnections(String(result.insertId!), connections);
     }
 
     console.log(result.rows);
@@ -441,6 +438,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       await tx.executeSqlAsync(`DELETE FROM connections where block_id = ?;`, [
         id,
       ]);
+      const deletedBlock = blocks.find((block) => block.id === id);
+      if (
+        deletedBlock &&
+        FileBlockTypes.includes(deletedBlock.type) &&
+        deletedBlock.content.startsWith(PHOTOS_FOLDER)
+      ) {
+        await FileSystem.deleteAsync(
+          FileSystem.documentDirectory + deletedBlock.content
+        );
+      }
 
       setBlocks(blocks.filter((block) => block.id !== id));
       // TODO: this is only because we rely on items count for each collection and its cached
@@ -675,7 +682,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           createdAt: convertDbTimestampToDate(block.created_timestamp),
           updatedAt: convertDbTimestampToDate(block.updated_timestamp),
           createdBy: block.created_by,
-          remoteSourceType: block.remote_source_type,
+          remoteSourceType: block.remote_source_type as RemoteSourceType,
+          remoteSourceInfo: block.remote_source_info
+            ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
+            : null,
         } as Block)
     );
   }
@@ -717,25 +727,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     ) {
       return;
     }
-
-    // TODO: if adding more types, change this to switch
-    const arenaToken = await SecureStore.getItemAsync(ArenaTokenStorageKey);
-    if (!arenaToken) {
-      return;
-    }
-    // TODO: make this a bulk get blocks
-    const blocks = await Promise.all(
-      blockIds.map((blockId) => getBlock(blockId))
-    );
-    for (const block of blocks) {
-      const success = await addBlockToChannel({
-        channelId: collectionAddedTo.remoteSourceInfo.arenaId,
-        block,
-        arenaToken,
-      });
-      if (success) {
-      }
-    }
+    void trySyncPendingArenaBlocks();
   }
 
   async function trySyncPendingArenaBlocks() {
@@ -805,9 +797,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     arenaToken: string
   ) {
     try {
-      const resp = await addBlockToChannel({ channelId, block, arenaToken });
-      // TODO: need to get the right block id here
-      const newBlockId = "";
+      const newBlockId = await addBlockToChannel({
+        channelId,
+        block,
+        arenaToken,
+      });
       await db.execAsync(
         [
           {
@@ -817,6 +811,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               JSON.stringify({
                 arenaId: newBlockId,
                 arenaClass: "Block",
+                connectedAt: new Date().toISOString(),
               } as RemoteSourceInfo),
               block.id,
             ],
@@ -827,13 +822,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     } catch (err) {}
   }
 
-  async function addConnections(
-    blockId: string,
-    collectionIds: string[],
-    // TODO: this is wonky and only temporary bc block isn't present when adding connection inside
-    // transaction inside the "addBlock" function
-    blockInfo?: Block
-  ) {
+  async function addConnections(blockId: string, collectionIds: string[]) {
     const result = await db.execAsync(
       collectionIds.map((collectionId) => ({
         sql: `INSERT INTO connections (block_id, collection_id, created_by)
@@ -848,29 +837,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     void fetchCollections();
 
-    console.log("collections", collections);
-    // TODO: if collectionIds have remoteSource, then sync to remote source
-    // TODO: if collectionId has remoteSource, then sync to remote source
-    const addedCollections = collections.filter(
-      (c) =>
-        collectionIds.includes(c.id) && c.remoteSourceType && c.remoteSourceInfo
-    );
-
-    console.log(addedCollections);
-
-    // TODO: if adding more types, change this to switch
-    const arenaToken = await SecureStore.getItemAsync(ArenaTokenStorageKey);
-    if (!arenaToken) {
-      return;
-    }
-    const block = blockInfo ? blockInfo : await getBlock(blockId);
-    for (const collection of addedCollections) {
-      console.log("adding to channel");
-      await addBlockToChannel({
-        channelId: collection.remoteSourceInfo!.arenaId,
-        block,
-        arenaToken,
-      });
+    if (
+      collections.some(
+        (c) =>
+          collectionIds.includes(c.id) &&
+          c.remoteSourceType &&
+          c.remoteSourceInfo
+      )
+    ) {
+      void trySyncPendingArenaBlocks();
     }
   }
 
