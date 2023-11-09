@@ -38,11 +38,10 @@ export function CollectionSummary({
       space="$3"
       {...viewProps}
     >
+      {/* TODO: this doesnt work with long overflowing titles im gonna kms */}
       <YStack flexGrow={1}>
-        <XStack justifyContent="space-between">
-          <StyledParagraph title maxWidth={thumbnail ? "80%" : undefined}>
-            {title}
-          </StyledParagraph>
+        <XStack justifyContent="space-between" flex={1}>
+          <StyledParagraph title>{title}</StyledParagraph>
           {remoteSourceType && (
             <XStack
               alignSelf="flex-end"
@@ -65,16 +64,18 @@ export function CollectionSummary({
           </StyledParagraph>
         </StyledView>
       </YStack>
-      <AspectRatioImage
-        uri={thumbnail}
-        otherProps={{
-          aspectRatio: 1,
-          resizeMode: "cover",
-          borderRadius: 8,
-          height: 40,
-          width: 40,
-        }}
-      />
+      <YStack width={40} height={40}>
+        <AspectRatioImage
+          uri={thumbnail}
+          otherProps={{
+            aspectRatio: 1,
+            resizeMode: "cover",
+            borderRadius: 8,
+            height: 40,
+            width: 40,
+          }}
+        />
+      </YStack>
     </XStack>
   );
 }

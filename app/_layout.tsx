@@ -94,6 +94,7 @@ function RootLayoutNav() {
                   options={{
                     presentation: "card",
                     title: "",
+                    animation: "slide_from_bottom",
                   }}
                 />
                 <Stack.Screen

@@ -4,13 +4,17 @@ import { MainHeaderIcons } from "../app/(tabs)/_layout";
 import { CollectionGearHeaderLink } from "../app/collection/[id]";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { TextForageView } from "../components/TextForageView";
+import { useState } from "react";
 
 export function ChatDetailView({
   initialCollectionId,
 }: {
   initialCollectionId: string | null;
 }) {
-  const router = useRouter();
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(
+    initialCollectionId
+  );
+  // const router = useRouter();
 
   return (
     <>
@@ -20,17 +24,20 @@ export function ChatDetailView({
           headerTitle: () => (
             <YStack paddingBottom="$3">
               <CollectionSelect
-                selectedCollection={initialCollectionId}
-                setSelectedCollection={(newCollectionId) => {
-                  router.push(
-                    !newCollectionId
-                      ? { pathname: "/(tabs)/home" }
-                      : {
-                          pathname: "/collection/[id]/chat",
-                          params: { id: newCollectionId },
-                        }
-                  );
-                }}
+                selectedCollection={selectedCollection}
+                // TODO: handle the routing for this to navigate to the correct collection
+                // this needs to move the chat.tsx to within the tabs navigation
+                // setSelectedCollection={(newCollectionId) => {
+                //   router.replace(
+                //     !newCollectionId
+                //       ? { pathname: "/(tabs)/home" }
+                //       : {
+                //           pathname: "/collection/[id]/chat",
+                //           params: { id: newCollectionId },
+                //         }
+                //   );
+                // }}
+                setSelectedCollection={setSelectedCollection}
                 collectionPlaceholder="All collections"
                 triggerProps={{
                   theme: "orange",
@@ -42,13 +49,13 @@ export function ChatDetailView({
         }}
       />
       <YStack height="100%" overflow="hidden">
-        {initialCollectionId !== null && (
+        {selectedCollection !== null && (
           <Stack.Screen
             options={{
               headerRight: (props) => {
                 return (
                   <CollectionGearHeaderLink
-                    id={initialCollectionId}
+                    id={selectedCollection}
                     tintColor={props.tintColor}
                   />
                 );
@@ -56,7 +63,7 @@ export function ChatDetailView({
             }}
           />
         )}
-        <TextForageView collectionId={initialCollectionId || undefined} />
+        <TextForageView collectionId={selectedCollection || undefined} />
       </YStack>
     </>
   );
