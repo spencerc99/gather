@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { Platform, StyleSheet } from "react-native";
-import { H2, View, YStack } from "tamagui";
+import { H2, H3, View, YStack } from "tamagui";
 import {
   StyledButton,
   StyledText,
@@ -12,18 +12,21 @@ import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { currentUser } from "../utils/user";
 import { SelectArenaChannel } from "../views/ArenaLogin";
+import { PortalProvider } from "tamagui";
 import { ImportArenaChannelSelect } from "../components/ImportArenaChannelSelect";
 
 export default function ModalScreen() {
   // TODO: type the diff modals by the pathname?
 
   return (
-    <View style={styles.container}>
-      <CreateCollectionModal />
+    <PortalProvider>
+      <View style={styles.container}>
+        <CreateCollectionModal />
 
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
-      <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
-    </View>
+        {/* Use a light status bar on iOS to account for the black space above the modal */}
+        <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
+      </View>
+    </PortalProvider>
   );
 }
 
@@ -32,12 +35,12 @@ function CreateCollectionModal() {
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { createCollection } = useContext(DatabaseContext);
+  const { createCollection, arenaAccessToken } = useContext(DatabaseContext);
   const user = currentUser();
 
   return (
     <YStack style={styles.createCollection}>
-      <StyledText style={styles.title}>Create or Import Collection</StyledText>
+      <H3>Create Collection</H3>
       <StyledInput
         placeholder="I want to remember this"
         value={title}
@@ -59,16 +62,25 @@ function CreateCollectionModal() {
       >
         Create
       </StyledButton>
-      <H2>or Import</H2>
-      <ImportArenaChannelSelect
-        {...{
-          isLoading,
-          setIsLoading,
-          onSuccess: () => {
-            router.replace("..");
-          },
-        }}
-      />
+      <H3>or Import</H3>
+      {!arenaAccessToken ? (
+        <StyledText color="$gray9">
+          <Link href="/internal">
+            <StyledText link>Login to Are.na</StyledText>
+          </Link>{" "}
+          to import one of your channels
+        </StyledText>
+      ) : (
+        <ImportArenaChannelSelect
+          {...{
+            isLoading,
+            setIsLoading,
+            onSuccess: () => {
+              router.replace("..");
+            },
+          }}
+        />
+      )}
     </YStack>
   );
 }

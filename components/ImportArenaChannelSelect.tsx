@@ -21,6 +21,7 @@ export function ImportArenaChannelSelect({
   setIsLoading: (isLoading: boolean) => void;
   onSuccess?: () => void;
 }) {
+  const { arenaAccessToken } = useContext(DatabaseContext);
   const { fetchCollections, createCollection, createBlocks } =
     useContext(DatabaseContext);
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
@@ -32,7 +33,10 @@ export function ImportArenaChannelSelect({
     Keyboard.dismiss();
     setIsLoading(true);
     try {
-      const { title, id, contents } = await getChannelContents(arenaChannel);
+      const { title, id, contents } = await getChannelContents(
+        arenaChannel,
+        arenaAccessToken
+      );
       let collectionId = selectedCollection;
       if (!collectionId) {
         collectionId = await createCollection({
@@ -76,7 +80,7 @@ export function ImportArenaChannelSelect({
       // but for some reason not showing up.. maybe a read-replica thing?
       fetchCollections();
       // TODO: add toast saying success with new collection name and how many blocks created
-      onSuccess();
+      onSuccess?.();
     } catch (error) {
       console.error(error);
       throw error;
@@ -87,6 +91,7 @@ export function ImportArenaChannelSelect({
 
   return (
     <>
+      {/* TODO: maybe just have it import on click? */}
       <SelectArenaChannel
         setArenaChannel={setArenaChannel}
         arenaChannel={arenaChannel}

@@ -169,7 +169,8 @@ export function transformChannelUrlToApiUrl(url: string): string {
 
 // TODO: this should use users access token if they added it
 export async function getChannelContents(
-  url: string
+  url: string,
+  accessToken?: string | null
 ): Promise<ArenaChannelInfo> {
   const reviewItemSourceTransformed = transformChannelUrlToApiUrl(url);
   let fetchedItems: RawArenaItem[] = [];
@@ -179,8 +180,11 @@ export async function getChannelContents(
   try {
     let nextUrl: string | undefined = baseUrl;
     while (nextUrl) {
-      console.log("paging", nextUrl);
-      const resp = await fetch(nextUrl);
+      const resp = await fetch(nextUrl, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
       const respBody = await resp.json();
       if (isFirstFetch) {
         const { contents, ...rest } = respBody;
