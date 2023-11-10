@@ -1,4 +1,4 @@
-import { useRouter, Tabs, Stack } from "expo-router";
+import { Tabs, Stack } from "expo-router";
 import { YStack } from "tamagui";
 import { MainHeaderIcons } from "../app/(tabs)/_layout";
 import { CollectionGearHeaderLink } from "../app/collection/[id]";

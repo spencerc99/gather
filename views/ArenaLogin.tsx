@@ -148,7 +148,6 @@ export function SelectArenaChannel({
 }) {
   const { arenaAccessToken } = useContext(DatabaseContext);
   const [channels, setChannels] = useState<ArenaChannelInfo[] | null>(null);
-  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
@@ -164,9 +163,9 @@ export function SelectArenaChannel({
   return arenaAccessToken ? (
     <Select
       native
-      onValueChange={setSelectedChannel}
+      onValueChange={setArenaChannel}
       // @ts-ignore
-      value={selectedChannel}
+      value={arenaChannel}
       disablePreventBodyScroll
     >
       <Select.Trigger elevation="$3">
@@ -237,7 +236,7 @@ export function SelectArenaChannel({
                   key={channel.id}
                   value={channel.id.toString()}
                   backgroundColor={
-                    selectedChannel === channel.id.toString()
+                    arenaChannel === channel.id.toString()
                       ? "$green4"
                       : undefined
                   }
