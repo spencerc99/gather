@@ -10,9 +10,10 @@ export function CreateCollectionButton({ disabled }: { disabled?: boolean }) {
         justifyContent: "center",
         alignItems: "center",
       }}
+      borderRadius={16}
       disabled={disabled}
     >
-      Create Collection
+      New Collection
     </LinkButton>
   );
 }

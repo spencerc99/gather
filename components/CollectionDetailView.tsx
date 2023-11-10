@@ -3,7 +3,9 @@ import { Collection } from "../utils/dataTypes";
 import { useContext, useEffect, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { BlockSummary } from "./BlockSummary";
-import { StyledParagraph } from "./Themed";
+import { AspectRatioImage, StyledParagraph, StyledView } from "./Themed";
+import { ExternalLink } from "./ExternalLink";
+import { Stack } from "expo-router";
 
 export function CollectionDetailView({
   collection,
@@ -19,31 +21,70 @@ export function CollectionDetailView({
     collaborators,
     updatedAt,
     numBlocks: numItems,
+    lastConnectedAt,
+    remoteSourceInfo,
+    remoteSourceType,
+    thumbnail,
   } = collection;
   const { getCollectionItems } = useContext(DatabaseContext);
-  const [blocks, setBlocks] = useState<Block[] | null>(null);
+  // const [blocks, setBlocks] = useState<Block[] | null>(null);
 
-  useEffect(() => {
-    getCollectionItems(id).then((blocks) => setBlocks(blocks));
-  }, [id]);
+  // useEffect(() => {
+  //   getCollectionItems(id).then((blocks) => setBlocks(blocks));
+  // }, [id]);
 
   return (
-    <ScrollView>
-      <YStack padding="10%">
-        <StyledParagraph title>{title}</StyledParagraph>
-        <StyledParagraph color="$gray9">{description}</StyledParagraph>
-        <StyledParagraph>
-          by{" "}
-          <StyledParagraph style={{ fontWeight: 700 }}>
-            {createdBy}
-          </StyledParagraph>
-        </StyledParagraph>
-        <StyledParagraph>Created at: {createdAt.toISOString()}</StyledParagraph>
-        <StyledParagraph>Updated at: {updatedAt.toISOString()}</StyledParagraph>
-        <StyledParagraph>Collaborators: {collaborators}</StyledParagraph>
-        <StyledParagraph>Total: {numItems}</StyledParagraph>
-        {/* insert search bar */}
-        {blocks === null ? (
+    <>
+      <Stack.Screen
+        options={{
+          title,
+        }}
+      />
+      <ScrollView>
+        <YStack padding="10%">
+          {/* <XStack space="$3" flex={1}> */}
+          <YStack flex={1} space="$1">
+            {description && (
+              <StyledParagraph color="$gray9">{description}</StyledParagraph>
+            )}
+            <StyledView>
+              <StyledParagraph metadata>
+                {numItems} items by{" "}
+                <StyledParagraph metadata style={{ fontWeight: 700 }}>
+                  {createdBy}
+                </StyledParagraph>
+              </StyledParagraph>
+              <StyledParagraph metadata>
+                Created at: {createdAt.toLocaleDateString()}
+              </StyledParagraph>
+              <StyledParagraph metadata>
+                Updated at: {updatedAt.toLocaleDateString()}
+              </StyledParagraph>
+              {lastConnectedAt && (
+                <StyledParagraph metadata>
+                  Last connected at: {lastConnectedAt.toLocaleDateString()}
+                </StyledParagraph>
+              )}
+              <StyledParagraph metadata>
+                Collaborators: {collaborators}
+              </StyledParagraph>
+              {/* TODO: update to handle multiple sources */}
+              {remoteSourceType && (
+                <StyledParagraph metadata>
+                  Syncing to{" "}
+                  <ExternalLink
+                    href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
+                  >
+                    <StyledParagraph link>{remoteSourceType}</StyledParagraph>
+                  </ExternalLink>
+                </StyledParagraph>
+              )}
+            </StyledView>
+          </YStack>
+          {/* <AspectRatioImage uri={thumbnail} otherProps={{ flex: 1 }} /> */}
+          {/* </XStack> */}
+          {/* insert search bar */}
+          {/* {blocks === null ? (
           <Spinner />
         ) : (
           <XStack flexWrap="wrap" space="$2">
@@ -51,8 +92,9 @@ export function CollectionDetailView({
               <BlockSummary block={block} />
             ))}
           </XStack>
-        )}
-      </YStack>
-    </ScrollView>
+        )} */}
+        </YStack>
+      </ScrollView>
+    </>
   );
 }

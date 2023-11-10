@@ -1,7 +1,7 @@
 import { Tabs, Stack } from "expo-router";
 import { YStack } from "tamagui";
 import { MainHeaderIcons } from "../app/(tabs)/_layout";
-import { CollectionGearHeaderLink } from "../app/collection/[id]";
+import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { TextForageView } from "../components/TextForageView";
 import { useState } from "react";
@@ -53,12 +53,7 @@ export function ChatDetailView({
           <Stack.Screen
             options={{
               headerRight: (props) => {
-                return (
-                  <CollectionGearHeaderLink
-                    id={selectedCollection}
-                    tintColor={props.tintColor}
-                  />
-                );
+                return <CollectionDetailsHeaderLink id={selectedCollection} />;
               },
             }}
           />

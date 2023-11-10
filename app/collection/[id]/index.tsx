@@ -2,10 +2,21 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { CollectionDetailView } from "../../../components/CollectionDetailView";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../../../utils/db";
-import { Spinner, useTheme } from "tamagui";
+import { Spinner } from "tamagui";
 import { Collection } from "../../../utils/dataTypes";
-import { StyledButton, Icon } from "../../../components/Themed";
 import { HeaderIcon } from "../../(tabs)/_layout";
+
+export function CollectionDetailsHeaderLink({ id }: { id: string }) {
+  return (
+    <HeaderIcon
+      href={{
+        pathname: "/collection/[id]",
+        params: { id: id.toString() },
+      }}
+      icon="list-alt"
+    />
+  );
+}
 
 export function CollectionGearHeaderLink({
   id,

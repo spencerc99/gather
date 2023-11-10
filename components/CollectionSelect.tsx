@@ -8,6 +8,7 @@ import {
   SizableText,
   SelectTriggerProps,
   YStack,
+  XStack,
 } from "tamagui";
 import { DatabaseContext } from "../utils/db";
 import { Icon, InputWithIcon, StyledButton } from "./Themed";
@@ -87,7 +88,7 @@ export function CollectionSelect({
           exitStyle={{ o: 0, y: 10 }}
           minWidth={200}
         >
-          <YStack margin="$2">
+          <YStack margin="$2" marginBottom="$1">
             <InputWithIcon
               icon="search"
               placeholder="Search..."
@@ -102,32 +103,36 @@ export function CollectionSelect({
               paddingBottom: 24,
             }}
           >
-            {searchValue && (
-              <StyledButton
-                onPress={async () => {
-                  await createCollection({
-                    title: searchValue,
-                    createdBy: currentUser().id,
-                  });
-                  setSearchValue("");
-                }}
-                noTextWrap={true}
-                height="auto"
-                paddingVertical={16}
-              >
-                <SizableText
-                  userSelect="none"
-                  cursor="pointer"
-                  color="$color"
-                  size="$true"
+            <XStack margin="$2" marginTop="$1">
+              {searchValue ? (
+                <StyledButton
+                  onPress={async () => {
+                    await createCollection({
+                      title: searchValue,
+                      createdBy: currentUser().id,
+                    });
+                    setSearchValue("");
+                  }}
+                  noTextWrap={true}
+                  height="auto"
+                  paddingVertical={16}
                 >
-                  New collection{" "}
-                  <SizableText style={{ fontWeight: 700 }}>
-                    {searchValue}
+                  <SizableText
+                    userSelect="none"
+                    cursor="pointer"
+                    color="$color"
+                    size="$true"
+                  >
+                    New collection{" "}
+                    <SizableText style={{ fontWeight: 700 }}>
+                      {searchValue}
+                    </SizableText>
                   </SizableText>
-                </SizableText>
-              </StyledButton>
-            )}
+                </StyledButton>
+              ) : (
+                <CreateCollectionButton />
+              )}
+            </XStack>
             {/* TODO: add some thing about last message */}
             <Select.Group>
               {collectionPlaceholder.includes(searchValue) && (
@@ -170,7 +175,6 @@ export function CollectionSelect({
                 </Select.Item>
               ))}
             </Select.Group>
-            {!searchValue && <CreateCollectionButton />}
           </ScrollView>
         </Select.Viewport>
 

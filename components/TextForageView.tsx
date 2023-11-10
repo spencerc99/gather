@@ -183,9 +183,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
         // TODO: make this smaller when there is a collectionId (because tabs don't show)
         keyboardVerticalOffset={insets.top + 44}
       >
-        <Theme name="pink">
-          <BlockTexts collectionId={collectionId} />
-        </Theme>
+        <BlockTexts collectionId={collectionId} />
         <YStack
           height="auto"
           borderTopWidth={1}

@@ -13,9 +13,11 @@ import {
   mapSnakeCaseToCamelCaseProperties,
 } from "../utils/db";
 import {
+  Icon,
   StyledButton,
   StyledParagraph,
   StyledText,
+  StyledView,
 } from "../components/Themed";
 import {
   Dimensions,
@@ -32,7 +34,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 
 export function UncategorizedView() {
-  const { db, blocks, addConnections, getConnectionsForBlock } =
+  const { db, blocks, addConnections, getConnectionsForBlock, deleteBlock } =
     useContext(DatabaseContext);
   const [events, setEvents] = useState<Block[] | null>(null);
 
@@ -107,10 +109,10 @@ export function UncategorizedView() {
       // addConnections(events[currentIndex!].id, selectedCollections);
       // setSelectedCollections([]);
       // setEvents([]);
-      addConnections(itemId, selectedCollections);
+      void addConnections(itemId, selectedCollections);
       setEvents([]);
     } else {
-      addConnections(itemId, selectedCollections);
+      void addConnections(itemId, selectedCollections);
       setEvents(events.filter((block) => block.id !== itemId));
       // carouselRef.current?.next();
     }
@@ -120,6 +122,14 @@ export function UncategorizedView() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const carouselRef = useRef<ICarouselInstance>(null);
+
+  function handleDeleteBlock(blockId: string) {
+    if (!events) {
+      return;
+    }
+    void deleteBlock(blockId);
+    setEvents(events.filter((block) => block.id !== blockId));
+  }
 
   function CarouselItem({ item, index }: { item: Block; index: number }) {
     const [selectedCollections, setSelectedCollections] = useState<string[]>(
@@ -141,6 +151,20 @@ export function UncategorizedView() {
 
     return (
       <>
+        <StyledButton
+          position="absolute"
+          top={0}
+          right={0}
+          zIndex={5}
+          icon={<Icon name="trash" size={16} />}
+          circular
+          theme="red"
+          size={16}
+          onPress={() => {
+            console.log("delete");
+            handleDeleteBlock(item.id);
+          }}
+        />
         <StyledText
           marginBottom="auto"
           textAlign="center"
@@ -240,9 +264,9 @@ export function UncategorizedView() {
           withAnimation={{
             type: "spring",
             config: {
-              damping: 15,
-              mass: 1,
-              stiffness: 150,
+              damping: 40,
+              mass: 1.2,
+              stiffness: 250,
             },
           }}
           width={width}

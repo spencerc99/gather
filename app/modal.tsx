@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
 import { Platform, StyleSheet } from "react-native";
-import { View, YStack } from "tamagui";
+import { H2, View, YStack } from "tamagui";
 import {
   StyledButton,
   StyledText,
@@ -11,6 +11,8 @@ import {
 import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { currentUser } from "../utils/user";
+import { SelectArenaChannel } from "../views/ArenaLogin";
+import { ImportArenaChannelSelect } from "../components/ImportArenaChannelSelect";
 
 export default function ModalScreen() {
   // TODO: type the diff modals by the pathname?
@@ -28,12 +30,14 @@ export default function ModalScreen() {
 function CreateCollectionModal() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
   const { createCollection } = useContext(DatabaseContext);
   const user = currentUser();
 
   return (
     <YStack style={styles.createCollection}>
-      <StyledText style={styles.title}>Create Collection</StyledText>
+      <StyledText style={styles.title}>Create or Import Collection</StyledText>
       <StyledInput
         placeholder="I want to remember this"
         value={title}
@@ -55,6 +59,16 @@ function CreateCollectionModal() {
       >
         Create
       </StyledButton>
+      <H2>or Import</H2>
+      <ImportArenaChannelSelect
+        {...{
+          isLoading,
+          setIsLoading,
+          onSuccess: () => {
+            router.replace("..");
+          },
+        }}
+      />
     </YStack>
   );
 }

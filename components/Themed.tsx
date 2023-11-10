@@ -3,7 +3,7 @@ import {
   Button as DefaultButton,
   ButtonProps,
   styled,
-  View as DefaultView,
+  View,
   Input as DefaultInput,
   TextArea as DefaultTextArea,
   GetProps,
@@ -17,6 +17,7 @@ import {
   ImageProps,
   Image,
   Label,
+  StackProps,
 } from "tamagui";
 
 import { Link, LinkProps } from "expo-router";
@@ -44,6 +45,11 @@ const TextVariants = {
       color: "$gray9",
     },
   },
+  link: {
+    true: {
+      color: "#2e78b7",
+    },
+  },
 } as const;
 
 export const StyledText = styled(Text, {
@@ -59,11 +65,10 @@ export const StyledLabel = styled(Label, {
   variants: TextVariants,
 });
 
-export function StyledView(props: any) {
-  const { style, ...otherProps } = props;
-
-  return <DefaultView style={style} {...otherProps} />;
-}
+// TODO: this doesn't properly pass down variants
+export const StyledView = styled(View, {
+  variants: TextVariants,
+});
 
 const PressableButton = styled(DefaultButton, {
   theme: "blue",
@@ -144,7 +149,7 @@ export const StyledTextArea = styled(DefaultTextArea, {
 
 export const IconComponent = styled(FontAwesome, {
   color: "$color",
-  backgroundColor: "$background",
+  // Background is "inherit" by default
   // TODO: 18 is not working here why????
   size: 18,
 } as any);

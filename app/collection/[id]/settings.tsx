@@ -40,6 +40,7 @@ export default function CollectionSettingsScreen() {
         <StyledText title>{title}</StyledText>
         <StyledText color="$gray9">{description}</StyledText>
 
+        {/* TODO: if its an arena synced channel just "unlink it" */}
         <StyledButton theme="red" onPress={() => onPressDelete()}>
           Delete
         </StyledButton>

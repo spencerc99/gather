@@ -1,12 +1,19 @@
 import { Block, DatabaseContext } from "../utils/db";
-import { StyledView, StyledParagraph, StyledButton, Icon } from "./Themed";
+import {
+  StyledView,
+  StyledParagraph,
+  StyledButton,
+  Icon,
+  StyledText,
+} from "./Themed";
 import { StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { useContext, useEffect, useState } from "react";
 import { ConnectionSummary } from "./ConnectionSummary";
 import { Connection } from "../utils/dataTypes";
-import { ScrollView, YStack } from "tamagui";
+import { YStack } from "tamagui";
 import { useRouter } from "expo-router";
+import { ExternalLink } from "./ExternalLink";
 
 export function BlockDetailView({ block }: { block: Block }) {
   const {
@@ -18,6 +25,8 @@ export function BlockDetailView({ block }: { block: Block }) {
     createdAt,
     createdBy,
     updatedAt,
+    remoteSourceInfo,
+    remoteSourceType,
   } = block;
 
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -40,15 +49,34 @@ export function BlockDetailView({ block }: { block: Block }) {
         style={{ width: "100%", height: "auto", aspectRatio: "1/1" }}
       />
       {/* TODO: don't show hold item actions and render them inline instead */}
-      <StyledParagraph alignSelf="flex-end">By: {createdBy}</StyledParagraph>
-      <StyledParagraph>{description}</StyledParagraph>
-      <StyledView style={styles.metadata}>
+      {description && <StyledParagraph metadata>{description}</StyledParagraph>}
+      <StyledView>
+        <StyledParagraph metadata>By: {createdBy}</StyledParagraph>
+        {source && (
+          <StyledText metadata>
+            From:{" "}
+            <ExternalLink href={source}>
+              <StyledParagraph link>{source}</StyledParagraph>
+            </ExternalLink>
+          </StyledText>
+        )}
         <StyledParagraph metadata>
-          Created: {createdAt.toLocaleTimeString()}
+          Created: {createdAt.toLocaleDateString()}
         </StyledParagraph>
         <StyledParagraph metadata>
-          Updated: {updatedAt.toLocaleTimeString()}
+          Updated: {updatedAt.toLocaleDateString()}
         </StyledParagraph>
+        {/* TODO: update to handle multiple sources */}
+        {remoteSourceType && (
+          <StyledParagraph metadata>
+            Syncing to{" "}
+            <ExternalLink
+              href={`https://are.na/block/${remoteSourceInfo?.arenaId}`}
+            >
+              <StyledParagraph link>{remoteSourceType}</StyledParagraph>
+            </ExternalLink>
+          </StyledParagraph>
+        )}
       </StyledView>
       <StyledButton
         icon={<Icon name="link" />}
