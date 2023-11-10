@@ -248,6 +248,7 @@ export function UncategorizedView() {
           width={width}
           data={events}
           scrollAnimationDuration={300}
+          windowSize={3}
           onScrollBegin={() => {
             // TODO: bring this back when you resolve the
             // propagation from trying to touch the selectcollections input
