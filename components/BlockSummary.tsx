@@ -12,8 +12,9 @@ import { useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
+import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
 
-function useBlockMenuItems(block: Block) {
+function useBlockMenuItems(block: Block): { blockMenuItems: MenuItemProps[] } {
   const { deleteBlock } = useContext(DatabaseContext);
   const router = useRouter();
   const { id, source, content, type } = block;
@@ -65,6 +66,17 @@ function useBlockMenuItems(block: Block) {
               },
             },
           ]),
+      // TODO: finish this
+      // set isEditing and pass that and a commitEdit function out of here for the consumer to handle
+      ...(__DEV__
+        ? [
+            {
+              text: "Edit",
+              icon: () => <Icon name="edit" />,
+              onPress: () => {},
+            },
+          ]
+        : []),
       {
         text: "Connect",
         icon: () => <Icon name="link" />,
@@ -86,7 +98,7 @@ function useBlockMenuItems(block: Block) {
     [id, source, content, deleteBlock]
   );
 
-  return blockMenuItems;
+  return { blockMenuItems };
 }
 
 export function BlockSummary({
@@ -103,7 +115,7 @@ export function BlockSummary({
   blockStyle?: object;
 }) {
   const { id, title, createdAt } = block;
-  const blockMenuItems = useBlockMenuItems(block);
+  const { blockMenuItems } = useBlockMenuItems(block);
 
   const theme = useTheme();
   const renderedBlockContent = (
@@ -164,7 +176,7 @@ export function BlockTextSummary({
 }) {
   const { id, type, source, title } = block;
   const theme = useTheme();
-  const blockMenuItems = useBlockMenuItems(block);
+  const { blockMenuItems } = useBlockMenuItems(block);
 
   function renderContent() {
     const content = (

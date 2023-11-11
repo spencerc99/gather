@@ -44,6 +44,7 @@ export function CollectionDetailView({
         <YStack padding="10%">
           {/* <XStack space="$3" flex={1}> */}
           <YStack flex={1} space="$1">
+            {/* TODO: change all these to labels and make them editable with a save */}
             {description && (
               <StyledParagraph color="$gray9">{description}</StyledParagraph>
             )}

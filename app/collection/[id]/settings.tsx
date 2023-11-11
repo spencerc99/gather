@@ -29,6 +29,7 @@ export default function CollectionSettingsScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
+      // TODO: fix this not properly redirecting back
       router.replace("/(tabs)/home");
     }
   }

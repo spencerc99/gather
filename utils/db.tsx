@@ -425,11 +425,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
 
     if (connections?.length) {
-      console.log("INSERT ID", result.insertId);
       await addConnections(String(result.insertId!), connections);
     }
 
-    console.log(result.rows);
     // TODO: change this to just fetch the new row info
     if (!ignoreFetch) {
       fetchBlocks();

@@ -93,7 +93,6 @@ function RootLayoutNav() {
                   name="collection/[id]/index"
                   options={{
                     presentation: "card",
-                    title: "",
                   }}
                 />
                 <Stack.Screen
@@ -115,6 +114,7 @@ function RootLayoutNav() {
                   name="block/[id]/index"
                   options={{
                     presentation: "card",
+                    title: "",
                   }}
                 />
                 <Stack.Screen

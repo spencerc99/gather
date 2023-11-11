@@ -67,7 +67,13 @@ export interface Metadata {
   description: null | string;
 }
 
-export type ArenaClass = "Image" | "Text" | "Link" | "Media" | "Attachment";
+export type ArenaClass =
+  | "Image"
+  | "Text"
+  | "Link"
+  | "Media"
+  | "Attachment"
+  | "Block";
 export interface RawArenaItem {
   id: string;
   title: string;
@@ -193,7 +199,10 @@ export async function getChannelContents(
       }
       let contents: RawArenaItem[] = respBody.contents;
       // TODO: recursively traverse the sub-channels
-      contents = contents.filter((c) => c.base_class === "Block");
+      contents = contents.filter(
+        // NOTE: class = block only if are.na has failed to process it
+        (c) => c.base_class === "Block" && c.class !== "Block"
+      );
       // Update storage with any new items
       fetchedItems.push(...contents);
       nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
@@ -205,12 +214,8 @@ export async function getChannelContents(
   return { ...channelInfo, contents: fetchedItems } as ArenaChannelInfo;
 }
 
-export function arenaClassToBlockType({
-  class: classVal,
-  embed,
-  attachment,
-  image,
-}: RawArenaItem): BlockType {
+export function arenaClassToBlockType(arenaItem: RawArenaItem): BlockType {
+  const { class: classVal, embed, attachment, image } = arenaItem;
   switch (classVal) {
     case "Image":
       return BlockType.Image;
@@ -250,6 +255,10 @@ export function arenaClassToBlockType({
     // this should honestly probably be Video Rather than anything with an embed.
     case "Media":
       return embed?.url ? BlockType.Link : BlockType.Image;
+    default:
+      throw new Error(
+        `Unhandled arena class: ${classVal}, ${JSON.stringify(arenaItem)}`
+      );
   }
 }
 
