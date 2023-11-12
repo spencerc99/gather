@@ -21,11 +21,13 @@ export function CollectionSelect({
   setSelectedCollection,
   collectionPlaceholder = "New collection",
   triggerProps = {},
+  onTriggerSelect,
 }: {
   selectedCollection: string | null;
   setSelectedCollection: (selectedCollection: string | null) => void;
   collectionPlaceholder?: string;
   triggerProps?: SelectTriggerProps;
+  onTriggerSelect?: () => void;
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
@@ -49,7 +51,13 @@ export function CollectionSelect({
       value={selectedCollection}
       disablePreventBodyScroll
     >
-      <Select.Trigger elevation="$3" {...triggerProps}>
+      <Select.Trigger
+        elevation="$3"
+        {...triggerProps}
+        onPress={() => {
+          onTriggerSelect?.();
+        }}
+      >
         <Select.Value placeholder={collectionPlaceholder} />
       </Select.Trigger>
 

@@ -6,6 +6,7 @@ import { CollectionSelect } from "../components/CollectionSelect";
 import { TextForageView } from "../components/TextForageView";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
+import { Keyboard } from "react-native";
 
 export function ChatDetailView({
   initialCollectionId,
@@ -35,6 +36,9 @@ export function ChatDetailView({
           headerTitle: () => (
             <YStack paddingBottom="$3">
               <CollectionSelect
+                onTriggerSelect={() => {
+                  Keyboard.dismiss();
+                }}
                 selectedCollection={selectedCollection}
                 // TODO: handle the routing for this to navigate to the correct collection
                 // this needs to move the chat.tsx to within the tabs navigation
