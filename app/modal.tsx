@@ -65,7 +65,12 @@ function CreateCollectionModal() {
       <H3>or Import</H3>
       {!arenaAccessToken ? (
         <StyledText color="$gray9">
-          <Link href="/internal">
+          <Link
+            href="/internal"
+            onPress={() => {
+              router.push("..");
+            }}
+          >
             <StyledText link>Login to Are.na</StyledText>
           </Link>{" "}
           to import one of your channels

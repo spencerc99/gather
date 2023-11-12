@@ -146,7 +146,7 @@ export function SelectArenaChannel({
   arenaChannel: string;
   setArenaChannel: (arenaChannel: string) => void;
 }) {
-  const { arenaAccessToken } = useContext(DatabaseContext);
+  const { arenaAccessToken, collections } = useContext(DatabaseContext);
   const [channels, setChannels] = useState<ArenaChannelInfo[] | null>(null);
   const [searchValue, setSearchValue] = useState("");
 
@@ -168,7 +168,7 @@ export function SelectArenaChannel({
       value={arenaChannel}
       disablePreventBodyScroll
     >
-      <Select.Trigger elevation="$3">
+      <Select.Trigger elevation="$3" disabled={!channels}>
         <Select.Value
           placeholder={
             !channels
@@ -230,43 +230,58 @@ export function SelectArenaChannel({
             <Select.Group>
               {filterItemsBySearchValue(channels || [], searchValue, [
                 "title",
-              ])?.map((channel, idx) => (
-                <Select.Item
-                  index={idx + 1}
-                  key={channel.id}
-                  value={channel.id.toString()}
-                  backgroundColor={
-                    arenaChannel === channel.id.toString()
-                      ? "$green4"
-                      : undefined
-                  }
-                >
-                  <CollectionSummary
-                    collection={{
-                      ...mapSnakeCaseToCamelCaseProperties(channel),
-                      description: channel.metadata?.description || undefined,
-                      thumbnail: channel.contents?.find(
-                        (c) => c.image?.thumb.url
-                      )?.image?.thumb.url,
-                      remoteSourceType: RemoteSourceType.Arena,
-                      numBlocks: channel.length,
-                      createdAt: new Date(channel.created_at),
-                      updatedAt: new Date(channel.updated_at),
-                      lastConnectedAt: new Date(channel.added_to_at),
-                      createdBy: channel.user.slug,
-                    }}
-                    viewProps={{
-                      borderWidth: 0,
-                      paddingHorizontal: 0,
-                      paddingVertical: 0,
-                      backgroundColor: "inherit",
-                    }}
-                  />
-                  <Select.ItemText display="none">
-                    {channel.title}
-                  </Select.ItemText>
-                </Select.Item>
-              ))}
+              ])?.map((channel, idx) => {
+                const isDisabled = collections.some(
+                  (c) =>
+                    c.remoteSourceType === RemoteSourceType.Arena &&
+                    c.remoteSourceInfo?.arenaId === channel.id.toString()
+                );
+                return (
+                  <>
+                    <Select.Item
+                      disabled={isDisabled}
+                      index={idx + 1}
+                      key={channel.id}
+                      value={channel.id.toString()}
+                      backgroundColor={
+                        arenaChannel === channel.id.toString()
+                          ? "$green4"
+                          : undefined
+                      }
+                      opacity={isDisabled ? 0.5 : undefined}
+                    >
+                      <CollectionSummary
+                        collection={{
+                          ...mapSnakeCaseToCamelCaseProperties(channel),
+                          description:
+                            channel.metadata?.description || undefined,
+                          thumbnail: channel.contents?.find(
+                            (c) => c.image?.thumb.url
+                          )?.image?.thumb.url,
+                          remoteSourceType: RemoteSourceType.Arena,
+                          numBlocks: channel.length,
+                          createdAt: new Date(channel.created_at),
+                          updatedAt: new Date(channel.updated_at),
+                          lastConnectedAt: new Date(channel.added_to_at),
+                          createdBy: channel.user.slug,
+                          title: isDisabled
+                            ? `${channel.title} (imported)`
+                            : channel.title,
+                        }}
+                        viewProps={{
+                          borderWidth: 0,
+                          paddingHorizontal: 0,
+                          paddingVertical: 0,
+                          backgroundColor: "inherit",
+                        }}
+                      />
+                      <Select.ItemText display="none">
+                        {channel.title}
+                      </Select.ItemText>
+                    </Select.Item>
+                  </>
+                );
+              })}
             </Select.Group>
           </ScrollView>
         </Select.Viewport>
