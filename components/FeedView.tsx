@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
-import { SearchBarInput, StyledText, StyledView } from "./Themed";
+import { SearchBarInput } from "./Themed";
 import { FlatList, Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { Link } from "expo-router";
@@ -40,6 +40,7 @@ export function FeedView() {
 
   const [searchValue, setSearchValue] = useState("");
 
+  // TODO: debounce this
   const filteredBlocks = useMemo(
     () =>
       filterItemsBySearchValue(blocks, searchValue, [
@@ -48,7 +49,7 @@ export function FeedView() {
         "source",
         "description",
       ]),
-    [blocks]
+    [blocks, searchValue]
   );
   const outputBlocks = useMemo(
     () =>
