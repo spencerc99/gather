@@ -116,6 +116,7 @@ export function UncategorizedView() {
       setEvents(events.filter((block) => block.id !== itemId));
       // carouselRef.current?.next();
     }
+    Keyboard.dismiss();
   }
 
   const width = Dimensions.get("window").width;
@@ -135,6 +136,7 @@ export function UncategorizedView() {
     const [selectedCollections, setSelectedCollections] = useState<string[]>(
       []
     );
+    const [searchValue, setSearchValue] = useState("");
 
     useEffect(() => {
       // TODO: bring back if putting all blocks here
@@ -195,6 +197,7 @@ export function UncategorizedView() {
               elevate
               onPress={() => {
                 onClickConnect(item.id, selectedCollections);
+                setSearchValue("");
                 setSelectedCollections([]);
               }}
               borderRadius={20}
@@ -221,6 +224,8 @@ export function UncategorizedView() {
         </YStack>
         <Stack backgroundColor={theme.background.get()} paddingHorizontal="$1">
           <SelectCollectionsList
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
             selectedCollections={selectedCollections}
             setSelectedCollections={setSelectedCollections}
             horizontal

@@ -19,14 +19,33 @@ export function SelectCollectionsList({
   setSelectedCollections: setSelectedCollections,
   scrollContainerPaddingBottom,
   horizontal,
+  searchValue: propSearch,
+  setSearchValue: propSetSearchValue,
 }: {
   selectedCollections: string[];
   setSelectedCollections: (selectedCollections: string[]) => void;
   scrollContainerPaddingBottom?: number;
   horizontal?: boolean;
+  searchValue?: string;
+  setSearchValue?: (newSearch: string) => void;
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
-  const [searchValue, setSearchValue] = useState("");
+  const [internalSearchValue, internalSetSearchValue] = useState("");
+
+  const searchValue = useMemo(() => {
+    propSetSearchValue ? propSearch : internalSearchValue;
+  }, [propSearch, internalSearchValue]);
+  const setSearchValue = useCallback(
+    (newSearch: string) => {
+      if (propSetSearchValue) {
+        propSetSearchValue(newSearch);
+      } else {
+        internalSetSearchValue(newSearch);
+      }
+    },
+    [propSetSearchValue, internalSetSearchValue]
+  );
+
   // sort by lastConnectedAt descending
   const sortedCollections = useMemo(
     () =>
