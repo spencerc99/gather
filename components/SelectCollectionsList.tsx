@@ -1,7 +1,15 @@
 import { useCallback, useContext, useMemo, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Collection } from "../utils/dataTypes";
-import { ScrollView, SizableText, Stack, View, XStack, YStack } from "tamagui";
+import {
+  ScrollView,
+  SizableText,
+  Stack,
+  View,
+  XStack,
+  YStack,
+  useDebounceValue,
+} from "tamagui";
 import {
   Icon,
   InputWithIcon,
@@ -32,9 +40,11 @@ export function SelectCollectionsList({
   const { collections, createCollection } = useContext(DatabaseContext);
   const [internalSearchValue, internalSetSearchValue] = useState("");
 
-  const searchValue = useMemo(() => {
-    propSetSearchValue ? propSearch : internalSearchValue;
-  }, [propSearch, internalSearchValue]);
+  const searchValue = useMemo(
+    () => (propSetSearchValue && propSearch ? propSearch : internalSearchValue),
+    [propSearch, internalSearchValue]
+  );
+  const debouncedSearch = useDebounceValue(searchValue, 300);
   const setSearchValue = useCallback(
     (newSearch: string) => {
       if (propSetSearchValue) {
@@ -55,6 +65,14 @@ export function SelectCollectionsList({
           (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
       ),
     [collections]
+  );
+  const filteredCollections = useMemo(
+    () =>
+      filterItemsBySearchValue(sortedCollections, debouncedSearch, [
+        "title",
+        "description",
+      ]),
+    [sortedCollections, debouncedSearch]
   );
 
   function toggleCollection(collection: Collection) {
@@ -77,10 +95,7 @@ export function SelectCollectionsList({
   }
 
   function renderCollections() {
-    return filterItemsBySearchValue(sortedCollections, searchValue, [
-      "title",
-      "description",
-    ]).map((collection) => {
+    return filteredCollections.map((collection) => {
       const viewProps = selectedCollections.includes(collection.id)
         ? {
             backgroundColor: "$green4",

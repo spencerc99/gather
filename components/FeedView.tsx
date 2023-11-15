@@ -4,7 +4,7 @@ import { SearchBarInput } from "./Themed";
 import { FlatList, Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { Link } from "expo-router";
-import { YStack } from "tamagui";
+import { YStack, useDebounceValue } from "tamagui";
 import { filterItemsBySearchValue } from "../utils/search";
 
 export function FeedView() {
@@ -39,17 +39,20 @@ export function FeedView() {
   }
 
   const [searchValue, setSearchValue] = useState("");
+  const debouncedSearch = useDebounceValue(searchValue, 300);
 
-  // TODO: debounce this
   const filteredBlocks = useMemo(
     () =>
-      filterItemsBySearchValue(blocks, searchValue, [
-        "title",
-        "content",
-        "source",
-        "description",
-      ]),
-    [blocks, searchValue]
+      useDebounceValue(
+        filterItemsBySearchValue(blocks, debouncedSearch, [
+          "title",
+          "content",
+          "source",
+          "description",
+        ]),
+        300
+      ),
+    [blocks, debouncedSearch]
   );
   const outputBlocks = useMemo(
     () =>

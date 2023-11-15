@@ -4,7 +4,7 @@ import {
   makeRedirectUri,
   useAuthRequest,
 } from "expo-auth-session";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import {
   Icon,
   InputWithIcon,
@@ -23,6 +23,7 @@ import {
   Spinner,
   XStack,
   YStack,
+  useDebounceValue,
 } from "tamagui";
 import {
   ArenaChannelInfo,
@@ -149,6 +150,7 @@ export function SelectArenaChannel({
   const { arenaAccessToken, collections } = useContext(DatabaseContext);
   const [channels, setChannels] = useState<ArenaChannelInfo[] | null>(null);
   const [searchValue, setSearchValue] = useState("");
+  const debouncedSearch = useDebounceValue(searchValue, 300);
 
   useEffect(() => {
     if (arenaAccessToken) {
@@ -159,6 +161,11 @@ export function SelectArenaChannel({
       setChannels([]);
     }
   }, [arenaAccessToken]);
+
+  const filteredChannels = useMemo(
+    () => filterItemsBySearchValue(channels || [], debouncedSearch, ["title"]),
+    [channels, debouncedSearch]
+  );
 
   return arenaAccessToken ? (
     <Select
@@ -228,9 +235,7 @@ export function SelectArenaChannel({
             }}
           >
             <Select.Group>
-              {filterItemsBySearchValue(channels || [], searchValue, [
-                "title",
-              ])?.map((channel, idx) => {
+              {filteredChannels?.map((channel, idx) => {
                 const isDisabled = collections.some(
                   (c) =>
                     c.remoteSourceType === RemoteSourceType.Arena &&

@@ -8,6 +8,7 @@ import {
   SelectTriggerProps,
   YStack,
   XStack,
+  useDebounceValue,
 } from "tamagui";
 import { DatabaseContext } from "../utils/db";
 import { Icon, InputWithIcon, StyledButton } from "./Themed";
@@ -31,6 +32,7 @@ export function CollectionSelect({
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
+  const debouncedSearch = useDebounceValue(searchValue, 300);
 
   // sort by lastConnectedAt descending
   const sortedCollections = useMemo(
@@ -42,7 +44,14 @@ export function CollectionSelect({
       ),
     [collections]
   );
-
+  const filteredCollections = useMemo(
+    () =>
+      filterItemsBySearchValue(sortedCollections, debouncedSearch, [
+        "title",
+        "description",
+      ]),
+    [sortedCollections, debouncedSearch]
+  );
   return (
     <Select
       native
@@ -155,10 +164,7 @@ export function CollectionSelect({
                   <Select.ItemText>{collectionPlaceholder}</Select.ItemText>
                 </Select.Item>
               )}
-              {filterItemsBySearchValue(sortedCollections, searchValue, [
-                "title",
-                "description",
-              ]).map((collection, idx) => (
+              {filteredCollections.map((collection, idx) => (
                 <Select.Item
                   index={idx + 1}
                   key={collection.id}
