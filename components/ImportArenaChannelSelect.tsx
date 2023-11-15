@@ -104,6 +104,11 @@ export function ImportArenaChannelSelect({
       <StyledButton
         onPress={async () => {
           await onImportChannel();
+          alert(
+            'Imported channel "' +
+              arenaChannel +
+              '" from are.na. Adding items to it will sync to are.na, but new items added to are.na will not sync here (coming soon).'
+          );
         }}
         disabled={isLoading || !arenaChannel}
         icon={isLoading ? <Spinner size="small" /> : null}

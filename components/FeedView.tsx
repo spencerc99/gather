@@ -43,15 +43,12 @@ export function FeedView() {
 
   const filteredBlocks = useMemo(
     () =>
-      useDebounceValue(
-        filterItemsBySearchValue(blocks, debouncedSearch, [
-          "title",
-          "content",
-          "source",
-          "description",
-        ]),
-        300
-      ),
+      filterItemsBySearchValue(blocks, debouncedSearch, [
+        "title",
+        "content",
+        "source",
+        "description",
+      ]),
     [blocks, debouncedSearch]
   );
   const outputBlocks = useMemo(
