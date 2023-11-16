@@ -201,18 +201,21 @@ export function BlockTextSummary({
     );
     switch (type) {
       case BlockType.Link:
-        return (
-          <ExternalLink href={source!}>
-            <YStack>
-              {content}
-              <YStack alignItems="flex-end" paddingBottom="$1" maxWidth={250}>
-                <StyledText ellipse={true}>{title}</StyledText>
-                <StyledText metadata ellipse={true}>
-                  {source}
-                </StyledText>
-              </YStack>
+        const inner = (
+          <YStack>
+            {content}
+            <YStack alignItems="flex-end" paddingBottom="$1" maxWidth={250}>
+              <StyledText ellipse={true}>{title}</StyledText>
+              <StyledText metadata ellipse={true}>
+                {source}
+              </StyledText>
             </YStack>
-          </ExternalLink>
+          </YStack>
+        );
+        return source ? (
+          <ExternalLink href={source}>{inner}</ExternalLink>
+        ) : (
+          inner
         );
       default:
         return content;

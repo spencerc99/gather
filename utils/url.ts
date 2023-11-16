@@ -35,9 +35,14 @@ export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
     // TODO: create a custom service for this? or only do it optionally? how to handle this in local-first context.. maybe never store?
     // TODO: pass in url as filename?
     const siteImageFileUrl = await getFsPathForRemoteImage(
-      `http://image.thum.io/get/${cleanedUrl}`
+      `http://image.thum.io/get/auth/69488-thum/${cleanedUrl}`
     );
     data.images = [siteImageFileUrl];
+  }
+
+  console.log(data);
+  if (!data.source) {
+    data.source = url;
   }
 
   return data as UrlMetadata;
