@@ -33,7 +33,7 @@
     "expo-linking": "~5.0.2",
     "expo-router": "^2.0.7",
     "expo-splash-screen": "~0.20.5",
-    "expo-sqlite": "~11.7.1",
+    "expo-sqlite": "~11.3.3",
     "expo-status-bar": "~1.6.0",
     "expo-system-ui": "~2.4.0",
     "expo-web-browser": "~12.3.2",
