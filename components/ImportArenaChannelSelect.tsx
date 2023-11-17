@@ -7,7 +7,7 @@ import { Keyboard } from "react-native";
 import {
   arenaClassToBlockType,
   arenaClassToMimeType,
-  getChannelContents,
+  getChannelInfo,
 } from "../utils/arena";
 import { RemoteSourceType } from "../utils/dataTypes";
 import { currentUser } from "../utils/user";
@@ -33,7 +33,7 @@ export function ImportArenaChannelSelect({
     Keyboard.dismiss();
     setIsLoading(true);
     try {
-      const { title, id, contents } = await getChannelContents(
+      const { title, id, contents } = await getChannelInfo(
         arenaChannel,
         arenaAccessToken
       );

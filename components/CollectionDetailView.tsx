@@ -3,7 +3,12 @@ import { Collection } from "../utils/dataTypes";
 import { useContext, useEffect, useState } from "react";
 import { Block, DatabaseContext } from "../utils/db";
 import { BlockSummary } from "./BlockSummary";
-import { AspectRatioImage, StyledParagraph, StyledView } from "./Themed";
+import {
+  AspectRatioImage,
+  StyledButton,
+  StyledParagraph,
+  StyledView,
+} from "./Themed";
 import { ExternalLink } from "./ExternalLink";
 import { Stack } from "expo-router";
 
@@ -26,12 +31,23 @@ export function CollectionDetailView({
     remoteSourceType,
     thumbnail,
   } = collection;
-  const { getCollectionItems } = useContext(DatabaseContext);
+  const { getCollectionItems, syncNewRemoteItems } =
+    useContext(DatabaseContext);
+  const [isLoading, setIsLoading] = useState(false);
   // const [blocks, setBlocks] = useState<Block[] | null>(null);
 
   // useEffect(() => {
   //   getCollectionItems(id).then((blocks) => setBlocks(blocks));
   // }, [id]);
+
+  async function onClickSyncNewItems() {
+    setIsLoading(true);
+    try {
+      await syncNewRemoteItems(id);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <>
@@ -48,29 +64,29 @@ export function CollectionDetailView({
             {description && (
               <StyledParagraph color="$gray9">{description}</StyledParagraph>
             )}
-            <StyledView>
-              <StyledParagraph metadata>
-                {numItems} items by{" "}
-                <StyledParagraph metadata style={{ fontWeight: 700 }}>
-                  {createdBy}
-                </StyledParagraph>
+            <StyledParagraph metadata>
+              {numItems} items by{" "}
+              <StyledParagraph metadata style={{ fontWeight: 700 }}>
+                {createdBy}
               </StyledParagraph>
+            </StyledParagraph>
+            <StyledParagraph metadata>
+              Created at: {createdAt.toLocaleDateString()}
+            </StyledParagraph>
+            <StyledParagraph metadata>
+              Updated at: {updatedAt.toLocaleDateString()}
+            </StyledParagraph>
+            {lastConnectedAt && (
               <StyledParagraph metadata>
-                Created at: {createdAt.toLocaleDateString()}
+                Last connected at: {lastConnectedAt.toLocaleDateString()}
               </StyledParagraph>
-              <StyledParagraph metadata>
-                Updated at: {updatedAt.toLocaleDateString()}
-              </StyledParagraph>
-              {lastConnectedAt && (
-                <StyledParagraph metadata>
-                  Last connected at: {lastConnectedAt.toLocaleDateString()}
-                </StyledParagraph>
-              )}
-              <StyledParagraph metadata>
-                Collaborators: {collaborators}
-              </StyledParagraph>
-              {/* TODO: update to handle multiple sources */}
-              {remoteSourceType && (
+            )}
+            <StyledParagraph metadata>
+              Collaborators: {collaborators}
+            </StyledParagraph>
+            {/* TODO: update to handle multiple sources */}
+            {remoteSourceType && (
+              <>
                 <StyledParagraph metadata>
                   Syncing to{" "}
                   <ExternalLink
@@ -79,8 +95,17 @@ export function CollectionDetailView({
                     <StyledParagraph link>{remoteSourceType}</StyledParagraph>
                   </ExternalLink>
                 </StyledParagraph>
-              )}
-            </StyledView>
+                {__DEV__ && (
+                  <StyledButton
+                    onPress={onClickSyncNewItems}
+                    disabled={isLoading}
+                    icon={isLoading ? <Spinner size="small" /> : null}
+                  >
+                    Sync new items
+                  </StyledButton>
+                )}
+              </>
+            )}
           </YStack>
           {/* <AspectRatioImage uri={thumbnail} otherProps={{ flex: 1 }} /> */}
           {/* </XStack> */}

@@ -1,6 +1,8 @@
-import { Block } from "./db";
+import { Block, BlocksInsertInfo, DatabaseBlockInsert } from "./db";
 import * as FileSystem from "expo-file-system";
 import { BlockType, MimeType } from "./mimeTypes";
+import { RemoteSourceType } from "./dataTypes";
+import { currentUser } from "./user";
 
 export const ArenaClientId = "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE";
 // TODO: move these before open sourcing repo
@@ -173,8 +175,50 @@ export function transformChannelUrlToApiUrl(url: string): string {
   return `${ArenaChannelsApi}/${channel}`;
 }
 
-// TODO: this should use users access token if they added it
 export async function getChannelContents(
+  channelId: string,
+  { accessToken, lastId }: { accessToken?: string | null; lastId?: string }
+): Promise<RawArenaItem[]> {
+  let fetchedItems: RawArenaItem[] = [];
+  let lastIdFound = lastId ? false : true;
+  const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
+  try {
+    let nextUrl: string | undefined = baseUrl;
+    while (nextUrl) {
+      const resp = await fetch(nextUrl, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+      const respBody = await resp.json();
+      let contents: RawArenaItem[] = respBody.contents;
+      // TODO: recursively traverse the sub-channels
+      contents = contents.filter(
+        // NOTE: class = block only if are.na has failed to process it
+        (c) => c.base_class === "Block" && c.class !== "Block"
+      );
+      if (lastId && contents.some((c) => c.id === lastId)) {
+        // turn contents into everything AFTER lastID
+        contents = contents.slice(
+          contents.findIndex((c) => c.id === lastId) + 1
+        );
+        lastIdFound = true;
+      }
+      // Update storage with any new items
+      if (lastIdFound) {
+        fetchedItems.push(...contents);
+      }
+      nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
+    }
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+  return fetchedItems;
+}
+
+// TODO: this should use users access token if they added it
+export async function getChannelInfo(
   url: string,
   accessToken?: string | null
 ): Promise<ArenaChannelInfo> {
@@ -333,7 +377,7 @@ export async function addBlockToChannel({
   channelId: string;
   block: Block;
   arenaToken: string;
-}): Promise<string> {
+}): Promise<RawArenaItem> {
   const url = `${ArenaChannelsApi}/${channelId}/blocks`;
   const body = await getBodyForBlock(block);
   console.log("adding block to channel", channelId, body, arenaToken, url);
@@ -345,13 +389,13 @@ export async function addBlockToChannel({
       "Content-Type": "application/json",
     },
   });
-  const response = await resp.json();
+  const response: RawArenaItem = await resp.json();
   if (!resp.ok) {
     console.error(`failed to add block to arena channel ${resp.status}`, resp);
     throw new Error(JSON.stringify(response));
   }
 
-  return response.id;
+  return response;
 }
 
 async function getUserInfo(accessToken: string): Promise<RawArenaUser> {
@@ -386,4 +430,30 @@ export async function getUserChannels(
     throw e;
   }
   return fetchedItems;
+}
+
+export function rawArenaBlocksToBlockInsertInfo(
+  arenaBlocks: RawArenaItem[]
+): DatabaseBlockInsert[] {
+  return arenaBlocks.map((block) => ({
+    title: block.title,
+    description: block.description,
+    content:
+      block.attachment?.url ||
+      // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
+      // it only provides the html iframe code..
+      block.embed?.url ||
+      block.image?.display.url ||
+      block.content,
+    type: arenaClassToBlockType(block),
+    contentType: arenaClassToMimeType(block),
+    source: block.source?.url,
+    createdBy: currentUser().id,
+    remoteSourceType: RemoteSourceType.Arena,
+    remoteSourceInfo: {
+      arenaId: block.id,
+      arenaClass: "Block",
+      connectedAt: block.connected_at,
+    },
+  }));
 }

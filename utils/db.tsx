@@ -22,7 +22,12 @@ import {
 import { currentUser } from "./user";
 import { convertDbTimestampToDate } from "./date";
 import { PHOTOS_FOLDER, intializeFilesystemFolder } from "./blobs";
-import { ArenaTokenStorageKey, addBlockToChannel } from "./arena";
+import {
+  ArenaTokenStorageKey,
+  addBlockToChannel,
+  getChannelContents,
+  rawArenaBlocksToBlockInsertInfo,
+} from "./arena";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -54,7 +59,23 @@ function inParam(sql: string, arr: (string | number | null)[]) {
   return sql.replace("?#", arr.join(","));
 }
 
-interface DatabaseBlockInsert {
+function mapDbBlockToBlock(block: any): Block {
+  const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
+  return {
+    ...blockMappedToCamelCase,
+    // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
+    id: block.id.toString(),
+    content: mapBlockContentToPath(block.content, block.type),
+    createdAt: convertDbTimestampToDate(block.created_timestamp),
+    updatedAt: convertDbTimestampToDate(block.updated_timestamp),
+    remoteSourceType: block.remote_source_type as RemoteSourceType,
+    remoteSourceInfo: block.remote_source_info
+      ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
+      : null,
+  } as Block;
+}
+
+export interface DatabaseBlockInsert {
   title?: string;
   description?: string; // long-form description about the object, could include things like tags here and those get automatically extracted?
   content: string; // could be either the data itself or a path to the data if a rich media object
@@ -104,6 +125,7 @@ interface DatabaseContextProps {
   collections: Collection[];
   createCollection: (collection: CollectionInsertInfo) => Promise<string>;
   getCollectionItems: (collectionId: string) => Promise<Block[]>;
+  syncNewRemoteItems: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => void;
 
@@ -150,6 +172,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   },
   deleteCollection: () => {},
   getCollectionItems: async () => [],
+  syncNewRemoteItems: async () => {},
 
   addConnections: async () => {},
   replaceConnections: async () => {},
@@ -529,24 +552,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         `SELECT * FROM blocks;`,
         [],
         (_, { rows: { _array } }) => {
-          setBlocks(
-            _array.map((block) => {
-              const blockMappedToCamelCase =
-                mapSnakeCaseToCamelCaseProperties(block);
-              return {
-                ...blockMappedToCamelCase,
-                // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
-                id: block.id.toString(),
-                content: mapBlockContentToPath(block.content, block.type),
-                createdAt: convertDbTimestampToDate(block.created_timestamp),
-                updatedAt: convertDbTimestampToDate(block.updated_timestamp),
-                remoteSourceType: block.remote_source_type as RemoteSourceType,
-                remoteSourceInfo: block.remote_source_info
-                  ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
-                  : null,
-              } as Block;
-            })
-          );
+          setBlocks(_array.map((block) => mapDbBlockToBlock(block)));
         },
         (err) => {
           throw err;
@@ -681,19 +687,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       throw result.error;
     }
 
-    return result.rows.map(
-      (block) =>
-        ({
-          ...block,
-          createdAt: convertDbTimestampToDate(block.created_timestamp),
-          updatedAt: convertDbTimestampToDate(block.updated_timestamp),
-          createdBy: block.created_by,
-          remoteSourceType: block.remote_source_type as RemoteSourceType,
-          remoteSourceInfo: block.remote_source_info
-            ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
-            : null,
-        } as Block)
-    );
+    return result.rows.map((block) => mapDbBlockToBlock(block));
   }
 
   async function addConnectionsToCollection(
@@ -767,17 +761,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const blocksToSync = await Promise.all(
       (result as SQLite.ResultSet).rows.map(async (block) => {
         const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
+        const mappedBlock = mapDbBlockToBlock(block);
         return {
           ...blockMappedToCamelCase,
-          // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
-          id: block.id.toString(),
-          content: mapBlockContentToPath(block.content, block.type),
-          createdAt: convertDbTimestampToDate(block.created_timestamp),
-          updatedAt: convertDbTimestampToDate(block.updated_timestamp),
-          remoteSourceType: block.remote_source_type as RemoteSourceType,
-          remoteSourceInfo: block.remote_source_info
-            ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
-            : null,
+          ...mappedBlock,
           collectionRemoteSourceType:
             blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
           collectionRemoteSourceInfo:
@@ -794,27 +781,30 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       await syncBlockToArena(
         blockToSync.collectionRemoteSourceInfo!.arenaId!,
         // @ts-ignore
-        blockToSync as Block,
-        arenaToken
+        blockToSync as Block
       );
     }
   }
 
-  async function syncBlockToArena(
-    channelId: string,
-    block: Block,
-    arenaToken: string
-  ) {
+  async function syncBlockToArena(channelId: string, block: Block) {
+    if (!arenaAccessToken) {
+      return;
+    }
+
     try {
-      const newBlockId = await addBlockToChannel({
+      const { id: newBlockId, image } = await addBlockToChannel({
         channelId,
         block,
-        arenaToken,
+        arenaToken: arenaAccessToken,
       });
+      const hasUpdatedImage =
+        block.type === BlockType.Link && image?.display.url;
       await db.execAsync(
         [
           {
-            sql: "UPDATE blocks SET remote_source_type = ?, remote_source_info = ? WHERE id = ?;",
+            sql: `UPDATE blocks SET remote_source_type = ?, remote_source_info = ?${
+              hasUpdatedImage ? `, content = ?` : ""
+            } WHERE id = ?;`,
             args: [
               RemoteSourceType.Arena,
               JSON.stringify({
@@ -822,6 +812,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 arenaClass: "Block",
                 connectedAt: new Date().toISOString(),
               } as RemoteSourceInfo),
+              ...(hasUpdatedImage ? [image.display.url] : []),
               block.id,
             ],
           },
@@ -829,6 +820,70 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         false
       );
     } catch (err) {}
+  }
+
+  async function getLastRemoteItemForCollection(
+    collectionId: string
+  ): Promise<Block | null> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `SELECT  blocks.*
+            FROM        blocks
+            INNER JOIN  connections ON connections.block_id = blocks.id
+            LEFT JOIN   collections ON connections.collection_id = collections.id
+            WHERE       collections.remote_source_type IS NOT NULL AND
+                        collections.remote_source_info IS NOT NULL AND
+                        blocks.remote_source_type IS NOT NULL AND
+                        collections.id = ?
+            ORDER BY    blocks.created_timestamp DESC
+            LIMIT       1`,
+          args: [collectionId],
+        },
+      ],
+      true
+    );
+    if ("error" in result) {
+      throw result.error;
+    }
+
+    return result.rows.map((block) => mapDbBlockToBlock(block))[0];
+  }
+
+  async function syncNewRemoteItems(collectionId: string) {
+    const collection = await getCollection(collectionId);
+    if (!collection.remoteSourceType || !collection.remoteSourceInfo) {
+      return;
+    }
+
+    const { remoteSourceInfo, remoteSourceType } = collection;
+
+    switch (remoteSourceType) {
+      case RemoteSourceType.Arena:
+        const { arenaId } = remoteSourceInfo;
+        const lastRemoteItem = await getLastRemoteItemForCollection(
+          collectionId
+        );
+
+        const lastContents = await getChannelContents(arenaId, {
+          accessToken: arenaAccessToken,
+          lastId: lastRemoteItem?.remoteSourceInfo?.arenaId,
+        });
+        console.log(lastContents);
+        // TODO: handle deletions & need to go one-by-one becaues not guaranteed to always be new
+        if (lastContents.length) {
+          await createBlocks({
+            blocksToInsert: rawArenaBlocksToBlockInsertInfo(lastContents),
+            collectionId: collectionId,
+          });
+          await fetchBlocks();
+        }
+        break;
+      default:
+        throw new Error(
+          `Remote source type ${collection.remoteSourceType} not supported`
+        );
+    }
   }
 
   async function addConnections(blockId: string, collectionIds: string[]) {
@@ -963,6 +1018,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         replaceConnections,
         deleteCollection,
         getCollectionItems,
+        syncNewRemoteItems,
         arenaAccessToken,
         updateArenaAccessToken,
         // TODO: remove
