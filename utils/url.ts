@@ -41,8 +41,8 @@ export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
   }
 
   console.log(data);
-  if (!data.source) {
-    data.source = url;
+  if (!data.url) {
+    data.url = url;
   }
 
   return data as UrlMetadata;
