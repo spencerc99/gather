@@ -246,9 +246,9 @@ export function SelectCollectionsList({
         contentContainerStyle={
           horizontal
             ? {
-                paddingBottom: scrollContainerPaddingBottom,
+                paddingRight: scrollContainerPaddingBottom,
               }
-            : { paddingRight: scrollContainerPaddingBottom }
+            : { paddingBottom: scrollContainerPaddingBottom }
         }
         horizontal={horizontal}
         keyboardShouldPersistTaps={"handled"}

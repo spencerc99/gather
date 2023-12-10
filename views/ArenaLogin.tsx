@@ -210,7 +210,7 @@ export function SelectArenaChannel({
         </Sheet>
       </Adapt>
 
-      <Select.Content>
+      <Select.Content zIndex={2000000}>
         <Select.Viewport
           // to do animations:
           animation="quick"

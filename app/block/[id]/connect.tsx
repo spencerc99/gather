@@ -5,6 +5,8 @@ import { Spinner } from "tamagui";
 import { SelectCollectionsList } from "../../../components/SelectCollectionsList";
 import { StyledButton, StyledView } from "../../../components/Themed";
 import { areArraysEqual } from "../../../utils/common";
+import { Platform } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 export default function BlockConnectModal() {
   const { id } = useLocalSearchParams();
@@ -52,8 +54,6 @@ export default function BlockConnectModal() {
         <StyledButton
           onPress={onConnect}
           width="100%"
-          marginTop="$3"
-          marginBottom="$5"
           disabled={areArraysEqual(
             initialConnectedCollections,
             selectedCollections
@@ -64,7 +64,9 @@ export default function BlockConnectModal() {
         <SelectCollectionsList
           selectedCollections={selectedCollections}
           setSelectedCollections={setSelectedCollections}
+          scrollContainerPaddingBottom={120}
         />
+        <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
       </StyledView>
     </>
   );
