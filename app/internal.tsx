@@ -6,6 +6,7 @@ import {
   H2,
   H3,
   Label,
+  ScrollView,
   Select,
   Sheet,
   Spinner,
@@ -20,23 +21,43 @@ import {
   StyledButton,
   StyledParagraph,
 } from "../components/Themed";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ArenaLogin } from "../views/ArenaLogin";
 import { ImportArenaChannelSelect } from "../components/ImportArenaChannelSelect";
+import { useFocusEffect } from "expo-router";
 
 export default function ModalScreen() {
-  const { db, initDatabases, fetchBlocks, fetchCollections } =
-    useContext(DatabaseContext);
+  const {
+    db,
+    initDatabases,
+    fetchBlocks,
+    fetchCollections,
+    trySyncPendingArenaBlocks,
+    getPendingArenaBlocks,
+  } = useContext(DatabaseContext);
+
+  const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
+
+  useFocusEffect(() => {
+    getPendingArenaBlocks().then((result) =>
+      setPendingArenaBlocks(result.rows)
+    );
+  });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   return (
-    <View padding="10%" space="$2">
+    <ScrollView padding="10%" space="$2">
       <H3>Are.na Settings</H3>
       <ArenaLogin />
       <Label>Target Are.na channel</Label>
       <ImportArenaChannelSelect {...{ isLoading, setIsLoading }} />
       <H3>Internal Developer Settings</H3>
+      <StyledButton disabled={isLoading} onPress={trySyncPendingArenaBlocks}>
+        <StyledParagraph>
+          Sync to Arena ({pendingArenaBlocks.length} pending)
+        </StyledParagraph>
+      </StyledButton>
       <StyledButton disabled={isLoading} onPress={fetchCollections}>
         Refresh Collections
       </StyledButton>
@@ -79,6 +100,10 @@ export default function ModalScreen() {
       >
         Reset Databases
       </StyledButton>
+      <H3>pending blocks</H3>
+      <StyledParagraph>
+        {JSON.stringify(pendingArenaBlocks, null, 2)}
+      </StyledParagraph>
       {/* TODO: bring this back when working */}
       {/* <ButtonWithConfirm
         disabled={isLoading}
@@ -114,6 +139,6 @@ export default function ModalScreen() {
       </ButtonWithConfirm> */}
       {/* Use a light status bar on iOS to account for the black space above the modal */}
       <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
-    </View>
+    </ScrollView>
   );
 }

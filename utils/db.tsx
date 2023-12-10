@@ -145,6 +145,8 @@ interface DatabaseContextProps {
   initDatabases: () => Promise<void>;
   fetchBlocks: () => void;
   fetchCollections: () => void;
+  trySyncPendingArenaBlocks: () => void;
+  getPendingArenaBlocks: () => any;
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
@@ -187,6 +189,8 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   initDatabases: async () => {},
   fetchBlocks: () => {},
   fetchCollections: () => {},
+  trySyncPendingArenaBlocks: () => {},
+  getPendingArenaBlocks: () => {},
 });
 
 export function mapSnakeCaseToCamelCaseProperties<
@@ -734,12 +738,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return await SecureStore.getItemAsync(ArenaTokenStorageKey);
   }
 
-  async function trySyncPendingArenaBlocks() {
-    // TODO: make this work for every provider
-    if (!arenaAccessToken) {
-      return;
-    }
-
+  async function getPendingArenaBlocks() {
     const [result] = await db.execAsync(
       [
         {
@@ -757,6 +756,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       true
     );
     handleSqlErrors(result);
+    return result;
+  }
+
+  async function trySyncPendingArenaBlocks() {
+    // TODO: make this work for every provider
+    if (!arenaAccessToken) {
+      return;
+    }
+
+    const result = await getPendingArenaBlocks();
 
     const blocksToSync = await Promise.all(
       (result as SQLite.ResultSet).rows.map(async (block) => {
@@ -1026,6 +1035,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         initDatabases,
         fetchBlocks,
         fetchCollections,
+        trySyncPendingArenaBlocks,
+        getPendingArenaBlocks,
       }}
     >
       {children}
