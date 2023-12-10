@@ -115,7 +115,14 @@ export function SelectCollectionsList({
               viewProps={viewProps}
             />
           ) : (
-            <CollectionSummary collection={collection} viewProps={viewProps} />
+            <CollectionSummary
+              collection={collection}
+              viewProps={
+                viewProps || {
+                  borderWidth: 1,
+                }
+              }
+            />
           )}
         </Pressable>
       );

@@ -49,10 +49,6 @@ export default function BlockConnectModal() {
         }}
       />
       <StyledView paddingHorizontal="$2" height="100%">
-        <SelectCollectionsList
-          selectedCollections={selectedCollections}
-          setSelectedCollections={setSelectedCollections}
-        />
         <StyledButton
           onPress={onConnect}
           width="100%"
@@ -65,6 +61,10 @@ export default function BlockConnectModal() {
         >
           Connect
         </StyledButton>
+        <SelectCollectionsList
+          selectedCollections={selectedCollections}
+          setSelectedCollections={setSelectedCollections}
+        />
       </StyledView>
     </>
   );

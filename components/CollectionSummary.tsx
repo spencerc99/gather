@@ -33,6 +33,7 @@ export function CollectionSummary({
       width="100%"
       paddingHorizontal="$2"
       borderWidth={2}
+      borderRadius={4}
       borderColor={theme.color.get()}
       backgroundColor={theme.background.get()}
       space="$3"
