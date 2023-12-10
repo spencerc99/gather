@@ -101,7 +101,7 @@ export function CollectionDetailView({
                     disabled={isLoading}
                     icon={isLoading ? <Spinner size="small" /> : null}
                   >
-                    Sync new items
+                    Sync new items from {remoteSourceType}
                   </StyledButton>
                 )}
               </>
