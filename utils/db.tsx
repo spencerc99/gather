@@ -990,9 +990,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     void intializeFilesystemFolder();
     void getArenaAccessToken().then((accessToken) => {
       setArenaAccessToken(accessToken);
-      void trySyncPendingArenaBlocks();
     });
   }, []);
+
+  useEffect(() => {
+    void trySyncPendingArenaBlocks();
+  }, [arenaAccessToken]);
 
   async function updateArenaAccessToken(newToken: string | null) {
     // TODO: handle web
