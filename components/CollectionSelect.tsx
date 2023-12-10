@@ -76,9 +76,9 @@ export function CollectionSelect({
           native
           animationConfig={{
             type: "spring",
-            damping: 20,
-            mass: 1.2,
-            stiffness: 150,
+            damping: 10,
+            mass: 0.3,
+            stiffness: 120,
           }}
           dismissOnSnapToBottom
         >
@@ -96,14 +96,7 @@ export function CollectionSelect({
       </Adapt>
 
       <Select.Content>
-        <Select.Viewport
-          // to do animations:
-          animation="quick"
-          animateOnly={["transform", "opacity"]}
-          enterStyle={{ o: 0, y: -10 }}
-          exitStyle={{ o: 0, y: 10 }}
-          minWidth={200}
-        >
+        <Select.Viewport minWidth={200}>
           <YStack margin="$2" marginBottom="$1">
             <InputWithIcon
               icon="search"
