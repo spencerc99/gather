@@ -24,6 +24,7 @@ import {
   XStack,
   YStack,
   useDebounceValue,
+  YStackProps,
 } from "tamagui";
 import {
   ArenaChannelInfo,
@@ -143,9 +144,15 @@ export function ArenaLogin() {
 export function SelectArenaChannel({
   arenaChannel,
   setArenaChannel,
+  frameProps,
+  overlayProps,
+  modal = true,
 }: {
   arenaChannel: string;
   setArenaChannel: (arenaChannel: string) => void;
+  frameProps?: YStackProps;
+  overlayProps?: YStackProps;
+  modal?: boolean;
 }) {
   const { arenaAccessToken, collections } = useContext(DatabaseContext);
   const [channels, setChannels] = useState<ArenaChannelInfo[] | null>(null);
@@ -187,8 +194,7 @@ export function SelectArenaChannel({
 
       <Adapt when="sm" platform="touch">
         <Sheet
-          modal
-          native
+          modal={modal}
           animationConfig={{
             type: "spring",
             damping: 20,
@@ -197,7 +203,7 @@ export function SelectArenaChannel({
           }}
           dismissOnSnapToBottom
         >
-          <Sheet.Frame>
+          <Sheet.Frame {...frameProps}>
             <Sheet.ScrollView>
               <Adapt.Contents />
             </Sheet.ScrollView>
@@ -206,6 +212,7 @@ export function SelectArenaChannel({
             animation="lazy"
             enterStyle={{ opacity: 0 }}
             exitStyle={{ opacity: 0 }}
+            {...overlayProps}
           />
         </Sheet>
       </Adapt>

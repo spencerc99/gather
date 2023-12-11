@@ -84,6 +84,17 @@ function CreateCollectionModal() {
               router.replace("..");
             },
           }}
+          frameProps={{
+            marginLeft: "-10%",
+            width: "120%",
+          }}
+          overlayProps={{
+            height: "126%",
+            width: "126%",
+            marginLeft: "-13%",
+            marginTop: "-13%",
+          }}
+          modal={false}
         />
       )}
     </YStack>
@@ -95,10 +106,12 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    padding: "10%",
+    marginTop: "10%",
   },
   createCollection: {
     gap: 8,
+    height: "100%",
+    margin: "10%",
   },
   title: {
     fontSize: 20,

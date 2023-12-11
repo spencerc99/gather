@@ -220,30 +220,8 @@ export function ButtonWithConfirm({
   return (
     <AlertDialog native>
       <AlertDialog.Trigger asChild>
-        <StyledButton
-          {...rest}
-          onPress={() => console.log("been pressed")}
-        ></StyledButton>
+        <StyledButton {...rest}></StyledButton>
       </AlertDialog.Trigger>
-
-      <Adapt when="sm" platform="touch">
-        <Sheet
-          animation="bouncy"
-          zIndex={200000}
-          modal
-          dismissOnSnapToBottom
-          native
-        >
-          <Sheet.Frame padding="$4" gap="$4">
-            <Adapt.Contents />
-          </Sheet.Frame>
-          <Sheet.Overlay
-            animation="lazy"
-            enterStyle={{ opacity: 0 }}
-            exitStyle={{ opacity: 0 }}
-          />
-        </Sheet>
-      </Adapt>
 
       <AlertDialog.Portal>
         <AlertDialog.Overlay

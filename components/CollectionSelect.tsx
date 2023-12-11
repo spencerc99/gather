@@ -9,6 +9,7 @@ import {
   YStack,
   XStack,
   useDebounceValue,
+  // setupNativeSheet,
 } from "tamagui";
 import { DatabaseContext } from "../utils/db";
 import { Icon, InputWithIcon, StyledButton } from "./Themed";
@@ -16,6 +17,9 @@ import { CreateCollectionButton } from "./CreateCollectionButton";
 import { currentUser } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
 import { filterItemsBySearchValue } from "../utils/search";
+// import { ModalView } from "react-native-ios-modal";
+
+// setupNativeSheet("ios", ModalView);
 
 export function CollectionSelect({
   selectedCollection,
@@ -54,7 +58,6 @@ export function CollectionSelect({
   );
   return (
     <Select
-      native
       onValueChange={setSelectedCollection}
       // @ts-ignore
       value={selectedCollection}
@@ -71,9 +74,9 @@ export function CollectionSelect({
       </Select.Trigger>
 
       <Adapt when="sm" platform="touch">
+        {/* TODO: this should really come from the top.. but tamagui doesnt support this */}
         <Sheet
           modal
-          native
           animationConfig={{
             type: "spring",
             damping: 10,
@@ -81,6 +84,7 @@ export function CollectionSelect({
             stiffness: 120,
           }}
           dismissOnSnapToBottom
+          snapPoints={[92]}
         >
           <Sheet.Frame>
             <Sheet.ScrollView>

@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { Spinner } from "tamagui";
+import { Spinner, YStackProps } from "tamagui";
 import { DatabaseContext } from "../utils/db";
 import { SelectArenaChannel } from "../views/ArenaLogin";
 import { StyledButton } from "./Themed";
@@ -16,10 +16,16 @@ export function ImportArenaChannelSelect({
   isLoading,
   setIsLoading,
   onSuccess,
+  frameProps,
+  overlayProps,
+  modal = true,
 }: {
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
   onSuccess?: () => void;
+  frameProps?: YStackProps;
+  overlayProps?: YStackProps;
+  modal?: boolean;
 }) {
   const { arenaAccessToken } = useContext(DatabaseContext);
   const { fetchCollections, createCollection, createBlocks } =
@@ -95,6 +101,9 @@ export function ImportArenaChannelSelect({
       <SelectArenaChannel
         setArenaChannel={setArenaChannel}
         arenaChannel={arenaChannel}
+        frameProps={frameProps}
+        overlayProps={overlayProps}
+        modal={modal}
       />
       {/* <Label>Local collection to import to (optional)</Label>
       <CollectionSelect
