@@ -97,10 +97,11 @@ export interface BlocksInsertInfo {
   collectionId?: string;
 }
 
-export interface Block extends Omit<BlockInsertInfo, "connections"> {
+export interface Block extends Omit<BlockInsertInfo, "collectionsToConnect"> {
   id: string;
   createdAt: Date;
   updatedAt: Date;
+  numConnections: number;
 }
 
 const BlockInsertChunkSize = 10;
@@ -553,7 +554,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   function fetchBlocks() {
     db.transaction((tx) => {
       tx.executeSql(
-        `SELECT * FROM blocks;`,
+        `WITH block_connections AS (
+            SELECT    connections.block_id,
+                      COUNT(connections.collection_id) as num_connections
+            FROM      connections
+            GROUP BY  1
+          )
+          SELECT    blocks.*,
+                    COALESCE(block_connections.num_connections, 0) as num_connections
+          FROM      blocks
+          LEFT JOIN block_connections ON block_connections.block_id = blocks.id;`,
         [],
         (_, { rows: { _array } }) => {
           setBlocks(_array.map((block) => mapDbBlockToBlock(block)));
@@ -679,9 +689,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       [
         {
           sql: `
-        SELECT * FROM blocks
-        INNER JOIN connections ON blocks.id = connections.block_id
-        WHERE connections.collection_id = ?;`,
+            WITH block_connections AS (
+              SELECT    block_id,
+                        COUNT(collection_id) as num_connections
+              FROM      connections
+              GROUP BY  1
+            )
+            SELECT      blocks.*,
+                        COALESCE(block_connections.num_connections, 0) as num_connections
+            FROM        blocks
+            INNER JOIN  connections ON blocks.id = connections.block_id
+            LEFT JOIN   block_connections ON blocks.id = block_connections.block_id
+            WHERE       connections.collection_id = ?;`,
           args: [collectionId],
         },
       ],

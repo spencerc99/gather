@@ -4,9 +4,9 @@ import { BlockType } from "../utils/mimeTypes";
 import { Platform, StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
 import { useContext, useMemo } from "react";
-import { Icon, StyledText, StyledView } from "./Themed";
+import { Icon, IconComponent, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import { TextProps, YStack, useTheme } from "tamagui";
+import { TextProps, XStack, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
@@ -243,7 +243,7 @@ export function BlockMetadata({
   block: Block;
   textProps?: TextProps;
 }) {
-  const { type, createdAt, source } = block;
+  const { type, createdAt, source, numConnections } = block;
 
   let metadata;
   switch (type) {
@@ -255,7 +255,14 @@ export function BlockMetadata({
     //   );
     //   break;
     default:
-      metadata = getRelativeDate(createdAt);
+      const relativeDate = getRelativeDate(createdAt);
+      metadata = (
+        <>
+          {relativeDate}
+          {"  "}
+          {numConnections} <IconComponent name="link" size={12} color="grey9" />
+        </>
+      );
       break;
   }
 
