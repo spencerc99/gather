@@ -7,7 +7,7 @@ import {
   useTheme,
 } from "tamagui";
 import { StyleSheet } from "react-native";
-import { Block } from "../utils/db";
+import { Block } from "../utils/dataTypes";
 import { BlockType } from "../utils/mimeTypes";
 import { MediaView } from "./MediaView";
 

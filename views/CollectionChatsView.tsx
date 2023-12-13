@@ -5,13 +5,14 @@ import { ScrollView, SizableText, XStack, YStack } from "tamagui";
 import { CollectionSummary } from "../components/CollectionSummary";
 import { Link, useRouter } from "expo-router";
 import { Pressable } from "react-native";
-import { currentUser } from "../utils/user";
 import { CreateCollectionButton } from "../components/CreateCollectionButton";
 import { filterItemsBySearchValue } from "../utils/search";
+import { UserContext } from "../utils/user";
 
 export function CollectionChatsView() {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
+  const { currentUser } = useContext(UserContext);
   const router = useRouter();
 
   // sort by lastConnectedAt descending
@@ -47,7 +48,7 @@ export function CollectionChatsView() {
             onPress={async () => {
               const newCollectionId = await createCollection({
                 title: searchValue,
-                createdBy: currentUser().id,
+                createdBy: currentUser.id,
               });
               setSearchValue("");
               router.push({

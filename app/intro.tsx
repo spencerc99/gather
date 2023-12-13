@@ -23,10 +23,10 @@ import { Dimensions, Image } from "react-native";
 import Carousel from "react-native-reanimated-carousel";
 import { RawAnimations } from "../animations";
 import { DatabaseContext } from "../utils/db";
-import { useEmail } from "../utils/user";
 import { ArenaChannelMultiSelect } from "../components/arena/ArenaChannelMultiSelect";
 import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../utils/arena";
+import { UserContext } from "../utils/user";
 
 const NumSteps = 3;
 // source https://uibakery.io/regex-library/email
@@ -36,18 +36,37 @@ export default function IntroScreen() {
   const [step, setStep] = useState<number>(0);
   const router = useRouter();
   const width = Dimensions.get("window").width;
-  const [savedEmail, updateEmail] = useEmail();
+  const { email: savedEmail, updateEmail } = useContext(UserContext);
   const [email, setEmail] = useState("");
-  const { arenaAccessToken } = useContext(DatabaseContext);
+  const { arenaAccessToken, fetchCollections, tryImportArenaChannel } =
+    useContext(DatabaseContext);
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
     []
   );
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (savedEmail) {
       setEmail(savedEmail);
     }
   }, [savedEmail]);
+
+  async function importSelectedChannels() {
+    // TODO: this would ideally do it in the background asynchronously
+    setIsLoading(true);
+    try {
+      await Promise.all(
+        selectedChannels.map((channel) => tryImportArenaChannel(channel))
+      ).then(() => {
+        fetchCollections();
+      });
+    } catch (error) {
+      console.error(error);
+      // throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   async function nextStep() {
     if (step === NumSteps - 1) {
@@ -84,7 +103,6 @@ export default function IntroScreen() {
   function renderStep() {
     switch (step) {
       case 0:
-        // welcome / what this is
         // create your ID
         return (
           // TODO: add animated.view to slide in
@@ -161,17 +179,12 @@ export default function IntroScreen() {
         return (
           <>
             <YStack>
-              <StyledText fontWeight="bold" fontSize="$5">
-                Adding to Are.na
-                <ArenaLogo
-                  style={{
-                    marginLeft: -4,
-                  }}
-                />
+              <StyledText fontWeight="bold" fontSize="$6">
+                Adding to Are.na <ArenaLogo />
               </StyledText>
               <StyledText>
-                The data you add on Gather is stored locally and will be synced
-                to Are.na whenever you are online.
+                Gather stores your data locally on your device. You can
+                optionally sync specific collections to Are.na.
               </StyledText>
             </YStack>
             {!arenaAccessToken ? (
@@ -190,10 +203,18 @@ export default function IntroScreen() {
                   setSelectedChannels={setSelectedChannels}
                   selectedChannels={selectedChannels}
                 />
-                <YStack space="$3">
+                <YStack space="$1.5">
                   {selectedChannels.map((channel) => (
-                    <Stack backgroundColor="$green4">
-                      <ArenaChannelSummary channel={channel} />
+                    <Stack
+                      backgroundColor="$green4"
+                      key={channel.id.toString()}
+                    >
+                      <ArenaChannelSummary
+                        channel={channel}
+                        viewProps={{
+                          borderWidth: 0.5,
+                        }}
+                      />
                     </Stack>
                   ))}
                 </YStack>
@@ -201,26 +222,43 @@ export default function IntroScreen() {
             )}
 
             <NextStepButton
+              icon={isLoading ? <Spinner size="small" /> : null}
               text={
-                selectedChannels.length > 1
+                isLoading
+                  ? `Importing ${selectedChannels.length} channels...`
+                  : selectedChannels.length > 1
                   ? `Import ${selectedChannels.length} channels`
                   : arenaAccessToken
                   ? "I'll import later"
                   : "Not now"
               }
+              onPress={importSelectedChannels}
             />
           </>
         );
-      // arena prompt
       case 2:
         // collection examples
         return (
           <>
-            <StyledText>
-              Create a collection to start gathering. Some examples include: - a
-              collection of things you want to remember - a people watching
-              collection - a collection of times you said wow
+            <StyledText fontWeight="bold" fontSize="$6">
+              One last tip...
             </StyledText>
+            <StyledText fontSize="$4">
+              Create collections to start gathering. Treat them as ideas,
+              angles, or perspectives you want to continue revisiting.
+            </StyledText>
+            <YStack space="$1">
+              <StyledText fontSize="$4">
+                - things you want to remember
+              </StyledText>
+              <StyledText fontSize="$4">- people watching log</StyledText>
+              <StyledText fontSize="$4">- times you said wow</StyledText>
+              <StyledText fontSize="$4">- orange things</StyledText>
+              <StyledText fontSize="$4">- kindness journal</StyledText>
+              <StyledText fontSize="$4">- songs that slap</StyledText>
+              <StyledText fontSize="$4">- outfits of the day</StyledText>
+              <StyledText fontSize="$4">- morning mood log</StyledText>
+            </YStack>
             <NextStepButton text="Start gathering" />
           </>
         );
@@ -235,7 +273,7 @@ export default function IntroScreen() {
         paddingHorizontal="10%"
       >
         <Progress
-          value={((step + 1) / NumSteps) * 100}
+          value={(step / NumSteps) * 100}
           marginTop="2%"
           borderRadius={4}
         >

@@ -26,6 +26,7 @@ import { useContext, useEffect, useState } from "react";
 import { ArenaLogin } from "../views/ArenaLogin";
 import { ImportArenaChannelSelect } from "../components/ImportArenaChannelSelect";
 import { useFocusEffect } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ModalScreen() {
   const {
@@ -40,11 +41,14 @@ export default function ModalScreen() {
 
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
 
-  useFocusEffect(() => {
+  useEffect(() => {
+    if (!__DEV__) {
+      return;
+    }
     getPendingArenaBlocks().then((result) =>
       setPendingArenaBlocks(result.rows)
     );
-  });
+  }, []);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -103,15 +107,24 @@ export default function ModalScreen() {
         Reset Databases
       </StyledButton>
       {__DEV__ && (
-        <YStack flex={1}>
-          <StyledLabel fontWeight="bold">Token</StyledLabel>
-          <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
+        <YStack space="$1">
+          <XStack>
+            <StyledLabel fontWeight="bold">Token</StyledLabel>
+            <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
+          </XStack>
+          <StyledButton
+            onPress={() => {
+              AsyncStorage.setItem("seenIntro", "false");
+            }}
+          >
+            Reset intro seen
+          </StyledButton>
+          <H3>pending blocks</H3>
+          <StyledParagraph>
+            {JSON.stringify(pendingArenaBlocks, null, 2)}
+          </StyledParagraph>
         </YStack>
       )}
-      <H3>pending blocks</H3>
-      <StyledParagraph>
-        {JSON.stringify(pendingArenaBlocks, null, 2)}
-      </StyledParagraph>
       {/* TODO: bring this back when working */}
       {/* <ButtonWithConfirm
         disabled={isLoading}

@@ -1,8 +1,6 @@
-import { Block, BlocksInsertInfo, DatabaseBlockInsert } from "./db";
+import { Block } from "./dataTypes";
 import * as FileSystem from "expo-file-system";
 import { BlockType, MimeType } from "./mimeTypes";
-import { RemoteSourceType } from "./dataTypes";
-import { currentUser } from "./user";
 
 export const ArenaClientId = "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE";
 // TODO: move these before open sourcing repo
@@ -430,30 +428,4 @@ export async function getUserChannels(
     throw e;
   }
   return fetchedItems;
-}
-
-export function rawArenaBlocksToBlockInsertInfo(
-  arenaBlocks: RawArenaItem[]
-): DatabaseBlockInsert[] {
-  return arenaBlocks.map((block) => ({
-    title: block.title,
-    description: block.description,
-    content:
-      block.attachment?.url ||
-      // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
-      // it only provides the html iframe code..
-      block.embed?.url ||
-      block.image?.display.url ||
-      block.content,
-    type: arenaClassToBlockType(block),
-    contentType: arenaClassToMimeType(block),
-    source: block.source?.url,
-    createdBy: currentUser().id,
-    remoteSourceType: RemoteSourceType.Arena,
-    remoteSourceInfo: {
-      arenaId: block.id,
-      arenaClass: "Block",
-      connectedAt: block.connected_at,
-    },
-  }));
 }

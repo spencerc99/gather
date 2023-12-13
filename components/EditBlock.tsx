@@ -3,7 +3,8 @@ import { StyledButton, StyledInput, StyledTextArea } from "./Themed";
 import { KeyboardAvoidingView, Platform } from "react-native";
 import { BlockContent } from "./BlockContent";
 import { useContext, useState } from "react";
-import { Block, DatabaseContext } from "../utils/db";
+import { DatabaseContext } from "../utils/db";
+import { Block } from "../utils/dataTypes";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SelectCollectionsList } from "./SelectCollectionsList";
 

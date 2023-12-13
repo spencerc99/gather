@@ -1,7 +1,8 @@
 import { YStack, Spinner, XStack, ScrollView } from "tamagui";
 import { Collection } from "../utils/dataTypes";
 import { useContext, useEffect, useState } from "react";
-import { Block, DatabaseContext } from "../utils/db";
+import { DatabaseContext } from "../utils/db";
+import { Block } from "../utils/dataTypes";
 import { BlockSummary } from "./BlockSummary";
 import {
   AspectRatioImage,

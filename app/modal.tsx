@@ -10,10 +10,9 @@ import {
 } from "../components/Themed";
 import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
-import { currentUser } from "../utils/user";
-import { SelectArenaChannel } from "../views/ArenaLogin";
 import { PortalProvider } from "tamagui";
 import { ImportArenaChannelSelect } from "../components/ImportArenaChannelSelect";
+import { UserContext } from "../utils/user";
 
 export default function ModalScreen() {
   // TODO: type the diff modals by the pathname?
@@ -36,7 +35,7 @@ function CreateCollectionModal() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const { createCollection, arenaAccessToken } = useContext(DatabaseContext);
-  const user = currentUser();
+  const { currentUser: user } = useContext(UserContext);
 
   return (
     <YStack style={styles.createCollection}>

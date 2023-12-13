@@ -13,6 +13,7 @@ import { HoldMenuProvider } from "react-native-hold-menu";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TamaguiProvider, Theme } from "tamagui";
 import { config } from "../tamagui.config";
+import { UserProvider } from "../utils/user";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -65,73 +66,78 @@ function RootLayoutNav() {
             theme={colorScheme || undefined}
             safeAreaInsets={insets}
           >
-            <DatabaseProvider>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="modal"
-                  options={{
-                    presentation: "modal",
-                    headerShown: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="internal"
-                  options={{
-                    presentation: "card",
-                    title: "",
-                  }}
-                />
-                <Stack.Screen
-                  name="intro"
-                  options={{
-                    presentation: "card",
-                    title: "",
-                  }}
-                />
-                {/* <Stack.Screen
-                  name="profile"
-                  options={{
-                    presentation: "card",
-                    title: "",
-                  }}
-                /> */}
-                <Stack.Screen
-                  name="collection/[id]/index"
-                  options={{
-                    presentation: "card",
-                  }}
-                />
-                <Stack.Screen
-                  name="collection/[id]/chat"
-                  options={{
-                    presentation: "card",
-                    title: "",
-                    animation: "slide_from_bottom",
-                  }}
-                />
-                <Stack.Screen
-                  name="collection/[id]/settings"
-                  options={{
-                    presentation: "modal",
-                    title: "Collection Settings",
-                  }}
-                />
-                <Stack.Screen
-                  name="block/[id]/index"
-                  options={{
-                    presentation: "card",
-                    title: "",
-                  }}
-                />
-                <Stack.Screen
-                  name="block/[id]/connect"
-                  options={{
-                    presentation: "modal",
-                  }}
-                />
-              </Stack>
-            </DatabaseProvider>
+            <UserProvider>
+              <DatabaseProvider>
+                <Stack>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="modal"
+                    options={{
+                      presentation: "modal",
+                      headerShown: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="internal"
+                    options={{
+                      presentation: "card",
+                      title: "",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="intro"
+                    options={{
+                      presentation: "card",
+                      title: "",
+                    }}
+                  />
+                  {/* <Stack.Screen
+                    name="profile"
+                    options={{
+                      presentation: "card",
+                      title: "",
+                    }}
+                  /> */}
+                  <Stack.Screen
+                    name="collection/[id]/index"
+                    options={{
+                      presentation: "card",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="collection/[id]/chat"
+                    options={{
+                      presentation: "card",
+                      title: "",
+                      animation: "slide_from_bottom",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="collection/[id]/settings"
+                    options={{
+                      presentation: "modal",
+                      title: "Collection Settings",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="block/[id]/index"
+                    options={{
+                      presentation: "card",
+                      title: "",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="block/[id]/connect"
+                    options={{
+                      presentation: "modal",
+                    }}
+                  />
+                </Stack>
+              </DatabaseProvider>
+            </UserProvider>
           </HoldMenuProvider>
         </Theme>
       </TamaguiProvider>

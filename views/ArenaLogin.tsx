@@ -262,32 +262,30 @@ export function SelectArenaChannel({
                     c.remoteSourceInfo?.arenaId === channel.id.toString()
                 );
                 return (
-                  <>
-                    <Select.Item
-                      disabled={isDisabled}
-                      index={idx + 1}
-                      key={channel.id}
-                      value={channel.id.toString()}
-                      backgroundColor={
-                        arenaChannel === channel.id.toString()
-                          ? "$green4"
-                          : undefined
-                      }
-                      opacity={isDisabled ? 0.5 : undefined}
-                    >
-                      <ArenaChannelSummary
-                        channel={channel}
-                        isDisabled={isDisabled}
-                        viewProps={{
-                          paddingHorizontal: 0,
-                          paddingVertical: 0,
-                        }}
-                      />
-                      <Select.ItemText display="none">
-                        {channel.title}
-                      </Select.ItemText>
-                    </Select.Item>
-                  </>
+                  <Select.Item
+                    disabled={isDisabled}
+                    index={idx + 1}
+                    key={channel.id}
+                    value={channel.id.toString()}
+                    backgroundColor={
+                      arenaChannel === channel.id.toString()
+                        ? "$green4"
+                        : undefined
+                    }
+                    opacity={isDisabled ? 0.5 : undefined}
+                  >
+                    <ArenaChannelSummary
+                      channel={channel}
+                      isDisabled={isDisabled}
+                      viewProps={{
+                        paddingHorizontal: 0,
+                        paddingVertical: 0,
+                      }}
+                    />
+                    <Select.ItemText display="none">
+                      {channel.title}
+                    </Select.ItemText>
+                  </Select.Item>
                 );
               })}
             </Select.Group>

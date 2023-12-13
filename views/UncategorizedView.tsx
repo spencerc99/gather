@@ -7,11 +7,11 @@ import {
   useState,
 } from "react";
 import {
-  Block,
   DatabaseContext,
   mapBlockContentToPath,
   mapSnakeCaseToCamelCaseProperties,
 } from "../utils/db";
+import { Block } from "../utils/dataTypes";
 import {
   Icon,
   StyledButton,

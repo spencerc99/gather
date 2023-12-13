@@ -1,3 +1,5 @@
+import { BlockType, MimeType } from "./mimeTypes";
+
 export interface CollectionInsertInfo {
   title: string;
   description?: string;
@@ -26,6 +28,7 @@ export interface Connection {
 
   // derived
   collectionTitle: string;
+  remoteSourceType?: RemoteSourceType;
 }
 
 export enum RemoteSourceType {
@@ -46,4 +49,32 @@ export interface ArenaChannelBlockInfo {
 
 interface RemoteSourceInfoMap {
   [RemoteSourceType.Arena]: ArenaChannelCollectionInfo | ArenaChannelBlockInfo;
+}
+export interface Block extends Omit<BlockInsertInfo, "collectionsToConnect"> {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  numConnections: number;
+}
+export interface DatabaseBlockInsert {
+  title?: string;
+  description?: string; // long-form description about the object, could include things like tags here and those get automatically extracted?
+  content: string; // could be either the data itself or a path to the data if a rich media object
+  type: BlockType;
+  contentType?: MimeType;
+  source?: string; // the URL where the object was captured from. If a photo with EXIF data, then the location metadata
+
+  //   TODO: add type
+  remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
+  remoteSourceInfo?: ArenaChannelBlockInfo;
+  createdBy: string; // DID of the person who made it?
+}
+
+export interface BlockInsertInfo extends DatabaseBlockInsert {
+  collectionsToConnect?: string[]; // IDs of collections that this block is in
+}
+
+export interface BlocksInsertInfo {
+  blocksToInsert: DatabaseBlockInsert[];
+  collectionId?: string;
 }

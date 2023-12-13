@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
-import { Block, DatabaseContext } from "../../../utils/db";
+import { DatabaseContext } from "../../../utils/db";
+import { Block } from "../../../utils/dataTypes";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Spinner } from "tamagui";
 import { SelectCollectionsList } from "../../../components/SelectCollectionsList";

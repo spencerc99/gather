@@ -1,7 +1,8 @@
 import { useLocalSearchParams } from "expo-router";
 import { BlockDetailView } from "../../../components/BlockDetailView";
 import { useContext, useEffect, useState } from "react";
-import { Block, DatabaseContext } from "../../../utils/db";
+import { DatabaseContext } from "../../../utils/db";
+import { Block } from "../../../utils/dataTypes";
 import { ScrollView, Spinner, YStack } from "tamagui";
 
 export default function BlockDetailScreen() {

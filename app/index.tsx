@@ -13,8 +13,7 @@ export default function App() {
 
   useFocusEffect(() => {
     AsyncStorage.getItem("seenIntro").then((value) => {
-      console.log("seenintro", value);
-      setSeenIntro(Boolean(value));
+      setSeenIntro(Boolean(value ? JSON.parse(value) : value));
     });
   });
 

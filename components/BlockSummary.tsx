@@ -1,4 +1,5 @@
-import { Block, DatabaseContext } from "../utils/db";
+import { DatabaseContext } from "../utils/db";
+import { Block } from "../utils/dataTypes";
 import * as WebBrowser from "expo-web-browser";
 import { BlockType } from "../utils/mimeTypes";
 import { Platform, StyleSheet } from "react-native";

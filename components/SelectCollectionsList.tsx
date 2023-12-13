@@ -19,7 +19,7 @@ import {
 } from "./Themed";
 import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
 import { Pressable } from "react-native";
-import { currentUser } from "../utils/user";
+import { UserContext } from "../utils/user";
 import { filterItemsBySearchValue } from "../utils/search";
 
 export function SelectCollectionsList({
@@ -39,6 +39,7 @@ export function SelectCollectionsList({
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [internalSearchValue, internalSetSearchValue] = useState("");
+  const { currentUser } = useContext(UserContext);
 
   const searchValue = useMemo(
     () => (propSetSearchValue && propSearch ? propSearch : internalSearchValue),
@@ -89,7 +90,7 @@ export function SelectCollectionsList({
     /* TODO: after creation, pop toast that it was created, clear search and push to top of collections list? */
     const newCollectionId = await createCollection({
       title: searchValue,
-      createdBy: currentUser().id,
+      createdBy: currentUser.id,
     });
     setSelectedCollections([...selectedCollections, newCollectionId]);
   }

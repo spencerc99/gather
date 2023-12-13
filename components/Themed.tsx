@@ -333,11 +333,9 @@ export function ArenaLogo({
 }) {
   return (
     <Image
-      source={{
-        ...require("../assets/images/arena.png"),
-        width: size,
-        height: size,
-      }}
+      source={require("../assets/images/arena.png")}
+      width={size}
+      height={size}
       style={{
         ...style,
       }}

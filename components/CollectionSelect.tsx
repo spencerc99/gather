@@ -14,7 +14,7 @@ import {
 import { DatabaseContext } from "../utils/db";
 import { Icon, InputWithIcon, StyledButton } from "./Themed";
 import { CreateCollectionButton } from "./CreateCollectionButton";
-import { currentUser } from "../utils/user";
+import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
 import { filterItemsBySearchValue } from "../utils/search";
 // import { ModalView } from "react-native-ios-modal";
@@ -37,6 +37,7 @@ export function CollectionSelect({
   const { collections, createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
+  const { currentUser: user } = useContext(UserContext);
 
   // sort by lastConnectedAt descending
   const sortedCollections = useMemo(
@@ -122,7 +123,7 @@ export function CollectionSelect({
                   onPress={async () => {
                     await createCollection({
                       title: searchValue,
-                      createdBy: currentUser().id,
+                      createdBy: user.id,
                     });
                     setSearchValue("");
                   }}

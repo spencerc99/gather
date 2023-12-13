@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "expo-router";
-import { Block, DatabaseContext } from "../utils/db";
+import { DatabaseContext } from "../utils/db";
+import { Block } from "../utils/dataTypes";
 import { Image, Spinner, XStack, YStack, useTheme } from "tamagui";
 import { Icon, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";

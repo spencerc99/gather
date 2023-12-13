@@ -5,29 +5,39 @@ import * as SQLite from "expo-sqlite";
 import {
   PropsWithChildren,
   createContext,
+  useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { BlockType, FileBlockTypes, MimeType } from "./mimeTypes";
+import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {
-  ArenaChannelBlockInfo,
   Collection,
   CollectionInsertInfo,
   Connection,
   RemoteSourceInfo,
   RemoteSourceType,
 } from "./dataTypes";
-import { currentUser } from "./user";
+import { UserContext } from "./user";
 import { convertDbTimestampToDate } from "./date";
 import { PHOTOS_FOLDER, intializeFilesystemFolder } from "./blobs";
 import {
+  ArenaChannelInfo,
   ArenaTokenStorageKey,
+  RawArenaItem,
   addBlockToChannel,
+  arenaClassToBlockType,
+  arenaClassToMimeType,
   getChannelContents,
-  rawArenaBlocksToBlockInsertInfo,
+  getChannelInfo,
 } from "./arena";
+import { Block } from "./dataTypes";
+import {
+  BlockInsertInfo,
+  BlocksInsertInfo,
+  DatabaseBlockInsert,
+} from "./dataTypes";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -75,35 +85,6 @@ function mapDbBlockToBlock(block: any): Block {
   } as Block;
 }
 
-export interface DatabaseBlockInsert {
-  title?: string;
-  description?: string; // long-form description about the object, could include things like tags here and those get automatically extracted?
-  content: string; // could be either the data itself or a path to the data if a rich media object
-  type: BlockType;
-  contentType?: MimeType;
-  source?: string; // the URL where the object was captured from. If a photo with EXIF data, then the location metadata
-  //   TODO: add type
-  remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
-  remoteSourceInfo?: ArenaChannelBlockInfo;
-  createdBy: string; // DID of the person who made it?
-}
-
-interface BlockInsertInfo extends DatabaseBlockInsert {
-  collectionsToConnect?: string[]; // IDs of collections that this block is in
-}
-
-export interface BlocksInsertInfo {
-  blocksToInsert: DatabaseBlockInsert[];
-  collectionId?: string;
-}
-
-export interface Block extends Omit<BlockInsertInfo, "collectionsToConnect"> {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  numConnections: number;
-}
-
 const BlockInsertChunkSize = 10;
 function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
   const chunks = [];
@@ -140,6 +121,10 @@ interface DatabaseContextProps {
   // arena
   arenaAccessToken: string | null;
   updateArenaAccessToken: (newToken: string | null) => void;
+  tryImportArenaChannel: (
+    arenaChannel: string | ArenaChannelInfo,
+    selectedCollection?: string
+  ) => Promise<void>;
 
   // TODO: remove this once apis solidify
   db: SQLite.SQLiteDatabase;
@@ -185,6 +170,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
 
   arenaAccessToken: null,
   updateArenaAccessToken: () => {},
+  tryImportArenaChannel: async () => {},
 
   db,
   initDatabases: async () => {},
@@ -259,6 +245,8 @@ function handleSqlErrors(
 }
 
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
+  const { currentUser } = useContext(UserContext);
+
   useEffect(() => {
     void initDatabases();
   }, []);
@@ -722,7 +710,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         sql: `INSERT INTO connections (block_id, collection_id, created_by)
               VALUES (?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-        args: [blockId, collectionId, currentUser().id],
+        args: [blockId, collectionId, currentUser.id],
       })),
       false
     );
@@ -878,6 +866,32 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return result.rows.map((block) => mapDbBlockToBlock(block))[0];
   }
 
+  function rawArenaBlocksToBlockInsertInfo(
+    arenaBlocks: RawArenaItem[]
+  ): DatabaseBlockInsert[] {
+    return arenaBlocks.map((block) => ({
+      title: block.title,
+      description: block.description,
+      content:
+        block.attachment?.url ||
+        // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
+        // it only provides the html iframe code..
+        block.embed?.url ||
+        block.image?.display.url ||
+        block.content,
+      type: arenaClassToBlockType(block),
+      contentType: arenaClassToMimeType(block),
+      source: block.source?.url,
+      createdBy: currentUser.id,
+      remoteSourceType: RemoteSourceType.Arena,
+      remoteSourceInfo: {
+        arenaId: block.id,
+        arenaClass: "Block",
+        connectedAt: block.connected_at,
+      },
+    }));
+  }
+
   async function syncNewRemoteItems(collectionId: string) {
     const collection = await getCollection(collectionId);
     if (!collection.remoteSourceType || !collection.remoteSourceInfo) {
@@ -920,7 +934,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         sql: `INSERT INTO connections (block_id, collection_id, created_by)
               VALUES (?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-        args: [blockId, collectionId, currentUser().id],
+        args: [blockId, collectionId, currentUser.id],
       })),
       false
     );
@@ -949,7 +963,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           sql: `INSERT INTO connections (block_id, collection_id, created_by)
               VALUES (?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-          args: [blockId, collectionId, currentUser().id],
+          args: [blockId, collectionId, currentUser.id],
         })),
         {
           sql: inParam(
@@ -977,7 +991,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                         connections.collection_id, 
                         connections.created_timestamp, 
                         connections.created_by, 
-                        collections.title
+                        collections.title,
+                        collections.remote_source_type
                 FROM connections 
                 INNER JOIN collections ON connections.collection_id = collections.id
                 WHERE block_id = ?`,
@@ -1028,6 +1043,53 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     setArenaAccessToken(newToken);
   }
 
+  async function tryImportArenaChannel(
+    arenaChannel: string | ArenaChannelInfo,
+    selectedCollection?: string
+  ): Promise<void> {
+    const { title, id, contents } =
+      typeof arenaChannel === "string"
+        ? await getChannelInfo(arenaChannel, arenaAccessToken)
+        : arenaChannel;
+    let collectionId = selectedCollection;
+    if (!collectionId) {
+      collectionId = await createCollection({
+        title,
+        createdBy: currentUser.id,
+        remoteSourceType: RemoteSourceType.Arena,
+        remoteSourceInfo: {
+          arenaId: id.toString(),
+          arenaClass: "Collection",
+        },
+      });
+    }
+
+    await createBlocks({
+      blocksToInsert: contents.map((block) => ({
+        title: block.title,
+        description: block.description,
+        content:
+          block.attachment?.url ||
+          // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
+          // it only provides the html iframe code..
+          block.embed?.url ||
+          block.image?.display.url ||
+          block.content,
+        type: arenaClassToBlockType(block),
+        contentType: arenaClassToMimeType(block),
+        source: block.source?.url,
+        createdBy: currentUser.id,
+        remoteSourceType: RemoteSourceType.Arena,
+        remoteSourceInfo: {
+          arenaId: block.id,
+          arenaClass: "Block",
+          connectedAt: block.connected_at,
+        },
+      })),
+      collectionId: collectionId!,
+    });
+  }
+
   return (
     <DatabaseContext.Provider
       value={{
@@ -1052,6 +1114,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         syncNewRemoteItems,
         arenaAccessToken,
         updateArenaAccessToken,
+        tryImportArenaChannel,
         // TODO: remove
         db,
         initDatabases,

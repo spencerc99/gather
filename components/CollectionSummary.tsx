@@ -10,6 +10,7 @@ import {
 import { GetProps, SizableText, XStack, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { ensureUnreachable } from "../utils/react";
+import { RemoteSourceLabel } from "./RemoteSourceLabel";
 
 export function CollectionSummary({
   collection,
@@ -29,17 +30,6 @@ export function CollectionSummary({
   } = collection;
   const theme = useTheme();
 
-  function renderRemoteSourceLabel() {
-    if (!remoteSourceType) return null;
-
-    switch (remoteSourceType) {
-      case RemoteSourceType.Arena:
-        return <ArenaLogo />;
-      default:
-        return ensureUnreachable(remoteSourceType);
-    }
-  }
-
   return (
     <XStack
       paddingVertical="$4"
@@ -56,17 +46,7 @@ export function CollectionSummary({
       <YStack flexGrow={1}>
         <XStack justifyContent="space-between" flex={1}>
           <StyledParagraph title>{title}</StyledParagraph>
-          {remoteSourceType && (
-            <XStack
-              alignSelf="flex-end"
-              borderWidth={1}
-              paddingHorizontal="$1"
-              borderRadius="$3"
-              borderColor={theme.color.get()}
-            >
-              {renderRemoteSourceLabel()}
-            </XStack>
-          )}
+          <RemoteSourceLabel remoteSourceType={remoteSourceType} />
         </XStack>
         <StyledView style={styles.metaContainer}>
           <StyledParagraph metadata>

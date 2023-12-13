@@ -1,5 +1,6 @@
 import { useContext, useMemo, useState } from "react";
-import { Block, DatabaseContext } from "../utils/db";
+import { DatabaseContext } from "../utils/db";
+import { Block } from "../utils/dataTypes";
 import { SearchBarInput } from "./Themed";
 import { FlatList, Pressable, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";

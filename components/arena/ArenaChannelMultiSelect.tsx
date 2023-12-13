@@ -48,7 +48,6 @@ export function ArenaChannelMultiSelect({
       </StyledButton>
 
       <Sheet
-        forceRemoveScrollEnabled={open}
         open={open}
         modal
         onOpenChange={setOpen}
@@ -76,6 +75,10 @@ export function ArenaChannelMultiSelect({
               // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
               paddingBottom: 24,
             }}
+            onScroll={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             {filteredChannels?.map((channel, idx) => {
               const isDisabled = collections.some(
@@ -88,30 +91,28 @@ export function ArenaChannelMultiSelect({
               );
 
               return (
-                <>
-                  <Stack
-                    disabled={isDisabled}
-                    key={channel.id}
-                    backgroundColor={isSelected ? "$green4" : undefined}
-                    opacity={isDisabled ? 0.5 : undefined}
-                    onPress={() => {
-                      if (isSelected) {
-                        setSelectedChannels(
-                          selectedChannels.filter(
-                            (c) => c.id.toString() !== channel.id.toString()
-                          )
-                        );
-                      } else {
-                        setSelectedChannels([...selectedChannels, channel]);
-                      }
-                    }}
-                  >
-                    <ArenaChannelSummary
-                      channel={channel}
-                      isDisabled={isDisabled}
-                    />
-                  </Stack>
-                </>
+                <Stack
+                  disabled={isDisabled}
+                  key={channel.id.toString()}
+                  backgroundColor={isSelected ? "$green4" : undefined}
+                  opacity={isDisabled ? 0.5 : undefined}
+                  onPress={() => {
+                    if (isSelected) {
+                      setSelectedChannels(
+                        selectedChannels.filter(
+                          (c) => c.id.toString() !== channel.id.toString()
+                        )
+                      );
+                    } else {
+                      setSelectedChannels([...selectedChannels, channel]);
+                    }
+                  }}
+                >
+                  <ArenaChannelSummary
+                    channel={channel}
+                    isDisabled={isDisabled}
+                  />
+                </Stack>
               );
             })}
           </ScrollView>

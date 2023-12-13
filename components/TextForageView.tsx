@@ -13,7 +13,7 @@ import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import { MediaView } from "./MediaView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { currentUser } from "../utils/user";
+import { UserContext } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { extractDataFromUrl, isUrl } from "../utils/url";
@@ -29,6 +29,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
   const [medias, setMedias] = useState<PickedMedia[]>([]);
   const { createBlock: addBlock } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
+  const { currentUser } = useContext(UserContext);
 
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
@@ -81,7 +82,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               type === BlockType.Image ? "jpg" : "mp4"
             );
             return addBlock({
-              createdBy: currentUser().id,
+              createdBy: currentUser.id,
               content: fileUri,
               // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
               type,
@@ -97,7 +98,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           const { title, description, images, url, domain, favicon } =
             await extractDataFromUrl(savedTextValue);
           await addBlock({
-            createdBy: currentUser().id,
+            createdBy: currentUser.id,
             // TODO: try to capture a picture of the url always
             content: images?.[0] || favicon || url,
             title,
@@ -108,7 +109,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           });
         } else {
           await addBlock({
-            createdBy: currentUser().id,
+            createdBy: currentUser.id,
             content: savedTextValue,
             type: BlockType.Text,
             collectionsToConnect: collectionId ? [collectionId] : [],

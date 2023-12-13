@@ -25,13 +25,13 @@ import { StyledParagraph } from "../../components/Themed";
 import { convertDbTimestampToDate, getRelativeDate } from "../../utils/date";
 import { BlockSummary } from "../../components/BlockSummary";
 import { BlockType } from "../../utils/mimeTypes";
-import { currentUser } from "../../utils/user";
+import { UserContext } from "../../utils/user";
 
 export default function ProfileScreen() {
   // TODO: change this to show events, group them by date.
   /* TODO: show profile information */
 
-  const user = currentUser();
+  const { currentUser: user } = useContext(UserContext);
 
   return (
     <>
