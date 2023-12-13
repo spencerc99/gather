@@ -8,6 +8,7 @@ import {
   ButtonProps,
   Stack,
   Theme,
+  Spinner,
 } from "tamagui";
 import {
   ArenaLogo,
@@ -160,6 +161,7 @@ export default function IntroScreen() {
               placeholder="gather@tiny-inter.net"
               value={email}
               onChangeText={(text) => setEmail(text)}
+              inputMode="email"
             ></StyledInput>
             <StyledText metadata>
               This information will not be sent anywhere and is only used to

@@ -250,11 +250,16 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               onPress={recording ? stopRecording : startRecording}
             /> */}
           </XStack>
-          <XStack alignItems="center" justifyContent="center" padding="$2">
+          <XStack
+            alignItems="center"
+            justifyContent="center"
+            padding="$2"
+            space="$2"
+          >
             <StyledButton
               icon={<Icon size={24} name="photo" />}
               onPress={pickImage}
-              chromeless
+              paddingHorizontal="$2"
             />
             <StyledTextArea
               placeholder="Save a thought, photo, or link..."
@@ -271,9 +276,10 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               onPress={async () => {
                 void onSaveResult();
               }}
-              chromeless
               theme="green"
+              paddingHorizontal="$2"
               disabled={!textValue && !medias.length}
+              chromeless
             >
               <Icon name="arrow-circle-up" size={30} color="$green10" />
             </StyledButton>

@@ -102,6 +102,12 @@ const PressableButton = styled(DefaultButton, {
         color: "$secondaryColor",
       },
     },
+    // Idk why all of the sudden this doesnt work lol
+    chromeless: {
+      true: {
+        backgroundColor: "transparent",
+      },
+    },
   } as const,
 
   defaultVariants: {
@@ -195,6 +201,7 @@ export function SearchBarInput({
     <InputWithIcon
       icon="search"
       placeholder="Search..."
+      inputMode="search"
       width="100%"
       backgroundColor="$gray4"
       value={searchValue}
