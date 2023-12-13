@@ -96,7 +96,7 @@ export default function ModalScreen() {
               .forEach((result) => {
                 throw result;
               });
-            await initDatabases();
+            // await initDatabases();
           } catch (err) {
             throw err;
           } finally {
@@ -109,7 +109,7 @@ export default function ModalScreen() {
       {__DEV__ && (
         <YStack space="$1">
           <XStack>
-            <StyledLabel fontWeight="bold">Token</StyledLabel>
+            <StyledLabel bold>Token</StyledLabel>
             <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
           </XStack>
           <StyledButton

@@ -28,6 +28,7 @@ import { ArenaChannelMultiSelect } from "../components/arena/ArenaChannelMultiSe
 import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../utils/arena";
 import { UserContext } from "../utils/user";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const NumSteps = 3;
 // source https://uibakery.io/regex-library/email
@@ -115,7 +116,6 @@ export default function IntroScreen() {
             </StyledText>
             <YStack alignItems="center" marginBottom="$3">
               {/* TODO: allow you to zoom in */}
-              {/* TODO: turn into carousel? */}
               <Carousel
                 loop
                 autoPlay
@@ -167,7 +167,6 @@ export default function IntroScreen() {
               This information will not be sent anywhere and is only used to
               create your personal unique identifier.
             </StyledText>
-            {/* TODO: disable if email not right */}
             <NextStepButton
               text="Next"
               disabled={!email || !EmailRegex.test(email)}
@@ -180,15 +179,13 @@ export default function IntroScreen() {
       case 1:
         return (
           <>
-            <YStack>
-              <StyledText fontWeight="bold" fontSize="$6">
-                Adding to Are.na <ArenaLogo />
-              </StyledText>
-              <StyledText>
-                Gather stores your data locally on your device. You can
-                optionally sync specific collections to Are.na.
-              </StyledText>
-            </YStack>
+            <StyledText bold fontSize="$6">
+              Adding to Are.na <ArenaLogo />
+            </StyledText>
+            <StyledText>
+              Gather stores your data locally on your device. You can optionally
+              sync specific collections to Are.na.
+            </StyledText>
             {!arenaAccessToken ? (
               <>
                 <ArenaLogin path="intro" />
@@ -199,7 +196,6 @@ export default function IntroScreen() {
                 </StyledText>
               </>
             ) : (
-              // TODO: multi-select arena channel component
               <>
                 <ArenaChannelMultiSelect
                   setSelectedChannels={setSelectedChannels}
@@ -242,7 +238,7 @@ export default function IntroScreen() {
         // collection examples
         return (
           <>
-            <StyledText fontWeight="bold" fontSize="$6">
+            <StyledText bold fontSize="$6">
               One last tip...
             </StyledText>
             <StyledText fontSize="$4">
@@ -269,45 +265,47 @@ export default function IntroScreen() {
 
   return (
     <Theme name="light">
-      <YStack
-        minHeight="100%"
-        backgroundColor="#FFDBB2"
-        paddingHorizontal="10%"
-      >
-        <Progress
-          value={(step / NumSteps) * 100}
-          marginTop="2%"
-          borderRadius={4}
-        >
-          <Progress.Indicator animation="quick" />
-        </Progress>
+      <KeyboardAwareScrollView style={{ flex: 1 }} extraScrollHeight={70}>
         <YStack
-          paddingTop="8%"
-          justifyContent="center"
-          height="100%"
-          paddingBottom="20%"
-          gap="$3"
+          minHeight="100%"
+          backgroundColor="#FFDBB2"
+          paddingHorizontal="10%"
         >
-          <XStack flexGrow={0}>
-            <Image
-              source={require("../assets/images/icon.png")}
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 16,
-              }}
-            />
-          </XStack>
-          <YStack gap="$3" flexGrow={1}>
-            {renderStep()}
-            {__DEV__ && (
+          <Progress
+            value={Math.max(1, (step / NumSteps) * 100)}
+            marginTop="2%"
+            borderRadius={4}
+          >
+            <Progress.Indicator animation="quick" />
+          </Progress>
+          <YStack
+            paddingTop="8%"
+            justifyContent="center"
+            height="100%"
+            paddingBottom="20%"
+            gap="$3"
+          >
+            <XStack flexGrow={0}>
+              <Image
+                source={require("../assets/images/icon.png")}
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 16,
+                }}
+              />
+            </XStack>
+            <YStack gap="$3" flexGrow={1}>
+              {renderStep()}
+            </YStack>
+            {/* {__DEV__ && (
               <StyledButton onPress={() => router.replace("/home")}>
                 home
               </StyledButton>
-            )}
+            )} */}
           </YStack>
         </YStack>
-      </YStack>
+      </KeyboardAwareScrollView>
     </Theme>
   );
 }

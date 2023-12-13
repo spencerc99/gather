@@ -50,6 +50,11 @@ const TextVariants = {
       color: "#2e78b7",
     },
   },
+  bold: {
+    true: {
+      fontWeight: "700",
+    },
+  },
 } as const;
 
 export const StyledText = styled(Text, {

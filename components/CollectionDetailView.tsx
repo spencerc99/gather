@@ -66,10 +66,11 @@ export function CollectionDetailView({
               <StyledParagraph color="$gray9">{description}</StyledParagraph>
             )}
             <StyledParagraph metadata>
-              {numItems} items by{" "}
-              <StyledParagraph metadata style={{ fontWeight: 700 }}>
+              {numItems} items
+              {/* by{" "} */}
+              {/* <StyledParagraph metadata style={{ fontWeight: 700 }}>
                 {createdBy}
-              </StyledParagraph>
+              </StyledParagraph> */}
             </StyledParagraph>
             <StyledParagraph metadata>
               Created at: {createdAt.toLocaleDateString()}

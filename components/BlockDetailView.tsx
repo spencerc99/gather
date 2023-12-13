@@ -53,7 +53,7 @@ export function BlockDetailView({ block }: { block: Block }) {
       {/* TODO: change all these to labels and make them editable with a save */}
       {description && <StyledParagraph metadata>{description}</StyledParagraph>}
       <StyledView>
-        <StyledParagraph metadata>By: {createdBy}</StyledParagraph>
+        {/* <StyledParagraph metadata>By: {createdBy}</StyledParagraph> */}
         {source && (
           <StyledText metadata>
             From:{" "}

@@ -247,62 +247,77 @@ function handleSqlErrors(
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const { currentUser } = useContext(UserContext);
 
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
+
   useEffect(() => {
     void initDatabases();
+    void intializeFilesystemFolder();
+    void getArenaAccessToken().then((accessToken) => {
+      setArenaAccessToken(accessToken);
+    });
   }, []);
+
+  useEffect(() => {
+    void trySyncPendingArenaBlocks();
+  }, [arenaAccessToken]);
 
   async function initDatabases() {
     await db.transactionAsync(async (tx) => {
       // Set up tables
       // TODO: figure out id scheme
-      const [...results] = await Promise.all([
-        tx.executeSqlAsync(
-          `CREATE TABLE IF NOT EXISTS blocks (
-            id integer PRIMARY KEY AUTOINCREMENT,
-            title varchar(128),
-            content TEXT NOT NULL,
-            description TEXT,
-            type varchar(128) NOT NULL,
-            content_type varchar(128),
-            source TEXT,
-            remote_source_type varchar(128),
-            remote_source_info blob,
-            created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            created_by TEXT NOT NULL
-        );`
-        ),
-        tx.executeSqlAsync(
-          `CREATE TABLE IF NOT EXISTS collections (
-            id integer PRIMARY KEY AUTOINCREMENT,
-            title varchar(128) NOT NULL,
-            description TEXT,
-            thumbnail TEXT,
-            created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            created_by TEXT NOT NULL,
-            remote_source_type varchar(128),
-            remote_source_info blob 
-        );`
-        ),
-      ]);
+      try {
+        const [...results] = await Promise.all([
+          tx.executeSqlAsync(
+            `CREATE TABLE IF NOT EXISTS blocks (
+              id integer PRIMARY KEY AUTOINCREMENT,
+              title varchar(128),
+              content TEXT NOT NULL,
+              description TEXT,
+              type varchar(128) NOT NULL,
+              content_type varchar(128),
+              source TEXT,
+              remote_source_type varchar(128),
+              remote_source_info blob,
+              created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              created_by TEXT NOT NULL
+          );`
+          ),
+          tx.executeSqlAsync(
+            `CREATE TABLE IF NOT EXISTS collections (
+              id integer PRIMARY KEY AUTOINCREMENT,
+              title varchar(128) NOT NULL,
+              description TEXT,
+              thumbnail TEXT,
+              created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              created_by TEXT NOT NULL,
+              remote_source_type varchar(128),
+              remote_source_info blob 
+          );`
+          ),
+        ]);
 
-      const result = await tx.executeSqlAsync(
-        `CREATE TABLE IF NOT EXISTS connections(
-            block_id integer NOT NULL,
-            collection_id integer NOT NULL,
-            created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            created_by TEXT NOT NULL,
-
-            PRIMARY KEY (block_id, collection_id),
-            FOREIGN KEY (block_id) REFERENCES blocks(id),
-            FOREIGN KEY (collection_id) REFERENCES collections(id)
-        );`
-      );
-
-      await fetchBlocks();
-      await fetchCollections();
-    });
+        const result = await tx.executeSqlAsync(
+          `CREATE TABLE IF NOT EXISTS connections(
+              block_id integer NOT NULL,
+              collection_id integer NOT NULL,
+              created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              created_by TEXT NOT NULL,
+  
+              PRIMARY KEY (block_id, collection_id),
+              FOREIGN KEY (block_id) REFERENCES blocks(id),
+              FOREIGN KEY (collection_id) REFERENCES collections(id)
+          );`
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    }, false);
+    fetchBlocks();
+    fetchCollections();
   }
 
   async function insertBlocks(blocksToInsert: DatabaseBlockInsert[]) {
@@ -491,10 +506,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       setCollections(collections.filter((collection) => collection.id !== id));
     });
   };
-
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
 
   const createCollection = async (collection: CollectionInsertInfo) => {
     const [result] = await db.execAsync(
@@ -1017,19 +1028,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
-
-  useEffect(() => {
-    void fetchBlocks();
-    void fetchCollections();
-    void intializeFilesystemFolder();
-    void getArenaAccessToken().then((accessToken) => {
-      setArenaAccessToken(accessToken);
-    });
-  }, []);
-
-  useEffect(() => {
-    void trySyncPendingArenaBlocks();
-  }, [arenaAccessToken]);
 
   async function updateArenaAccessToken(newToken: string | null) {
     // TODO: handle web
