@@ -10,31 +10,50 @@ import { FlatList, Keyboard, Pressable, ScrollView } from "react-native";
 import { BlockContent } from "./BlockContent";
 import { BlockType } from "../utils/mimeTypes";
 
-const InspoBlocks = [
+export const InspoBlocks = [
+  //   {
+  //     content: `If it is a human thing to do to put something you want,
+  // because it's useful, edible, or beautiful, into a bag, or a
+  // basket, or a bit of rolled bark or leaf, or a net woven of
+  // your own hair, or what have you, and then take it home
+  // with you, home being another, larger kind of pouch or
+  // bag, a container for people, and then later on you take it
+  // out and eat it or share it or store it up for winter in a
+  // solider container or put it in the medicine bundle or the
+  // shrine or the museum, the holy place, the area that
+  // contains what is sacred, and then next day you probably
+  // do much the same again--if to do that is human, if that's
+  // what it takes, then I am a human being after all. Fully,
+  // freely, gladly, for the first time.`,
+  //     type: BlockType.Text,
+  //   },
+  // {
+  //   // synonym
+  //   content:
+  //     "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyNDE5MDc1OS9vcmlnaW5hbF9jMzc4ZGZjZWQ0M2QyM2QxZmIwZWM2Y2YyZWUwNWZiNy5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjYwMCwiaGVpZ2h0Ijo2MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJwbmciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ==",
+  //   type: BlockType.Image,
+  // },
   {
-    content: `If it is a human thing to do to put something you want,
-because it's useful, edible, or beautiful, into a bag, or a
-basket, or a bit of rolled bark or leaf, or a net woven of
-your own hair, or what have you, and then take it home
-with you, home being another, larger kind of pouch or
-bag, a container for people, and then later on you take it
-out and eat it or share it or store it up for winter in a
-solider container or put it in the medicine bundle or the
-shrine or the museum, the holy place, the area that
-contains what is sacred, and then next day you probably
-do much the same again--if to do that is human, if that's
-what it takes, then I am a human being after all. Fully,
-freely, gladly, for the first time.`,
+    content: `Do not be tricked into believing that modern decor must be slick or psychedelic, or "natural" or "modern art," or
+"plants" or anything else that current taste-makers claim.
+It is most beautiful when it comes straight from your life
+—the things you care for, the things that tell your story.`,
     type: BlockType.Text,
   },
   {
     content:
-      "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyNDE5MDc1OS9vcmlnaW5hbF9jMzc4ZGZjZWQ0M2QyM2QxZmIwZWM2Y2YyZWUwNWZiNy5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjYwMCwiaGVpZ2h0Ijo2MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJwbmciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ==",
+      "https://d2w9rnfcy7mm78.cloudfront.net/25197739/original_606f6067eb04a9d337c570f8740bfa21.png?1702426508?bc=0",
     type: BlockType.Image,
   },
+  // {
+  //   content:
+  //     "Collagist’s Note: New York is a swarm of signs and unholy advertisements. I encounter haphazard phrases daily like dropped pennies; I pick them up to store in my pocketbook (iPhone Notes App), safekeeping these found letters that have gone on a walk (Walking is reading. Writing is walking): cruel embankments, necrologists of the newspapers, pompous rivers, sozzled, jealous spaghetti",
+  //   type: BlockType.Text,
+  // },
   {
+    // TODO: cross out home and change it to phone
     content:
-      "Collagist’s Note: New York is a swarm of signs and unholy advertisements. I encounter haphazard phrases daily like dropped pennies; I pick them up to store in my pocketbook (iPhone Notes App), safekeeping these found letters that have gone on a walk (Walking is reading. Writing is walking): cruel embankments, necrologists of the newspapers, pompous rivers, sozzled, jealous spaghetti",
+      "Have nothing in your home that you do not know to be useful or believe to be beautiful — Charles Eames",
     type: BlockType.Text,
   },
 ];

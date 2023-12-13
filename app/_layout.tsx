@@ -66,7 +66,7 @@ function RootLayoutNav() {
             safeAreaInsets={insets}
           >
             <DatabaseProvider>
-              <Stack initialRouteName="(tabs)/home">
+              <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="modal"
@@ -77,6 +77,13 @@ function RootLayoutNav() {
                 />
                 <Stack.Screen
                   name="internal"
+                  options={{
+                    presentation: "card",
+                    title: "",
+                  }}
+                />
+                <Stack.Screen
+                  name="intro"
                   options={{
                     presentation: "card",
                     title: "",

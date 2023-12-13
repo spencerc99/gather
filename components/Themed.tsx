@@ -323,3 +323,24 @@ export function AspectRatioImage({
     />
   );
 }
+
+export function ArenaLogo({
+  size = 18,
+  style,
+}: {
+  size?: number;
+  style?: object;
+}) {
+  return (
+    <Image
+      source={{
+        ...require("../assets/images/arena.png"),
+        width: size,
+        height: size,
+      }}
+      style={{
+        ...style,
+      }}
+    />
+  );
+}

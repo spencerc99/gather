@@ -1,6 +1,7 @@
 import { StyleSheet } from "react-native";
-import { Collection } from "../utils/dataTypes";
+import { Collection, RemoteSourceType } from "../utils/dataTypes";
 import {
+  ArenaLogo,
   AspectRatioImage,
   StyledLabel,
   StyledParagraph,
@@ -8,6 +9,7 @@ import {
 } from "./Themed";
 import { GetProps, SizableText, XStack, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
+import { ensureUnreachable } from "../utils/react";
 
 export function CollectionSummary({
   collection,
@@ -26,6 +28,17 @@ export function CollectionSummary({
     remoteSourceType,
   } = collection;
   const theme = useTheme();
+
+  function renderRemoteSourceLabel() {
+    if (!remoteSourceType) return null;
+
+    switch (remoteSourceType) {
+      case RemoteSourceType.Arena:
+        return <ArenaLogo />;
+      default:
+        return ensureUnreachable(remoteSourceType);
+    }
+  }
 
   return (
     <XStack
@@ -51,7 +64,7 @@ export function CollectionSummary({
               borderRadius="$3"
               borderColor={theme.color.get()}
             >
-              <StyledLabel>{remoteSourceType}</StyledLabel>
+              {renderRemoteSourceLabel()}
             </XStack>
           )}
         </XStack>

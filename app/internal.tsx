@@ -19,6 +19,7 @@ import { DatabaseContext } from "../utils/db";
 import {
   ButtonWithConfirm,
   StyledButton,
+  StyledLabel,
   StyledParagraph,
 } from "../components/Themed";
 import { useContext, useEffect, useState } from "react";
@@ -34,6 +35,7 @@ export default function ModalScreen() {
     fetchCollections,
     trySyncPendingArenaBlocks,
     getPendingArenaBlocks,
+    arenaAccessToken,
   } = useContext(DatabaseContext);
 
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
@@ -49,7 +51,7 @@ export default function ModalScreen() {
   return (
     <ScrollView padding="10%" space="$2">
       <H3>Are.na Settings</H3>
-      <ArenaLogin />
+      <ArenaLogin path="internal" />
       <Label>Target Are.na channel</Label>
       <ImportArenaChannelSelect {...{ isLoading, setIsLoading }} />
       <H3>Internal Developer Settings</H3>
@@ -100,6 +102,12 @@ export default function ModalScreen() {
       >
         Reset Databases
       </StyledButton>
+      {__DEV__ && (
+        <YStack flex={1}>
+          <StyledLabel fontWeight="bold">Token</StyledLabel>
+          <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
+        </YStack>
+      )}
       <H3>pending blocks</H3>
       <StyledParagraph>
         {JSON.stringify(pendingArenaBlocks, null, 2)}

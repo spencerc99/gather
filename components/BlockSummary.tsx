@@ -260,7 +260,7 @@ export function BlockMetadata({
         <>
           {relativeDate}
           {"  "}
-          {numConnections} <IconComponent name="link" size={12} color="grey9" />
+          {numConnections} <IconComponent name="link" size={12} color="gray9" />
         </>
       );
       break;

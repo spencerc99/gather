@@ -1,6 +1,6 @@
 import { createAnimations } from "@tamagui/animations-react-native";
 
-export const animations = createAnimations({
+export const RawAnimations: Parameters<typeof createAnimations>[0] = {
   bouncy: {
     type: "spring",
     damping: 10,
@@ -18,4 +18,6 @@ export const animations = createAnimations({
     mass: 1.2,
     stiffness: 250,
   },
-});
+};
+
+export const animations = createAnimations(RawAnimations);

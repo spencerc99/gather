@@ -5,7 +5,9 @@ import {
   useAuthRequest,
 } from "expo-auth-session";
 import { useContext, useEffect, useMemo, useState } from "react";
+import { Image } from "react-native";
 import {
+  ArenaLogo,
   Icon,
   InputWithIcon,
   StyledButton,
@@ -40,6 +42,7 @@ import {
 import { CollectionSummary } from "../components/CollectionSummary";
 import { RemoteSourceType } from "../utils/dataTypes";
 import { filterItemsBySearchValue } from "../utils/search";
+import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
 
 const SCHEME = Constants.platform?.scheme;
 
@@ -51,13 +54,12 @@ const discovery = {
   tokenEndpoint: "https://dev.are.na/oauth/token",
 };
 
-const redirectUri = makeRedirectUri({
-  scheme: SCHEME,
-  path: "internal",
-});
-console.log("REDIRECT", redirectUri);
+export function ArenaLogin({ path }: { path: string }) {
+  const redirectUri = makeRedirectUri({
+    scheme: SCHEME,
+    path,
+  });
 
-export function ArenaLogin() {
   const [request, response, promptAsync] = useAuthRequest(
     {
       clientId: ArenaClientId,
@@ -101,10 +103,6 @@ export function ArenaLogin() {
     <Spinner />
   ) : arenaAccessToken ? (
     <XStack alignItems="center" space="$2" justifyContent="space-between">
-      <YStack flex={1}>
-        <StyledLabel fontWeight="bold">Token</StyledLabel>
-        <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
-      </YStack>
       <StyledButton
         flex={1}
         disabled={!request}
@@ -115,6 +113,16 @@ export function ArenaLogin() {
       >
         Login again
       </StyledButton>
+      <StyledButton
+        flex={1}
+        disabled={!request}
+        onPress={() => {
+          updateArenaAccessToken(null);
+        }}
+        theme="red"
+      >
+        Logout
+      </StyledButton>
     </XStack>
   ) : (
     <StyledButton
@@ -122,9 +130,14 @@ export function ArenaLogin() {
       onPress={() => {
         promptAsync();
       }}
-      theme="black"
+      theme="green"
     >
       Login to Arena
+      <ArenaLogo
+        style={{
+          marginLeft: -6,
+        }}
+      />
     </StyledButton>
   );
 }
@@ -262,29 +275,12 @@ export function SelectArenaChannel({
                       }
                       opacity={isDisabled ? 0.5 : undefined}
                     >
-                      <CollectionSummary
-                        collection={{
-                          ...mapSnakeCaseToCamelCaseProperties(channel),
-                          description:
-                            channel.metadata?.description || undefined,
-                          thumbnail: channel.contents?.find(
-                            (c) => c.image?.thumb.url
-                          )?.image?.thumb.url,
-                          remoteSourceType: RemoteSourceType.Arena,
-                          numBlocks: channel.length,
-                          createdAt: new Date(channel.created_at),
-                          updatedAt: new Date(channel.updated_at),
-                          lastConnectedAt: new Date(channel.added_to_at),
-                          createdBy: channel.user.slug,
-                          title: isDisabled
-                            ? `${channel.title} (imported)`
-                            : channel.title,
-                        }}
+                      <ArenaChannelSummary
+                        channel={channel}
+                        isDisabled={isDisabled}
                         viewProps={{
-                          borderWidth: 0,
                           paddingHorizontal: 0,
                           paddingVertical: 0,
-                          backgroundColor: "inherit",
                         }}
                       />
                       <Select.ItemText display="none">
