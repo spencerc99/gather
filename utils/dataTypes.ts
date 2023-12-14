@@ -9,6 +9,8 @@ export interface CollectionInsertInfo {
   remoteSourceInfo?: ArenaChannelCollectionInfo;
 }
 
+export type CollectionEditInfo = Partial<CollectionInsertInfo>;
+
 export interface Collection extends CollectionInsertInfo {
   id: string;
   createdAt: Date;

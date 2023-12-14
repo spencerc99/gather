@@ -42,6 +42,7 @@ export default function CollectionSettingsScreen() {
         <StyledText color="$gray9">{description}</StyledText>
 
         {/* TODO: if its an arena synced channel just "unlink it" */}
+        {/* TODO: what happens to blocks here? */}
         <StyledButton theme="red" onPress={() => onPressDelete()}>
           Delete
         </StyledButton>

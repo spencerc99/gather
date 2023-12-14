@@ -16,6 +16,7 @@ import {
   ArenaImportInfo,
   BlockEditInfo,
   Collection,
+  CollectionEditInfo,
   CollectionInsertInfo,
   Connection,
   LastSyncedInfo,
@@ -34,6 +35,7 @@ import {
   arenaClassToMimeType,
   getChannelContents,
   getChannelInfo,
+  getChannelInfoFromUrl,
   removeBlockFromChannel,
 } from "./arena";
 import { Block } from "./dataTypes";
@@ -141,6 +143,10 @@ interface DatabaseContextProps {
 
   collections: Collection[];
   createCollection: (collection: CollectionInsertInfo) => Promise<string>;
+  updateCollection: (
+    collectionId: string,
+    editInfo: CollectionEditInfo
+  ) => Promise<void>;
   getCollectionItems: (collectionId: string) => Promise<Block[]>;
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Promise<Collection>;
@@ -191,6 +197,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   createCollection: async () => {
     throw new Error("not yet loaded");
   },
+  updateCollection: async () => {},
   getCollection: async () => {
     throw new Error("not yet loaded");
   },
@@ -803,6 +810,54 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return result.rows.map((block) => mapDbBlockToBlock(block));
   }
 
+  async function updateCollection(
+    collectionId: string,
+    editInfo: CollectionEditInfo
+  ): Promise<void> {
+    if (Object.keys(editInfo).length === 0) {
+      return;
+    }
+
+    const entriesToEdit = Object.entries(editInfo);
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `
+            UPDATE collections SET 
+            ${entriesToEdit
+              .map(([key]) => `${camelCaseToSnakeCase(key)} = ?`)
+              .join(", ")},
+              updated_timestamp = CURRENT_TIMESTAMP
+            WHERE id = ?
+            RETURNING *;`,
+          args: [
+            ...entriesToEdit.map(([key, value]) => {
+              if (key === "remoteSourceInfo") {
+                return JSON.stringify(value);
+              }
+              return value;
+            }),
+            collectionId,
+          ],
+        },
+      ],
+      false
+    );
+
+    // TODO: have handleSqlERrors properly handle the type here
+    if ("error" in result) {
+      throw result.error;
+    }
+
+    setCollections(
+      collections.map((c) =>
+        c.id !== collectionId
+          ? c
+          : { ...c, ...mapDbCollectionToCollection(result.rows[0]) }
+      )
+    );
+  }
+
   async function addConnectionsToCollection(
     collectionId: string,
     blockIds: string[]
@@ -1045,6 +1100,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         const { arenaId: channelId } = remoteSourceInfo;
         const lastSyncedInfo = await getLastSyncedInfoForChannel(channelId);
 
+        // TODO: a little ineficient bc this always fetches the 1st page of contents
+        const channelInfo = await getChannelInfo(channelId, arenaAccessToken);
+        // TODO: this could get a little out of sync if we allow editing the title on our end and arena doesn't update properly
+        // so it needs to take into account the updatedAt timestamp to be fully safe.
+        if (channelInfo.title !== collection.title) {
+          console.log(
+            `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`
+          );
+          await updateCollection(collectionId, { title: channelInfo.title });
+        }
+
         const lastContents = await getChannelContents(channelId, {
           accessToken: arenaAccessToken,
           lastSyncedInfo,
@@ -1195,7 +1261,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   ): Promise<ArenaImportInfo> {
     const { title, id, contents } =
       typeof arenaChannel === "string"
-        ? await getChannelInfo(arenaChannel, arenaAccessToken)
+        ? await getChannelInfoFromUrl(arenaChannel, arenaAccessToken)
         : arenaChannel;
     let collectionId = selectedCollection;
     const channelId = id.toString();
@@ -1240,6 +1306,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         getConnectionsForBlock,
         collections,
         createCollection,
+        updateCollection,
         getCollection,
         addConnections,
         replaceConnections,

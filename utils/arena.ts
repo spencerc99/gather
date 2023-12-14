@@ -231,8 +231,30 @@ export async function getChannelContents(
   return fetchedItems;
 }
 
-// TODO: this should use users access token if they added it
 export async function getChannelInfo(
+  channelId: string,
+  accessToken?: string | null
+): Promise<Omit<ArenaChannelInfo, "contents">> {
+  const baseUrl = `${ArenaChannelsApi}/${channelId}`;
+  let channelInfo = {};
+  try {
+    const resp = await fetch(baseUrl, {
+      headers: {
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+    });
+    const respBody = await resp.json();
+    const { contents, ...rest } = respBody;
+    channelInfo = rest as ArenaChannelInfo;
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+  return channelInfo as ArenaChannelInfo;
+}
+
+// TODO: this should use users access token if they added it
+export async function getChannelInfoFromUrl(
   url: string,
   accessToken?: string | null
 ): Promise<ArenaChannelInfo> {
