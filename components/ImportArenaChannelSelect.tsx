@@ -31,7 +31,7 @@ export function ImportArenaChannelSelect({
     Keyboard.dismiss();
     setIsLoading(true);
     try {
-      await tryImportArenaChannel(
+      const { title, size } = await tryImportArenaChannel(
         arenaChannel,
         selectedCollection || undefined
       );
@@ -39,8 +39,12 @@ export function ImportArenaChannelSelect({
       // TODO: this should not be needed because `createCollection` calls it
       // but for some reason not showing up.. maybe a read-replica thing?
       fetchCollections();
-      // TODO: add toast saying success with new collection name and how many blocks created
       onSuccess?.();
+      alert(
+        'Imported channel "' +
+          title +
+          `" with ${size} blocks from are.na.\n\nItems added to and removed from this collection will push to Are.na, and items added to the are.na channel will sync back here, but removals on are.na will not take effect on Gather.`
+      );
     } catch (error) {
       console.error(error);
       throw error;
@@ -62,11 +66,6 @@ export function ImportArenaChannelSelect({
       <StyledButton
         onPress={async () => {
           await onImportChannel();
-          alert(
-            'Imported channel "' +
-              arenaChannel +
-              '" from are.na. Adding items to it will sync to are.na, but new items added to are.na will not sync here (coming soon).'
-          );
         }}
         disabled={isLoading || !arenaChannel}
         icon={isLoading ? <Spinner size="small" /> : null}

@@ -13,10 +13,12 @@ import {
 import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {
+  ArenaImportInfo,
   BlockEditInfo,
   Collection,
   CollectionInsertInfo,
   Connection,
+  LastSyncedInfo,
   RemoteSourceInfo,
   RemoteSourceType,
 } from "./dataTypes";
@@ -32,6 +34,7 @@ import {
   arenaClassToMimeType,
   getChannelContents,
   getChannelInfo,
+  removeBlockFromChannel,
 } from "./arena";
 import { Block } from "./dataTypes";
 import {
@@ -39,6 +42,10 @@ import {
   BlocksInsertInfo,
   DatabaseBlockInsert,
 } from "./dataTypes";
+import {
+  getLastSyncedInfoForChannel,
+  updateLastSyncedInfoForChannel,
+} from "./asyncStorage";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -86,6 +93,32 @@ function mapDbBlockToBlock(block: any): Block {
   } as Block;
 }
 
+function mapDbCollectionToCollection(collection: any): Collection {
+  const collectionMappedToCamelCase =
+    mapSnakeCaseToCamelCaseProperties(collection);
+  // @ts-ignore
+  return {
+    ...collectionMappedToCamelCase,
+    // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
+    id: collection.id.toString(),
+    createdAt: convertDbTimestampToDate(collection.created_timestamp),
+    updatedAt: convertDbTimestampToDate(collection.updated_timestamp),
+    createdBy: collection.created_by,
+    lastConnectedAt: collection.last_connected_at
+      ? convertDbTimestampToDate(collection.last_connected_at)
+      : undefined,
+    remoteSourceType:
+      collectionMappedToCamelCase.remoteSourceType as RemoteSourceType,
+    remoteSourceInfo: collectionMappedToCamelCase.remoteSourceInfo
+      ? (JSON.parse(
+          collectionMappedToCamelCase.remoteSourceInfo
+        ) as RemoteSourceInfo)
+      : null,
+    // TODO: add collaborators
+    collaborators: [],
+  } as Collection;
+}
+
 const BlockInsertChunkSize = 10;
 function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
   const chunks = [];
@@ -126,7 +159,7 @@ interface DatabaseContextProps {
   tryImportArenaChannel: (
     arenaChannel: string | ArenaChannelInfo,
     selectedCollection?: string
-  ) => Promise<void>;
+  ) => Promise<ArenaImportInfo>;
 
   // TODO: remove this once apis solidify
   db: SQLite.SQLiteDatabase;
@@ -173,7 +206,9 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
 
   arenaAccessToken: null,
   updateArenaAccessToken: () => {},
-  tryImportArenaChannel: async () => {},
+  tryImportArenaChannel: async () => {
+    throw new Error("not yet loaded");
+  },
 
   db,
   initDatabases: async () => {},
@@ -267,7 +302,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }, []);
 
   useEffect(() => {
-    void trySyncPendingArenaBlocks();
+    void syncWithArena();
   }, [arenaAccessToken]);
 
   async function initDatabases() {
@@ -476,20 +511,49 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   const deleteBlock = async (id: string) => {
     // TODO: get the image path and delete it from the local filesystem too
+    const deletedBlock = await getBlock(id);
+    if (!deleteBlock) {
+      return;
+    }
+    const connectionsForBlock = deletedBlock.remoteSourceType
+      ? await getConnectionsForBlock(id)
+      : [];
+
     await db.transactionAsync(async (tx) => {
       await tx.executeSqlAsync(`DELETE FROM blocks WHERE id = ?;`, [id]);
       await tx.executeSqlAsync(`DELETE FROM connections where block_id = ?;`, [
         id,
       ]);
-      const deletedBlock = blocks.find((block) => block.id === id);
       if (
-        deletedBlock &&
         FileBlockTypes.includes(deletedBlock.type) &&
         deletedBlock.content.startsWith(PHOTOS_FOLDER)
       ) {
         await FileSystem.deleteAsync(
           FileSystem.documentDirectory + deletedBlock.content
         );
+      }
+
+      if (deletedBlock.remoteSourceType) {
+        switch (deletedBlock.remoteSourceType) {
+          case RemoteSourceType.Arena:
+            if (!arenaAccessToken) {
+              break;
+            }
+            const { arenaId: arenaBlockId } = deletedBlock.remoteSourceInfo!;
+            for (const connection of connectionsForBlock) {
+              const { collectionId } = connection;
+              // TODO: do this all at once for all of them
+              const { remoteSourceInfo } = await getCollection(collectionId);
+              if (!remoteSourceInfo) {
+                continue;
+              }
+              await removeBlockFromChannel({
+                blockId: arenaBlockId,
+                channelId: remoteSourceInfo.arenaId,
+                arenaToken: arenaAccessToken,
+              });
+            }
+        }
       }
 
       setBlocks(blocks.filter((block) => block.id !== id));
@@ -628,33 +692,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           (_, { rows: { _array } }) => {
             setCollections([
               ..._array.map((collection) => {
-                const mappedCollection =
-                  mapSnakeCaseToCamelCaseProperties(collection);
-                // @ts-ignore
-                return {
-                  ...mappedCollection,
-                  // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
-                  id: collection.id.toString(),
-                  createdAt: convertDbTimestampToDate(
-                    collection.created_timestamp
-                  ),
-                  updatedAt: convertDbTimestampToDate(
-                    collection.updated_timestamp
-                  ),
-                  createdBy: collection.created_by,
-                  lastConnectedAt: convertDbTimestampToDate(
-                    collection.last_connected_at
-                  ),
-                  remoteSourceType:
-                    mappedCollection.remoteSourceType as RemoteSourceType,
-                  remoteSourceInfo: mappedCollection.remoteSourceInfo
-                    ? (JSON.parse(
-                        mappedCollection.remoteSourceInfo
-                      ) as RemoteSourceInfo)
-                    : null,
-                  // TODO: add collaborators
-                  collaborators: ["spencer-did"],
-                } as Collection;
+                return mapDbCollectionToCollection(collection);
               }),
             ]);
           }
@@ -809,10 +847,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return await SecureStore.getItemAsync(ArenaTokenStorageKey);
   }
 
-  async function getPendingArenaBlocks() {
+  async function getPendingArenaBlocks(): Promise<SQLite.ResultSet> {
     const [result] = await db.execAsync(
       [
         {
+          // TODO: this query should be just arena when supporting other providers
           sql: `SELECT  blocks.*, 
                         collections.id as collection_id, collections.remote_source_type as collection_remote_source_type, collections.remote_source_info as collection_remote_source_info
             FROM        blocks
@@ -827,35 +866,73 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       true
     );
     handleSqlErrors(result);
-    return result;
+    return result as SQLite.ResultSet;
+  }
+  async function getArenaCollections(): Promise<SQLite.ResultSet> {
+    const [result] = await db.execAsync(
+      [
+        {
+          // TODO: this query should be just arena when supporting other providers
+          sql: `SELECT  *
+            FROM        collections
+            WHERE       collections.remote_source_type IS NOT NULL AND
+                        collections.remote_source_info IS NOT NULL;`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result as SQLite.ResultSet;
+  }
+
+  async function syncWithArena() {
+    try {
+      await trySyncPendingArenaBlocks();
+      await trySyncNewArenaBlocks();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function trySyncNewArenaBlocks() {
+    if (!arenaAccessToken) {
+      return;
+    }
+
+    const result = await getArenaCollections();
+    const collectionsToSync = result.rows.map((collection) => ({
+      ...mapDbCollectionToCollection(collection),
+    }));
+
+    for (const collectionToSync of collectionsToSync) {
+      await syncNewRemoteItemsForCollection(collectionToSync);
+    }
   }
 
   async function trySyncPendingArenaBlocks() {
-    // TODO: make this work for every provider
     if (!arenaAccessToken) {
       return;
     }
 
     const result = await getPendingArenaBlocks();
 
-    const blocksToSync = await Promise.all(
-      (result as SQLite.ResultSet).rows.map(async (block) => {
-        const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
-        const mappedBlock = mapDbBlockToBlock(block);
-        return {
-          ...blockMappedToCamelCase,
-          ...mappedBlock,
-          collectionRemoteSourceType:
-            blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
-          collectionRemoteSourceInfo:
-            blockMappedToCamelCase.collectionRemoteSourceInfo
-              ? (JSON.parse(
-                  blockMappedToCamelCase.collectionRemoteSourceInfo
-                ) as RemoteSourceInfo)
-              : null,
-        };
-      })
-    );
+    const blocksToSync = result.rows.map((block) => {
+      const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
+      const mappedBlock = mapDbBlockToBlock(block);
+      return {
+        ...blockMappedToCamelCase,
+        ...mappedBlock,
+        collectionRemoteSourceType:
+          blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
+        collectionRemoteSourceInfo:
+          blockMappedToCamelCase.collectionRemoteSourceInfo
+            ? (JSON.parse(
+                blockMappedToCamelCase.collectionRemoteSourceInfo
+              ) as RemoteSourceInfo)
+            : null,
+      };
+    });
 
     for (const blockToSync of blocksToSync) {
       await syncBlockToArena(
@@ -956,31 +1033,40 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }));
   }
 
-  async function syncNewRemoteItems(collectionId: string) {
-    const collection = await getCollection(collectionId);
+  async function syncNewRemoteItemsForCollection(collection: Collection) {
     if (!collection.remoteSourceType || !collection.remoteSourceInfo) {
       return;
     }
 
-    const { remoteSourceInfo, remoteSourceType } = collection;
+    const { remoteSourceInfo, remoteSourceType, id: collectionId } = collection;
 
     switch (remoteSourceType) {
       case RemoteSourceType.Arena:
-        const { arenaId } = remoteSourceInfo;
-        const lastRemoteItem = await getLastRemoteItemForCollection(
-          collectionId
-        );
+        const { arenaId: channelId } = remoteSourceInfo;
+        const lastSyncedInfo = await getLastSyncedInfoForChannel(channelId);
 
-        const lastContents = await getChannelContents(arenaId, {
+        const lastContents = await getChannelContents(channelId, {
           accessToken: arenaAccessToken,
-          lastId: lastRemoteItem?.remoteSourceInfo?.arenaId,
+          lastSyncedInfo,
         });
-        console.log(lastContents);
-        // TODO: handle deletions & need to go one-by-one becaues not guaranteed to always be new
-        if (lastContents.length) {
+        // TODO: handle deletions so pass in a list of blockIds that are in the collection already
+        console.log(
+          `Found ${lastContents.length} new items from remote to add to ${collection.title}`
+        );
+        if (lastContents.length > 0) {
+          console.log(
+            "lastconnectedat",
+            lastContents[lastContents.length - 1].connected_at
+          );
           await createBlocks({
             blocksToInsert: rawArenaBlocksToBlockInsertInfo(lastContents),
-            collectionId: collectionId,
+            collectionId,
+          });
+          await updateLastSyncedInfoForChannel(channelId, {
+            lastSyncedAt: new Date().toISOString(),
+            lastSyncedBlockCreatedAt:
+              lastContents[lastContents.length - 1].connected_at,
+            lastSyncedBlockId: lastContents[lastContents.length - 1].id,
           });
           await fetchBlocks();
         }
@@ -990,6 +1076,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           `Remote source type ${collection.remoteSourceType} not supported`
         );
     }
+  }
+
+  async function syncNewRemoteItems(collectionId: string) {
+    const collection = await getCollection(collectionId);
+    if (!collection.remoteSourceType || !collection.remoteSourceInfo) {
+      return;
+    }
+
+    return syncNewRemoteItemsForCollection(collection);
   }
 
   async function addConnections(blockId: string, collectionIds: string[]) {
@@ -1097,48 +1192,35 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   async function tryImportArenaChannel(
     arenaChannel: string | ArenaChannelInfo,
     selectedCollection?: string
-  ): Promise<void> {
+  ): Promise<ArenaImportInfo> {
     const { title, id, contents } =
       typeof arenaChannel === "string"
         ? await getChannelInfo(arenaChannel, arenaAccessToken)
         : arenaChannel;
     let collectionId = selectedCollection;
+    const channelId = id.toString();
     if (!collectionId) {
       collectionId = await createCollection({
         title,
         createdBy: currentUser.id,
         remoteSourceType: RemoteSourceType.Arena,
         remoteSourceInfo: {
-          arenaId: id.toString(),
+          arenaId: channelId,
           arenaClass: "Collection",
         },
       });
     }
 
     await createBlocks({
-      blocksToInsert: contents.map((block) => ({
-        title: block.title,
-        description: block.description,
-        content:
-          block.attachment?.url ||
-          // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
-          // it only provides the html iframe code..
-          block.embed?.url ||
-          block.image?.display.url ||
-          block.content,
-        type: arenaClassToBlockType(block),
-        contentType: arenaClassToMimeType(block),
-        source: block.source?.url,
-        createdBy: currentUser.id,
-        remoteSourceType: RemoteSourceType.Arena,
-        remoteSourceInfo: {
-          arenaId: block.id,
-          arenaClass: "Block",
-          connectedAt: block.connected_at,
-        },
-      })),
+      blocksToInsert: rawArenaBlocksToBlockInsertInfo(contents),
       collectionId: collectionId!,
     });
+    await updateLastSyncedInfoForChannel(channelId, {
+      lastSyncedAt: new Date().toISOString(),
+      lastSyncedBlockCreatedAt: contents[contents.length - 1].connected_at,
+      lastSyncedBlockId: contents[contents.length - 1].id,
+    });
+    return { title, size: contents.length };
   }
 
   return (

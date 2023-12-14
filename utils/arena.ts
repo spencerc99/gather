@@ -1,4 +1,4 @@
-import { Block } from "./dataTypes";
+import { Block, LastSyncedInfo } from "./dataTypes";
 import * as FileSystem from "expo-file-system";
 import { BlockType, MimeType } from "./mimeTypes";
 
@@ -175,10 +175,14 @@ export function transformChannelUrlToApiUrl(url: string): string {
 
 export async function getChannelContents(
   channelId: string,
-  { accessToken, lastId }: { accessToken?: string | null; lastId?: string }
+  {
+    accessToken,
+    lastSyncedInfo,
+  }: { accessToken?: string | null; lastSyncedInfo?: LastSyncedInfo | null }
 ): Promise<RawArenaItem[]> {
+  console.log("Lastsynced info", lastSyncedInfo);
   let fetchedItems: RawArenaItem[] = [];
-  let lastIdFound = lastId ? false : true;
+  let newItemsFound = lastSyncedInfo ? false : true;
   const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
   try {
     let nextUrl: string | undefined = baseUrl;
@@ -195,15 +199,27 @@ export async function getChannelContents(
         // NOTE: class = block only if are.na has failed to process it
         (c) => c.base_class === "Block" && c.class !== "Block"
       );
-      if (lastId && contents.some((c) => c.id === lastId)) {
+
+      if (
+        lastSyncedInfo &&
+        contents.some(
+          (c) =>
+            new Date(c.connected_at).getTime() >
+            new Date(lastSyncedInfo.lastSyncedBlockCreatedAt).getTime()
+        )
+      ) {
         // turn contents into everything AFTER lastID
         contents = contents.slice(
-          contents.findIndex((c) => c.id === lastId) + 1
+          contents.findIndex(
+            (c) =>
+              new Date(c.connected_at).getTime() >
+              new Date(lastSyncedInfo.lastSyncedBlockCreatedAt).getTime()
+          )
         );
-        lastIdFound = true;
+        newItemsFound = true;
       }
       // Update storage with any new items
-      if (lastIdFound) {
+      if (newItemsFound) {
         fetchedItems.push(...contents);
       }
       nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
@@ -394,6 +410,34 @@ export async function addBlockToChannel({
   }
 
   return response;
+}
+
+export async function removeBlockFromChannel({
+  blockId,
+  channelId,
+  arenaToken,
+}: {
+  blockId: string;
+  channelId: string;
+  arenaToken: string;
+}): Promise<void> {
+  const url = `${ArenaChannelsApi}/${channelId}/blocks/${blockId}`;
+  console.log("deleting block from channel", channelId, blockId);
+  const resp = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${arenaToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+  const response: RawArenaItem = await resp.json();
+  if (!resp.ok) {
+    console.error(
+      `failed to remove block from arena channel ${resp.status}`,
+      resp
+    );
+    throw new Error(JSON.stringify(response));
+  }
 }
 
 async function getUserInfo(accessToken: string): Promise<RawArenaUser> {

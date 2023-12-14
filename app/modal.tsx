@@ -63,6 +63,7 @@ function CreateCollectionModal() {
       </StyledButton>
       <H3>or Import</H3>
       {!arenaAccessToken ? (
+        // TODO: this is jank, the select collections modal is still open after this
         <StyledText color="$gray9">
           <Link
             href="/internal"

@@ -5,9 +5,11 @@ import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import { BlockSummary } from "./BlockSummary";
 import {
+  ArenaLogo,
   AspectRatioImage,
   StyledButton,
   StyledParagraph,
+  StyledText,
   StyledView,
 } from "./Themed";
 import { ExternalLink } from "./ExternalLink";
@@ -97,13 +99,15 @@ export function CollectionDetailView({
                     <StyledParagraph link>{remoteSourceType}</StyledParagraph>
                   </ExternalLink>
                 </StyledParagraph>
+                {/* TODO: add a dev button to reset channel to start */}
                 {__DEV__ && (
                   <StyledButton
                     onPress={onClickSyncNewItems}
                     disabled={isLoading}
                     icon={isLoading ? <Spinner size="small" /> : null}
                   >
-                    Sync new items from {remoteSourceType}
+                    {`Sync new items from ${remoteSourceType}`}
+                    <ArenaLogo style={{ marginLeft: -4 }} />
                   </StyledButton>
                 )}
               </>
