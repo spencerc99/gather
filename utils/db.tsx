@@ -46,7 +46,9 @@ import {
 } from "./dataTypes";
 import {
   getLastSyncedInfoForChannel,
+  getLastSyncedRemoteInfo,
   updateLastSyncedInfoForChannel,
+  updateLastSyncedRemoteInfo,
 } from "./asyncStorage";
 
 function openDatabase() {
@@ -944,7 +946,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   async function syncWithArena() {
     try {
       await trySyncPendingArenaBlocks();
-      await trySyncNewArenaBlocks();
+      const { lastSyncedAt } = await getLastSyncedRemoteInfo();
+      // if passed 6 hours, sync again
+      if (
+        !lastSyncedAt ||
+        new Date().getTime() >
+          new Date(lastSyncedAt).getTime() + 1000 * 60 * 60 * 6
+      ) {
+        await trySyncNewArenaBlocks();
+        await updateLastSyncedRemoteInfo();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -1104,6 +1115,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         const channelInfo = await getChannelInfo(channelId, arenaAccessToken);
         // TODO: this could get a little out of sync if we allow editing the title on our end and arena doesn't update properly
         // so it needs to take into account the updatedAt timestamp to be fully safe.
+        console.log(channelInfo);
         if (channelInfo.title !== collection.title) {
           console.log(
             `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`

@@ -22,3 +22,22 @@ export async function updateLastSyncedInfoForChannel(
 ): Promise<void> {
   await AsyncStorage.setItem(channelId, JSON.stringify(lastSyncedInfo));
 }
+
+const LastSyncedAtKey = "lastSyncedAt";
+interface LastSyncedRemoteInfo {
+  lastSyncedAt: string | null;
+}
+export async function getLastSyncedRemoteInfo(): Promise<LastSyncedRemoteInfo> {
+  const info = await AsyncStorage.getItem(LastSyncedAtKey);
+  return info === null
+    ? { lastSyncedAt: null }
+    : (JSON.parse(info) as LastSyncedRemoteInfo);
+}
+export async function updateLastSyncedRemoteInfo(): Promise<void> {
+  await AsyncStorage.setItem(
+    LastSyncedAtKey,
+    JSON.stringify({
+      lastSyncedAt: new Date().toISOString(),
+    })
+  );
+}
