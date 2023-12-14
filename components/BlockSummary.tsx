@@ -139,11 +139,14 @@ export function BlockSummary({
           {renderedBlockContent}
         </HoldItem>
       )}
-      {!hideMetadata && (
-        <StyledText metadata ellipse={true}>
-          {title ? `${title}` : `${getRelativeDate(createdAt)}`}
-        </StyledText>
-      )}
+      {!hideMetadata &&
+        (title ? (
+          <StyledText metadata ellipse={true}>
+            {title}
+          </StyledText>
+        ) : (
+          <BlockMetadata block={block} />
+        ))}
     </YStack>
   );
 }

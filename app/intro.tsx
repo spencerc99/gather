@@ -107,7 +107,7 @@ export default function IntroScreen() {
       case 0:
         // create your ID
         return (
-          // TODO: add animated.view to slide in
+          // TODO: add animated.view to slide in?
           <>
             <H2>Welcome to Gather</H2>
             <StyledText marginBottom="$1">

@@ -56,11 +56,11 @@ export function UncategorizedView() {
                 blocks.type,
                 blocks.source,
                 blocks.created_timestamp,
-                COUNT(connections.collection_id) AS collection_count
+                COUNT(connections.collection_id) AS num_connections
         FROM blocks
         LEFT JOIN connections ON connections.block_id = blocks.id
         GROUP BY 1,2,3,4,5,6) AS c
-        WHERE c.collection_count = 0
+        WHERE c.num_connections = 0
         ORDER BY c.created_timestamp DESC;`,
           // TODO: add this after migrating table
           // WHERE user_id = ?
@@ -159,11 +159,11 @@ export function UncategorizedView() {
           right={0}
           zIndex={5}
           icon={<Icon name="trash" size={16} />}
+          // TODO: this broke with the latest tamagui upgrade
           circular
           theme="red"
           size={16}
           onPress={() => {
-            console.log("delete");
             handleDeleteBlock(item.id);
           }}
         />
@@ -245,10 +245,13 @@ export function UncategorizedView() {
       paddingHorizontal="$4"
       space="$3"
     >
+      <StyledText position="absolute" top="$1" textAlign="center" width="100%">
+        {blocks.length} total blocks
+      </StyledText>
       {/* TODO: fix this, not sure why it isn't cycling */}
       {/* {<CyclingRecentBlocks />} */}
       <StyledText textAlign="center" fontSize="$7">
-        No uncategorized items! Text yourself some more and come back later :)
+        No uncategorized items!
       </StyledText>
     </YStack>
   ) : (

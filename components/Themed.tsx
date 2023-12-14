@@ -78,6 +78,7 @@ export const StyledView = styled(View, {
 const PressableButton = styled(DefaultButton, {
   theme: "blue",
   backgroundColor: "$background",
+  color: "$color",
   // taken from https://github.com/tamagui/tamagui/issues/1156
   variants: {
     disabled: {
