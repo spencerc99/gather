@@ -100,8 +100,8 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
         }}
         friction={2}
         renderRightActions={() => (
-          <YStack alignItems="center" justifyContent="center" padding="$2">
-            <StyledButton circular>
+          <YStack alignItems="center" padding="$2">
+            <StyledButton circular size="$3">
               <Icon name="link" />
             </StyledButton>
           </YStack>

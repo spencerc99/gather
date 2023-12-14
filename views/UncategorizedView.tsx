@@ -159,11 +159,8 @@ export function UncategorizedView() {
           right={6}
           zIndex={5}
           icon={<Icon name="trash" size={20} />}
-          // TODO: this broke with the latest tamagui upgrade, combination of size and circular
           height="$2"
           paddingHorizontal="$2"
-          // size={16}
-          // circular
           theme="red"
           onPress={() => {
             handleDeleteBlock(item.id);
