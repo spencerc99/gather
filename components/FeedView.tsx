@@ -13,29 +13,19 @@ export function FeedView() {
 
   function renderBlock(block: Block) {
     return (
-      <Link
-        href={{
-          pathname: "/block/[id]/",
-          params: { id: block.id },
-        }}
-        key={block.id}
-        asChild
-      >
-        <Pressable>
-          <YStack alignItems="center" justifyContent="center" width="100%">
-            <BlockSummary
-              block={block}
-              blockStyle={{
-                // maxWidth: 150,
-                maxHeight: 150,
-              }}
-              style={{
-                maxHeight: 180,
-              }}
-            />
-          </YStack>
-        </Pressable>
-      </Link>
+      <YStack alignItems="center" justifyContent="center" width="100%">
+        <BlockSummary
+          block={block}
+          blockStyle={{
+            // maxWidth: 150,
+            maxHeight: 150,
+          }}
+          style={{
+            maxHeight: 180,
+          }}
+          shouldLink
+        />
+      </YStack>
     );
   }
 

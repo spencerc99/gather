@@ -117,25 +117,14 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
           swipeable.close();
         }}
       >
-        {/* TODO: add Select hold menu item to multiselect */}
-        <Link
-          href={{
-            pathname: "/block/[id]/",
-            params: { id: block.id },
+        <BlockTextSummary
+          block={block}
+          style={{ maxHeight: 320 }}
+          blockStyle={{
+            maxHeight: 320,
           }}
-          key={block.id}
-          asChild
-        >
-          <Pressable>
-            <BlockTextSummary
-              block={block}
-              style={{ maxHeight: 320 }}
-              blockStyle={{
-                maxHeight: 320,
-              }}
-            />
-          </Pressable>
-        </Link>
+          shouldLink
+        />
       </Swipeable>
     );
   }

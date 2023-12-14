@@ -2,20 +2,25 @@ import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import * as WebBrowser from "expo-web-browser";
 import { BlockType } from "../utils/mimeTypes";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Icon, IconComponent, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
 import { TextProps, XStack, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
 import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
 
-function useBlockMenuItems(block: Block): { blockMenuItems: MenuItemProps[] } {
+function useBlockMenuItems(
+  block: Block,
+  { onClickEdit }: { onClickEdit?: () => void } = {}
+): {
+  blockMenuItems: MenuItemProps[];
+} {
   const { deleteBlock } = useContext(DatabaseContext);
   const router = useRouter();
   const { id, source, content, type } = block;
@@ -67,14 +72,14 @@ function useBlockMenuItems(block: Block): { blockMenuItems: MenuItemProps[] } {
               },
             },
           ]),
-      // TODO: finish this
-      // set isEditing and pass that and a commitEdit function out of here for the consumer to handle
-      ...(__DEV__
+      ...(type === BlockType.Text && onClickEdit
         ? [
             {
               text: "Edit",
               icon: () => <Icon name="edit" />,
-              onPress: () => {},
+              onPress: () => {
+                onClickEdit();
+              },
             },
           ]
         : []),
@@ -106,22 +111,44 @@ export function BlockSummary({
   block,
   hideMetadata,
   hideHoldMenu,
+  shouldLink,
   style,
   blockStyle,
 }: {
   block: Block;
   hideMetadata?: boolean;
   hideHoldMenu?: boolean;
+  shouldLink?: boolean;
   style?: object;
   blockStyle?: object;
 }) {
   const { id, title, createdAt } = block;
-  const { blockMenuItems } = useBlockMenuItems(block);
+  const { updateBlock } = useContext(DatabaseContext);
+  const [isEditing, setIsEditing] = useState(false);
+
+  async function commitEdit(newContent: string | null) {
+    try {
+      if (newContent !== null) {
+        await updateBlock(id, { content: newContent });
+      }
+    } catch (err) {
+      console.error(err);
+      // TODO: toast with error;
+    } finally {
+      setIsEditing(false);
+    }
+  }
+
+  const { blockMenuItems } = useBlockMenuItems(block, {
+    onClickEdit: () => setIsEditing(true),
+  });
 
   const theme = useTheme();
   const renderedBlockContent = (
     <BlockContent
       {...block}
+      isEditing={isEditing}
+      commitEdit={commitEdit}
       containerStyle={style}
       mediaStyle={{
         aspectRatio: 1,
@@ -130,7 +157,7 @@ export function BlockSummary({
     />
   );
 
-  return (
+  const renderedSummary = (
     <YStack space="$1" alignItems="center" key={id}>
       {hideHoldMenu ? (
         renderedBlockContent
@@ -148,6 +175,21 @@ export function BlockSummary({
           <BlockMetadata block={block} />
         ))}
     </YStack>
+  );
+
+  return shouldLink && !isEditing ? (
+    <Link
+      href={{
+        pathname: "/block/[id]/",
+        params: { id: block.id },
+      }}
+      key={block.id}
+      asChild
+    >
+      <Pressable>{renderedSummary}</Pressable>
+    </Link>
+  ) : (
+    renderedSummary
   );
 }
 
@@ -170,23 +212,45 @@ export function BlockSummary({
 export function BlockTextSummary({
   block,
   hideMetadata,
+  shouldLink,
   style,
   blockStyle,
 }: {
   block: Block;
+  shouldLink?: boolean;
   hideMetadata?: boolean;
   style?: object;
   blockStyle?: object;
 }) {
   const { id, type, source, title } = block;
   const theme = useTheme();
-  const { blockMenuItems } = useBlockMenuItems(block);
+  const { updateBlock } = useContext(DatabaseContext);
+  const [isEditing, setIsEditing] = useState(false);
+
+  async function commitEdit(newContent: string | null) {
+    try {
+      if (newContent !== null) {
+        await updateBlock(id, { content: newContent });
+      }
+    } catch (err) {
+      console.error(err);
+      // TODO: toast with error;
+    } finally {
+      setIsEditing(false);
+    }
+  }
+
+  const { blockMenuItems } = useBlockMenuItems(block, {
+    onClickEdit: () => setIsEditing(true),
+  });
 
   function renderContent() {
     const content = (
       <BlockContent
         key={id}
         {...block}
+        isEditing={isEditing}
+        commitEdit={commitEdit}
         containerStyle={style}
         mediaStyle={{
           width: 250,
@@ -226,7 +290,7 @@ export function BlockTextSummary({
     }
   }
 
-  return (
+  const renderedSummary = (
     <YStack space="$1">
       <HoldItem items={blockMenuItems} closeOnTap>
         <StyledView backgroundColor="$gray6" borderRadius="$4">
@@ -237,6 +301,20 @@ export function BlockTextSummary({
         <BlockMetadata block={block} textProps={{ textAlign: "right" }} />
       )}
     </YStack>
+  );
+  return shouldLink && !isEditing ? (
+    <Link
+      href={{
+        pathname: "/block/[id]/",
+        params: { id: block.id },
+      }}
+      key={block.id}
+      asChild
+    >
+      <Pressable>{renderedSummary}</Pressable>
+    </Link>
+  ) : (
+    renderedSummary
   );
 }
 

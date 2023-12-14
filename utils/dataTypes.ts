@@ -70,6 +70,8 @@ export interface DatabaseBlockInsert {
   createdBy: string; // DID of the person who made it?
 }
 
+export type BlockEditInfo = Partial<DatabaseBlockInsert>;
+
 export interface BlockInsertInfo extends DatabaseBlockInsert {
   collectionsToConnect?: string[]; // IDs of collections that this block is in
 }

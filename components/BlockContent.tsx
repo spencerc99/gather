@@ -2,6 +2,7 @@ import {
   Paragraph,
   ParagraphProps,
   ScrollView,
+  XStack,
   YStack,
   YStackProps,
   useTheme,
@@ -10,17 +11,23 @@ import { StyleSheet } from "react-native";
 import { Block } from "../utils/dataTypes";
 import { BlockType } from "../utils/mimeTypes";
 import { MediaView } from "./MediaView";
+import { Icon, StyledButton, StyledTextArea } from "./Themed";
+import { useState } from "react";
 
 export function BlockContent({
   type,
   content,
   title,
   description,
+  isEditing,
+  commitEdit,
   containerStyle,
   mediaStyle: style,
   textContainerProps = {},
   textProps = {},
 }: Pick<Block, "type" | "content" | "title" | "description"> & {
+  isEditing?: boolean;
+  commitEdit?: (newContent: string | null) => Promise<void>;
   containerStyle?: object;
   mediaStyle?: object;
   textContainerProps?: YStackProps;
@@ -29,12 +36,22 @@ export function BlockContent({
   const theme = useTheme();
   let renderedContent;
   let containerProps = {};
+  const [editableContent, setEditableContent] = useState(content);
 
   switch (type) {
     case BlockType.Text:
       renderedContent = (
         <ScrollView flexShrink={1} flexGrow={0} maxHeight={"auto"}>
-          <Paragraph {...textProps}>{content}</Paragraph>
+          {!isEditing ? (
+            <Paragraph {...textProps}>{content}</Paragraph>
+          ) : (
+            <StyledTextArea
+              value={editableContent}
+              onChangeText={setEditableContent}
+              minHeight={undefined}
+              flex={1}
+            />
+          )}
         </ScrollView>
       );
       containerProps = {
@@ -70,6 +87,29 @@ export function BlockContent({
   return (
     <YStack style={(styles.block, containerStyle)} {...containerProps}>
       {renderedContent}
+      {isEditing && (
+        <XStack space="$2" justifyContent="flex-end">
+          <StyledButton
+            onPress={() => {
+              commitEdit?.(null);
+            }}
+            theme="red"
+            // size={}
+            height="$2"
+            icon={<Icon name="close" />}
+          />
+          <StyledButton
+            onPress={() => {
+              commitEdit?.(editableContent);
+            }}
+            theme="green"
+            // size={}
+            height="$2"
+            icon={<Icon name="check" />}
+            disabled={editableContent === content || editableContent === ""}
+          />
+        </XStack>
+      )}
     </YStack>
   );
 }

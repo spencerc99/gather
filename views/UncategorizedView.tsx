@@ -155,14 +155,16 @@ export function UncategorizedView() {
       <>
         <StyledButton
           position="absolute"
-          top={0}
-          right={0}
+          top={6}
+          right={6}
           zIndex={5}
-          icon={<Icon name="trash" size={16} />}
-          // TODO: this broke with the latest tamagui upgrade
-          circular
+          icon={<Icon name="trash" size={20} />}
+          // TODO: this broke with the latest tamagui upgrade, combination of size and circular
+          height="$2"
+          paddingHorizontal="$2"
+          // size={16}
+          // circular
           theme="red"
-          size={16}
           onPress={() => {
             handleDeleteBlock(item.id);
           }}

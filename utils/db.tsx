@@ -13,6 +13,7 @@ import {
 import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {
+  BlockEditInfo,
   Collection,
   CollectionInsertInfo,
   Connection,
@@ -100,6 +101,7 @@ interface DatabaseContextProps {
   createBlock: (block: BlockInsertInfo) => Promise<string>;
   createBlocks: (blocks: BlocksInsertInfo) => Promise<string[]>;
   getBlock: (blockId: string) => Promise<Block>;
+  updateBlock: (blockId: string, editInfo: BlockEditInfo) => Promise<void>;
   deleteBlock: (id: string) => void;
 
   getConnectionsForBlock: (blockId: string) => Promise<Connection[]>;
@@ -147,6 +149,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   getBlock: async () => {
     throw new Error("not yet loaded");
   },
+  updateBlock: async () => {},
   deleteBlock: () => {},
 
   getConnectionsForBlock: async () => [],
@@ -179,6 +182,10 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   trySyncPendingArenaBlocks: () => {},
   getPendingArenaBlocks: () => {},
 });
+
+function camelCaseToSnakeCase(str: string) {
+  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
 
 export function mapSnakeCaseToCamelCaseProperties<
   T extends { [column: string]: any }
@@ -683,6 +690,52 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return maybeBlock;
   }
 
+  async function updateBlock(
+    blockId: string,
+    editInfo: BlockEditInfo
+  ): Promise<void> {
+    if (Object.keys(editInfo).length === 0) {
+      return;
+    }
+
+    const entriesToEdit = Object.entries(editInfo);
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `
+            UPDATE blocks SET 
+            ${entriesToEdit
+              .map(([key]) => `${camelCaseToSnakeCase(key)} = ?`)
+              .join(", ")},
+              updated_timestamp = CURRENT_TIMESTAMP
+            WHERE id = ?
+            RETURNING *;`,
+          args: [
+            ...entriesToEdit.map(([key, value]) => {
+              if (key === "remoteSourceInfo") {
+                return JSON.stringify(value);
+              }
+              return value;
+            }),
+            blockId,
+          ],
+        },
+      ],
+      false
+    );
+
+    // TODO: have handleSqlERrors properly handle the type here
+    if ("error" in result) {
+      throw result.error;
+    }
+
+    setBlocks(
+      blocks.map((b) =>
+        b.id !== blockId ? b : { ...b, ...mapDbBlockToBlock(result.rows[0]) }
+      )
+    );
+  }
+
   async function getCollectionItems(collectionId: string): Promise<Block[]> {
     const [result] = await db.execAsync(
       [
@@ -1098,6 +1151,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           return blocks.filter((b) => b.remoteSourceType === null);
         }, [blocks]),
         getBlock,
+        updateBlock,
         deleteBlock,
         setShareIntent,
         shareIntent,
