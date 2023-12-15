@@ -23,7 +23,7 @@ import {
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import { Keyboard } from "react-native";
+import { Keyboard, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
 
@@ -344,9 +344,15 @@ export function ArenaLogo({
   size?: number;
   style?: object;
 }) {
+  const colorScheme = useColorScheme();
+
   return (
     <Image
-      source={require("../assets/images/arena.png")}
+      source={
+        colorScheme === "dark"
+          ? require("../assets/images/arena-inverted.png")
+          : require("../assets/images/arena.png")
+      }
       width={size}
       height={size}
       style={{
