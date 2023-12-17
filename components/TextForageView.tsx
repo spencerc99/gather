@@ -30,6 +30,11 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
   const { createBlock: addBlock } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
+  const insets = useSafeAreaInsets();
+
+  if (!currentUser) {
+    return null;
+  }
 
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
@@ -161,8 +166,6 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       },
     ]);
   }
-
-  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView

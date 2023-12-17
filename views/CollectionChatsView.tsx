@@ -48,7 +48,7 @@ export function CollectionChatsView() {
             onPress={async () => {
               const newCollectionId = await createCollection({
                 title: searchValue,
-                createdBy: currentUser.id,
+                createdBy: currentUser!.id,
               });
               setSearchValue("");
               router.push({

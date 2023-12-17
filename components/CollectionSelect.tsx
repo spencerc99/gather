@@ -57,6 +57,11 @@ export function CollectionSelect({
       ]),
     [sortedCollections, debouncedSearch]
   );
+
+  if (!user) {
+    return;
+  }
+
   return (
     <Select
       onValueChange={setSelectedCollection}
@@ -75,7 +80,6 @@ export function CollectionSelect({
       </Select.Trigger>
 
       <Adapt when="sm" platform="touch">
-        {/* TODO: this should really come from the top.. but tamagui doesnt support this */}
         <Sheet
           modal
           animationConfig={{
@@ -146,7 +150,7 @@ export function CollectionSelect({
                 <CreateCollectionButton />
               )}
             </XStack>
-            {/* TODO: add some thing about last message */}
+            {/* TODO: add some preview about last message */}
             <Select.Group>
               {collectionPlaceholder.includes(searchValue) && (
                 <Select.Item

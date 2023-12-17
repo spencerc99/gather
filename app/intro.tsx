@@ -115,7 +115,6 @@ export default function IntroScreen() {
               wonderings.
             </StyledText>
             <YStack alignItems="center" marginBottom="$3">
-              {/* TODO: allow you to zoom in */}
               <Carousel
                 loop
                 autoPlay

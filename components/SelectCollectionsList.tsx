@@ -87,6 +87,9 @@ export function SelectCollectionsList({
   }
 
   async function onClickCreateCollection() {
+    if (!currentUser) {
+      return;
+    }
     /* TODO: after creation, pop toast that it was created, clear search and push to top of collections list? */
     const newCollectionId = await createCollection({
       title: searchValue,

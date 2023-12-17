@@ -53,7 +53,7 @@ function CreateCollectionModal() {
       /> */}
       <StyledButton
         onPress={async () => {
-          await createCollection({ title, description, createdBy: user.id });
+          await createCollection({ title, description, createdBy: user!.id });
           router.replace("..");
         }}
         disabled={!title}

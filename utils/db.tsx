@@ -869,7 +869,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         sql: `INSERT INTO connections (block_id, collection_id, created_by)
               VALUES (?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-        args: [blockId, collectionId, currentUser.id],
+        args: [blockId, collectionId, currentUser!.id],
       })),
       false
     );
@@ -1089,7 +1089,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       type: arenaClassToBlockType(block),
       contentType: arenaClassToMimeType(block),
       source: block.source?.url,
-      createdBy: currentUser.id,
+      createdBy: currentUser!.id,
       remoteSourceType: RemoteSourceType.Arena,
       remoteSourceInfo: {
         arenaId: block.id,
@@ -1171,7 +1171,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         sql: `INSERT INTO connections (block_id, collection_id, created_by)
               VALUES (?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-        args: [blockId, collectionId, currentUser.id],
+        args: [blockId, collectionId, currentUser!.id],
       })),
       false
     );
@@ -1200,7 +1200,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           sql: `INSERT INTO connections (block_id, collection_id, created_by)
               VALUES (?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-          args: [blockId, collectionId, currentUser.id],
+          args: [blockId, collectionId, currentUser!.id],
         })),
         {
           sql: inParam(
@@ -1280,7 +1280,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (!collectionId) {
       collectionId = await createCollection({
         title,
-        createdBy: currentUser.id,
+        createdBy: currentUser!.id,
         remoteSourceType: RemoteSourceType.Arena,
         remoteSourceInfo: {
           arenaId: channelId,
