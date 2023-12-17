@@ -45,18 +45,19 @@ function CreateCollectionModal() {
         value={title}
         onChangeText={(text) => setTitle(text)}
       />
-      <StyledTextArea
+      {/* <StyledTextArea
         placeholder="a channel for remembering"
         value={description}
+        minHeight={100}
         onChangeText={(text) => setDescription(text)}
-      />
+      /> */}
       <StyledButton
         onPress={async () => {
           await createCollection({ title, description, createdBy: user.id });
           router.replace("..");
         }}
         disabled={!title}
-        style={{ marginLeft: "auto" }}
+        // style={{ marginLeft: "auto" }}
         size="$4"
       >
         Create

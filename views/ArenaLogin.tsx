@@ -217,9 +217,7 @@ export function SelectArenaChannel({
           dismissOnSnapToBottom
         >
           <Sheet.Frame {...frameProps}>
-            <Sheet.ScrollView>
-              <Adapt.Contents />
-            </Sheet.ScrollView>
+            <Adapt.Contents />
           </Sheet.Frame>
           <Sheet.Overlay
             animation="lazy"

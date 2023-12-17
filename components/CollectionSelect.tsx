@@ -87,10 +87,9 @@ export function CollectionSelect({
           dismissOnSnapToBottom
           snapPoints={[92]}
         >
+          <Sheet.Handle />
           <Sheet.Frame>
-            <Sheet.ScrollView>
-              <Adapt.Contents />
-            </Sheet.ScrollView>
+            <Adapt.Contents />
           </Sheet.Frame>
           <Sheet.Overlay
             animation="lazy"
@@ -102,7 +101,7 @@ export function CollectionSelect({
 
       <Select.Content>
         <Select.Viewport minWidth={200}>
-          <YStack margin="$2" marginBottom="$1">
+          <YStack margin="$2" marginTop="$3">
             <InputWithIcon
               icon="search"
               placeholder="Search..."
@@ -117,7 +116,7 @@ export function CollectionSelect({
               paddingBottom: 24,
             }}
           >
-            <XStack margin="$2" marginTop="$1">
+            <XStack margin="$2" marginTop="$1" justifyContent="center">
               {searchValue ? (
                 <StyledButton
                   onPress={async () => {
@@ -139,7 +138,7 @@ export function CollectionSelect({
                   >
                     New collection{" "}
                     <SizableText style={{ fontWeight: 700 }}>
-                      {searchValue}
+                      "{searchValue}"
                     </SizableText>
                   </SizableText>
                 </StyledButton>
