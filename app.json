@@ -3,7 +3,7 @@
     "name": "Gather",
     "slug": "gather",
     "privacy": "unlisted",
-    "version": "1.1.29",
+    "version": "1.1.30",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "net.tiny-inter.gather",
