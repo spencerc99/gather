@@ -3,6 +3,7 @@ import {
   SafeAreaView,
   ScrollView,
   Platform,
+  Keyboard,
 } from "react-native";
 import { StyledButton, StyledTextArea, Icon } from "./Themed";
 import { View, XStack, YStack, Theme } from "tamagui";
@@ -273,6 +274,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                 setTextValue(text);
               }}
               value={textValue}
+              enablesReturnKeyAutomatically
             />
             <StyledButton
               size="$4"

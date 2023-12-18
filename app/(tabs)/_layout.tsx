@@ -29,8 +29,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          tabBarLabel: "Home",
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          tabBarLabel: "Chats",
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="comments" color={color} />
+          ),
           headerLeft: () => leftHeaderIcons,
           headerRight: () => headerIcons,
         }}
