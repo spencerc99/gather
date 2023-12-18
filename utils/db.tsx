@@ -558,6 +558,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               if (!remoteSourceInfo) {
                 continue;
               }
+              // TODO: this doens't work if you are offline...
               await removeBlockFromChannel({
                 blockId: arenaBlockId,
                 channelId: remoteSourceInfo.arenaId,
@@ -734,7 +735,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       (block) => block.id.toString() === blockId.toString()
     );
     if (!maybeBlock) {
-      console.error(`Block ${blockId} not found!`);
+      throw Error(`Block ${blockId} not found!`);
     }
     return maybeBlock;
   }

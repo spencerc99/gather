@@ -492,12 +492,16 @@ export async function removeBlockFromChannel({
       "Content-Type": "application/json",
     },
   });
-  const response: RawArenaItem = await resp.json();
+  const response = await resp.text();
   if (!resp.ok) {
     console.error(
       `failed to remove block from arena channel ${resp.status}`,
-      resp
+      JSON.stringify(response)
     );
+    // TODO: this handles case if block is already deleted, change after migration
+    if (resp.status === 401) {
+      return;
+    }
     throw new Error(JSON.stringify(response));
   }
 }
