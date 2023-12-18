@@ -17,7 +17,6 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const leftHeaderIcons = <LeftHeaderIcons />;
   const headerIcons = <MainHeaderIcons />;
 
   return (
@@ -33,7 +32,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <TabBarIcon name="comments" color={color} />
           ),
-          headerLeft: () => leftHeaderIcons,
           headerRight: () => headerIcons,
         }}
       />
@@ -49,40 +47,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-  );
-}
-
-export function LeftHeaderIcons() {
-  const theme = useTheme();
-
-  // TODO: add back when actually implementing the search
-  return null;
-
-  function launchSearchDialog() {}
-
-  return (
-    <XStack
-      space="$4"
-      paddingLeft="$3"
-      alignItems="center"
-      height="100%"
-      marginBottom="$2"
-    >
-      <Pressable
-        onPress={() => {
-          launchSearchDialog();
-        }}
-      >
-        {({ pressed }) => (
-          <FontAwesome
-            name="search"
-            size={22}
-            color={theme.color.get()}
-            style={{ opacity: pressed ? 0.5 : 1 }}
-          />
-        )}
-      </Pressable>
-    </XStack>
   );
 }
 

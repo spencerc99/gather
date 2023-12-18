@@ -19,13 +19,20 @@ import { BlockTexts } from "./BlockTexts";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { BlockType } from "../utils/mimeTypes";
+import { FeedView } from "./FeedView";
 
 interface PickedMedia {
   uri: string;
   type: BlockType;
 }
 
-export function TextForageView({ collectionId }: { collectionId?: string }) {
+export function TextForageView({
+  collectionId,
+  isSearching,
+}: {
+  collectionId?: string;
+  isSearching?: boolean;
+}) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
   const { createBlock: addBlock } = useContext(DatabaseContext);
@@ -88,7 +95,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               type === BlockType.Image ? "jpg" : "mp4"
             );
             return addBlock({
-              createdBy: currentUser.id,
+              createdBy: currentUser!.id,
               content: fileUri,
               // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
               type,
@@ -104,7 +111,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           const { title, description, images, url, domain, favicon } =
             await extractDataFromUrl(savedTextValue);
           await addBlock({
-            createdBy: currentUser.id,
+            createdBy: currentUser!.id,
             // TODO: try to capture a picture of the url always
             content: images?.[0] || favicon || url,
             title,
@@ -115,7 +122,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           });
         } else {
           await addBlock({
-            createdBy: currentUser.id,
+            createdBy: currentUser!.id,
             content: savedTextValue,
             type: BlockType.Text,
             collectionsToConnect: collectionId ? [collectionId] : [],
@@ -168,7 +175,10 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     ]);
   }
 
-  return (
+  return isSearching ? (
+    // TODO: integrate the search directly into the chat box
+    <FeedView />
+  ) : (
     <SafeAreaView
       style={{
         flex: 1,

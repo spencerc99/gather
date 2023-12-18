@@ -2,11 +2,19 @@ import { useContext, useMemo, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import { SearchBarInput } from "./Themed";
-import { FlatList, Pressable, StyleSheet } from "react-native";
+import { FlatList, StyleSheet } from "react-native";
 import { BlockSummary } from "./BlockSummary";
-import { Link } from "expo-router";
 import { YStack, useDebounceValue } from "tamagui";
 import { filterItemsBySearchValue } from "../utils/search";
+import Animated, {
+  Easing,
+  SlideInDown,
+  SlideInLeft,
+  SlideInUp,
+  SlideOutDown,
+  SlideOutLeft,
+  SlideOutUp,
+} from "react-native-reanimated";
 
 export function FeedView() {
   const { blocks } = useContext(DatabaseContext);
@@ -52,7 +60,10 @@ export function FeedView() {
 
   // TODO: use tabs to render blocks + collections
   return (
-    <>
+    <Animated.View
+      entering={SlideInLeft.duration(500).easing(Easing.ease)}
+      exiting={SlideOutLeft.duration(750).easing(Easing.ease)}
+    >
       <YStack space="$4" paddingHorizontal="$2" flexGrow={1}>
         <SearchBarInput
           searchValue={searchValue}
@@ -68,7 +79,7 @@ export function FeedView() {
           {outputBlocks.map(renderBlock)}
         </StyledView> */}
       </YStack>
-    </>
+    </Animated.View>
   );
 }
 

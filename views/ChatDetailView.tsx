@@ -1,12 +1,14 @@
 import { Tabs, Stack, useFocusEffect } from "expo-router";
-import { YStack } from "tamagui";
+import { YStack, XStack, useTheme } from "tamagui";
 import { MainHeaderIcons } from "../app/(tabs)/_layout";
 import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { TextForageView } from "../components/TextForageView";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
-import { Keyboard } from "react-native";
+import { Keyboard, Pressable, useColorScheme } from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
+import Colors from "../constants/Styles";
 
 export function ChatDetailView({
   initialCollectionId,
@@ -17,7 +19,9 @@ export function ChatDetailView({
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     initialCollectionId
   );
-  // const router = useRouter();
+  const [isSearching, setIsSearching] = useState(false);
+  const theme = useTheme();
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     if (
@@ -32,6 +36,35 @@ export function ChatDetailView({
     <>
       <Tabs.Screen
         options={{
+          headerLeft: () => (
+            <XStack
+              space="$4"
+              paddingLeft="$3"
+              alignItems="center"
+              height="100%"
+              marginBottom="$2"
+            >
+              <Pressable
+                onPress={() => {
+                  setIsSearching(!isSearching);
+                }}
+              >
+                {({ pressed }) => (
+                  <FontAwesome
+                    name="search"
+                    size={22}
+                    color={
+                      isSearching
+                        ? Colors[colorScheme ?? "light"].tint
+                        : theme.color.get()
+                    }
+                    style={{ opacity: pressed ? 0.5 : 1 }}
+                    active={isSearching}
+                  />
+                )}
+              </Pressable>
+            </XStack>
+          ),
           headerRight: () => <MainHeaderIcons />,
           headerTitle: () => (
             <YStack paddingBottom="$3">
@@ -73,7 +106,10 @@ export function ChatDetailView({
             }}
           />
         )}
-        <TextForageView collectionId={selectedCollection || undefined} />
+        <TextForageView
+          collectionId={selectedCollection || undefined}
+          isSearching={isSearching}
+        />
       </YStack>
     </>
   );
