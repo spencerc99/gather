@@ -39,13 +39,13 @@ export function CollectionGearHeaderLink({
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();
   const [collection, setCollection] = useState<Collection | null>(null);
-  const { getCollection } = useContext(DatabaseContext);
+  const { getCollection, collections } = useContext(DatabaseContext);
 
   useEffect(() => {
     getCollection(id.toString()).then((collection) =>
       setCollection(collection)
     );
-  }, [id]);
+  }, [id, collections]);
 
   if (!collection) {
     return <Spinner size="large" color="$orange4" />;

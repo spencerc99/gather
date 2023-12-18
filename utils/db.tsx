@@ -720,7 +720,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       (collection) => collection.id.toString() === collectionId.toString()
     );
     if (!maybeCollection) {
-      throw new Error(
+      console.error(
         `Collection ${collectionId} not found! Only have ${collections.map(
           (c) => c.id
         )}`
@@ -734,7 +734,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       (block) => block.id.toString() === blockId.toString()
     );
     if (!maybeBlock) {
-      throw new Error(`Block ${blockId} not found!`);
+      console.error(`Block ${blockId} not found!`);
     }
     return maybeBlock;
   }
@@ -1116,7 +1116,21 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     switch (remoteSourceType) {
       case RemoteSourceType.Arena:
         const { arenaId: channelId } = remoteSourceInfo;
-        const lastSyncedInfo = await getLastSyncedInfoForChannel(channelId);
+        let lastSyncedInfo = await getLastSyncedInfoForChannel(channelId);
+        if (!lastSyncedInfo) {
+          const lastRemoteItem = await getLastRemoteItemForCollection(
+            collectionId
+          );
+          if (lastRemoteItem?.remoteSourceInfo) {
+            lastSyncedInfo = {
+              lastSyncedBlockCreatedAt:
+                lastRemoteItem.remoteSourceInfo.connectedAt,
+              lastSyncedBlockId: lastRemoteItem.remoteSourceInfo.arenaId,
+              // TODO: this is wrong but i dont want to deal with types rn
+              lastSyncedAt: new Date().toISOString(),
+            };
+          }
+        }
 
         // TODO: a little ineficient bc this always fetches the 1st page of contents
         const channelInfo = await getChannelInfo(channelId, arenaAccessToken);

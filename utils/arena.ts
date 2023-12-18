@@ -144,6 +144,7 @@ export function nextUrlFromResponse(
   params: Record<string, any>,
   response: any
 ): string | undefined {
+  // TODO: this is not standardized across are.na responses..
   const { page, length, per } = response;
   if (page * per < length) {
     return apiUrl(baseUrl, path, { ...params, page: page + 1 });
@@ -180,10 +181,16 @@ export async function getChannelContents(
     lastSyncedInfo,
   }: { accessToken?: string | null; lastSyncedInfo?: LastSyncedInfo | null }
 ): Promise<RawArenaItem[]> {
-  console.log("Lastsynced info", lastSyncedInfo);
+  console.log(
+    "Fetching items for channel",
+    channelId,
+    ". Looking for items after ",
+    lastSyncedInfo?.lastSyncedBlockCreatedAt
+  );
   let fetchedItems: RawArenaItem[] = [];
   let newItemsFound = lastSyncedInfo ? false : true;
-  const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
+  const baseUrl = `${ArenaChannelsApi}/${channelId}`;
+  let numItemsFetched = 0;
   try {
     let nextUrl: string | undefined = baseUrl;
     while (nextUrl) {
@@ -199,6 +206,7 @@ export async function getChannelContents(
         // NOTE: class = block only if are.na has failed to process it
         (c) => c.base_class === "Block" && c.class !== "Block"
       );
+      numItemsFetched += contents.length;
 
       if (
         lastSyncedInfo &&
@@ -208,7 +216,6 @@ export async function getChannelContents(
             new Date(lastSyncedInfo.lastSyncedBlockCreatedAt).getTime()
         )
       ) {
-        // turn contents into everything AFTER lastID
         contents = contents.slice(
           contents.findIndex(
             (c) =>
@@ -228,6 +235,9 @@ export async function getChannelContents(
     console.error(e);
     throw e;
   }
+  console.log(
+    `Fetched ${numItemsFetched} items. Returned ${fetchedItems.length} items.`
+  );
   return fetchedItems;
 }
 

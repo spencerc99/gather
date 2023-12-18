@@ -62,8 +62,12 @@ export function CollectionDetailView({
       <ScrollView>
         <YStack padding="10%">
           {/* <XStack space="$3" flex={1}> */}
-          <YStack flex={1} space="$1">
+          <YStack flex={1} gap="$1">
             {/* TODO: change all these to labels and make them editable with a save */}
+            <StyledParagraph title marginBottom="$2">
+              {title}
+            </StyledParagraph>
+            {__DEV__ && <StyledParagraph metadata>ID: {id}</StyledParagraph>}
             {description && (
               <StyledParagraph color="$gray9">{description}</StyledParagraph>
             )}
@@ -75,24 +79,24 @@ export function CollectionDetailView({
               </StyledParagraph> */}
             </StyledParagraph>
             <StyledParagraph metadata>
-              Created at: {createdAt.toLocaleDateString()}
+              Created at: {createdAt.toLocaleString()}
             </StyledParagraph>
             <StyledParagraph metadata>
-              Updated at: {updatedAt.toLocaleDateString()}
+              Updated at: {updatedAt.toLocaleString()}
             </StyledParagraph>
             {lastConnectedAt && (
               <StyledParagraph metadata>
-                Last connected at: {lastConnectedAt.toLocaleDateString()}
+                Last connected at: {lastConnectedAt.toLocaleString()}
               </StyledParagraph>
             )}
-            <StyledParagraph metadata>
+            {/* <StyledParagraph metadata>
               Collaborators: {collaborators}
-            </StyledParagraph>
+            </StyledParagraph> */}
             {/* TODO: update to handle multiple sources */}
             {remoteSourceType && (
               <>
                 <StyledParagraph metadata>
-                  Syncing to{" "}
+                  Syncing to/from{" "}
                   <ExternalLink
                     href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
                   >
@@ -100,16 +104,15 @@ export function CollectionDetailView({
                   </ExternalLink>
                 </StyledParagraph>
                 {/* TODO: add a dev button to reset channel to start */}
-                {__DEV__ && (
-                  <StyledButton
-                    onPress={onClickSyncNewItems}
-                    disabled={isLoading}
-                    icon={isLoading ? <Spinner size="small" /> : null}
-                  >
-                    {`Sync new items from ${remoteSourceType}`}
-                    <ArenaLogo style={{ marginLeft: -4 }} />
-                  </StyledButton>
-                )}
+                <StyledButton
+                  onPress={onClickSyncNewItems}
+                  disabled={isLoading}
+                  icon={isLoading ? <Spinner size="small" /> : null}
+                  marginTop="$2"
+                >
+                  {`Sync new items from ${remoteSourceType}`}
+                  <ArenaLogo style={{ marginLeft: -4 }} />
+                </StyledButton>
               </>
             )}
           </YStack>

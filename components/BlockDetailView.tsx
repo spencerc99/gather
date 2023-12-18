@@ -49,6 +49,7 @@ export function BlockDetailView({ block }: { block: Block }) {
         block={block}
         style={{ width: "100%", height: "auto", aspectRatio: "1/1" }}
       />
+      {__DEV__ && <StyledParagraph metadata>ID: {id}</StyledParagraph>}
       {/* TODO: don't show hold item actions and render them inline instead */}
       {/* TODO: change all these to labels and make them editable with a save */}
       {description && <StyledParagraph metadata>{description}</StyledParagraph>}
