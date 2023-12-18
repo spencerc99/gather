@@ -175,6 +175,7 @@ interface DatabaseContextProps {
   fetchBlocks: () => void;
   fetchCollections: () => void;
   trySyncPendingArenaBlocks: () => void;
+  trySyncNewArenaBlocks: () => void;
   getPendingArenaBlocks: () => any;
 }
 
@@ -224,6 +225,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   fetchBlocks: () => {},
   fetchCollections: () => {},
   trySyncPendingArenaBlocks: () => {},
+  trySyncNewArenaBlocks: () => {},
   getPendingArenaBlocks: () => {},
 });
 
@@ -954,7 +956,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           new Date(lastSyncedAt).getTime() + 1000 * 60 * 60 * 6
       ) {
         await trySyncNewArenaBlocks();
-        await updateLastSyncedRemoteInfo();
       }
     } catch (err) {
       console.error(err);
@@ -971,8 +972,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ...mapDbCollectionToCollection(collection),
     }));
 
-    for (const collectionToSync of collectionsToSync) {
-      await syncNewRemoteItemsForCollection(collectionToSync);
+    try {
+      for (const collectionToSync of collectionsToSync) {
+        await syncNewRemoteItemsForCollection(collectionToSync);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      await updateLastSyncedRemoteInfo();
     }
   }
 
@@ -1115,7 +1122,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         const channelInfo = await getChannelInfo(channelId, arenaAccessToken);
         // TODO: this could get a little out of sync if we allow editing the title on our end and arena doesn't update properly
         // so it needs to take into account the updatedAt timestamp to be fully safe.
-        console.log(channelInfo);
+        console.log("Title:", channelInfo.title);
         if (channelInfo.title !== collection.title) {
           console.log(
             `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`
@@ -1335,6 +1342,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         fetchCollections,
         trySyncPendingArenaBlocks,
         getPendingArenaBlocks,
+        trySyncNewArenaBlocks,
       }}
     >
       {children}

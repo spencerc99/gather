@@ -44,8 +44,20 @@ export function CollectionSummary({
     >
       {/* TODO: this doesnt work with long overflowing titles im gonna kms */}
       <YStack flexGrow={1}>
-        <XStack justifyContent="space-between" flex={1}>
-          <StyledParagraph title>{title}</StyledParagraph>
+        <XStack>
+          <StyledParagraph
+            title
+            flexGrow={1}
+            {...(Boolean(remoteSourceType)
+              ? {
+                  paddingRight: "$3",
+                }
+              : {})}
+            // TODO: this doesnt work idk why
+            wordWrap="break-word"
+          >
+            {title}
+          </StyledParagraph>
           <RemoteSourceLabel remoteSourceType={remoteSourceType} />
         </XStack>
         <StyledView style={styles.metaContainer}>

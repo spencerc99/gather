@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "expo-router";
 import { DatabaseContext } from "../utils/db";
-import { Block } from "../utils/dataTypes";
+import { Block, Collection } from "../utils/dataTypes";
 import { Image, Spinner, XStack, YStack, useTheme } from "tamagui";
 import { Icon, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";
@@ -57,8 +57,14 @@ export const InspoBlocks = [
 ];
 
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
-  const { localBlocks: allBlocks, getCollectionItems } =
-    useContext(DatabaseContext);
+  const {
+    localBlocks: allBlocks,
+    getCollectionItems,
+    collections,
+  } = useContext(DatabaseContext);
+  const [collection, setCollection] = useState<undefined | Collection>(
+    undefined
+  );
 
   const width = Dimensions.get("window").width;
   const [blocks, setBlocks] = useState<Block[] | null>(null);
@@ -67,6 +73,9 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   useEffect(() => {
     void fetchBlocks();
   }, [collectionId, allBlocks]);
+  useEffect(() => {
+    setCollection(collections.find((c) => c.id === collectionId));
+  }, [collectionId]);
 
   async function fetchBlocks() {
     if (!collectionId) {
@@ -90,6 +99,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     [blocks]
   );
   const router = useRouter();
+  const isRemoteCollection = collection?.remoteSourceType !== undefined;
 
   function renderBlock(block: Block) {
     return (
@@ -124,6 +134,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
             maxHeight: 320,
           }}
           shouldLink
+          isRemoteCollection={isRemoteCollection}
         />
       </Swipeable>
     );

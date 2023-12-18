@@ -215,12 +215,14 @@ export function BlockTextSummary({
   shouldLink,
   style,
   blockStyle,
+  isRemoteCollection,
 }: {
   block: Block;
   shouldLink?: boolean;
   hideMetadata?: boolean;
   style?: object;
   blockStyle?: object;
+  isRemoteCollection?: boolean;
 }) {
   const { id, type, source, title } = block;
   const theme = useTheme();
@@ -298,7 +300,11 @@ export function BlockTextSummary({
         </StyledView>
       </HoldItem>
       {!hideMetadata && (
-        <BlockMetadata block={block} textProps={{ textAlign: "right" }} />
+        <BlockMetadata
+          block={block}
+          textProps={{ textAlign: "right" }}
+          isRemoteCollection={isRemoteCollection}
+        />
       )}
     </YStack>
   );
@@ -321,11 +327,13 @@ export function BlockTextSummary({
 export function BlockMetadata({
   block,
   textProps,
+  isRemoteCollection,
 }: {
   block: Block;
   textProps?: TextProps;
+  isRemoteCollection?: boolean;
 }) {
-  const { type, createdAt, source, numConnections } = block;
+  const { type, createdAt, source, numConnections, remoteSourceInfo } = block;
 
   let metadata;
   switch (type) {
@@ -337,7 +345,11 @@ export function BlockMetadata({
     //   );
     //   break;
     default:
-      const relativeDate = getRelativeDate(createdAt);
+      const relativeDate = getRelativeDate(
+        isRemoteCollection && remoteSourceInfo?.connectedAt
+          ? new Date(remoteSourceInfo?.connectedAt)
+          : createdAt
+      );
       metadata = (
         <>
           {relativeDate}

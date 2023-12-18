@@ -22,7 +22,17 @@ export function ConnectionSummary({ connection }: { connection: Connection }) {
       backgroundColor={theme.background.get()}
     >
       <XStack>
-        <StyledParagraph title flexGrow={1}>
+        <StyledParagraph
+          title
+          {...(Boolean(remoteSourceType)
+            ? {
+                paddingRight: "$2",
+              }
+            : {})}
+          // TODO: this doesnt work idk why
+          wordWrap="break-word"
+          flexGrow={1}
+        >
           {collectionTitle}
         </StyledParagraph>
         <RemoteSourceLabel remoteSourceType={remoteSourceType} />

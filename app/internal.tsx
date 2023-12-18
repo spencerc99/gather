@@ -37,6 +37,7 @@ export default function ModalScreen() {
     fetchBlocks,
     fetchCollections,
     trySyncPendingArenaBlocks,
+    trySyncNewArenaBlocks,
     getPendingArenaBlocks,
     arenaAccessToken,
   } = useContext(DatabaseContext);
@@ -91,6 +92,9 @@ export default function ModalScreen() {
         <StyledParagraph>
           Sync to Arena ({pendingArenaBlocks.length} pending)
         </StyledParagraph>
+      </StyledButton>
+      <StyledButton disabled={isLoading} onPress={trySyncNewArenaBlocks}>
+        <StyledParagraph>Sync from Arena</StyledParagraph>
       </StyledButton>
       <StyledButton disabled={isLoading} onPress={fetchCollections}>
         Refresh Collections

@@ -235,7 +235,7 @@ export async function getChannelInfo(
   channelId: string,
   accessToken?: string | null
 ): Promise<Omit<ArenaChannelInfo, "contents">> {
-  const baseUrl = `${ArenaChannelsApi}/${channelId}`;
+  const baseUrl = `${ArenaChannelsApi}/${channelId}/thumb`;
   let channelInfo = {};
   try {
     const resp = await fetch(baseUrl, {
