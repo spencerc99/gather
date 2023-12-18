@@ -256,9 +256,9 @@ export function UncategorizedView() {
   ) : (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "position" : "height"}
+      // behavior={Platform.OS === "ios" ? "position" : "height"}
       // TODO: try switching back to padding when fixing the keyboard-dynamic height thing below
-      // behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       contentContainerStyle={{
         flex: 1,
       }}

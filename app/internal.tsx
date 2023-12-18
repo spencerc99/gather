@@ -80,7 +80,6 @@ export default function ModalScreen() {
       )}
       <H3>Are.na Settings</H3>
       <ArenaLogin path="internal" />
-      <Label>Target Are.na channel</Label>
       <ImportArenaChannelSelect {...{ isLoading, setIsLoading }} />
       <H3>Internal Developer Tools</H3>
       <StyledText>
