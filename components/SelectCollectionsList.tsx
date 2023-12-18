@@ -12,8 +12,8 @@ import {
 } from "tamagui";
 import {
   Icon,
-  InputWithIcon,
   LinkButton,
+  SearchBarInput,
   StyledButton,
   StyledParagraph,
 } from "./Themed";
@@ -238,13 +238,12 @@ export function SelectCollectionsList({
   return (
     // horizontal ? "column-reverse" :
     <Stack flexDirection={"column"} height="auto">
-      <InputWithIcon
-        icon="search"
+      <SearchBarInput
+        backgroundColor="$gray4"
+        searchValue={searchValue}
+        setSearchValue={setSearchValue}
         placeholder="Search a collection..."
         width="100%"
-        backgroundColor="$gray4"
-        value={searchValue}
-        onChangeText={(text) => setSearchValue(text)}
       />
       <ScrollView
         contentContainerStyle={

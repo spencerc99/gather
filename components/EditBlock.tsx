@@ -49,6 +49,7 @@ export function EditBlock({ block }: { block: Block }) {
               maxLength={120}
               onChangeText={(text) => setTitleValue(text)}
               value={titleValue}
+              returnKeyType="done"
             />
             <StyledTextArea
               placeholder="description"

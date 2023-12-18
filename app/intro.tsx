@@ -161,6 +161,7 @@ export default function IntroScreen() {
               value={email}
               onChangeText={(text) => setEmail(text)}
               inputMode="email"
+              returnKeyType="done"
             ></StyledInput>
             <StyledText metadata>
               This information will not be sent anywhere and is only used to

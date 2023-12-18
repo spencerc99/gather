@@ -4,7 +4,7 @@ import { ArenaChannelInfo, getUserChannels } from "../../utils/arena";
 import { RemoteSourceType } from "../../utils/dataTypes";
 import { DatabaseContext } from "../../utils/db";
 import { filterItemsBySearchValue } from "../../utils/search";
-import { InputWithIcon, StyledButton } from "../Themed";
+import { SearchBarInput, StyledButton } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
 
 export function ArenaChannelMultiSelect({
@@ -62,12 +62,10 @@ export function ArenaChannelMultiSelect({
         <Sheet.Handle />
         <Sheet.Frame padding="$1" space="$2">
           <YStack margin="$2">
-            <InputWithIcon
-              icon="search"
-              placeholder="Search..."
+            <SearchBarInput
               backgroundColor="$gray4"
-              value={searchValue}
-              onChangeText={(text) => setSearchValue(text)}
+              searchValue={searchValue}
+              setSearchValue={setSearchValue}
             />
           </YStack>
           <ScrollView

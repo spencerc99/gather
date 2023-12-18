@@ -9,7 +9,7 @@ import { Image } from "react-native";
 import {
   ArenaLogo,
   Icon,
-  InputWithIcon,
+  SearchBarInput,
   StyledButton,
   StyledInput,
   StyledLabel,
@@ -238,15 +238,13 @@ export function SelectArenaChannel({
           minWidth={200}
         >
           <YStack margin="$2">
-            <InputWithIcon
-              icon="search"
-              placeholder="Search..."
+            <SearchBarInput
               backgroundColor="$gray4"
-              value={searchValue}
-              onChangeText={(text) => setSearchValue(text)}
+              searchValue={searchValue}
+              setSearchValue={setSearchValue}
             />
           </YStack>
-          <ScrollView
+          <Sheet.ScrollView
             contentContainerStyle={{
               // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
               paddingBottom: 24,
@@ -287,7 +285,7 @@ export function SelectArenaChannel({
                 );
               })}
             </Select.Group>
-          </ScrollView>
+          </Sheet.ScrollView>
         </Select.Viewport>
 
         <Select.ScrollDownButton
@@ -310,6 +308,7 @@ export function SelectArenaChannel({
         onChangeText={(text) => setArenaChannel(text)}
         placeholder="https://are.na/spencer-chang/basket-sjuhif_oeqk"
         autogrow
+        returnKeyType="done"
       />
       {arenaChannel && !ArenaChannelRegex.test(arenaChannel) && (
         <StyledLabel color="$red9" paddingBottom="$1">

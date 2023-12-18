@@ -44,6 +44,7 @@ function CreateCollectionModal() {
         placeholder="I want to remember this"
         value={title}
         onChangeText={(text) => setTitle(text)}
+        returnKeyType="done"
       />
       {/* <StyledTextArea
         placeholder="a channel for remembering"

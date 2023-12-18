@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from "react";
 import { DatabaseContext } from "../utils/db";
-import { InputWithIcon, StyledButton, StyledView } from "../components/Themed";
+import { SearchBarInput, StyledButton, StyledView } from "../components/Themed";
 import { ScrollView, SizableText, XStack, YStack } from "tamagui";
 import { CollectionSummary } from "../components/CollectionSummary";
 import { Link, useRouter } from "expo-router";
@@ -29,12 +29,10 @@ export function CollectionChatsView() {
   return (
     <YStack width="100%" height="100%">
       <YStack margin="$2">
-        <InputWithIcon
-          icon="search"
-          placeholder="Search..."
+        <SearchBarInput
           backgroundColor="$gray4"
-          value={searchValue}
-          onChangeText={(text) => setSearchValue(text)}
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
         />
       </YStack>
       <ScrollView

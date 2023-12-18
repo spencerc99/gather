@@ -17,6 +17,7 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const leftHeaderIcons = <LeftHeaderIcons />;
   const headerIcons = <MainHeaderIcons />;
 
   return (
@@ -30,6 +31,7 @@ export default function TabLayout() {
         options={{
           tabBarLabel: "Home",
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          headerLeft: () => leftHeaderIcons,
           headerRight: () => headerIcons,
         }}
       />
@@ -44,15 +46,38 @@ export default function TabLayout() {
           headerRight: () => headerIcons,
         }}
       />
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: "Discover",
-          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
-          headerRight: () => headerIcons,
-        }}
-      />
     </Tabs>
+  );
+}
+
+export function LeftHeaderIcons() {
+  const theme = useTheme();
+
+  function launchSearchDialog() {}
+
+  return (
+    <XStack
+      space="$4"
+      paddingLeft="$3"
+      alignItems="center"
+      height="100%"
+      marginBottom="$2"
+    >
+      <Pressable
+        onPress={() => {
+          launchSearchDialog();
+        }}
+      >
+        {({ pressed }) => (
+          <FontAwesome
+            name="search"
+            size={22}
+            color={theme.color.get()}
+            style={{ opacity: pressed ? 0.5 : 1 }}
+          />
+        )}
+      </Pressable>
+    </XStack>
   );
 }
 
@@ -60,7 +85,13 @@ export function MainHeaderIcons() {
   const theme = useTheme();
 
   return (
-    <XStack space="$4" paddingRight="$2">
+    <XStack
+      space="$4"
+      paddingRight="$3"
+      alignItems="center"
+      height="100%"
+      marginBottom="$2"
+    >
       <Link href="/internal" asChild>
         <Pressable>
           {({ pressed }) => (

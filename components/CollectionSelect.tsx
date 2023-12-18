@@ -12,7 +12,7 @@ import {
   // setupNativeSheet,
 } from "tamagui";
 import { DatabaseContext } from "../utils/db";
-import { Icon, InputWithIcon, StyledButton } from "./Themed";
+import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
 import { CreateCollectionButton } from "./CreateCollectionButton";
 import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
@@ -106,15 +106,13 @@ export function CollectionSelect({
       <Select.Content>
         <Select.Viewport minWidth={200}>
           <YStack margin="$2" marginTop="$3">
-            <InputWithIcon
-              icon="search"
-              placeholder="Search..."
+            <SearchBarInput
               backgroundColor="$gray4"
-              value={searchValue}
-              onChangeText={(text) => setSearchValue(text)}
+              searchValue={searchValue}
+              setSearchValue={setSearchValue}
             />
           </YStack>
-          <ScrollView
+          <Sheet.ScrollView
             contentContainerStyle={{
               // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
               paddingBottom: 24,
@@ -162,7 +160,9 @@ export function CollectionSelect({
                     selectedCollection === null ? "$green4" : undefined
                   }
                 >
-                  <Select.ItemText>{collectionPlaceholder}</Select.ItemText>
+                  <Select.ItemText>
+                    <StyledText bold>{collectionPlaceholder}</StyledText>
+                  </Select.ItemText>
                 </Select.Item>
               )}
               {filteredCollections.map((collection, idx) => (
@@ -189,7 +189,7 @@ export function CollectionSelect({
                 </Select.Item>
               ))}
             </Select.Group>
-          </ScrollView>
+          </Sheet.ScrollView>
         </Select.Viewport>
 
         <Select.ScrollDownButton
