@@ -151,6 +151,22 @@ export function nextUrlFromResponse(
   }
 }
 
+export function nextUrlFromArenaContentsResponse(
+  baseUrl: string,
+  path: string,
+  params: Record<string, any>,
+  response: any,
+  perPage: number = 20
+): string | undefined {
+  const { contents } = response;
+  if (contents.length === perPage) {
+    return apiUrl(baseUrl, path, {
+      ...params,
+      page: Number(params.page) || 1 + 1,
+    });
+  }
+}
+
 const ArenaApiUrl = "https://api.are.na/v2";
 const ArenaChannelsApi = "https://api.are.na/v2/channels";
 export const ArenaChannelRegex =
@@ -189,6 +205,8 @@ export async function getChannelContents(
   );
   let fetchedItems: RawArenaItem[] = [];
   let newItemsFound = lastSyncedInfo ? false : true;
+  // TODO: fix as with below
+  // const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
   const baseUrl = `${ArenaChannelsApi}/${channelId}`;
   let numItemsFetched = 0;
   try {
@@ -229,6 +247,18 @@ export async function getChannelContents(
       if (newItemsFound) {
         fetchedItems.push(...contents);
       }
+      // TODO: this is not working, debug and fix to reduce data fetched
+      // const urlParams = Object.fromEntries(
+      //   new URLSearchParams(nextUrl.split("?")[1])
+      // );
+      // console.log(urlParams);
+      // nextUrl = nextUrlFromArenaContentsResponse(
+      //   baseUrl,
+      //   "",
+      //   urlParams,
+      //   respBody
+      // );
+      // console.log(nextUrl);
       nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
     }
   } catch (e) {
