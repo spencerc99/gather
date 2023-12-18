@@ -55,6 +55,9 @@ export default function TabLayout() {
 export function LeftHeaderIcons() {
   const theme = useTheme();
 
+  // TODO: add back when actually implementing the search
+  return null;
+
   function launchSearchDialog() {}
 
   return (

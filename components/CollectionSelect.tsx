@@ -76,7 +76,14 @@ export function CollectionSelect({
           onTriggerSelect?.();
         }}
       >
-        <Select.Value placeholder={collectionPlaceholder} />
+        <Select.Value placeholder={collectionPlaceholder} />{" "}
+        <Icon
+          name="chevron-down"
+          size={12}
+          position="absolute"
+          right={7}
+          top="68%"
+        />
       </Select.Trigger>
 
       <Adapt when="sm" platform="touch">
