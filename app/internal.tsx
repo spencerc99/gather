@@ -88,12 +88,32 @@ export default function ModalScreen() {
         any issues, please contact Spencer first, and he might direct you to
         these buttons if there are issues :)
       </StyledText>
-      <StyledButton disabled={isLoading} onPress={trySyncPendingArenaBlocks}>
+      <StyledButton
+        disabled={isLoading}
+        onPress={async () => {
+          setIsLoading(true);
+          try {
+            await trySyncPendingArenaBlocks();
+          } finally {
+            setIsLoading(false);
+          }
+        }}
+      >
         <StyledParagraph>
           Sync to Arena ({pendingArenaBlocks.length} pending)
         </StyledParagraph>
       </StyledButton>
-      <StyledButton disabled={isLoading} onPress={trySyncNewArenaBlocks}>
+      <StyledButton
+        disabled={isLoading}
+        onPress={async () => {
+          setIsLoading(true);
+          try {
+            await trySyncNewArenaBlocks();
+          } finally {
+            setIsLoading(false);
+          }
+        }}
+      >
         <StyledParagraph>Sync from Arena</StyledParagraph>
       </StyledButton>
       <StyledButton disabled={isLoading} onPress={fetchCollections}>

@@ -36,38 +36,42 @@ export function ChatDetailView({
     <>
       <Tabs.Screen
         options={{
-          headerLeft: () => (
-            <XStack
-              space="$4"
-              paddingLeft="$3"
-              alignItems="center"
-              height="100%"
-              marginBottom="$2"
-            >
-              <Pressable
-                onPress={() => {
-                  setIsSearching(!isSearching);
-                }}
-              >
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="search"
-                    size={22}
-                    color={
-                      isSearching
-                        ? Colors[colorScheme ?? "light"].tint
-                        : theme.color.get()
-                    }
-                    style={{ opacity: pressed ? 0.5 : 1 }}
-                    active={isSearching}
-                  />
-                )}
-              </Pressable>
-            </XStack>
-          ),
+          // TODO: this is too jank, bring back when actually working
+          // headerLeft: () => (
+          //   <XStack
+          //     space="$4"
+          //     paddingLeft="$3"
+          //     alignItems="center"
+          //     height="100%"
+          //     marginBottom="$2"
+          //   >
+          //     <Pressable
+          //       onPress={() => {
+          //         setIsSearching(!isSearching);
+          //       }}
+          //     >
+          //       {({ pressed }) => (
+          //         <FontAwesome
+          //           name="search"
+          //           size={22}
+          //           color={
+          //             isSearching
+          //               ? Colors[colorScheme ?? "light"].tint
+          //               : theme.color.get()
+          //           }
+          //           style={{ opacity: pressed ? 0.5 : 1 }}
+          //           active={isSearching}
+          //         />
+          //       )}
+          //     </Pressable>
+          //   </XStack>
+          // ),
           headerRight: () => <MainHeaderIcons />,
+          headerTitleContainerStyle: {
+            maxWidth: "70%",
+          },
           headerTitle: () => (
-            <YStack paddingBottom="$3">
+            <YStack paddingBottom="$3" marginHorizontal="auto">
               <CollectionSelect
                 onTriggerSelect={() => {
                   Keyboard.dismiss();
