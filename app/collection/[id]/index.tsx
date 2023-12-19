@@ -56,14 +56,14 @@ export default function CollectionDetailScreen() {
       <Stack.Screen
         options={{
           title: "",
-          headerRight: (props) => {
-            return (
-              <CollectionGearHeaderLink
-                id={collection.id}
-                tintColor={props.tintColor}
-              />
-            );
-          },
+          // headerRight: (props) => {
+          //   return (
+          //     <CollectionGearHeaderLink
+          //       id={collection.id}
+          //       tintColor={props.tintColor}
+          //     />
+          //   );
+          // },
         }}
       />
       <CollectionDetailView collection={collection} />

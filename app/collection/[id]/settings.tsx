@@ -10,7 +10,6 @@ export default function CollectionSettingsScreen() {
   const [collection, setCollection] = useState<Collection | null>(null);
   const { getCollection, deleteCollection, fullDeleteCollection } =
     useContext(DatabaseContext);
-  const router = useRouter();
 
   useEffect(() => {
     getCollection(id.toString()).then((collection) =>
@@ -23,28 +22,6 @@ export default function CollectionSettingsScreen() {
   }
 
   const { title, description, remoteSourceType } = collection;
-  //   TODO: add confirmation dialog https://tamagui.dev/docs/components/alert-dialog/1.0.0
-  function onPressDelete() {
-    deleteCollection(id.toString());
-    alert("Collection deleted!");
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      // TODO: fix this not properly redirecting back
-      router.replace("/(tabs)/home");
-    }
-  }
-
-  function onPressFullDelete() {
-    fullDeleteCollection(id.toString());
-    alert("Collection and blocks only in this collection deleted!");
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      // TODO: fix this not properly redirecting back
-      router.replace("/(tabs)/home");
-    }
-  }
 
   return (
     <ScrollView padding="10%">
@@ -52,19 +29,6 @@ export default function CollectionSettingsScreen() {
         {/* TODO: make these editable */}
         <StyledText title>{title}</StyledText>
         <StyledText color="$gray9">{description}</StyledText>
-
-        {/* TODO: if its an arena synced channel just "unlink it" */}
-        {/* TODO: what happens to blocks here? */}
-        <StyledButton theme="red" onPress={() => onPressDelete()}>
-          Delete
-        </StyledButton>
-        {remoteSourceType && (
-          <>
-            <StyledButton theme="red" onPress={() => onPressFullDelete()}>
-              Delete Collection and Contained Blocks
-            </StyledButton>
-          </>
-        )}
       </YStack>
     </ScrollView>
   );

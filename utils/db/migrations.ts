@@ -1,7 +1,7 @@
 export const Migrations = [
   // Added 2023-12-18
-  //   "ALTER TABLE blocks DROP COLUMN arena_id;",
   `ALTER TABLE blocks ADD COLUMN arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'));`,
+  //   TODO: add a remote_created_at for connections
 ];
 
 export const Indices = [

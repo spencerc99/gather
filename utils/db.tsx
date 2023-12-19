@@ -632,8 +632,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         DELETE FROM connections WHERE collection_id = ?;`,
         [id]
       );
-      setCollections(collections.filter((collection) => collection.id !== id));
     });
+    setCollections(collections.filter((collection) => collection.id !== id));
   };
 
   const fullDeleteCollection = async (id: string) => {
@@ -863,6 +863,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                         COUNT(collection_id) as num_connections
               FROM      connections
               GROUP BY  1
+              ${havingClause ? `\n${havingClause}` : ""}
             )
             SELECT      blocks.*,
                         COALESCE(block_connections.num_connections, 0) as num_connections
@@ -870,7 +871,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             INNER JOIN  connections ON blocks.id = connections.block_id
             LEFT JOIN   block_connections ON blocks.id = block_connections.block_id
             WHERE       connections.collection_id = ?${
-              havingClause ? `\n${havingClause}` : ""
+              whereClause ? ` AND ${whereClause}` : ""
             };`,
           args: [collectionId],
         },
@@ -1423,6 +1424,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         addConnections,
         replaceConnections,
         deleteCollection,
+        fullDeleteCollection,
         getCollectionItems,
         syncNewRemoteItems,
         arenaAccessToken,

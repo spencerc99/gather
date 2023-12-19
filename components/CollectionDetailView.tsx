@@ -2,18 +2,9 @@ import { YStack, Spinner, XStack, ScrollView } from "tamagui";
 import { Collection } from "../utils/dataTypes";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
-import { Block } from "../utils/dataTypes";
-import { BlockSummary } from "./BlockSummary";
-import {
-  ArenaLogo,
-  AspectRatioImage,
-  StyledButton,
-  StyledParagraph,
-  StyledText,
-  StyledView,
-} from "./Themed";
+import { ArenaLogo, StyledButton, StyledParagraph } from "./Themed";
 import { ExternalLink } from "./ExternalLink";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 
 export function CollectionDetailView({
   collection,
@@ -34,19 +25,48 @@ export function CollectionDetailView({
     remoteSourceType,
     thumbnail,
   } = collection;
-  const { getCollectionItems, syncNewRemoteItems } =
+  const { syncNewRemoteItems, deleteCollection, fullDeleteCollection } =
     useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState(false);
-  // const [blocks, setBlocks] = useState<Block[] | null>(null);
-
-  // useEffect(() => {
-  //   getCollectionItems(id).then((blocks) => setBlocks(blocks));
-  // }, [id]);
+  const router = useRouter();
 
   async function onClickSyncNewItems() {
     setIsLoading(true);
     try {
       await syncNewRemoteItems(id);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  //   TODO: add confirmation dialog https://tamagui.dev/docs/components/alert-dialog/1.0.0
+  function onPressDelete() {
+    setIsLoading(true);
+    try {
+      deleteCollection(id.toString());
+      alert("Collection deleted!");
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        // TODO: fix this not properly redirecting back
+        router.replace("/(tabs)/home");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function onPressFullDelete() {
+    setIsLoading(true);
+    try {
+      fullDeleteCollection(id.toString());
+      alert("Collection and blocks only in this collection deleted!");
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        // TODO: fix this not properly redirecting back
+        router.replace("/(tabs)/home");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -123,6 +143,18 @@ export function CollectionDetailView({
                   {`Sync new items from ${remoteSourceType}`}
                   <ArenaLogo style={{ marginLeft: -4 }} />
                 </StyledButton> */}
+              </>
+            )}
+            {/* TODO: if its an arena synced channel just "unlink it" */}
+            {/* TODO: what happens to blocks here? */}
+            <StyledButton theme="red" onPress={() => onPressDelete()}>
+              Delete
+            </StyledButton>
+            {remoteSourceType && (
+              <>
+                <StyledButton theme="red" onPress={() => onPressFullDelete()}>
+                  Delete Collection and Contained Blocks
+                </StyledButton>
               </>
             )}
           </YStack>
