@@ -8,7 +8,8 @@ import { DatabaseContext } from "../../../utils/db";
 export default function CollectionSettingsScreen() {
   const { id } = useLocalSearchParams();
   const [collection, setCollection] = useState<Collection | null>(null);
-  const { getCollection, deleteCollection } = useContext(DatabaseContext);
+  const { getCollection, deleteCollection, fullDeleteCollection } =
+    useContext(DatabaseContext);
   const router = useRouter();
 
   useEffect(() => {
@@ -21,11 +22,22 @@ export default function CollectionSettingsScreen() {
     return <Spinner size="large" color="$orange4" />;
   }
 
-  const { title, description } = collection;
+  const { title, description, remoteSourceType } = collection;
   //   TODO: add confirmation dialog https://tamagui.dev/docs/components/alert-dialog/1.0.0
   function onPressDelete() {
     deleteCollection(id.toString());
     alert("Collection deleted!");
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      // TODO: fix this not properly redirecting back
+      router.replace("/(tabs)/home");
+    }
+  }
+
+  function onPressFullDelete() {
+    fullDeleteCollection(id.toString());
+    alert("Collection and blocks only in this collection deleted!");
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -46,6 +58,13 @@ export default function CollectionSettingsScreen() {
         <StyledButton theme="red" onPress={() => onPressDelete()}>
           Delete
         </StyledButton>
+        {remoteSourceType && (
+          <>
+            <StyledButton theme="red" onPress={() => onPressFullDelete()}>
+              Delete Collection and Contained Blocks
+            </StyledButton>
+          </>
+        )}
       </YStack>
     </ScrollView>
   );

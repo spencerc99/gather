@@ -113,6 +113,16 @@ export function CollectionDetailView({
                   {`Sync new items from ${remoteSourceType}`}
                   <ArenaLogo style={{ marginLeft: -4 }} />
                 </StyledButton>
+                {/* TODO: add a button to "reset" channel from remote, which deletes items that it doesn't find */}
+                {/* <StyledButton
+                  onPress={onClickSyncNewItems}
+                  disabled={isLoading}
+                  icon={isLoading ? <Spinner size="small" /> : null}
+                  marginTop="$2"
+                >
+                  {`Sync new items from ${remoteSourceType}`}
+                  <ArenaLogo style={{ marginLeft: -4 }} />
+                </StyledButton> */}
               </>
             )}
           </YStack>

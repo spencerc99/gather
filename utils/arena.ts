@@ -454,23 +454,43 @@ export async function addBlockToChannel({
   block: Block;
   arenaToken: string;
 }): Promise<RawArenaItem> {
-  const url = `${ArenaChannelsApi}/${channelId}/blocks`;
-  const body = await getBodyForBlock(block);
-  console.log("adding block to channel", channelId, body, arenaToken, url);
-  const resp = await fetch(url, {
-    method: "POST",
-    body: JSON.stringify(body),
-    headers: {
-      Authorization: `Bearer ${arenaToken}`,
-      "Content-Type": "application/json",
-    },
-  });
-  const response: RawArenaItem = await resp.json();
+  let resp: Response;
+  let response: RawArenaItem;
+  if (block.remoteSourceInfo?.arenaId) {
+    // already exists in are.na just use a put
+    const url = `${ArenaChannelsApi}/${channelId}/blocks/${block.remoteSourceInfo.arenaId}/selection`;
+    console.log(
+      `adding existing arena block ${block.remoteSourceInfo.arenaId} to channel`,
+      channelId
+    );
+    resp = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${arenaToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+    response = await resp.json();
+  } else {
+    const url = `${ArenaChannelsApi}/${channelId}/blocks`;
+    const body = await getBodyForBlock(block);
+    console.log("adding block to channel", channelId, body, arenaToken, url);
+    resp = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        Authorization: `Bearer ${arenaToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+    response = await resp.json();
+  }
   if (!resp.ok) {
     console.error(`failed to add block to arena channel ${resp.status}`, resp);
     throw new Error(JSON.stringify(response));
   }
 
+  console.log(response);
   return response;
 }
 

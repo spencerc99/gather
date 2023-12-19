@@ -50,6 +50,7 @@ import {
   updateLastSyncedInfoForChannel,
   updateLastSyncedRemoteInfo,
 } from "./asyncStorage";
+import { Indices, Migrations } from "./db/migrations";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -153,6 +154,7 @@ interface DatabaseContextProps {
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => void;
+  fullDeleteCollection: (id: string) => void;
 
   addConnections(blockId: string, collectionIds: string[]): Promise<void>;
   replaceConnections(blockId: string, collectionIds: string[]): Promise<void>;
@@ -205,6 +207,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
     throw new Error("not yet loaded");
   },
   deleteCollection: () => {},
+  fullDeleteCollection: () => {},
   getCollectionItems: async () => [],
   syncNewRemoteItems: async () => {},
 
@@ -365,6 +368,24 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               FOREIGN KEY (collection_id) REFERENCES collections(id)
           );`
         );
+
+        // Perform migrations
+        for (const migration of Migrations) {
+          // this is to handle alter table add column when columns already exists
+          try {
+            await tx.executeSqlAsync(migration);
+          } catch (err: unknown) {
+            if ((err as Error).message.includes("duplicate column name")) {
+              continue;
+            }
+            throw err;
+          }
+        }
+
+        // Create indices
+        for (const index of Indices) {
+          await tx.executeSqlAsync(index);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -459,7 +480,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       [
         {
           sql: `
-            INSERT INTO blocks (
+              INSERT INTO blocks (
                 title,
                 description,
                 content,
@@ -469,18 +490,19 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 remote_source_type,
                 created_by,
                 remote_source_info
-            ) VALUES (
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?
-            )
-            RETURNING *;`,
+              ) VALUES (
+                  ?,
+                  ?,
+                  ?,
+                  ?,
+                  ?,
+                  ?,
+                  ?,
+                  ?,
+                  ?
+              )
+              ON CONFLICT(arena_id) DO NOTHING
+              RETURNING id;`,
           args: [
             // @ts-ignore expo sqlite types are broken
             block.title || null,
@@ -498,6 +520,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             block.remoteSourceInfo
               ? JSON.stringify(block.remoteSourceInfo)
               : null,
+            block.remoteSourceInfo?.arenaId || null,
           ],
         },
       ],
@@ -508,8 +531,27 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       throw result.error;
     }
 
+    let insertId = result.insertId;
+    if (!insertId) {
+      // means conflicted so find by arenaId
+      const [result] = await db.execAsync(
+        [
+          {
+            sql: `
+              SELECT id FROM blocks WHERE arena_id = ?;`,
+            args: [block.remoteSourceInfo?.arenaId.toString()],
+          },
+        ],
+        true
+      );
+      if ("error" in result) {
+        throw result.error;
+      }
+      insertId = result.rows[0].id;
+    }
+
     if (connections?.length) {
-      await addConnections(String(result.insertId!), connections);
+      await addConnections(String(insertId), connections);
     }
 
     // TODO: change this to just fetch the new row info
@@ -517,7 +559,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       fetchBlocks();
     }
 
-    return result.insertId!.toString();
+    return insertId!.toString();
+  };
+
+  const deleteBlocks = async (ids: string[]) => {
+    // TODO:
   };
 
   const deleteBlock = async (id: string) => {
@@ -588,6 +634,21 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       );
       setCollections(collections.filter((collection) => collection.id !== id));
     });
+  };
+
+  const fullDeleteCollection = async (id: string) => {
+    const collection = await getCollection(id);
+    if (!collection) {
+      return;
+    }
+    const blocks = await getCollectionItems(id, {
+      havingClause: `HAVING num_connections = 1`,
+    });
+
+    // TODO: turn this into deletes
+    await Promise.all(blocks.map((block) => deleteBlock(block.id)));
+
+    await deleteCollection(id);
   };
 
   const createCollection = async (collection: CollectionInsertInfo) => {
@@ -786,7 +847,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
   }
 
-  async function getCollectionItems(collectionId: string): Promise<Block[]> {
+  async function getCollectionItems(
+    collectionId: string,
+    {
+      whereClause,
+      havingClause,
+    }: { whereClause?: string; havingClause?: string } = {}
+  ): Promise<Block[]> {
     const [result] = await db.execAsync(
       [
         {
@@ -802,7 +869,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             FROM        blocks
             INNER JOIN  connections ON blocks.id = connections.block_id
             LEFT JOIN   block_connections ON blocks.id = block_connections.block_id
-            WHERE       connections.collection_id = ?;`,
+            WHERE       connections.collection_id = ?${
+              havingClause ? `\n${havingClause}` : ""
+            };`,
           args: [collectionId],
         },
       ],
@@ -1041,6 +1110,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               JSON.stringify({
                 arenaId: newBlockId,
                 arenaClass: "Block",
+                // TODO: fuuuuuu this is wrong, this has to be at the connection level or it doesn't work. so really whenever we import from arena we need to send this info to the connection.
                 connectedAt: new Date().toISOString(),
               } as RemoteSourceInfo),
               ...(hasUpdatedImage ? [image.display.url] : []),
@@ -1202,14 +1272,22 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     void fetchCollections();
 
-    if (
-      collections.some(
-        (c) =>
-          collectionIds.includes(c.id) &&
-          c.remoteSourceType &&
-          c.remoteSourceInfo
-      )
-    ) {
+    const remoteCollections = collections.filter(
+      (c) =>
+        collectionIds.includes(c.id) && c.remoteSourceType && c.remoteSourceInfo
+    );
+    if (remoteCollections.length > 0) {
+      const block = await getBlock(blockId);
+      for (const remoteCollection of remoteCollections) {
+        switch (remoteCollection.remoteSourceType) {
+          case RemoteSourceType.Arena:
+            await syncBlockToArena(
+              remoteCollection.remoteSourceInfo!.arenaId,
+              block
+            );
+            break;
+        }
+      }
       void trySyncPendingArenaBlocks();
     }
   }
