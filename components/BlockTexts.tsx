@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "expo-router";
 import { DatabaseContext } from "../utils/db";
-import { Block, Collection } from "../utils/dataTypes";
+import { Block, Collection, CollectionBlock } from "../utils/dataTypes";
 import { Image, Spinner, XStack, YStack, useTheme } from "tamagui";
 import { Icon, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";
@@ -67,7 +67,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   );
 
   const width = Dimensions.get("window").width;
-  const [blocks, setBlocks] = useState<Block[] | null>(null);
+  const [blocks, setBlocks] = useState<CollectionBlock[] | null>(null);
   const scrollRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -92,8 +92,8 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       // so it is the reverse of what it should be
       [...(blocks || [])].sort(
         (a, b) =>
-          new Date(b.remoteSourceInfo?.connectedAt || 0).getTime() -
-            new Date(a.remoteSourceInfo?.connectedAt || 0).getTime() ||
+          new Date(b.remoteConnectedAt || 0).getTime() -
+            new Date(a.remoteConnectedAt || 0).getTime() ||
           b.createdAt.getTime() - a.createdAt.getTime()
       ),
     [blocks]

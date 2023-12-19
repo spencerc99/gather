@@ -27,10 +27,16 @@ export interface Connection {
   collectionId: string;
   createdTimestamp: Date;
   createdBy: string;
+  remoteCreatedAt?: Date;
 
   // derived
   collectionTitle: string;
   remoteSourceType?: RemoteSourceType;
+}
+
+export interface InsertBlockConnection {
+  blockId: string;
+  remoteCreatedAt?: string;
 }
 
 export enum RemoteSourceType {
@@ -46,6 +52,7 @@ export interface ArenaChannelCollectionInfo {
 export interface ArenaChannelBlockInfo {
   arenaId: string;
   arenaClass: "Block";
+  // TODO: remove this, not needed
   connectedAt: string;
 }
 
@@ -57,6 +64,11 @@ export interface Block extends Omit<BlockInsertInfo, "collectionsToConnect"> {
   createdAt: Date;
   updatedAt: Date;
   numConnections: number;
+  remoteConnectedAt?: Date | null; // only present when selecting from a single collection
+}
+
+export interface CollectionBlock extends Block {
+  remoteConnectedAt: Date | null; // only present when selecting from a single collection
 }
 export interface DatabaseBlockInsert {
   title?: string;

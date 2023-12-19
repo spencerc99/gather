@@ -333,7 +333,14 @@ export function BlockMetadata({
   textProps?: TextProps;
   isRemoteCollection?: boolean;
 }) {
-  const { type, createdAt, source, numConnections, remoteSourceInfo } = block;
+  const {
+    type,
+    createdAt,
+    remoteConnectedAt,
+    source,
+    numConnections,
+    remoteSourceInfo,
+  } = block;
 
   let metadata;
   switch (type) {
@@ -346,8 +353,8 @@ export function BlockMetadata({
     //   break;
     default:
       const relativeDate = getRelativeDate(
-        isRemoteCollection && remoteSourceInfo?.connectedAt
-          ? new Date(remoteSourceInfo?.connectedAt)
+        isRemoteCollection && remoteConnectedAt
+          ? new Date(remoteConnectedAt)
           : createdAt
       );
       metadata = (

@@ -16,9 +16,11 @@ import {
   ArenaImportInfo,
   BlockEditInfo,
   Collection,
+  CollectionBlock,
   CollectionEditInfo,
   CollectionInsertInfo,
   Connection,
+  InsertBlockConnection,
   LastSyncedInfo,
   RemoteSourceInfo,
   RemoteSourceType,
@@ -150,7 +152,7 @@ interface DatabaseContextProps {
     collectionId: string,
     editInfo: CollectionEditInfo
   ) => Promise<void>;
-  getCollectionItems: (collectionId: string) => Promise<Block[]>;
+  getCollectionItems: (collectionId: string) => Promise<CollectionBlock[]>;
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => void;
@@ -316,6 +318,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }, []);
 
   useEffect(() => {
+    // TODO: change this to only when you go to the collection? or only for most recent collections? i think this is freezing up the app on start
     void syncWithArena();
   }, [arenaAccessToken]);
 
@@ -338,7 +341,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               remote_source_info blob,
               created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
               updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              created_by TEXT NOT NULL
+              created_by TEXT NOT NULL,
+              arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'))
           );`
           ),
           tx.executeSqlAsync(
@@ -362,6 +366,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               collection_id integer NOT NULL,
               created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
               created_by TEXT NOT NULL,
+              remote_created_at timestamp,
   
               PRIMARY KEY (block_id, collection_id),
               FOREIGN KEY (block_id) REFERENCES blocks(id),
@@ -467,7 +472,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     fetchBlocks();
 
     if (collectionId) {
-      await addConnectionsToCollection(collectionId, blockIds);
+      const blockConnections = blockIds.map((blockId, idx) => ({
+        blockId: blockId,
+        // TODO: this is kinda jank, should really be using the arena one
+        remoteCreatedAt: blocksToInsert[idx].remoteSourceInfo?.connectedAt,
+      }));
+      await addConnectionsToCollection(collectionId, blockConnections);
     }
     return blockIds;
   };
@@ -566,7 +576,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     // TODO:
   };
 
-  const deleteBlock = async (id: string) => {
+  const deleteBlock = async (id: string, ignoreRemote?: boolean) => {
     // TODO: get the image path and delete it from the local filesystem too
     const deletedBlock = await getBlock(id);
     if (!deleteBlock) {
@@ -590,7 +600,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         );
       }
 
-      if (deletedBlock.remoteSourceType) {
+      if (deletedBlock.remoteSourceType && !ignoreRemote) {
         switch (deletedBlock.remoteSourceType) {
           case RemoteSourceType.Arena:
             if (!arenaAccessToken) {
@@ -646,7 +656,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
 
     // TODO: turn this into deletes
-    await Promise.all(blocks.map((block) => deleteBlock(block.id)));
+    await Promise.all(blocks.map((block) => deleteBlock(block.id, true)));
 
     await deleteCollection(id);
   };
@@ -853,7 +863,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       whereClause,
       havingClause,
     }: { whereClause?: string; havingClause?: string } = {}
-  ): Promise<Block[]> {
+  ): Promise<CollectionBlock[]> {
     const [result] = await db.execAsync(
       [
         {
@@ -866,6 +876,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               ${havingClause ? `\n${havingClause}` : ""}
             )
             SELECT      blocks.*,
+                        connections.remote_created_at as remote_connected_at,
                         COALESCE(block_connections.num_connections, 0) as num_connections
             FROM        blocks
             INNER JOIN  connections ON blocks.id = connections.block_id
@@ -935,14 +946,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function addConnectionsToCollection(
     collectionId: string,
-    blockIds: string[]
+    blockConnections: InsertBlockConnection[]
   ) {
     const result = await db.execAsync(
-      blockIds.map((blockId) => ({
-        sql: `INSERT INTO connections (block_id, collection_id, created_by)
-              VALUES (?, ?, ?)
+      blockConnections.map(({ blockId, remoteCreatedAt }) => ({
+        sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
+              VALUES (?, ?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-        args: [blockId, collectionId, currentUser!.id],
+        args: [blockId, collectionId, currentUser!.id, remoteCreatedAt || null],
       })),
       false
     );
@@ -1087,17 +1098,21 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
   }
 
-  async function syncBlockToArena(channelId: string, block: Block) {
+  async function syncBlockToArena(
+    channelId: string,
+    block: Block
+  ): Promise<RawArenaItem | undefined> {
     if (!arenaAccessToken) {
       return;
     }
 
     try {
-      const { id: newBlockId, image } = await addBlockToChannel({
+      const rawArenaItem = await addBlockToChannel({
         channelId,
         block,
         arenaToken: arenaAccessToken,
       });
+      const { id: newBlockId, image } = rawArenaItem;
       const hasUpdatedImage =
         block.type === BlockType.Link && image?.display.url;
       await db.execAsync(
@@ -1121,7 +1136,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         ],
         false
       );
-    } catch (err) {}
+      return rawArenaItem;
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   async function getLastRemoteItemForCollection(
@@ -1259,12 +1277,57 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   async function addConnections(blockId: string, collectionIds: string[]) {
+    const remoteCollections = collections.filter(
+      (c) =>
+        collectionIds.includes(c.id) && c.remoteSourceType && c.remoteSourceInfo
+    );
+
+    const collectionIdToRemoteCreatedAt: Record<string, string | undefined> =
+      {};
+
+    if (remoteCollections.length > 0) {
+      const block = await getBlock(blockId);
+      for (const remoteCollection of remoteCollections) {
+        const [result] = await db.execAsync(
+          [
+            {
+              sql: `SELECT * FROM connections WHERE block_id = ? AND collection_id = ?;`,
+              args: [blockId, remoteCollection.id],
+            },
+          ],
+          true
+        );
+        if ("error" in result) {
+          throw result.error;
+        }
+        if (result.rows.length > 0) {
+          continue;
+        }
+
+        switch (remoteCollection.remoteSourceType) {
+          case RemoteSourceType.Arena:
+            const updatedBlock = await syncBlockToArena(
+              remoteCollection.remoteSourceInfo!.arenaId,
+              block
+            );
+            collectionIdToRemoteCreatedAt[remoteCollection.id] =
+              updatedBlock?.connected_at;
+            break;
+        }
+      }
+    }
+
     const result = await db.execAsync(
       collectionIds.map((collectionId) => ({
-        sql: `INSERT INTO connections (block_id, collection_id, created_by)
-              VALUES (?, ?, ?)
+        sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
+              VALUES (?, ?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-        args: [blockId, collectionId, currentUser!.id],
+        args: [
+          blockId,
+          collectionId,
+          currentUser!.id,
+          collectionIdToRemoteCreatedAt[collectionId] || null,
+        ],
       })),
       false
     );
@@ -1273,36 +1336,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     void fetchCollections();
 
-    const remoteCollections = collections.filter(
-      (c) =>
-        collectionIds.includes(c.id) && c.remoteSourceType && c.remoteSourceInfo
-    );
     if (remoteCollections.length > 0) {
-      const block = await getBlock(blockId);
-      for (const remoteCollection of remoteCollections) {
-        switch (remoteCollection.remoteSourceType) {
-          case RemoteSourceType.Arena:
-            await syncBlockToArena(
-              remoteCollection.remoteSourceInfo!.arenaId,
-              block
-            );
-            break;
-        }
-      }
       void trySyncPendingArenaBlocks();
     }
   }
 
   async function replaceConnections(blockId: string, collectionIds: string[]) {
+    await addConnections(blockId, collectionIds);
     const result = await db.execAsync(
       [
-        // TODO: make this into a single query for perf, just stack the values manually
-        ...collectionIds.map((collectionId) => ({
-          sql: `INSERT INTO connections (block_id, collection_id, created_by)
-              VALUES (?, ?, ?)
-              ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-          args: [blockId, collectionId, currentUser!.id],
-        })),
         {
           sql: inParam(
             `DELETE FROM connections WHERE block_id = ? AND collection_id NOT IN (?#);`,
