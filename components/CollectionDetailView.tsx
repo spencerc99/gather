@@ -48,7 +48,6 @@ export function CollectionDetailView({
       if (router.canGoBack()) {
         router.back();
       } else {
-        // TODO: fix this not properly redirecting back
         router.replace("/(tabs)/home");
       }
     } finally {
@@ -64,7 +63,6 @@ export function CollectionDetailView({
       if (router.canGoBack()) {
         router.back();
       } else {
-        // TODO: fix this not properly redirecting back
         router.replace("/(tabs)/home");
       }
     } finally {

@@ -212,6 +212,7 @@ export function SearchBarInput({
       backgroundColor="$gray4"
       value={searchValue}
       onChangeText={(text) => setSearchValue(text)}
+      {...props}
     />
   );
 }

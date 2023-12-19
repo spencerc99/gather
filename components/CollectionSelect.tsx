@@ -117,6 +117,7 @@ export function CollectionSelect({
               backgroundColor="$gray4"
               searchValue={searchValue}
               setSearchValue={setSearchValue}
+              placeholder="Search a collection..."
             />
           </YStack>
           <Sheet.ScrollView

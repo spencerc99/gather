@@ -242,6 +242,7 @@ export function SelectArenaChannel({
               backgroundColor="$gray4"
               searchValue={searchValue}
               setSearchValue={setSearchValue}
+              placeholder="Search channels..."
             />
           </YStack>
           <Sheet.ScrollView
