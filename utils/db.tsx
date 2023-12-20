@@ -473,7 +473,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (collectionId) {
       const blockConnections = blockIds.map((blockId, idx) => ({
         blockId: blockId,
-        // TODO: this is kinda jank, should really be using the arena one
+        // TODO: this is kinda jank, should really be using directly from arena item
+        // but because we are doing the logic to extract that into this its effectively
+        // the same info
         remoteCreatedAt: blocksToInsert[idx].remoteSourceInfo?.connectedAt,
       }));
       await addConnectionsToCollection(collectionId, blockConnections);
@@ -650,7 +652,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       havingClause: `HAVING num_connections = 1`,
     });
 
-    // TODO: turn this into deletes
+    // TODO: turn this bulk deletes
     await Promise.all(blocks.map((block) => deleteBlock(block.id, true)));
 
     await deleteCollection(id);
@@ -931,6 +933,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
   }
 
+  // NOTE: this deliberately does not update remote sources because that is always handled
+  // in the create block calls preceding this.
   async function addConnectionsToCollection(
     collectionId: string,
     blockConnections: InsertBlockConnection[]
@@ -960,7 +964,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     // );
     void fetchCollections();
 
-    // TODO: if collectionId has remoteSource, then sync to remote source
     const collectionAddedTo = collections.find((c) => c.id === collectionId);
     if (
       !collectionAddedTo?.remoteSourceType ||
@@ -1113,7 +1116,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               JSON.stringify({
                 arenaId: newBlockId,
                 arenaClass: "Block",
-                // TODO: fuuuuuu this is wrong, this has to be at the connection level or it doesn't work. so really whenever we import from arena we need to send this info to the connection.
+                // TODO: remove
                 connectedAt: new Date().toISOString(),
               } as RemoteSourceInfo),
               ...(hasUpdatedImage ? [image.display.url] : []),
@@ -1261,7 +1264,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return syncNewRemoteItemsForCollection(collection);
   }
 
-  async function addConnections(blockId: string, collectionIds: string[]) {
+  // returns a mapping of collectionIdToRemoteCreatedAt
+  async function handleRemoteConnectionUpdate(
+    blockId: string,
+    collectionIds: string[]
+  ): Promise<Record<string, string | undefined>> {
     const remoteCollections = collections.filter(
       (c) =>
         collectionIds.includes(c.id) && c.remoteSourceType && c.remoteSourceInfo
@@ -1299,6 +1306,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         }
       }
     }
+    return collectionIdToRemoteCreatedAt;
+  }
+
+  async function addConnections(blockId: string, collectionIds: string[]) {
+    const collectionIdToRemoteCreatedAt = await handleRemoteConnectionUpdate(
+      blockId,
+      collectionIds
+    );
 
     const result = await db.execAsync(
       collectionIds.map((collectionId) => ({
@@ -1319,7 +1334,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     void fetchCollections();
 
-    if (remoteCollections.length > 0) {
+    if (Object.keys(collectionIdToRemoteCreatedAt).length > 0) {
       void trySyncPendingArenaBlocks();
     }
   }

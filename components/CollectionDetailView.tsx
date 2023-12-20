@@ -2,7 +2,7 @@ import { YStack, Spinner, XStack, ScrollView } from "tamagui";
 import { Collection } from "../utils/dataTypes";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
-import { ArenaLogo, StyledButton, StyledParagraph } from "./Themed";
+import { ArenaLogo, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { ExternalLink } from "./ExternalLink";
 import { Stack, useRouter } from "expo-router";
 
@@ -25,8 +25,12 @@ export function CollectionDetailView({
     remoteSourceType,
     thumbnail,
   } = collection;
-  const { syncNewRemoteItems, deleteCollection, fullDeleteCollection } =
-    useContext(DatabaseContext);
+  const {
+    syncNewRemoteItems,
+    deleteCollection,
+    fullDeleteCollection,
+    arenaAccessToken,
+  } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -111,50 +115,67 @@ export function CollectionDetailView({
               Collaborators: {collaborators}
             </StyledParagraph> */}
             {/* TODO: update to handle multiple sources */}
-            {remoteSourceType && (
-              <>
-                <StyledParagraph metadata>
-                  Syncing to/from{" "}
-                  <ExternalLink
-                    href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
+            <YStack gap="$2">
+              {remoteSourceType ? (
+                <>
+                  <StyledParagraph metadata>
+                    Syncing to/from{" "}
+                    <ExternalLink
+                      href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
+                    >
+                      <StyledParagraph link>{remoteSourceType}</StyledParagraph>
+                    </ExternalLink>
+                  </StyledParagraph>
+                  {/* TODO: add a dev button to reset channel to start */}
+                  <StyledButton
+                    onPress={onClickSyncNewItems}
+                    disabled={isLoading}
+                    icon={isLoading ? <Spinner size="small" /> : null}
+                    marginTop="$2"
                   >
-                    <StyledParagraph link>{remoteSourceType}</StyledParagraph>
-                  </ExternalLink>
-                </StyledParagraph>
-                {/* TODO: add a dev button to reset channel to start */}
-                <StyledButton
-                  onPress={onClickSyncNewItems}
-                  disabled={isLoading}
-                  icon={isLoading ? <Spinner size="small" /> : null}
-                  marginTop="$2"
-                >
-                  {`Sync new items from ${remoteSourceType}`}
-                  <ArenaLogo style={{ marginLeft: -4 }} />
-                </StyledButton>
-                {/* TODO: add a button to "reset" channel from remote, which deletes items that it doesn't find */}
-                {/* <StyledButton
-                  onPress={onClickSyncNewItems}
-                  disabled={isLoading}
-                  icon={isLoading ? <Spinner size="small" /> : null}
-                  marginTop="$2"
-                >
-                  {`Sync new items from ${remoteSourceType}`}
-                  <ArenaLogo style={{ marginLeft: -4 }} />
-                </StyledButton> */}
-              </>
-            )}
-            {/* TODO: if its an arena synced channel just "unlink it" */}
-            {/* TODO: what happens to blocks here? */}
-            <StyledButton theme="red" onPress={() => onPressDelete()}>
-              Delete
-            </StyledButton>
-            {remoteSourceType && (
-              <>
-                <StyledButton theme="red" onPress={() => onPressFullDelete()}>
-                  Delete Collection and Contained Blocks
-                </StyledButton>
-              </>
-            )}
+                    {`Sync new items from ${remoteSourceType}`}
+                    <ArenaLogo style={{ marginLeft: -4 }} />
+                  </StyledButton>
+                  {/* TODO: add a button to "reset" channel from remote, which deletes items that it doesn't find */}
+                  {/* <StyledButton
+                    onPress={onClickSyncNewItems}
+                    disabled={isLoading}
+                    icon={isLoading ? <Spinner size="small" /> : null}
+                    marginTop="$2"
+                  >
+                    {`Sync new items from ${remoteSourceType}`}
+                    <ArenaLogo style={{ marginLeft: -4 }} />
+                  </StyledButton> */}
+                </>
+              ) : arenaAccessToken ? (
+                <>
+                  <StyledButton
+                    // onPress={onClickSyncNewItems}
+                    disabled={true || isLoading}
+                    icon={isLoading ? <Spinner size="small" /> : null}
+                    marginTop="$2"
+                  >
+                    Push collection to Are.na (coming soon)
+                    <ArenaLogo style={{ marginLeft: -4 }} />
+                  </StyledButton>
+                </>
+              ) : null}
+              {/* TODO: if its an arena synced channel just "unlink it" */}
+              {/* TODO: what happens to blocks here? */}
+              <StyledButton theme="red" onPress={() => onPressDelete()}>
+                Delete Collection
+              </StyledButton>
+              {remoteSourceType && (
+                <YStack>
+                  <StyledButton theme="red" onPress={() => onPressFullDelete()}>
+                    Delete Collection & Contained Blocks
+                  </StyledButton>
+                  <StyledText metadata>
+                    contained blocks are blocks that are only in this channel
+                  </StyledText>
+                </YStack>
+              )}
+            </YStack>
           </YStack>
           {/* <AspectRatioImage uri={thumbnail} otherProps={{ flex: 1 }} /> */}
           {/* </XStack> */}

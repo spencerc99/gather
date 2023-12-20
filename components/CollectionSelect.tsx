@@ -169,7 +169,7 @@ export function CollectionSelect({
                   }
                 >
                   <Select.ItemText>
-                    <StyledText bold>{collectionPlaceholder}</StyledText>
+                    <StyledText>{collectionPlaceholder}</StyledText>
                   </Select.ItemText>
                 </Select.Item>
               )}
