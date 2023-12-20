@@ -17,6 +17,7 @@ import { BlockContent } from "./BlockContent";
 import { BlockType } from "../utils/mimeTypes";
 import Carousel from "react-native-reanimated-carousel";
 import { RawAnimations } from "../animations";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 export const InspoBlocks = [
   {
@@ -64,6 +65,9 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   const [collection, setCollection] = useState<undefined | Collection>(
     undefined
   );
+  const [showBackToBottomIndicator, setShowBackToBottomIndicator] =
+    useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const width = Dimensions.get("window").width;
   const [blocks, setBlocks] = useState<CollectionBlock[] | null>(null);
@@ -210,21 +214,58 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       </YStack>
     </ScrollView>
   ) : (
-    <FlatList
-      renderItem={({ item }) => renderBlock(item)}
-      data={sortedBlocks}
-      scrollEventThrottle={60}
-      ref={scrollRef}
-      inverted
-      contentContainerStyle={{
-        flexGrow: 1,
-        marginTop: 8,
-        paddingBottom: 16,
-        paddingHorizontal: 8,
-        gap: 16,
-        width: "100%",
-        alignItems: "flex-end",
-      }}
-    ></FlatList>
+    <>
+      <FlatList
+        renderItem={({ item }) => renderBlock(item)}
+        data={sortedBlocks}
+        scrollEventThrottle={150}
+        ref={scrollRef}
+        onScroll={(e) => {
+          if (isScrolling) {
+            return;
+          }
+          if (e.nativeEvent.contentOffset.y > 250) {
+            setShowBackToBottomIndicator(true);
+          } else {
+            setShowBackToBottomIndicator(false);
+          }
+        }}
+        inverted
+        contentContainerStyle={{
+          flexGrow: 1,
+          marginTop: 8,
+          paddingBottom: 16,
+          paddingHorizontal: 8,
+          gap: 16,
+          width: "100%",
+          alignItems: "flex-end",
+        }}
+      ></FlatList>
+      {showBackToBottomIndicator && (
+        <Animated.View
+          entering={FadeIn}
+          exiting={FadeOut}
+          position="absolute"
+          bottom={90}
+          left={10}
+        >
+          <StyledButton
+            height="$3"
+            backgroundColor="$gray6"
+            paddingHorizontal="$2"
+            borderRadius="$8"
+            icon={<Icon name="chevron-down" size={20} />}
+            onPress={() => {
+              setIsScrolling(true);
+              setShowBackToBottomIndicator(false);
+              scrollRef.current?.scrollToIndex({ animated: false, index: 0 });
+              setTimeout(() => {
+                setIsScrolling(false);
+              }, 1000);
+            }}
+          ></StyledButton>
+        </Animated.View>
+      )}
+    </>
   );
 }

@@ -37,6 +37,7 @@ export function ChatDetailView({
       <Tabs.Screen
         options={{
           // TODO: this is too jank, bring back when actually working
+          // TODO: maybe instead make this like gallery icon and then you can
           // headerLeft: () => (
           //   <XStack
           //     space="$4"
