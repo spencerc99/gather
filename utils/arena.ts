@@ -298,9 +298,10 @@ export async function getChannelInfoFromUrl(
   url: string,
   accessToken?: string | null
 ): Promise<ArenaChannelInfo> {
-  const reviewItemSourceTransformed = transformChannelUrlToApiUrl(url);
+  const transformedUrl = transformChannelUrlToApiUrl(url);
+  console.log("getting arena info from url", transformedUrl);
   let fetchedItems: RawArenaItem[] = [];
-  const baseUrl = reviewItemSourceTransformed;
+  const baseUrl = transformedUrl;
   let channelInfo = {};
   let isFirstFetch = true;
   try {

@@ -555,6 +555,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       );
       handleSqlErrors(result);
       insertId = result.rows[0].id;
+      console.log("insert id not found", insertId);
     }
 
     if (connections?.length) {
@@ -649,7 +650,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
     const blocks = await getCollectionItems(id, {
-      havingClause: `HAVING num_connections = 1`,
+      whereClause: `num_connections = 1`,
     });
 
     // TODO: turn this bulk deletes
@@ -853,10 +854,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function getCollectionItems(
     collectionId: string,
-    {
-      whereClause,
-      havingClause,
-    }: { whereClause?: string; havingClause?: string } = {}
+    { whereClause }: { whereClause?: string; havingClause?: string } = {}
   ): Promise<CollectionBlock[]> {
     const [result] = await db.execAsync(
       [
@@ -867,7 +865,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                         COUNT(collection_id) as num_connections
               FROM      connections
               GROUP BY  1
-              ${havingClause ? `\n${havingClause}` : ""}
             )
             SELECT      blocks.*,
                         connections.remote_created_at as remote_connected_at,
@@ -1441,6 +1438,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     arenaChannel: string | ArenaChannelInfo,
     selectedCollection?: string
   ): Promise<ArenaImportInfo> {
+    console.log(`importing ${arenaChannel}`);
     const { title, id, contents } =
       typeof arenaChannel === "string"
         ? await getChannelInfoFromUrl(arenaChannel, arenaAccessToken)
@@ -1459,6 +1457,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       });
     }
 
+    console.log(`found ${contents.length} items`);
     await createBlocks({
       blocksToInsert: rawArenaBlocksToBlockInsertInfo(contents),
       collectionId: collectionId!,
