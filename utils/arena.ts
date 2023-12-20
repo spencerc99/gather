@@ -458,13 +458,20 @@ export async function addBlockToChannel({
   let response: RawArenaItem;
   if (block.remoteSourceInfo?.arenaId) {
     // already exists in are.na just use a put
-    const url = `${ArenaChannelsApi}/${channelId}/blocks/${block.remoteSourceInfo.arenaId}/selection`;
+    // not documented in api docs, see https://discord.com/channels/691439466224549898/821954408643952650/825013461872017468
+    const url = withQueryParams(
+      `${ArenaChannelsApi}/${channelId}/connections`,
+      {
+        connectable_type: "Block",
+        connectable_id: block.remoteSourceInfo.arenaId,
+      }
+    );
     console.log(
       `adding existing arena block ${block.remoteSourceInfo.arenaId} to channel`,
       channelId
     );
     resp = await fetch(url, {
-      method: "PUT",
+      method: "POST",
       headers: {
         Authorization: `Bearer ${arenaToken}`,
         "Content-Type": "application/json",

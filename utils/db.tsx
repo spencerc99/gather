@@ -284,7 +284,9 @@ function handleSqlErrors(
     | (SQLite.ResultSet | SQLite.ResultSetError)[]
     | SQLite.ResultSet
     | SQLite.ResultSetError
-): results is SQLite.ResultSet {
+): asserts results is typeof results extends any[]
+  ? SQLite.ResultSet[]
+  : SQLite.ResultSet {
   const errors: SQLite.ResultSetError[] = ([] as any[])
     .concat(results)
     .filter((result) => "error" in result);
@@ -299,7 +301,6 @@ function handleSqlErrors(
         .join("\n")}`
     );
   }
-  return true;
 }
 
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
@@ -453,9 +454,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             ]),
           ]
         );
-        if ("error" in result) {
-          throw result.error;
-        }
+        handleSqlErrors(result);
         // TODO: figure out how to get the ids from all of the inserts.
       }
     });
@@ -537,9 +536,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       false
     );
 
-    if ("error" in result) {
-      throw result.error;
-    }
+    handleSqlErrors(result);
 
     let insertId = result.insertId;
     if (!insertId) {
@@ -554,9 +551,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         ],
         true
       );
-      if ("error" in result) {
-        throw result.error;
-      }
+      handleSqlErrors(result);
       insertId = result.rows[0].id;
     }
 
@@ -695,9 +690,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       false
     );
 
-    if ("error" in result) {
-      throw result.error;
-    }
+    handleSqlErrors(result);
 
     fetchCollections();
 
@@ -845,10 +838,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       false
     );
 
-    // TODO: have handleSqlERrors properly handle the type here
-    if ("error" in result) {
-      throw result.error;
-    }
+    handleSqlErrors(result);
+
+    // TODO: handle remote update
 
     setBlocks(
       blocks.map((b) =>
@@ -889,9 +881,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ],
       true
     );
-    if ("error" in result) {
-      throw result.error;
-    }
+    handleSqlErrors(result);
 
     return result.rows.map((block) => mapDbBlockToBlock(block));
   }
@@ -930,10 +920,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       false
     );
 
-    // TODO: have handleSqlERrors properly handle the type here
-    if ("error" in result) {
-      throw result.error;
-    }
+    handleSqlErrors(result);
 
     setCollections(
       collections.map((c) =>
@@ -1163,9 +1150,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ],
       true
     );
-    if ("error" in result) {
-      throw result.error;
-    }
+    handleSqlErrors(result);
 
     return result.rows.map((block) => mapDbBlockToBlock(block))[0];
   }
@@ -1297,9 +1282,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ],
           true
         );
-        if ("error" in result) {
-          throw result.error;
-        }
+        handleSqlErrors(result);
         if (result.rows.length > 0) {
           continue;
         }
@@ -1343,6 +1326,29 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function replaceConnections(blockId: string, collectionIds: string[]) {
     await addConnections(blockId, collectionIds);
+
+    const [selectResult] = await db.execAsync(
+      [
+        {
+          sql: inParam(
+            `SELECT collection_id FROM connections WHERE block_id = ? AND collection_id NOT IN (?#);`,
+            collectionIds
+          ),
+          args: [blockId],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(selectResult);
+
+    const removedCollectionIds = selectResult.rows.map((r) => r.collection_id);
+    const remoteCollectionsToRemoveConnection = collections.filter(
+      (c) =>
+        removedCollectionIds.includes(c.id) &&
+        c.remoteSourceType &&
+        c.remoteSourceInfo
+    );
+
     const result = await db.execAsync(
       [
         {
@@ -1355,8 +1361,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ],
       false
     );
-
     handleSqlErrors(result);
+
+    if (arenaAccessToken) {
+      for (const collection of remoteCollectionsToRemoveConnection) {
+        await removeBlockFromChannel({
+          blockId,
+          channelId: collection.remoteSourceInfo!.arenaId,
+          arenaToken: arenaAccessToken,
+        });
+      }
+    }
 
     await fetchCollections();
   }
@@ -1382,10 +1397,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       true
     );
 
-    // TODO: have handleSqlERrors properly handle the type here
-    if ("error" in result) {
-      throw result.error;
-    }
+    handleSqlErrors(result);
 
     return result.rows.map((connection) => ({
       ...mapSnakeCaseToCamelCaseProperties(connection),
