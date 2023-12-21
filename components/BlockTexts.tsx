@@ -220,6 +220,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
         data={sortedBlocks}
         scrollEventThrottle={150}
         ref={scrollRef}
+        scrollsToTop={false}
         onScroll={(e) => {
           if (isScrolling) {
             return;
