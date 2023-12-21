@@ -7,8 +7,13 @@ import { RemoteSourceLabel } from "./RemoteSourceLabel";
 
 export function ConnectionSummary({ connection }: { connection: Connection }) {
   const theme = useTheme();
-  const { createdBy, createdTimestamp, collectionTitle, remoteSourceType } =
-    connection;
+  const {
+    createdBy,
+    createdTimestamp,
+    collectionTitle,
+    remoteSourceType,
+    remoteCreatedAt,
+  } = connection;
 
   return (
     <StyledView
@@ -40,7 +45,7 @@ export function ConnectionSummary({ connection }: { connection: Connection }) {
       <StyledView style={styles.metaContainer}>
         {/* <StyledParagraph metadata>{createdBy}</StyledParagraph> */}
         <StyledParagraph alignSelf="flex-end" metadata>
-          connected {getRelativeDate(createdTimestamp)}
+          connected {getRelativeDate(remoteCreatedAt || createdTimestamp)}
         </StyledParagraph>
       </StyledView>
     </StyledView>

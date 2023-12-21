@@ -57,10 +57,13 @@ export default function IntroScreen() {
     // TODO: this would ideally do it in the background asynchronously
     setIsLoading(true);
     try {
-      for (const channel of selectedChannels) {
-        await tryImportArenaChannel(channel);
-      }
-      await fetchCollections();
+      await Promise.all(
+        selectedChannels.map(
+          async (channel) => await tryImportArenaChannel(channel.id.toString())
+        )
+      ).then(() => {
+        fetchCollections();
+      });
     } catch (error) {
       console.error(error);
       // throw error;

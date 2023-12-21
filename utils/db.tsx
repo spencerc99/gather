@@ -1454,10 +1454,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   async function tryImportArenaChannel(
-    arenaChannel: string | ArenaChannelInfo,
+    arenaChannel: string,
     selectedCollection?: string
   ): Promise<ArenaImportInfo> {
-    console.log(`importing ${arenaChannel}`);
+    console.log(`importing ${JSON.stringify(arenaChannel)}`);
     const { title, id, contents } =
       typeof arenaChannel === "string"
         ? await getChannelInfoFromUrl(arenaChannel, arenaAccessToken)
