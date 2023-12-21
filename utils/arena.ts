@@ -545,6 +545,7 @@ async function getUserInfo(accessToken: string): Promise<RawArenaUser> {
 export async function getUserChannels(
   accessToken: string
 ): Promise<ArenaChannelInfo[]> {
+  // TODO: this doens't handle pagination, need for it to stream search results
   const userInfo = await getUserInfo(accessToken);
   const baseUrl = `https://api.are.na/v2/users/${userInfo.id}/channels`;
   let fetchedItems: ArenaChannelInfo[] = [];

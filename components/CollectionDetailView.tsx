@@ -44,10 +44,10 @@ export function CollectionDetailView({
   }
 
   //   TODO: add confirmation dialog https://tamagui.dev/docs/components/alert-dialog/1.0.0
-  function onPressDelete() {
+  async function onPressDelete() {
     setIsLoading(true);
     try {
-      deleteCollection(id.toString());
+      await deleteCollection(id.toString());
       alert("Collection deleted!");
       if (router.canGoBack()) {
         router.back();
@@ -59,10 +59,10 @@ export function CollectionDetailView({
     }
   }
 
-  function onPressFullDelete() {
+  async function onPressFullDelete() {
     setIsLoading(true);
     try {
-      fullDeleteCollection(id.toString());
+      await fullDeleteCollection(id.toString());
       alert("Collection and blocks only in this collection deleted!");
       if (router.canGoBack()) {
         router.back();
@@ -162,12 +162,22 @@ export function CollectionDetailView({
               ) : null}
               {/* TODO: if its an arena synced channel just "unlink it" */}
               {/* TODO: what happens to blocks here? */}
-              <StyledButton theme="red" onPress={() => onPressDelete()}>
+              <StyledButton
+                theme="red"
+                onPress={() => onPressDelete()}
+                disabled={isLoading}
+                icon={isLoading ? <Spinner size="small" /> : null}
+              >
                 Delete Collection
               </StyledButton>
               {remoteSourceType && (
                 <YStack>
-                  <StyledButton theme="red" onPress={() => onPressFullDelete()}>
+                  <StyledButton
+                    theme="red"
+                    onPress={() => onPressFullDelete()}
+                    disabled={isLoading}
+                    icon={isLoading ? <Spinner size="small" /> : null}
+                  >
                     Delete Collection & Contained Blocks
                   </StyledButton>
                   <StyledText metadata>

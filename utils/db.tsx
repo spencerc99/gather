@@ -155,8 +155,8 @@ interface DatabaseContextProps {
   getCollectionItems: (collectionId: string) => Promise<CollectionBlock[]>;
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Promise<Collection>;
-  deleteCollection: (id: string) => void;
-  fullDeleteCollection: (id: string) => void;
+  deleteCollection: (id: string) => Promise<void>;
+  fullDeleteCollection: (id: string) => Promise<void>;
 
   addConnections(blockId: string, collectionIds: string[]): Promise<void>;
   replaceConnections(blockId: string, collectionIds: string[]): Promise<void>;
@@ -173,7 +173,7 @@ interface DatabaseContextProps {
     selectedCollection?: string
   ) => Promise<ArenaImportInfo>;
 
-  // TODO: remove this once apis solidify
+  // internal
   db: SQLite.SQLiteDatabase;
   initDatabases: () => Promise<void>;
   fetchBlocks: () => void;
@@ -208,8 +208,8 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   getCollection: async () => {
     throw new Error("not yet loaded");
   },
-  deleteCollection: () => {},
-  fullDeleteCollection: () => {},
+  deleteCollection: async () => {},
+  fullDeleteCollection: async () => {},
   getCollectionItems: async () => [],
   syncNewRemoteItems: async () => {},
 
@@ -570,62 +570,83 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return insertId!.toString();
   };
 
-  const deleteBlocks = async (ids: string[]) => {
-    // TODO:
+  const deleteBlocksById = async (ids: string[], ignoreRemote?: boolean) => {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: inParam(`SELECT * from blocks where id IN (?#)`, ids),
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    const blocks = result.rows.map(mapDbBlockToBlock);
+    return await deleteBlocks(blocks, ignoreRemote);
   };
 
-  const deleteBlock = async (id: string, ignoreRemote?: boolean) => {
-    // TODO: get the image path and delete it from the local filesystem too
-    const deletedBlock = await getBlock(id);
-    if (!deleteBlock) {
-      return;
-    }
-    const connectionsForBlock = deletedBlock.remoteSourceType
-      ? await getConnectionsForBlock(id)
-      : [];
-
+  const deleteBlocks = async (blocks: Block[], ignoreRemote?: boolean) => {
+    const blockIds = blocks.map((block) => block.id);
     await db.transactionAsync(async (tx) => {
-      await tx.executeSqlAsync(`DELETE FROM blocks WHERE id = ?;`, [id]);
-      await tx.executeSqlAsync(`DELETE FROM connections where block_id = ?;`, [
-        id,
-      ]);
-      if (
-        FileBlockTypes.includes(deletedBlock.type) &&
-        deletedBlock.content.startsWith(PHOTOS_FOLDER)
-      ) {
-        await FileSystem.deleteAsync(
-          FileSystem.documentDirectory + deletedBlock.content
-        );
-      }
+      await tx.executeSqlAsync(
+        inParam(`DELETE FROM blocks WHERE id IN (?#);`, blockIds)
+      );
 
-      if (deletedBlock.remoteSourceType && !ignoreRemote) {
-        switch (deletedBlock.remoteSourceType) {
-          case RemoteSourceType.Arena:
-            if (!arenaAccessToken) {
-              break;
-            }
-            const { arenaId: arenaBlockId } = deletedBlock.remoteSourceInfo!;
-            for (const connection of connectionsForBlock) {
-              const { collectionId } = connection;
-              // TODO: do this all at once for all of them
-              const { remoteSourceInfo } = await getCollection(collectionId);
-              if (!remoteSourceInfo) {
-                continue;
+      void Promise.all(
+        blocks
+          .filter(
+            (block) =>
+              FileBlockTypes.includes(block.type) &&
+              block.content.startsWith(PHOTOS_FOLDER)
+          )
+          .map(async (block) =>
+            FileSystem.deleteAsync(FileSystem.documentDirectory + block.content)
+          )
+      );
+
+      if (!ignoreRemote) {
+        const remoteBlocks = blocks.filter(
+          (block) => block.remoteSourceType !== undefined
+        );
+
+        for (const block of remoteBlocks) {
+          const connectionsForBlock = await getConnectionsForBlock(block.id);
+
+          switch (block.remoteSourceType) {
+            case RemoteSourceType.Arena:
+              if (!arenaAccessToken) {
+                break;
               }
-              // TODO: this doens't work if you are offline...
-              await removeBlockFromChannel({
-                blockId: arenaBlockId,
-                channelId: remoteSourceInfo.arenaId,
-                arenaToken: arenaAccessToken,
-              });
-            }
+              const { arenaId: arenaBlockId } = block.remoteSourceInfo!;
+              for (const connection of connectionsForBlock) {
+                const { collectionId } = connection;
+                // TODO: do this all at once for all of them
+                const { remoteSourceInfo } = await getCollection(collectionId);
+                if (!remoteSourceInfo) {
+                  continue;
+                }
+                // TODO: this doens't work if you are offline...
+                await removeBlockFromChannel({
+                  blockId: arenaBlockId,
+                  channelId: remoteSourceInfo.arenaId,
+                  arenaToken: arenaAccessToken,
+                });
+              }
+          }
         }
       }
 
-      setBlocks(blocks.filter((block) => block.id !== id));
-      // TODO: this is only because we rely on items count for each collection and its cached
-      fetchCollections();
+      await tx.executeSqlAsync(
+        inParam(`DELETE FROM connections where block_id IN (?#);`, blockIds)
+      );
     });
+    fetchBlocks();
+    // TODO: this is only because we rely on items count for each collection and its cached
+    fetchCollections();
+  };
+
+  const deleteBlock = async (id: string, ignoreRemote?: boolean) => {
+    await deleteBlocksById([id], ignoreRemote);
   };
 
   const deleteCollection = async (id: string) => {
@@ -653,9 +674,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       whereClause: `num_connections = 1`,
     });
 
-    // TODO: turn this bulk deletes
-    await Promise.all(blocks.map((block) => deleteBlock(block.id, true)));
-
+    await deleteBlocks(blocks, true);
     await deleteCollection(id);
   };
 
@@ -1498,7 +1517,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         arenaAccessToken,
         updateArenaAccessToken,
         tryImportArenaChannel,
-        // TODO: remove
+        // internal
         db,
         initDatabases,
         fetchBlocks,
