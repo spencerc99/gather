@@ -182,9 +182,34 @@ export function SelectArenaChannel({
     }
   }, [arenaAccessToken]);
 
+  const remoteCollectionIds = useMemo(
+    () =>
+      new Set(
+        collections
+          .filter(
+            (c) =>
+              c.remoteSourceType === RemoteSourceType.Arena &&
+              c.remoteSourceInfo?.arenaId
+          )
+          .map((c) => c.remoteSourceInfo?.arenaId)
+      ),
+    [collections]
+  );
+
+  const nonDisabledChannels = useMemo(
+    () =>
+      channels?.filter((c) => {
+        return !remoteCollectionIds.has(c.id.toString());
+      }),
+    [channels, collections]
+  );
+
   const filteredChannels = useMemo(
-    () => filterItemsBySearchValue(channels || [], debouncedSearch, ["title"]),
-    [channels, debouncedSearch]
+    () =>
+      debouncedSearch === ""
+        ? nonDisabledChannels
+        : filterItemsBySearchValue(channels || [], debouncedSearch, ["title"]),
+    [channels, debouncedSearch, nonDisabledChannels]
   );
 
   return arenaAccessToken ? (
@@ -253,10 +278,8 @@ export function SelectArenaChannel({
           >
             <Select.Group>
               {filteredChannels?.map((channel, idx) => {
-                const isDisabled = collections.some(
-                  (c) =>
-                    c.remoteSourceType === RemoteSourceType.Arena &&
-                    c.remoteSourceInfo?.arenaId === channel.id.toString()
+                const isDisabled = remoteCollectionIds.has(
+                  channel.id.toString()
                 );
                 return (
                   <Select.Item

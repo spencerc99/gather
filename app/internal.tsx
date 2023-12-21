@@ -11,6 +11,7 @@ import {
   Sheet,
   Spinner,
   Theme,
+  Stack,
   View,
   XStack,
   YStack,
@@ -25,11 +26,13 @@ import {
 } from "../components/Themed";
 import { useContext, useEffect, useState } from "react";
 import { ArenaLogin } from "../views/ArenaLogin";
-import { ImportArenaChannelSelect } from "../components/ImportArenaChannelSelect";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { UserContext, UserInfoId } from "../utils/user";
 import { stringToColor } from "../utils";
 import dayjs from "dayjs";
+import { ArenaChannelMultiSelect } from "../components/arena/ArenaChannelMultiSelect";
+import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
+import { ArenaChannelInfo } from "../utils/arena";
 
 export default function ModalScreen() {
   const {
@@ -40,11 +43,33 @@ export default function ModalScreen() {
     trySyncNewArenaBlocks,
     getPendingArenaBlocks,
     arenaAccessToken,
+    tryImportArenaChannel,
   } = useContext(DatabaseContext);
 
   const { currentUser } = useContext(UserContext);
 
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
+  const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
+    []
+  );
+  async function importSelectedChannels() {
+    // TODO: this would ideally do it in the background asynchronously
+    setIsLoading(true);
+    try {
+      await Promise.all(
+        selectedChannels.map(
+          async (channel) => await tryImportArenaChannel(channel.id.toString())
+        )
+      ).then(() => {
+        fetchCollections();
+      });
+    } catch (error) {
+      console.error(error);
+      // throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!__DEV__) {
@@ -81,7 +106,31 @@ export default function ModalScreen() {
       )}
       <H3>Are.na Settings</H3>
       <ArenaLogin path="internal" />
-      <ImportArenaChannelSelect {...{ isLoading, setIsLoading }} />
+      <ArenaChannelMultiSelect
+        setSelectedChannels={setSelectedChannels}
+        selectedChannels={selectedChannels}
+      />
+      <YStack space="$1.5">
+        {selectedChannels.map((channel) => (
+          <Stack backgroundColor="$green4" key={channel.id.toString()}>
+            <ArenaChannelSummary
+              channel={channel}
+              viewProps={{
+                borderWidth: 0.5,
+              }}
+            />
+          </Stack>
+        ))}
+      </YStack>
+      <StyledButton
+        icon={isLoading ? <Spinner size="small" /> : null}
+        disabled={!selectedChannels.length || isLoading}
+        onPress={importSelectedChannels}
+      >
+        {isLoading
+          ? `Importing ${selectedChannels.length} channels...`
+          : `Import ${selectedChannels.length} channels`}
+      </StyledButton>
       <H3>Internal Developer Tools</H3>
       <StyledText>
         These are available for testing and debugging purposes. If you run into

@@ -160,8 +160,6 @@ export function CollectionDetailView({
                   </StyledButton>
                 </>
               ) : null}
-              {/* TODO: if its an arena synced channel just "unlink it" */}
-              {/* TODO: what happens to blocks here? */}
               <StyledButton
                 theme="red"
                 onPress={() => onPressDelete()}
@@ -181,7 +179,8 @@ export function CollectionDetailView({
                     Delete Collection & Contained Blocks
                   </StyledButton>
                   <StyledText metadata>
-                    contained blocks are blocks that are only in this channel
+                    contained blocks are blocks that are only in this channel.
+                    use this when you want to "undo" an import.
                   </StyledText>
                 </YStack>
               )}

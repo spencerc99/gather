@@ -233,6 +233,7 @@ export default function IntroScreen() {
                   : "Not now"
               }
               onPress={importSelectedChannels}
+              disabled={isLoading}
             />
           </>
         );

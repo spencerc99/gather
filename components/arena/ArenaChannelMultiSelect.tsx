@@ -1,10 +1,10 @@
 import { useContext, useState, useEffect, useMemo } from "react";
-import { useDebounceValue, YStack, ScrollView, Stack, Sheet } from "tamagui";
+import { useDebounceValue, XStack, ScrollView, Stack, Sheet } from "tamagui";
 import { ArenaChannelInfo, getUserChannels } from "../../utils/arena";
 import { RemoteSourceType } from "../../utils/dataTypes";
 import { DatabaseContext } from "../../utils/db";
 import { filterItemsBySearchValue } from "../../utils/search";
-import { SearchBarInput, StyledButton } from "../Themed";
+import { SearchBarInput, StyledButton, StyledText } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
 
 export function ArenaChannelMultiSelect({
@@ -29,10 +29,34 @@ export function ArenaChannelMultiSelect({
       setChannels([]);
     }
   }, [arenaAccessToken]);
+  const remoteCollectionIds = useMemo(
+    () =>
+      new Set(
+        collections
+          .filter(
+            (c) =>
+              c.remoteSourceType === RemoteSourceType.Arena &&
+              c.remoteSourceInfo?.arenaId
+          )
+          .map((c) => c.remoteSourceInfo?.arenaId)
+      ),
+    [collections]
+  );
+
+  const nonDisabledChannels = useMemo(
+    () =>
+      channels?.filter((c) => {
+        return !remoteCollectionIds.has(c.id.toString());
+      }),
+    [channels, collections]
+  );
 
   const filteredChannels = useMemo(
-    () => filterItemsBySearchValue(channels || [], debouncedSearch, ["title"]),
-    [channels, debouncedSearch]
+    () =>
+      debouncedSearch === ""
+        ? nonDisabledChannels
+        : filterItemsBySearchValue(channels || [], debouncedSearch, ["title"]),
+    [channels, debouncedSearch, nonDisabledChannels]
   );
 
   const selectedChannelIds = selectedChannels.map((c) => c.id.toString());
@@ -61,13 +85,22 @@ export function ArenaChannelMultiSelect({
         />
         <Sheet.Handle />
         <Sheet.Frame padding="$1" space="$2">
-          <YStack margin="$2">
-            <SearchBarInput
-              backgroundColor="$gray4"
-              searchValue={searchValue}
-              setSearchValue={setSearchValue}
-            />
-          </YStack>
+          <XStack margin="$2">
+            <Stack flexGrow={1} paddingRight="$2">
+              <SearchBarInput
+                backgroundColor="$gray4"
+                searchValue={searchValue}
+                setSearchValue={setSearchValue}
+              />
+            </Stack>
+            <StyledButton
+              flexShrink={1}
+              theme="red"
+              disabled={!selectedChannels.length}
+            >
+              <StyledText>clear ({selectedChannels.length})</StyledText>
+            </StyledButton>
+          </XStack>
           <ScrollView
             contentContainerStyle={{
               // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
@@ -79,11 +112,7 @@ export function ArenaChannelMultiSelect({
             }}
           >
             {filteredChannels?.map((channel, idx) => {
-              const isDisabled = collections.some(
-                (c) =>
-                  c.remoteSourceType === RemoteSourceType.Arena &&
-                  c.remoteSourceInfo?.arenaId === channel.id.toString()
-              );
+              const isDisabled = remoteCollectionIds.has(channel.id.toString());
               const isSelected = selectedChannelIds.includes(
                 channel.id.toString()
               );
