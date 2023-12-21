@@ -57,11 +57,10 @@ export default function IntroScreen() {
     // TODO: this would ideally do it in the background asynchronously
     setIsLoading(true);
     try {
-      await Promise.all(
-        selectedChannels.map((channel) => tryImportArenaChannel(channel))
-      ).then(() => {
-        fetchCollections();
-      });
+      for (const channel of selectedChannels) {
+        await tryImportArenaChannel(channel);
+      }
+      await fetchCollections();
     } catch (error) {
       console.error(error);
       // throw error;
@@ -224,7 +223,7 @@ export default function IntroScreen() {
               text={
                 isLoading
                   ? `Importing ${selectedChannels.length} channels...`
-                  : selectedChannels.length > 1
+                  : selectedChannels.length >= 1
                   ? `Import ${selectedChannels.length} channels`
                   : arenaAccessToken
                   ? "I'll import later"

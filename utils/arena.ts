@@ -567,6 +567,7 @@ export async function getUserChannels(
         },
       });
       const respBody = await resp.json();
+      // TODO: resolve mismatch in length here
       let contents: ArenaChannelInfo[] = respBody.channels;
       fetchedItems.push(...contents);
       nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
