@@ -145,9 +145,10 @@ export function nextUrlFromResponse(
   response: any
 ): string | undefined {
   // TODO: this is not standardized across are.na responses..
-  const { page, length, per } = response;
-  if (page * per < length) {
-    return apiUrl(baseUrl, path, { ...params, page: page + 1 });
+  const { page, length, per, current_page } = response;
+  let currPage = page || current_page;
+  if (currPage * per < length) {
+    return apiUrl(baseUrl, path, { ...params, page: currPage + 1 });
   }
 }
 
@@ -546,12 +547,20 @@ export async function getUserChannels(
   accessToken: string
 ): Promise<ArenaChannelInfo[]> {
   // TODO: this doens't handle pagination, need for it to stream search results
+  // maybe save the last result in state and then try to update
+  const NumFetches = 1;
   const userInfo = await getUserInfo(accessToken);
-  const baseUrl = `https://api.are.na/v2/users/${userInfo.id}/channels`;
+  const baseUrl = withQueryParams(
+    `https://api.are.na/v2/users/${userInfo.id}/channels`,
+    {
+      per: 30,
+    }
+  );
   let fetchedItems: ArenaChannelInfo[] = [];
+  let numFetches = 0;
   try {
     let nextUrl: string | undefined = baseUrl;
-    while (nextUrl) {
+    while (nextUrl && numFetches < NumFetches) {
       const resp = await fetch(nextUrl, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -561,6 +570,7 @@ export async function getUserChannels(
       let contents: ArenaChannelInfo[] = respBody.channels;
       fetchedItems.push(...contents);
       nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
+      numFetches++;
     }
   } catch (e) {
     console.error(e);
