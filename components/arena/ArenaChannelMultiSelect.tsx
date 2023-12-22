@@ -67,7 +67,7 @@ export function ArenaChannelMultiSelect({
 
   return (
     <Stack>
-      <StyledButton backgroundColor="white" onPress={() => setOpen(true)}>
+      <StyledButton onPress={() => setOpen(true)}>
         {!channels ? "Loading from are.na..." : "Select channels to import"}
       </StyledButton>
 

@@ -83,7 +83,6 @@ export function CollectionDetailView({
       />
       <ScrollView>
         <YStack padding="10%">
-          {/* <XStack space="$3" flex={1}> */}
           <YStack flex={1} gap="$1">
             {/* TODO: change all these to labels and make them editable with a save */}
             <StyledParagraph title marginBottom="$2">
@@ -186,18 +185,6 @@ export function CollectionDetailView({
               )}
             </YStack>
           </YStack>
-          {/* <AspectRatioImage uri={thumbnail} otherProps={{ flex: 1 }} /> */}
-          {/* </XStack> */}
-          {/* insert search bar */}
-          {/* {blocks === null ? (
-          <Spinner />
-        ) : (
-          <XStack flexWrap="wrap" space="$2">
-            {blocks.map((block) => (
-              <BlockSummary block={block} />
-            ))}
-          </XStack>
-        )} */}
         </YStack>
       </ScrollView>
     </>
