@@ -1,10 +1,11 @@
 import { getFsPathForMediaResult, getFsPathForRemoteImage } from "./blobs";
+import urlMetadata from "url-metadata";
 
 const UrlRegex =
   /^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
 
 export function cleanUrl(url: string): string {
-  return url.trim().toLowerCase();
+  return url.trim();
 }
 
 export function isUrl(maybeUrl: string): boolean {
@@ -16,7 +17,6 @@ interface UrlMetadata {
   description?: string;
   images?: string[];
   favicon?: string;
-  domain: string;
   url: string;
 }
 
@@ -26,11 +26,21 @@ export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
   }
 
   const cleanedUrl = cleanUrl(url);
-
-  const response = await fetch(
-    `https://jsonlink.io/api/extract?url=${cleanedUrl}`
-  );
-  const data = await response.json();
+  const response = await urlMetadata(cleanedUrl);
+  let data: UrlMetadata = {
+    title: (response.title || response["og:title"]) as string,
+    description: (response.description ||
+      response["og:description"] ||
+      response["twitter:description"]) as string,
+    images: [
+      response.image,
+      response["og:image"],
+      response["twitter:image"],
+    ].filter((image) => Boolean(image)) as string[],
+    // @ts-ignore
+    favicon: response["favicons"]?.[0]?.href as string,
+    url: cleanedUrl,
+  };
   if (!data.images?.length) {
     // TODO: create a custom service for this? or only do it optionally? how to handle this in local-first context.. maybe never store?
     // TODO: pass in url as filename?
@@ -38,11 +48,6 @@ export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
       `http://image.thum.io/get/auth/69503-gather/${cleanedUrl}`
     );
     data.images = [siteImageFileUrl];
-  }
-
-  console.log(data);
-  if (!data.url) {
-    data.url = url;
   }
 
   return data as UrlMetadata;

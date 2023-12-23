@@ -59,6 +59,7 @@
     "react-native-screens": "~3.22.0",
     "react-native-web": "~0.19.6",
     "tamagui": "^1.79.11",
+    "url-metadata": "^3.3.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

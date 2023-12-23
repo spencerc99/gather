@@ -108,7 +108,7 @@ export function TextForageView({
       if (savedTextValue) {
         // TODO: do this check after insert as text value and then do an update to make it super fast.
         if (isUrl(savedTextValue)) {
-          const { title, description, images, url, domain, favicon } =
+          const { title, description, images, url, favicon } =
             await extractDataFromUrl(savedTextValue);
           await addBlock({
             createdBy: currentUser!.id,
