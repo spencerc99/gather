@@ -7,6 +7,12 @@ export const ArenaClientId = "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE";
 export const ArenaClientSecret = "jSpLG7pclKUxa_QcIfg6iv057TMK2Wz-Ma4f99ly9F0";
 export const ArenaTokenStorageKey = "arena-token";
 
+enum ArenaVisibility {
+  Public = "public",
+  Closed = "closed",
+  Private = "private",
+}
+
 export interface ArenaChannelInfo {
   id: number;
   title: string;
@@ -578,4 +584,64 @@ export async function getUserChannels(
     throw e;
   }
   return fetchedItems;
+}
+
+export async function createChannel({
+  accessToken,
+  title,
+  // TODO: make this a default setting in settings
+  visibility = ArenaVisibility.Private,
+  itemsToAdd,
+}: {
+  accessToken: string;
+  title: string;
+  visibility?: ArenaVisibility;
+  itemsToAdd?: Block[];
+}): Promise<{
+  newChannel: ArenaChannelInfo;
+  numItemsAdded: number;
+  numItemsFailed: number;
+}> {
+  const url = `${ArenaApiUrl}/channels`;
+  const resp = await fetch(url, {
+    method: "POST",
+    body: JSON.stringify({
+      title,
+      status: visibility,
+    }),
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+  const maybeChannel: ArenaChannelInfo = await resp.json();
+  if (!resp.ok) {
+    console.error(`failed to create channel ${resp.status}`, maybeChannel);
+    throw new Error(JSON.stringify(maybeChannel));
+  }
+
+  let numItemsAdded = 0;
+  let numItemsFailed = 0;
+  if (itemsToAdd?.length) {
+    const { id } = maybeChannel;
+    for (const block of itemsToAdd) {
+      try {
+        await addBlockToChannel({
+          channelId: id.toString(),
+          block,
+          arenaToken: accessToken,
+        });
+        numItemsAdded++;
+      } catch (e) {
+        console.error(e);
+        numItemsFailed++;
+      }
+    }
+  }
+
+  return {
+    newChannel: maybeChannel,
+    numItemsAdded,
+    numItemsFailed,
+  };
 }

@@ -5,6 +5,7 @@ import { DatabaseContext } from "../utils/db";
 import { ArenaLogo, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { ExternalLink } from "./ExternalLink";
 import { Stack, useRouter } from "expo-router";
+import { createChannel } from "../utils/arena";
 
 export function CollectionDetailView({
   collection,
@@ -30,6 +31,7 @@ export function CollectionDetailView({
     deleteCollection,
     fullDeleteCollection,
     arenaAccessToken,
+    getCollectionItems,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -72,6 +74,24 @@ export function CollectionDetailView({
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function onClickLinkToArena() {
+    if (!arenaAccessToken) {
+      return;
+    }
+
+    const collectionItems = await getCollectionItems(id);
+    const { newChannel, numItemsAdded, numItemsFailed } = await createChannel({
+      accessToken: arenaAccessToken,
+      title,
+      itemsToAdd: collectionItems,
+    });
+    alert(
+      `Created ${newChannel.title} on Are.na and added ${numItemsAdded} items.${
+        numItemsFailed > 0 ? ` ${numItemsFailed} items failed to add.` : ""
+      }}`
+    );
   }
 
   return (
@@ -149,12 +169,12 @@ export function CollectionDetailView({
               ) : arenaAccessToken ? (
                 <>
                   <StyledButton
-                    // onPress={onClickSyncNewItems}
-                    disabled={true || isLoading}
+                    onPress={onClickLinkToArena}
+                    disabled={isLoading}
                     icon={isLoading ? <Spinner size="small" /> : null}
                     marginTop="$2"
                   >
-                    Push collection to Are.na (coming soon)
+                    Link collection to Are.na
                     <ArenaLogo style={{ marginLeft: -4 }} />
                   </StyledButton>
                 </>
