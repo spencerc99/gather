@@ -7,8 +7,6 @@ import { TextForageView } from "../components/TextForageView";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Keyboard, Pressable, useColorScheme } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
-import Colors from "../constants/Styles";
 
 export function ChatDetailView({
   initialCollectionId,

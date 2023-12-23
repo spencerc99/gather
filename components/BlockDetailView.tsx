@@ -12,7 +12,7 @@ import { BlockSummary } from "./BlockSummary";
 import { useContext, useEffect, useState } from "react";
 import { ConnectionSummary } from "./ConnectionSummary";
 import { Connection } from "../utils/dataTypes";
-import { ScrollView, YStack } from "tamagui";
+import { ScrollView, Stack, YStack } from "tamagui";
 import { Link, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 
@@ -98,12 +98,21 @@ export function BlockDetailView({ block }: { block: Block }) {
         {/* TODO: separate by your connections vs. friends vs world? */}
         {connections.map((connection) => (
           // TODO: this should link to the collection chat
-          // <Link href="/(tabs)/home">
-          <ConnectionSummary
-            key={connection.collectionId}
-            connection={connection}
-          />
-          // </Link>
+          <Stack width="100%">
+            <Link
+              href={{
+                pathname: "/(tabs)/home",
+                params: {
+                  collectionId: connection.collectionId,
+                },
+              }}
+            >
+              <ConnectionSummary
+                key={connection.collectionId}
+                connection={connection}
+              />
+            </Link>
+          </Stack>
         ))}
       </YStack>
     </ScrollView>
