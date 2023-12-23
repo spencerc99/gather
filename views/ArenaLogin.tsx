@@ -98,7 +98,6 @@ export function ArenaLogin({ path }: { path: string }) {
     }
   }, [response]);
 
-  //   TODO: if token already present render the token and make login button smaller.
   return arenaAccessToken === undefined ? (
     <Spinner />
   ) : arenaAccessToken ? (

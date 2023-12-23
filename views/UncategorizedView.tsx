@@ -247,8 +247,6 @@ export function UncategorizedView() {
       <StyledText position="absolute" top="$1" textAlign="center" width="100%">
         {blocks.length} total blocks
       </StyledText>
-      {/* TODO: fix this, not sure why it isn't cycling */}
-      {/* {<CyclingRecentBlocks />} */}
       <StyledText textAlign="center" fontSize="$7">
         No uncategorized items!
       </StyledText>
@@ -308,34 +306,5 @@ export function UncategorizedView() {
         />
       </YStack>
     </KeyboardAvoidingView>
-  );
-}
-
-function CyclingRecentBlocks() {
-  const { blocks } = useContext(DatabaseContext);
-  const recentBlocks = useMemo(() => {
-    return [...blocks]
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 10);
-  }, [blocks]);
-  const [currIdx, setCurrIdx] = useState(0);
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setCurrIdx((newIdx) => (newIdx + 1) % recentBlocks.length);
-    }, 250);
-
-    return clearTimeout(timeout);
-  }, [recentBlocks]);
-
-  return !blocks.length ? null : (
-    <BlockSummary
-      block={recentBlocks[currIdx]}
-      hideHoldMenu
-      hideMetadata
-      style={{
-        width: 150,
-        height: 150,
-      }}
-    />
   );
 }
