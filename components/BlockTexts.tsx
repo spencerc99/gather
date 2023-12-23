@@ -103,6 +103,16 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   );
   const router = useRouter();
   const isRemoteCollection = collection?.remoteSourceType !== undefined;
+  const rightActions = useMemo(
+    () => (
+      <YStack alignItems="center" padding="$2">
+        <StyledButton circular size="$3">
+          <Icon name="link" />
+        </StyledButton>
+      </YStack>
+    ),
+    []
+  );
 
   function renderBlock(block: Block) {
     return (
@@ -112,13 +122,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
           overflow: "visible",
         }}
         friction={2}
-        renderRightActions={() => (
-          <YStack alignItems="center" padding="$2">
-            <StyledButton circular size="$3">
-              <Icon name="link" />
-            </StyledButton>
-          </YStack>
-        )}
+        renderRightActions={() => rightActions}
         onSwipeableOpen={(direction, swipeable) => {
           if (direction === "left") {
             return;
