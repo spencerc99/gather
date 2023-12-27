@@ -4,6 +4,7 @@ import {
   ScrollView,
   Platform,
   Keyboard,
+  Dimensions,
 } from "react-native";
 import { StyledButton, StyledTextArea, Icon } from "./Themed";
 import { View, XStack, YStack, Theme } from "tamagui";
@@ -274,6 +275,7 @@ export function TextForageView({
               icon={<Icon size={24} name="photo" />}
               onPress={pickImage}
               paddingHorizontal="$2"
+              alignSelf="flex-end"
             />
             <StyledTextArea
               placeholder="Save a thought, photo, or link..."
@@ -283,6 +285,7 @@ export function TextForageView({
               onChangeText={(text) => {
                 setTextValue(text);
               }}
+              maxHeight={Dimensions.get("window").height / 2}
               value={textValue}
               enablesReturnKeyAutomatically
             />
@@ -292,9 +295,10 @@ export function TextForageView({
                 void onSaveResult();
               }}
               theme="green"
+              chromeless
               paddingHorizontal="$2"
               disabled={!textValue && !medias.length}
-              chromeless
+              alignSelf="flex-end"
             >
               <Icon name="arrow-circle-up" size={30} color="$green10" />
             </StyledButton>
