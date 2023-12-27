@@ -7,12 +7,12 @@ import {
   Icon,
   StyledText,
 } from "./Themed";
-import { StyleSheet } from "react-native";
+import { Pressable } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { useContext, useEffect, useState } from "react";
 import { ConnectionSummary } from "./ConnectionSummary";
 import { Connection } from "../utils/dataTypes";
-import { ScrollView, Stack, YStack } from "tamagui";
+import { ScrollView, YStack } from "tamagui";
 import { Link, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 
@@ -97,32 +97,25 @@ export function BlockDetailView({ block }: { block: Block }) {
         </StyledButton>
         {/* TODO: separate by your connections vs. friends vs world? */}
         {connections.map((connection) => (
-          // TODO: this should link to the collection chat
-          <Stack width="100%">
-            <Link
-              href={{
-                pathname: "/(tabs)/home",
-                params: {
-                  collectionId: connection.collectionId,
-                },
-              }}
-            >
+          // TODO: jump to the location of the block??
+          <Link
+            href={{
+              pathname: "/(tabs)/home",
+              params: {
+                collectionId: connection.collectionId,
+              },
+            }}
+            asChild
+          >
+            <Pressable>
               <ConnectionSummary
                 key={connection.collectionId}
                 connection={connection}
               />
-            </Link>
-          </Stack>
+            </Pressable>
+          </Link>
         ))}
       </YStack>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  metadata: {
-    display: "flex",
-    alignSelf: "flex-end",
-    flexDirection: "column",
-  },
-});

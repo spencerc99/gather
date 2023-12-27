@@ -22,6 +22,10 @@ export function ChatDetailView({
   const colorScheme = useColorScheme();
 
   useEffect(() => {
+    setSelectedCollection(initialCollectionId);
+  }, [initialCollectionId]);
+
+  useEffect(() => {
     if (
       selectedCollection &&
       !collections.some((c) => c.id === selectedCollection)
