@@ -18,7 +18,7 @@ import {
   StyledParagraph,
 } from "./Themed";
 import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
-import { Pressable } from "react-native";
+import { FlatList, Pressable } from "react-native";
 import { UserContext } from "../utils/user";
 import { filterItemsBySearchValue } from "../utils/search";
 
@@ -99,140 +99,144 @@ export function SelectCollectionsList({
   }
 
   function renderCollections() {
-    return filteredCollections.map((collection) => {
-      const viewProps = selectedCollections.includes(collection.id)
-        ? {
-            backgroundColor: "$green4",
-            borderWidth: 2,
-            borderColor: "$green10",
-          }
-        : undefined;
-      return (
-        <Pressable
-          key={collection.id}
-          onPress={() => toggleCollection(collection)}
-        >
-          {/* TODO: bold the matching parts */}
-          {horizontal ? (
-            <CollectionThumbnail
-              collection={collection}
-              viewProps={viewProps}
-            />
-          ) : (
-            <CollectionSummary
-              collection={collection}
-              viewProps={
-                viewProps || {
-                  borderWidth: 1,
-                }
+    return (
+      <FlatList
+        horizontal={Boolean(horizontal)}
+        keyboardShouldPersistTaps={"handled"}
+        data={filteredCollections}
+        contentContainerStyle={{
+          gap: horizontal ? 8 : 4,
+        }}
+        renderItem={({ item: collection }) => {
+          const viewProps = selectedCollections.includes(collection.id)
+            ? {
+                backgroundColor: "$green4",
+                borderWidth: 2,
+                borderColor: "$green10",
               }
-            />
-          )}
-        </Pressable>
-      );
-    });
+            : undefined;
+          return (
+            <Pressable
+              key={collection.id}
+              onPress={() => toggleCollection(collection)}
+            >
+              {/* TODO: bold the matching parts */}
+              {horizontal ? (
+                <CollectionThumbnail
+                  collection={collection}
+                  viewProps={viewProps}
+                />
+              ) : (
+                <CollectionSummary
+                  collection={collection}
+                  viewProps={
+                    viewProps || {
+                      borderWidth: 1,
+                    }
+                  }
+                />
+              )}
+            </Pressable>
+          );
+        }}
+      />
+    );
   }
 
   function renderCollectionsList() {
-    if (horizontal) {
-      return (
-        <XStack
-          space="$2"
-          alignItems="center"
-          paddingVertical="$3"
-          // TODO: figure this out
-          onPress={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          {!searchValue && collections.length === 0 && (
-            <YStack height={140} width={110} justifyContent="center">
-              <LinkButton
-                href="/modal"
-                icon={<Icon name="plus" />}
-                height="auto"
-                minHeight={40}
-                paddingVertical="$1"
-              >
-                <SizableText
-                  userSelect="none"
-                  cursor="pointer"
-                  color="$color"
-                  size="$true"
+    return (
+      <Stack
+        {...(horizontal
+          ? {
+              paddingRight: scrollContainerPaddingBottom,
+            }
+          : { paddingBottom: scrollContainerPaddingBottom })}
+      >
+        {horizontal ? (
+          <XStack
+            space="$2"
+            alignItems="center"
+            paddingVertical="$3"
+            // TODO: figure this out
+            onPress={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {!searchValue && collections.length === 0 && (
+              <YStack height={140} width={110} justifyContent="center">
+                <LinkButton
+                  href="/modal"
+                  icon={<Icon name="plus" />}
+                  height="auto"
+                  minHeight={40}
+                  paddingVertical="$1"
                 >
-                  <SizableText>New collection</SizableText>
-                </SizableText>
-              </LinkButton>
-            </YStack>
-          )}
-          {searchValue && (
-            // Matches the height of CollectionThumbnail lol
-            <YStack height={140} width={100} justifyContent="center">
+                  <SizableText
+                    userSelect="none"
+                    cursor="pointer"
+                    color="$color"
+                    size="$true"
+                  >
+                    <SizableText>New collection</SizableText>
+                  </SizableText>
+                </LinkButton>
+              </YStack>
+            )}
+            {searchValue && (
+              // Matches the height of CollectionThumbnail lol
+              <YStack height={140} width={100} justifyContent="center">
+                <StyledButton
+                  onPress={async () => {
+                    await onClickCreateCollection();
+                  }}
+                  icon={<Icon name="plus" />}
+                  height="auto"
+                  minHeight={40}
+                >
+                  <SizableText
+                    userSelect="none"
+                    cursor="pointer"
+                    color="$color"
+                    size="$true"
+                    style={{ fontWeight: 700 }}
+                  >
+                    <SizableText>{searchValue}</SizableText>
+                  </SizableText>
+                </StyledButton>
+              </YStack>
+            )}
+            {renderCollections()}
+          </XStack>
+        ) : (
+          <YStack space="$1">
+            {searchValue && (
               <StyledButton
                 onPress={async () => {
                   await onClickCreateCollection();
                 }}
-                icon={<Icon name="plus" />}
+                noTextWrap={true}
                 height="auto"
-                minHeight={40}
+                paddingVertical={16}
               >
                 <SizableText
                   userSelect="none"
                   cursor="pointer"
                   color="$color"
                   size="$true"
-                  style={{ fontWeight: 700 }}
                 >
-                  <SizableText>{searchValue}</SizableText>
+                  New collection{" "}
+                  <SizableText style={{ fontWeight: 700 }}>
+                    {searchValue}
+                  </SizableText>
                 </SizableText>
               </StyledButton>
-            </YStack>
-          )}
-          {renderCollections()}
-        </XStack>
-      );
-    } else {
-      return (
-        <YStack space="$1">
-          {!searchValue && collections.length === 0 && (
-            <YStack height={140} width={100} justifyContent="center">
-              <LinkButton
-                href="/modal"
-                icon={<Icon name="plus" />}
-                height="auto"
-                minHeight={40}
-              >
-                New collection
-              </LinkButton>
-            </YStack>
-          )}
-          {searchValue && (
-            <StyledButton
-              onPress={async () => {
-                await onClickCreateCollection();
-              }}
-              noTextWrap={true}
-              height="auto"
-              paddingVertical={16}
-            >
-              <SizableText
-                userSelect="none"
-                cursor="pointer"
-                color="$color"
-                size="$true"
-              >
-                New collection{" "}
-                <SizableText style={{ fontWeight: 700 }}>
-                  {searchValue}
-                </SizableText>
-              </SizableText>
-            </StyledButton>
-          )}
-          {renderCollections()}
-        </YStack>
-      );
-    }
+            )}
+            {renderCollections()}
+          </YStack>
+        )}
+      </Stack>
+    );
   }
 
   return (
@@ -245,19 +249,7 @@ export function SelectCollectionsList({
         placeholder="Search a collection..."
         width="100%"
       />
-      <ScrollView
-        contentContainerStyle={
-          horizontal
-            ? {
-                paddingRight: scrollContainerPaddingBottom,
-              }
-            : { paddingBottom: scrollContainerPaddingBottom }
-        }
-        horizontal={horizontal}
-        keyboardShouldPersistTaps={"handled"}
-      >
-        {renderCollectionsList()}
-      </ScrollView>
+      {renderCollectionsList()}
     </Stack>
   );
 }

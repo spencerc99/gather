@@ -6,6 +6,7 @@ import { DatabaseContext } from "../../utils/db";
 import { filterItemsBySearchValue } from "../../utils/search";
 import { SearchBarInput, StyledButton, StyledText } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
+import { FlatList } from "react-native";
 
 export function ArenaChannelMultiSelect({
   selectedChannels,
@@ -101,48 +102,52 @@ export function ArenaChannelMultiSelect({
               <StyledText>clear ({selectedChannels.length})</StyledText>
             </StyledButton>
           </XStack>
-          <ScrollView
-            contentContainerStyle={{
-              // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
-              paddingBottom: 24,
-            }}
-            onScroll={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            {filteredChannels?.map((channel, idx) => {
-              const isDisabled = remoteCollectionIds.has(channel.id.toString());
-              const isSelected = selectedChannelIds.includes(
-                channel.id.toString()
-              );
-
-              return (
-                <Stack
-                  disabled={isDisabled}
-                  key={channel.id.toString()}
-                  backgroundColor={isSelected ? "$green4" : undefined}
-                  opacity={isDisabled ? 0.5 : undefined}
-                  onPress={() => {
-                    if (isSelected) {
-                      setSelectedChannels(
-                        selectedChannels.filter(
-                          (c) => c.id.toString() !== channel.id.toString()
-                        )
-                      );
-                    } else {
-                      setSelectedChannels([...selectedChannels, channel]);
-                    }
-                  }}
-                >
-                  <ArenaChannelSummary
-                    channel={channel}
-                    isDisabled={isDisabled}
-                  />
-                </Stack>
-              );
-            })}
-          </ScrollView>
+          <Sheet.ScrollView>
+            <FlatList
+              contentContainerStyle={{
+                // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
+                paddingBottom: 24,
+              }}
+              onScroll={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              data={filteredChannels}
+              renderItem={({ item, index: idx }) => {
+                const channel = item;
+                const isDisabled = remoteCollectionIds.has(
+                  channel.id.toString()
+                );
+                const isSelected = selectedChannelIds.includes(
+                  channel.id.toString()
+                );
+                return (
+                  <Stack
+                    disabled={isDisabled}
+                    key={channel.id.toString()}
+                    backgroundColor={isSelected ? "$green4" : undefined}
+                    opacity={isDisabled ? 0.5 : undefined}
+                    onPress={() => {
+                      if (isSelected) {
+                        setSelectedChannels(
+                          selectedChannels.filter(
+                            (c) => c.id.toString() !== channel.id.toString()
+                          )
+                        );
+                      } else {
+                        setSelectedChannels([...selectedChannels, channel]);
+                      }
+                    }}
+                  >
+                    <ArenaChannelSummary
+                      channel={channel}
+                      isDisabled={isDisabled}
+                    />
+                  </Stack>
+                );
+              }}
+            />
+          </Sheet.ScrollView>
         </Sheet.Frame>
       </Sheet>
     </Stack>
