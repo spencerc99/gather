@@ -33,7 +33,9 @@ function useBlockMenuItems(
             {
               text: "View Source",
               icon: () => <Icon name={"external-link"} />,
-              onPress: () => console.log("View Source"),
+              onPress: () => {
+                WebBrowser.openBrowserAsync(source!);
+              },
             },
           ]
         : []),

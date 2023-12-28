@@ -18,8 +18,6 @@ export function ChatDetailView({
     initialCollectionId
   );
   const [isSearching, setIsSearching] = useState(false);
-  const theme = useTheme();
-  const colorScheme = useColorScheme();
 
   useEffect(() => {
     setSelectedCollection(initialCollectionId);
@@ -80,18 +78,6 @@ export function ChatDetailView({
                   Keyboard.dismiss();
                 }}
                 selectedCollection={selectedCollection}
-                // TODO: handle the routing for this to navigate to the correct collection
-                // this needs to move the chat.tsx to within the tabs navigation
-                // setSelectedCollection={(newCollectionId) => {
-                //   router.replace(
-                //     !newCollectionId
-                //       ? { pathname: "/(tabs)/home" }
-                //       : {
-                //           pathname: "/collection/[id]/chat",
-                //           params: { id: newCollectionId },
-                //         }
-                //   );
-                // }}
                 setSelectedCollection={setSelectedCollection}
                 collectionPlaceholder="All collections"
                 triggerProps={{
