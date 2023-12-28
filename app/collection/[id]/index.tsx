@@ -13,7 +13,7 @@ export function CollectionDetailsHeaderLink({ id }: { id: string }) {
         pathname: "/collection/[id]",
         params: { id: id.toString() },
       }}
-      icon="list-alt"
+      icon="gear"
     />
   );
 }
