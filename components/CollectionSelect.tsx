@@ -68,6 +68,11 @@ export function CollectionSelect({
       // @ts-ignore
       value={selectedCollection}
       disablePreventBodyScroll
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setSearchValue("");
+        }
+      }}
     >
       <Select.Trigger
         elevation="$3"
@@ -118,6 +123,7 @@ export function CollectionSelect({
               searchValue={searchValue}
               setSearchValue={setSearchValue}
               placeholder="Search a collection..."
+              autoFocus
             />
           </YStack>
           <Sheet.ScrollView
