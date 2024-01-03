@@ -53,6 +53,9 @@ export default function BlockConnectModal() {
       />
       <StyledView paddingHorizontal="$2" height="100%">
         <StyledButton
+          position="absolute"
+          bottom={40}
+          zIndex={1}
           onPress={onConnect}
           width="100%"
           disabled={areArraysEqual(
@@ -65,7 +68,7 @@ export default function BlockConnectModal() {
         <SelectCollectionsList
           selectedCollections={selectedCollections}
           setSelectedCollections={setSelectedCollections}
-          scrollContainerPaddingBottom={120}
+          scrollContainerPaddingBottom={200}
         />
         <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
       </StyledView>
