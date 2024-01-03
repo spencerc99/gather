@@ -610,37 +610,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           )
       );
 
-      // TODO: move into separate and void it
       if (!ignoreRemote) {
-        const remoteBlocks = blocks.filter(
-          (block) => block.remoteSourceType !== undefined
-        );
-
-        for (const block of remoteBlocks) {
-          const connectionsForBlock = await getConnectionsForBlock(block.id);
-
-          switch (block.remoteSourceType) {
-            case RemoteSourceType.Arena:
-              if (!arenaAccessToken) {
-                break;
-              }
-              const { arenaId: arenaBlockId } = block.remoteSourceInfo!;
-              for (const connection of connectionsForBlock) {
-                const { collectionId } = connection;
-                // TODO: do this all at once for all of them
-                const { remoteSourceInfo } = await getCollection(collectionId);
-                if (!remoteSourceInfo) {
-                  continue;
-                }
-                // TODO: this doens't work if you are offline...
-                await removeBlockFromChannel({
-                  blockId: arenaBlockId,
-                  channelId: remoteSourceInfo.arenaId,
-                  arenaToken: arenaAccessToken,
-                });
-              }
-          }
-        }
+        // TODO: void this. Requires setting deletion timestamp and then deferring on deleting until remote is confirmed gone.
+        await handleDeleteBlocksRemote(blocks);
       }
 
       await tx.executeSqlAsync(
@@ -650,6 +622,38 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     fetchBlocks();
     // TODO: this is only because we rely on items count for each collection and its cached
     fetchCollections();
+  };
+
+  const handleDeleteBlocksRemote = async (blocks: Block[]) => {
+    const remoteBlocks = blocks.filter(
+      (block) => block.remoteSourceType !== undefined
+    );
+
+    for (const block of remoteBlocks) {
+      const connectionsForBlock = await getConnectionsForBlock(block.id);
+
+      switch (block.remoteSourceType) {
+        case RemoteSourceType.Arena:
+          if (!arenaAccessToken) {
+            break;
+          }
+          const { arenaId: arenaBlockId } = block.remoteSourceInfo!;
+          for (const connection of connectionsForBlock) {
+            const { collectionId } = connection;
+            // TODO: do this all at once for all of them
+            const { remoteSourceInfo } = await getCollection(collectionId);
+            if (!remoteSourceInfo) {
+              continue;
+            }
+            // TODO: this doens't work if you are offline...
+            await removeBlockFromChannel({
+              blockId: arenaBlockId,
+              channelId: remoteSourceInfo.arenaId,
+              arenaToken: arenaAccessToken,
+            });
+          }
+      }
+    }
   };
 
   const deleteBlock = async (id: string, ignoreRemote?: boolean) => {
@@ -725,11 +729,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     return result.insertId!.toString();
   };
-
-  function fetchBlocks() {
-    db.transaction((tx) => {
-      tx.executeSql(
-        `WITH block_connections AS (
+  const SelectBlockSql = `WITH block_connections AS (
             SELECT    connections.block_id,
                       COUNT(connections.collection_id) as num_connections
             FROM      connections
@@ -738,7 +738,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           SELECT    blocks.*,
                     COALESCE(block_connections.num_connections, 0) as num_connections
           FROM      blocks
-          LEFT JOIN block_connections ON block_connections.block_id = blocks.id;`,
+          LEFT JOIN block_connections ON block_connections.block_id = blocks.id`;
+
+  function fetchBlocks() {
+    db.transaction((tx) => {
+      tx.executeSql(
+        `${SelectBlockSql};`,
         [],
         (_, { rows: { _array } }) => {
           setBlocks(_array.map((block) => mapDbBlockToBlock(block)));
@@ -749,12 +754,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       );
     });
   }
-
-  function fetchCollections() {
-    db.transaction(
-      (tx) => {
-        tx.executeSql(
-          `WITH block_connections AS (
+  const SelectCollectionInfoSql = `WITH block_connections AS (
               SELECT      id, 
                           content, 
                           collection_id, 
@@ -792,7 +792,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               COUNT(connections.block_id) as num_blocks
           FROM      annotated_collections
           LEFT JOIN connections ON annotated_collections.id = connections.collection_id
-          GROUP BY 1,2,3,4,5,6,7;`,
+          GROUP BY 1,2,3,4,5,6,7`;
+
+  function fetchCollections() {
+    db.transaction(
+      (tx) => {
+        tx.executeSql(
+          `${SelectCollectionInfoSql};`,
           [],
           (_, { rows: { _array } }) => {
             setCollections([
@@ -809,34 +815,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
   }
 
-  async function getCollection(collectionId: string) {
-    const maybeCollection = collections.find(
-      (collection) => collection.id.toString() === collectionId.toString()
-    );
-    if (!maybeCollection) {
-      console.error(
-        `Collection ${collectionId} not found! Only have ${collections.map(
-          (c) => c.id
-        )}`
-      );
-    }
-    return maybeCollection;
-  }
-
-  async function getBlockFromDb(blockId: string): Promise<Block> {
+  async function fetchBlock(blockId: string): Promise<Block> {
     const [result] = await db.execAsync(
       [
         {
-          sql: `WITH block_connections AS (
-            SELECT    connections.block_id,
-                      COUNT(connections.collection_id) as num_connections
-            FROM      connections
-            GROUP BY  1
-          )
-          SELECT    blocks.*,
-                    COALESCE(block_connections.num_connections, 0) as num_connections
-          FROM      blocks
-          LEFT JOIN block_connections ON block_connections.block_id = blocks.id
+          sql: `${SelectBlockSql}
           WHERE     blocks.id = ?;`,
           args: [blockId],
         },
@@ -852,12 +835,42 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return mapDbBlockToBlock(result.rows[0]);
   }
 
+  async function fetchCollection(collectionId: string): Promise<Collection> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `${SelectCollectionInfoSql}
+          WHERE     collections.id = ?;`,
+          args: [collectionId],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+
+    if (!result.rows.length) {
+      throw Error(`Collection ${collectionId} not found!`);
+    }
+
+    return mapDbCollectionToCollection(result.rows[0]);
+  }
+
+  async function getCollection(collectionId: string) {
+    let maybeCollection = collections.find(
+      (collection) => collection.id.toString() === collectionId.toString()
+    );
+    if (!maybeCollection) {
+      maybeCollection = await fetchCollection(collectionId);
+    }
+    return maybeCollection;
+  }
+
   async function getBlock(blockId: string) {
     let maybeBlock = blocks.find(
       (block) => block.id.toString() === blockId.toString()
     );
     if (!maybeBlock) {
-      maybeBlock = await getBlockFromDb(blockId);
+      maybeBlock = await fetchBlock(blockId);
     }
     return maybeBlock;
   }
@@ -1354,56 +1367,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
 
     return syncNewRemoteItemsForCollection(collection);
-  }
-
-  // returns a mapping of collectionIdToRemoteCreatedAt
-  async function handleRemoteConnectionUpdate(
-    blockId: string,
-    collectionIds: string[]
-  ): Promise<Record<string, string | undefined>> {
-    const remoteCollections = collections.filter(
-      (c) =>
-        collectionIds.includes(c.id) && c.remoteSourceType && c.remoteSourceInfo
-    );
-
-    const collectionIdToRemoteCreatedAt: Record<string, string | undefined> =
-      {};
-
-    if (remoteCollections.length > 0) {
-      const block = await getBlock(blockId);
-      for (const remoteCollection of remoteCollections) {
-        const [result] = await db.execAsync(
-          [
-            {
-              sql: `SELECT * FROM connections WHERE block_id = ? AND collection_id = ?;`,
-              args: [blockId, remoteCollection.id],
-            },
-          ],
-          true
-        );
-        handleSqlErrors(result);
-        if (result.rows.length > 0) {
-          continue;
-        }
-
-        switch (remoteCollection.remoteSourceType) {
-          case RemoteSourceType.Arena:
-            try {
-              const updatedBlock = await syncBlockToArena(
-                remoteCollection.remoteSourceInfo!.arenaId,
-                block
-              );
-              collectionIdToRemoteCreatedAt[remoteCollection.id] =
-                updatedBlock?.connected_at;
-            } catch (err) {
-              console.error(err);
-            }
-
-            break;
-        }
-      }
-    }
-    return collectionIdToRemoteCreatedAt;
   }
 
   async function addConnections(blockId: string, collectionIds: string[]) {
