@@ -642,14 +642,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           }
           const { arenaId: arenaBlockId } = block.remoteSourceInfo!;
           for (const connection of connectionsForBlock) {
-            const { collectionId, remoteSourceInfo } = connection;
-            if (!remoteSourceInfo) {
-              continue;
-            }
+            const { remoteSourceInfo } = connection;
+
             // TODO: this doens't work if you are offline...
             await removeBlockFromChannel({
               blockId: arenaBlockId,
-              channelId: remoteSourceInfo.arenaId,
+              channelId: remoteSourceInfo!.arenaId,
               arenaToken: arenaAccessToken,
             });
           }
@@ -658,6 +656,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
 
   const deleteBlock = async (id: string, ignoreRemote?: boolean) => {
+    console.log("DELETING");
     await deleteBlocksById([id], ignoreRemote);
   };
 
@@ -1441,6 +1440,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     handleSqlErrors(result);
 
+    // TODO: this is still kinda jank, need to do the same thing as with deleting a block.
     if (arenaAccessToken) {
       for (const collection of remoteCollectionsToRemoveConnection) {
         await removeBlockFromChannel({
@@ -1452,6 +1452,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
 
     await fetchCollections();
+    await fetchBlocks();
   }
 
   async function getConnectionsForBlock(
@@ -1489,6 +1490,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       collectionId: connection.collection_id.toString(),
       createdTimestamp: convertDbTimestampToDate(connection.created_timestamp)!,
       collectionTitle: connection.title,
+      remoteSourceInfo: JSON.parse(connection.remote_source_info),
     }));
   }
 
