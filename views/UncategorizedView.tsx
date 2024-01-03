@@ -123,6 +123,8 @@ export function UncategorizedView() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const carouselRef = useRef<ICarouselInstance>(null);
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [searchValue, setSearchValue] = useState("");
 
   function handleDeleteBlock(blockId: string) {
     if (!events) {
@@ -133,11 +135,6 @@ export function UncategorizedView() {
   }
 
   function CarouselItem({ item, index }: { item: Block; index: number }) {
-    const [selectedCollections, setSelectedCollections] = useState<string[]>(
-      []
-    );
-    const [searchValue, setSearchValue] = useState("");
-
     useEffect(() => {
       // TODO: bring back if putting all blocks here
       // getConnectionsForBlock(item.id).then((connections) => {
@@ -221,15 +218,6 @@ export function UncategorizedView() {
             </StyledButton>
           </XStack>
         </YStack>
-        <Stack backgroundColor={theme.background.get()} paddingHorizontal="$1">
-          <SelectCollectionsList
-            searchValue={searchValue}
-            setSearchValue={setSearchValue}
-            selectedCollections={selectedCollections}
-            setSelectedCollections={setSelectedCollections}
-            horizontal
-          />
-        </Stack>
       </>
     );
   }
@@ -258,11 +246,11 @@ export function UncategorizedView() {
       // TODO: try switching back to padding when fixing the keyboard-dynamic height thing below
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       contentContainerStyle={{
-        flex: 1,
+        flexDirection: "column",
       }}
       keyboardVerticalOffset={insets.top + 60}
     >
-      <YStack flex={1} justifyContent="space-between">
+      <XStack flex={1}>
         <Carousel
           ref={carouselRef}
           loop={false}
@@ -276,35 +264,44 @@ export function UncategorizedView() {
           }}
           width={width}
           data={events}
-          scrollAnimationDuration={300}
-          windowSize={3}
-          onScrollBegin={() => {
-            // TODO: bring this back when you resolve the
-            // propagation from trying to touch the selectcollections input
-            // Keyboard.dismiss();
-          }}
-          onScrollEnd={() => {}}
-          onSnapToItem={(index) => {
-            // TODO: can bring this back when https://github.com/dohooo/react-native-reanimated-carousel/issues/464 is fixed
-            // if (currentIndex === index) {
-            //   return;
-            // }
-            // if (selectedCollections.length && currentIndex !== null) {
-            //   const currentBlockId = events[currentIndex].id;
-            //   addConnections(currentBlockId, selectedCollections);
-            //   setSelectedCollections([]);
-            //   setEvents(events.filter((block) => block.id !== currentBlockId));
-            //   if (index > currentIndex && index > 0) {
-            //     carouselRef.current?.prev({ animated: false });
-            //     setCurrentIndex(currentIndex - 1);
-            //     return;
-            //   }
-            // }
-            // setCurrentIndex(index);
-          }}
+          // scrollAnimationDuration={300}
+          windowSize={4}
+          // onScrollBegin={() => {
+          // TODO: bring this back when you resolve the
+          // propagation from trying to touch the selectcollections input
+          // Keyboard.dismiss();
+          // }}
+          // onScrollEnd={() => {}}
+          // onSnapToItem={(index) => {
+          // TODO: can bring this back when https://github.com/dohooo/react-native-reanimated-carousel/issues/464 is fixed
+          // if (currentIndex === index) {
+          //   return;
+          // }
+          // if (selectedCollections.length && currentIndex !== null) {
+          //   const currentBlockId = events[currentIndex].id;
+          //   addConnections(currentBlockId, selectedCollections);
+          //   setSelectedCollections([]);
+          //   setEvents(events.filter((block) => block.id !== currentBlockId));
+          //   if (index > currentIndex && index > 0) {
+          //     carouselRef.current?.prev({ animated: false });
+          //     setCurrentIndex(currentIndex - 1);
+          //     return;
+          //   }
+          // }
+          // setCurrentIndex(index);
+          // }}
           renderItem={({ item, index }) => CarouselItem({ item, index })}
         />
-      </YStack>
+      </XStack>
+      <Stack paddingHorizontal="$1">
+        <SelectCollectionsList
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+          selectedCollections={selectedCollections}
+          setSelectedCollections={setSelectedCollections}
+          horizontal
+        />
+      </Stack>
     </KeyboardAvoidingView>
   );
 }

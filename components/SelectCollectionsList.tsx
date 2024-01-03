@@ -240,8 +240,7 @@ export function SelectCollectionsList({
   }
 
   return (
-    // horizontal ? "column-reverse" :
-    <Stack flexDirection={"column"} height="auto">
+    <Stack flexDirection={"column"}>
       <SearchBarInput
         backgroundColor="$gray4"
         searchValue={searchValue}
