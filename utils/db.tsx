@@ -481,7 +481,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         // TODO: this is kinda jank, should really be using directly from arena item
         // but because we are doing the logic to extract that into this its effectively
         // the same info
-        remoteCreatedAt: blocksToInsert[idx].remoteSourceInfo?.connectedAt,
+        remoteCreatedAt: blocksToInsert[idx].remoteConnectedAt,
       }));
       await addConnectionsToCollection(collectionId, blockConnections);
     }
@@ -624,13 +624,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     fetchCollections();
   };
 
+  // TODO: this should really just be a separate thing that sweeps up any things to delete
   const handleDeleteBlocksRemote = async (blocks: Block[]) => {
     const remoteBlocks = blocks.filter(
       (block) => block.remoteSourceType !== undefined
     );
 
     for (const block of remoteBlocks) {
-      const connectionsForBlock = await getConnectionsForBlock(block.id);
+      const connectionsForBlock = await getConnectionsForBlock(block.id, {
+        filterRemoteOnly: true,
+      });
 
       switch (block.remoteSourceType) {
         case RemoteSourceType.Arena:
@@ -639,9 +642,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           }
           const { arenaId: arenaBlockId } = block.remoteSourceInfo!;
           for (const connection of connectionsForBlock) {
-            const { collectionId } = connection;
-            // TODO: do this all at once for all of them
-            const { remoteSourceInfo } = await getCollection(collectionId);
+            const { collectionId, remoteSourceInfo } = connection;
             if (!remoteSourceInfo) {
               continue;
             }
@@ -1043,6 +1044,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return await SecureStore.getItemAsync(ArenaTokenStorageKey);
   }
 
+  // TODO: change this to return Connection type
   async function getPendingArenaConnections(): Promise<SQLite.ResultSet> {
     const [result] = await db.execAsync(
       [
@@ -1220,18 +1222,25 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       const { id: newBlockId, image } = rawArenaItem;
       const hasUpdatedImage =
         block.type === BlockType.Link && image?.display.url;
-      if (hasUpdatedImage) {
-        console.log(`Block ${block.id} updated image from remote!`);
-        await db.execAsync(
-          [
-            {
-              sql: `UPDATE blocks content = ? WHERE id = ?;`,
-              args: [image.display.url, block.id],
-            },
-          ],
-          false
-        );
-      }
+      await db.execAsync(
+        [
+          {
+            sql: `UPDATE blocks SET remote_source_type = ?, remote_source_info = ?${
+              hasUpdatedImage ? `, content = ?` : ""
+            } WHERE id = ?;`,
+            args: [
+              RemoteSourceType.Arena,
+              JSON.stringify({
+                arenaId: newBlockId,
+                arenaClass: "Block",
+              } as RemoteSourceInfo),
+              ...(hasUpdatedImage ? [image.display.url] : []),
+              block.id,
+            ],
+          },
+        ],
+        false
+      );
       return rawArenaItem;
     } catch (err) {
       console.error(err);
@@ -1240,11 +1249,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function getLastRemoteItemForCollection(
     collectionId: string
-  ): Promise<Block | null> {
+  ): Promise<(Block & { remoteConnectedAt: string }) | null> {
     const [result] = await db.execAsync(
       [
         {
-          sql: `SELECT  blocks.*
+          sql: `SELECT  blocks.*,
+                        connections.remote_created_at as remote_connected_at
             FROM        blocks
             INNER JOIN  connections ON connections.block_id = blocks.id AND connections.collection_id = ?
             LEFT JOIN   collections ON connections.collection_id = collections.id
@@ -1284,8 +1294,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       remoteSourceInfo: {
         arenaId: block.id,
         arenaClass: "Block",
-        connectedAt: block.connected_at,
       },
+      remoteConnectedAt: block.connected_at,
     }));
   }
 
@@ -1306,8 +1316,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           );
           if (lastRemoteItem?.remoteSourceInfo) {
             lastSyncedInfo = {
-              lastSyncedBlockCreatedAt:
-                lastRemoteItem.remoteSourceInfo.connectedAt,
+              lastSyncedBlockCreatedAt: lastRemoteItem.remoteConnectedAt,
               lastSyncedBlockId: lastRemoteItem.remoteSourceInfo.arenaId,
               // TODO: this is wrong but i dont want to deal with types rn
               lastSyncedAt: new Date().toISOString(),
@@ -1446,7 +1455,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   async function getConnectionsForBlock(
-    blockId: string
+    blockId: string,
+    { filterRemoteOnly }: { filterRemoteOnly?: boolean } = {}
   ): Promise<Connection[]> {
     const [result] = await db.execAsync(
       [
@@ -1456,10 +1466,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                         connections.created_timestamp, 
                         connections.created_by, 
                         collections.title,
-                        collections.remote_source_type
+                        collections.remote_source_type,
+                        collections.remote_source_info
                 FROM connections 
                 INNER JOIN collections ON connections.collection_id = collections.id
-                WHERE block_id = ?`,
+                WHERE block_id = ?${
+                  filterRemoteOnly
+                    ? ` AND collections.remote_source_type IS NOT NULL AND connections.remote_created_at IS NOT NULL`
+                    : ""
+                };`,
           args: [blockId],
         },
       ],
