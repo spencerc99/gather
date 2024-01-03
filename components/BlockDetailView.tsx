@@ -72,17 +72,6 @@ export function BlockDetailView({ block }: { block: Block }) {
           <StyledParagraph metadata>
             Updated: {updatedAt.toLocaleDateString()}
           </StyledParagraph>
-          {/* TODO: update to handle multiple sources */}
-          {remoteSourceType && (
-            <StyledParagraph metadata>
-              Syncing to{" "}
-              <ExternalLink
-                href={`https://are.na/block/${remoteSourceInfo?.arenaId}`}
-              >
-                <StyledParagraph link>{remoteSourceType}</StyledParagraph>
-              </ExternalLink>
-            </StyledParagraph>
-          )}
         </StyledView>
         <StyledButton
           icon={<Icon name="link" />}

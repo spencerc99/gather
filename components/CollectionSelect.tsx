@@ -123,7 +123,6 @@ export function CollectionSelect({
               searchValue={searchValue}
               setSearchValue={setSearchValue}
               placeholder="Search a collection..."
-              autoFocus
             />
           </YStack>
           <Sheet.ScrollView

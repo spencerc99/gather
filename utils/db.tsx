@@ -1078,6 +1078,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     const result = await getPendingArenaBlocks();
 
+    // TODO: this needs to handle connections
     const blocksToSync = result.rows.map((block) => {
       const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
       const mappedBlock = mapDbBlockToBlock(block);

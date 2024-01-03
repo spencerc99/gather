@@ -8,52 +8,31 @@ import { DatabaseContext } from "../utils/db";
 export default function NotFoundScreen() {
   const pathname = usePathname();
   const router = useRouter();
-  const { shareIntent, resetShareIntent } = useShareIntent();
-  const { setShareIntent } = useContext(DatabaseContext);
-
-  useEffect(() => {
-    if (isShareIntentUrl(pathname) && shareIntent) {
-      setShareIntent(shareIntent);
-      resetShareIntent();
-      router.replace({
-        pathname: "/home",
-      });
-    }
-  }, [shareIntent]);
 
   return (
     <>
-      {/* TODO: show the splash screen here instead */}
-      {isShareIntentUrl(pathname) ? (
-        <>
-          <StyledText>Loading...</StyledText>
-          {/* TODO: remove */}
-          <StyledText>{JSON.stringify(shareIntent)}</StyledText>
-        </>
-      ) : (
-        <>
-          <Stack.Screen options={{ title: "Oops!" }} />
-          <StyledView style={styles.container}>
-            <StyledText style={styles.title}>
-              This screen doesn't exist.
-            </StyledText>
-            <StyledText>tried to navigate to: {pathname}</StyledText>
+      <>
+        <Stack.Screen options={{ title: "Oops!" }} />
+        <StyledView style={styles.container}>
+          <StyledText style={styles.title}>
+            This screen doesn't exist.
+          </StyledText>
+          <StyledText>tried to navigate to: {pathname}</StyledText>
 
-            <StyledText
-              style={styles.linkText}
-              onPress={() => {
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.replace({ pathname: "/home" });
-                }
-              }}
-            >
-              Go back.
-            </StyledText>
-          </StyledView>
-        </>
-      )}
+          <StyledText
+            style={styles.linkText}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace({ pathname: "/home" });
+              }
+            }}
+          >
+            Go back.
+          </StyledText>
+        </StyledView>
+      </>
     </>
   );
 }

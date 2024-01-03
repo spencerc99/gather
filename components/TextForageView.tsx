@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { StyledButton, StyledTextArea, Icon } from "./Themed";
 import { View, XStack, YStack, Theme } from "tamagui";
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
 import { Audio } from "expo-av";
@@ -36,10 +36,25 @@ export function TextForageView({
 }) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
-  const { createBlock: addBlock } = useContext(DatabaseContext);
+  const { createBlock: addBlock, shareIntent } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (shareIntent !== null) {
+      if (typeof shareIntent === "object") {
+        setMedias([
+          {
+            uri: shareIntent.uri,
+            type: BlockType.Image,
+          },
+        ]);
+      } else {
+        setTextValue(shareIntent);
+      }
+    }
+  }, [shareIntent]);
 
   if (!currentUser) {
     return null;

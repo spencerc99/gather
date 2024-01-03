@@ -5,15 +5,16 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Link, SplashScreen, Stack } from "expo-router";
-import { useEffect } from "react";
+import { Link, SplashScreen, Stack, usePathname, useRouter } from "expo-router";
+import { useContext, useEffect } from "react";
 import { useColorScheme } from "react-native";
-import { DatabaseProvider } from "../utils/db";
+import { DatabaseContext, DatabaseProvider } from "../utils/db";
 import { HoldMenuProvider } from "react-native-hold-menu";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TamaguiProvider, Theme } from "tamagui";
 import { config } from "../tamagui.config";
 import { UserProvider } from "../utils/user";
+import useShareIntent from "../hooks/useShareIntent";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -29,6 +30,9 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
+
   const [loaded, error] = useFonts({
     Inter: require("@tamagui/font-inter/otf/Inter-Medium.otf"),
     InterLight: require("@tamagui/font-inter/otf/Inter-Light.otf"),
@@ -51,13 +55,6 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  const insets = useSafeAreaInsets();
-
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <TamaguiProvider config={config}>
@@ -68,79 +65,77 @@ function RootLayoutNav() {
           >
             <UserProvider>
               <DatabaseProvider>
-                <Stack>
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="modal"
-                    options={{
-                      presentation: "modal",
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="internal"
-                    options={{
-                      presentation: "card",
-                      title: "",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="intro"
-                    options={{
-                      presentation: "card",
-                      title: "",
-                    }}
-                  />
-                  {/* <Stack.Screen
-                    name="profile"
-                    options={{
-                      presentation: "card",
-                      title: "",
-                    }}
-                  /> */}
-                  <Stack.Screen
-                    name="collection/[id]/index"
-                    options={{
-                      presentation: "card",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="collection/[id]/chat"
-                    options={{
-                      presentation: "card",
-                      title: "",
-                      animation: "slide_from_bottom",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="collection/[id]/settings"
-                    options={{
-                      presentation: "modal",
-                      title: "Collection Settings",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="block/[id]/index"
-                    options={{
-                      presentation: "card",
-                      title: "",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="block/[id]/connect"
-                    options={{
-                      presentation: "modal",
-                    }}
-                  />
-                </Stack>
+                <RootLayoutNav />
               </DatabaseProvider>
             </UserProvider>
           </HoldMenuProvider>
         </Theme>
       </TamaguiProvider>
     </ThemeProvider>
+  );
+}
+
+function RootLayoutNav() {
+  const { shareIntent, resetShareIntent } = useShareIntent();
+  const { setShareIntent } = useContext(DatabaseContext);
+
+  useEffect(() => {
+    if (shareIntent !== null) {
+      setShareIntent(shareIntent);
+      resetShareIntent();
+    }
+  }, [shareIntent]);
+
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="modal"
+        options={{
+          presentation: "modal",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="internal"
+        options={{
+          presentation: "card",
+          title: "",
+        }}
+      />
+      <Stack.Screen
+        name="intro"
+        options={{
+          presentation: "card",
+          title: "",
+        }}
+      />
+      <Stack.Screen
+        name="collection/[id]/index"
+        options={{
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="collection/[id]/settings"
+        options={{
+          presentation: "modal",
+          title: "Collection Settings",
+        }}
+      />
+      <Stack.Screen
+        name="block/[id]/index"
+        options={{
+          presentation: "card",
+          title: "",
+        }}
+      />
+      <Stack.Screen
+        name="block/[id]/connect"
+        options={{
+          presentation: "modal",
+        }}
+      />
+    </Stack>
   );
 }
