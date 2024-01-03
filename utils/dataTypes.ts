@@ -22,6 +22,12 @@ export interface Collection extends CollectionInsertInfo {
   lastConnectedAt: Date | null;
 }
 
+export interface ConnectionInsertInfo {
+  blockId: string;
+  collectionId: string;
+  remoteCreatedAt?: string;
+}
+
 export interface Connection {
   blockId: string;
   collectionId: string;
@@ -65,6 +71,12 @@ export interface Block extends Omit<BlockInsertInfo, "collectionsToConnect"> {
   updatedAt: Date;
   numConnections: number;
   remoteConnectedAt?: Date | null; // only present when selecting from a single collection
+}
+
+export interface BlockWithCollectionInfo extends Block {
+  collectionRemoteSourceInfo: RemoteSourceInfo;
+  collectionRemoteSourceType: RemoteSourceType;
+  collectionId: string;
 }
 
 export interface CollectionBlock extends Block {

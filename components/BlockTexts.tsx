@@ -95,9 +95,8 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       // so it is the reverse of what it should be
       [...(blocks || [])].sort(
         (a, b) =>
-          new Date(b.remoteConnectedAt || 0).getTime() -
-            new Date(a.remoteConnectedAt || 0).getTime() ||
-          b.createdAt.getTime() - a.createdAt.getTime()
+          new Date(b.remoteConnectedAt || b.createdAt).getTime() -
+          new Date(a.remoteConnectedAt || a.createdAt).getTime()
       ),
     [blocks]
   );

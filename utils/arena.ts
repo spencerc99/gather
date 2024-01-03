@@ -505,7 +505,6 @@ export async function addBlockToChannel({
     throw new Error(JSON.stringify(response));
   }
 
-  console.log(response);
   return response;
 }
 
