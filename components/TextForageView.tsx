@@ -100,6 +100,7 @@ export function TextForageView({
     const savedTextValue = textValue;
     setTextValue("");
     setMedias([]);
+    // TODO: add latest block to list now so it shows up immediately
 
     try {
       if (savedMedias.length) {
@@ -129,7 +130,7 @@ export function TextForageView({
           await addBlock({
             createdBy: currentUser!.id,
             // TODO: try to capture a picture of the url always
-            content: images?.[0] || favicon || url,
+            content: images?.[0] || favicon || "",
             title,
             description,
             source: url,

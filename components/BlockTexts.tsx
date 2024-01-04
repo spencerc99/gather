@@ -85,6 +85,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       setBlocks(allBlocks);
       return;
     }
+    // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
     const collectionBlocks = await getCollectionItems(collectionId);
     setBlocks(collectionBlocks);
   }

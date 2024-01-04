@@ -249,6 +249,9 @@ export function BlockTextSummary({
   });
 
   function renderContent() {
+    // if (!block.content && block.type === BlockType.Link) {
+    //   return null;
+    // }
     const content = (
       <BlockContent
         key={id}
@@ -274,6 +277,7 @@ export function BlockTextSummary({
     switch (type) {
       case BlockType.Link:
         const inner = (
+          // TODO: don't render content for link without image (content === '')
           <YStack>
             {content}
             <YStack alignItems="flex-end" paddingBottom="$1" maxWidth={250}>

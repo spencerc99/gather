@@ -264,32 +264,7 @@ export function UncategorizedView() {
           }}
           width={width}
           data={events}
-          // scrollAnimationDuration={300}
-          windowSize={4}
-          // onScrollBegin={() => {
-          // TODO: bring this back when you resolve the
-          // propagation from trying to touch the selectcollections input
-          // Keyboard.dismiss();
-          // }}
-          // onScrollEnd={() => {}}
-          // onSnapToItem={(index) => {
-          // TODO: can bring this back when https://github.com/dohooo/react-native-reanimated-carousel/issues/464 is fixed
-          // if (currentIndex === index) {
-          //   return;
-          // }
-          // if (selectedCollections.length && currentIndex !== null) {
-          //   const currentBlockId = events[currentIndex].id;
-          //   addConnections(currentBlockId, selectedCollections);
-          //   setSelectedCollections([]);
-          //   setEvents(events.filter((block) => block.id !== currentBlockId));
-          //   if (index > currentIndex && index > 0) {
-          //     carouselRef.current?.prev({ animated: false });
-          //     setCurrentIndex(currentIndex - 1);
-          //     return;
-          //   }
-          // }
-          // setCurrentIndex(index);
-          // }}
+          windowSize={7}
           renderItem={({ item, index }) => CarouselItem({ item, index })}
         />
       </XStack>

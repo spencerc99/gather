@@ -1,4 +1,3 @@
-import { getFsPathForMediaResult, getFsPathForRemoteImage } from "./blobs";
 import urlMetadata from "url-metadata";
 
 const UrlRegex =
@@ -41,14 +40,6 @@ export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
     favicon: response["favicons"]?.[0]?.href as string,
     url: cleanedUrl,
   };
-  if (!data.images?.length) {
-    // TODO: create a custom service for this? or only do it optionally? how to handle this in local-first context.. maybe never store?
-    // TODO: pass in url as filename?
-    const siteImageFileUrl = await getFsPathForRemoteImage(
-      `http://image.thum.io/get/auth/69503-gather/${cleanedUrl}`
-    );
-    data.images = [siteImageFileUrl];
-  }
-
+  // TODO: maybe use iframely here
   return data as UrlMetadata;
 }

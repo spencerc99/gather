@@ -518,7 +518,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   ?
               )
               ON CONFLICT(arena_id) DO NOTHING
-              RETURNING id;`,
+              RETURNING *;`,
           args: [
             // @ts-ignore expo sqlite types are broken
             block.title || null,
@@ -565,8 +565,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     // TODO: change this to just fetch the new row info
     if (!ignoreFetch) {
-      console.log("refetching");
-      fetchBlocks();
+      setBlocks([
+        ...blocks,
+        {
+          ...mapDbBlockToBlock(result.rows[0]),
+          numConnections: connections?.length || 0,
+        },
+      ]);
     }
 
     if (connections?.length) {
