@@ -1,11 +1,19 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block, Collection, CollectionBlock } from "../utils/dataTypes";
 import { Image, Spinner, XStack, YStack, useTheme } from "tamagui";
 import { Icon, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";
 import { Swipeable } from "react-native-gesture-handler";
-import { useRouter } from "expo-router";
+import { router, useRouter } from "expo-router";
 import {
   Dimensions,
   FlatList,
@@ -56,6 +64,53 @@ export const InspoBlocks = [
   // },
 ];
 
+const RightActions = memo(() => (
+  <YStack alignItems="center" padding="$2">
+    <StyledButton circular size="$3">
+      <Icon name="link" />
+    </StyledButton>
+  </YStack>
+));
+
+const BlockView = memo(
+  ({
+    block,
+    isRemoteCollection,
+  }: {
+    block: Block;
+    isRemoteCollection: boolean;
+  }) => (
+    <Swipeable
+      key={block.id}
+      containerStyle={{
+        overflow: "visible",
+      }}
+      friction={2}
+      renderRightActions={() => <RightActions />}
+      onSwipeableOpen={(direction, swipeable) => {
+        if (direction === "left") {
+          return;
+        }
+        router.push({
+          pathname: "/block/[id]/connect",
+          params: { id: block.id },
+        });
+        swipeable.close();
+      }}
+    >
+      <BlockTextSummary
+        block={block}
+        style={{ maxHeight: 320 }}
+        blockStyle={{
+          maxHeight: 320,
+        }}
+        shouldLink
+        isRemoteCollection={isRemoteCollection}
+      />
+    </Swipeable>
+  )
+);
+
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
   const {
     localBlocks: allBlocks,
@@ -86,6 +141,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       return;
     }
     // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
+    // TODO: can also push the sort to the DB
     const collectionBlocks = await getCollectionItems(collectionId);
     setBlocks(collectionBlocks);
   }
@@ -101,51 +157,14 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       ),
     [blocks]
   );
-  const router = useRouter();
   const isRemoteCollection = collection?.remoteSourceType !== undefined;
-  const rightActions = useMemo(
-    () => (
-      <YStack alignItems="center" padding="$2">
-        <StyledButton circular size="$3">
-          <Icon name="link" />
-        </StyledButton>
-      </YStack>
-    ),
-    []
-  );
 
-  function renderBlock(block: Block) {
-    return (
-      <Swipeable
-        key={block.id}
-        containerStyle={{
-          overflow: "visible",
-        }}
-        friction={2}
-        renderRightActions={() => rightActions}
-        onSwipeableOpen={(direction, swipeable) => {
-          if (direction === "left") {
-            return;
-          }
-          router.push({
-            pathname: "/block/[id]/connect",
-            params: { id: block.id },
-          });
-          swipeable.close();
-        }}
-      >
-        <BlockTextSummary
-          block={block}
-          style={{ maxHeight: 320 }}
-          blockStyle={{
-            maxHeight: 320,
-          }}
-          shouldLink
-          isRemoteCollection={isRemoteCollection}
-        />
-      </Swipeable>
-    );
-  }
+  const renderBlock = useCallback(
+    ({ item }: { item: Block }) => {
+      return <BlockView block={item} isRemoteCollection={isRemoteCollection} />;
+    },
+    [isRemoteCollection]
+  );
 
   return blocks === null ? (
     <Spinner size="large" />
@@ -220,7 +239,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   ) : (
     <>
       <FlatList
-        renderItem={({ item }) => renderBlock(item)}
+        renderItem={renderBlock}
         data={sortedBlocks}
         scrollEventThrottle={150}
         ref={scrollRef}

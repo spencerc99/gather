@@ -4,9 +4,9 @@ import {
   DatabaseContext,
   mapBlockContentToPath,
   mapSnakeCaseToCamelCaseProperties,
-} from "../../utils/db";
-import { CollectionSummary } from "../../components/CollectionSummary";
-import { CreateCollectionButton } from "../../components/CreateCollectionButton";
+} from "../utils/db";
+import { CollectionSummary } from "../components/CollectionSummary";
+import { CreateCollectionButton } from "../components/CreateCollectionButton";
 import {
   Avatar,
   ScrollView,
@@ -20,12 +20,12 @@ import {
   useTheme,
 } from "tamagui";
 import { Link } from "expo-router";
-import { FeedView } from "../../components/FeedView";
-import { StyledParagraph } from "../../components/Themed";
-import { convertDbTimestampToDate, getRelativeDate } from "../../utils/date";
-import { BlockSummary } from "../../components/BlockSummary";
-import { BlockType } from "../../utils/mimeTypes";
-import { UserContext } from "../../utils/user";
+import { FeedView } from "../components/FeedView";
+import { StyledParagraph } from "../components/Themed";
+import { convertDbTimestampToDate, getRelativeDate } from "../utils/date";
+import { BlockSummary } from "../components/BlockSummary";
+import { BlockType } from "../utils/mimeTypes";
+import { UserContext } from "../utils/user";
 
 export default function ProfileScreen() {
   // TODO: change this to show events, group them by date.

@@ -7,7 +7,7 @@ import {
 import { useFonts } from "expo-font";
 import { Link, SplashScreen, Stack, usePathname, useRouter } from "expo-router";
 import { useContext, useEffect } from "react";
-import { useColorScheme } from "react-native";
+import { Keyboard, useColorScheme } from "react-native";
 import { DatabaseContext, DatabaseProvider } from "../utils/db";
 import { HoldMenuProvider } from "react-native-hold-menu";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,6 +32,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  // const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const [loaded, error] = useFonts({
     Inter: require("@tamagui/font-inter/otf/Inter-Medium.otf"),
@@ -62,6 +63,19 @@ export default function RootLayout() {
           <HoldMenuProvider
             theme={colorScheme || undefined}
             safeAreaInsets={insets}
+            // onOpen={() => {
+            //   if (Keyboard.isVisible()) {
+            //     setKeyboardVisible(true);
+            //     Keyboard.dismiss();
+            //   }
+            // }}
+            // onClose={() => {
+            //   if (keyboardVisible) {
+            //     setKeyboardVisible(false);
+            //     // lol we need to have a ref to a text input..
+            //     // Keyboard.show()
+            //   }
+            // }}
           >
             <UserProvider>
               <DatabaseProvider>
@@ -94,13 +108,6 @@ function RootLayoutNav() {
         options={{
           presentation: "modal",
           headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="internal"
-        options={{
-          presentation: "card",
-          title: "",
         }}
       />
       <Stack.Screen

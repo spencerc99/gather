@@ -46,47 +46,45 @@ export default function TabLayout() {
           headerRight: () => headerIcons,
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          tabBarLabel: "Profile",
+          headerTitle: "",
+          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          headerRight: () => headerIcons,
+        }}
+      />
     </Tabs>
   );
 }
 
 export function MainHeaderIcons() {
-  const theme = useTheme();
+  return null;
 
-  return (
-    <XStack
-      space="$4"
-      paddingRight="$3"
-      alignItems="center"
-      height="100%"
-      marginBottom="$2"
-    >
-      <Link href="/internal" asChild>
-        <Pressable>
-          {({ pressed }) => (
-            <FontAwesome
-              name="gears"
-              size={25}
-              color={theme.color.get()}
-              style={{ opacity: pressed ? 0.5 : 1 }}
-            />
-          )}
-        </Pressable>
-      </Link>
-      {/* <Link href="/profile/" asChild>
-        <Pressable>
-          {({ pressed }) => (
-            <FontAwesome
-              name="user"
-              size={25}
-              color={theme.color.get()}
-              style={{ opacity: pressed ? 0.5 : 1 }}
-            />
-          )}
-        </Pressable>
-      </Link> */}
-    </XStack>
-  );
+  // const theme = useTheme();
+  // return (
+  //   <XStack
+  //     space="$4"
+  //     paddingRight="$3"
+  //     alignItems="center"
+  //     height="100%"
+  //     marginBottom="$2"
+  //   >
+  //     <Link href="/profile/" asChild>
+  //       <Pressable>
+  //         {({ pressed }) => (
+  //           <FontAwesome
+  //             name="user"
+  //             size={25}
+  //             color={theme.color.get()}
+  //             style={{ opacity: pressed ? 0.5 : 1 }}
+  //           />
+  //         )}
+  //       </Pressable>
+  //     </Link>
+  //   </XStack>
+  // );
 }
 
 export function HeaderIcon({

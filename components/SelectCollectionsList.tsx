@@ -1,4 +1,4 @@
-import { useCallback, useContext, useMemo, useState } from "react";
+import { memo, useCallback, useContext, useMemo, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Collection } from "../utils/dataTypes";
 import {
@@ -21,6 +21,36 @@ import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
 import { FlatList, Pressable } from "react-native";
 import { UserContext } from "../utils/user";
 import { filterItemsBySearchValue } from "../utils/search";
+
+const SelectCollectionView = memo(
+  ({
+    collection,
+    toggleCollection,
+    horizontal,
+    viewProps,
+  }: {
+    collection: Collection;
+    toggleCollection: (collection: Collection) => void;
+    horizontal?: boolean;
+    viewProps?: object;
+  }) => (
+    <Pressable key={collection.id} onPress={() => toggleCollection(collection)}>
+      {/* TODO: bold the matching parts */}
+      {horizontal ? (
+        <CollectionThumbnail collection={collection} viewProps={viewProps} />
+      ) : (
+        <CollectionSummary
+          collection={collection}
+          viewProps={
+            viewProps || {
+              borderWidth: 1,
+            }
+          }
+        />
+      )}
+    </Pressable>
+  )
+);
 
 export function SelectCollectionsList({
   selectedCollections: selectedCollections,
@@ -76,15 +106,18 @@ export function SelectCollectionsList({
     [sortedCollections, debouncedSearch]
   );
 
-  function toggleCollection(collection: Collection) {
-    if (selectedCollections.includes(collection.id)) {
-      setSelectedCollections(
-        selectedCollections.filter((id) => id !== collection.id)
-      );
-    } else {
-      setSelectedCollections([...selectedCollections, collection.id]);
-    }
-  }
+  const toggleCollection = useCallback(
+    (collection: Collection) => {
+      if (selectedCollections.includes(collection.id)) {
+        setSelectedCollections(
+          selectedCollections.filter((id) => id !== collection.id)
+        );
+      } else {
+        setSelectedCollections([...selectedCollections, collection.id]);
+      }
+    },
+    [selectedCollections, setSelectedCollections]
+  );
 
   async function onClickCreateCollection() {
     if (!currentUser) {
@@ -98,6 +131,28 @@ export function SelectCollectionsList({
     setSelectedCollections([...selectedCollections, newCollectionId]);
   }
 
+  const renderCollection = useCallback(
+    ({ item: collection }: { item: Collection }) => {
+      const viewProps = selectedCollections.includes(collection.id)
+        ? {
+            backgroundColor: "$green4",
+            borderWidth: 2,
+            borderColor: "$green10",
+          }
+        : undefined;
+
+      return (
+        <SelectCollectionView
+          collection={collection}
+          toggleCollection={toggleCollection}
+          horizontal={horizontal}
+          viewProps={viewProps}
+        />
+      );
+    },
+    [selectedCollections]
+  );
+
   function renderCollections() {
     return (
       <FlatList
@@ -107,38 +162,7 @@ export function SelectCollectionsList({
         contentContainerStyle={{
           gap: horizontal ? 8 : 4,
         }}
-        renderItem={({ item: collection }) => {
-          const viewProps = selectedCollections.includes(collection.id)
-            ? {
-                backgroundColor: "$green4",
-                borderWidth: 2,
-                borderColor: "$green10",
-              }
-            : undefined;
-          return (
-            <Pressable
-              key={collection.id}
-              onPress={() => toggleCollection(collection)}
-            >
-              {/* TODO: bold the matching parts */}
-              {horizontal ? (
-                <CollectionThumbnail
-                  collection={collection}
-                  viewProps={viewProps}
-                />
-              ) : (
-                <CollectionSummary
-                  collection={collection}
-                  viewProps={
-                    viewProps || {
-                      borderWidth: 1,
-                    }
-                  }
-                />
-              )}
-            </Pressable>
-          );
-        }}
+        renderItem={renderCollection}
       />
     );
   }

@@ -12,14 +12,14 @@ import {
   Paragraph,
   AlertDialog,
   XStack,
+  ImageProps,
   Adapt,
   Sheet,
-  ImageProps,
   Image,
   Label,
   StackProps,
 } from "tamagui";
-
+import { Image as ExpoImage } from "expo-image";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
@@ -341,6 +341,58 @@ export function AspectRatioImage({
     />
   );
 }
+
+// export function AspectRatioImage({
+//   uri: initUri,
+//   otherProps,
+// }: {
+//   uri?: string;
+//   otherProps?: ImageProps["style"];
+// }) {
+//   let styleProps = otherProps || {};
+
+//   const uri = useMemo(
+//     () =>
+//       initUri && initUri.startsWith(PHOTOS_FOLDER)
+//         ? FileSystem.documentDirectory + initUri
+//         : initUri,
+//     [initUri]
+//   );
+//   const [aspectRatio, setAspectRatio] = useState(styleProps?.aspectRatio);
+
+//   useEffect(() => {
+//     if (!uri) {
+//       setAspectRatio(1);
+//       return;
+//     }
+//     if (styleProps?.aspectRatio) {
+//       return;
+//     }
+
+//     Image.getSize(uri, (width, height) => {
+//       setAspectRatio(width / height);
+//     });
+//   }, [uri]);
+
+//   return (
+//     <ExpoImage
+//       source={uri ? uri : "../assets/images/placeholder-image.jpg"}
+//       contentFit="contain"
+//       // TODO: neither of these are working fix...
+//       // esp. that images have no width/height initially
+//       // defaultSource={require("../assets/images/loading-image.gif")}
+//       placeholder={require("../assets/images/loading-image.gif")}
+//       aspectRatio={aspectRatio}
+//       // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
+//       // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling
+//       // to the latest react-native image handling undefined width / height for the source
+//       style={{
+//         width: "100%",
+//       }}
+//       {...styleProps}
+//     />
+//   );
+// }
 
 export function ArenaLogo({
   size = 18,

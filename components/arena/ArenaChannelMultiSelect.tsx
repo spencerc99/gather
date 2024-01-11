@@ -1,4 +1,11 @@
-import { useContext, useState, useEffect, useMemo } from "react";
+import {
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  memo,
+} from "react";
 import { useDebounceValue, XStack, ScrollView, Stack, Sheet } from "tamagui";
 import { ArenaChannelInfo, getUserChannels } from "../../utils/arena";
 import { RemoteSourceType } from "../../utils/dataTypes";
@@ -7,6 +14,32 @@ import { filterItemsBySearchValue } from "../../utils/search";
 import { SearchBarInput, StyledButton, StyledText } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
 import { FlatList } from "react-native";
+
+const ChannelView = memo(
+  ({
+    channel,
+    toggleChannel,
+    viewProps,
+    isDisabled,
+    isSelected,
+  }: {
+    channel: ArenaChannelInfo;
+    toggleChannel: (channel: ArenaChannelInfo, isSelected: boolean) => void;
+    viewProps?: object;
+    isDisabled: boolean;
+    isSelected: boolean;
+  }) => (
+    <Stack
+      disabled={isDisabled}
+      key={channel.id.toString()}
+      backgroundColor={isSelected ? "$green4" : undefined}
+      opacity={isDisabled ? 0.5 : undefined}
+      onPress={() => toggleChannel(channel, isSelected)}
+    >
+      <ArenaChannelSummary channel={channel} isDisabled={isDisabled} />
+    </Stack>
+  )
+);
 
 export function ArenaChannelMultiSelect({
   selectedChannels,
@@ -44,6 +77,21 @@ export function ArenaChannelMultiSelect({
     [collections]
   );
 
+  const toggleChannel = useCallback(
+    (channel: ArenaChannelInfo, isSelected: boolean) => {
+      if (isSelected) {
+        setSelectedChannels(
+          selectedChannels.filter(
+            (c) => c.id.toString() !== channel.id.toString()
+          )
+        );
+      } else {
+        setSelectedChannels([...selectedChannels, channel]);
+      }
+    },
+    [selectedChannels, setSelectedChannels]
+  );
+
   const nonDisabledChannels = useMemo(
     () =>
       channels?.filter((c) => {
@@ -51,7 +99,6 @@ export function ArenaChannelMultiSelect({
       }),
     [channels, collections]
   );
-
   const filteredChannels = useMemo(
     () =>
       debouncedSearch === ""
@@ -60,7 +107,27 @@ export function ArenaChannelMultiSelect({
     [channels, debouncedSearch, nonDisabledChannels]
   );
 
-  const selectedChannelIds = selectedChannels.map((c) => c.id.toString());
+  const selectedChannelIds = useMemo(
+    () => selectedChannels.map((c) => c.id.toString()),
+    [selectedChannels]
+  );
+
+  const renderChannel = useCallback(
+    ({ item, index: idx }: { item: ArenaChannelInfo; index: number }) => {
+      const channel = item;
+      const isDisabled = remoteCollectionIds.has(channel.id.toString());
+      const isSelected = selectedChannelIds.includes(channel.id.toString());
+      return (
+        <ChannelView
+          channel={channel}
+          toggleChannel={toggleChannel}
+          isDisabled={isDisabled}
+          isSelected={isSelected}
+        />
+      );
+    },
+    [selectedChannelIds, selectedChannels, remoteCollectionIds]
+  );
 
   if (!arenaAccessToken) {
     return null;
@@ -113,39 +180,7 @@ export function ArenaChannelMultiSelect({
                 e.stopPropagation();
               }}
               data={filteredChannels}
-              renderItem={({ item, index: idx }) => {
-                const channel = item;
-                const isDisabled = remoteCollectionIds.has(
-                  channel.id.toString()
-                );
-                const isSelected = selectedChannelIds.includes(
-                  channel.id.toString()
-                );
-                return (
-                  <Stack
-                    disabled={isDisabled}
-                    key={channel.id.toString()}
-                    backgroundColor={isSelected ? "$green4" : undefined}
-                    opacity={isDisabled ? 0.5 : undefined}
-                    onPress={() => {
-                      if (isSelected) {
-                        setSelectedChannels(
-                          selectedChannels.filter(
-                            (c) => c.id.toString() !== channel.id.toString()
-                          )
-                        );
-                      } else {
-                        setSelectedChannels([...selectedChannels, channel]);
-                      }
-                    }}
-                  >
-                    <ArenaChannelSummary
-                      channel={channel}
-                      isDisabled={isDisabled}
-                    />
-                  </Stack>
-                );
-              }}
+              renderItem={renderChannel}
             />
           </Sheet.ScrollView>
         </Sheet.Frame>

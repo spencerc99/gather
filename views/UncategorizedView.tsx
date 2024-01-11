@@ -88,7 +88,7 @@ export function UncategorizedView() {
     // }
   }
 
-  function renderBlock(block: Block) {
+  const renderBlock = useCallback((block: Block) => {
     return (
       <BlockSummary
         hideHoldMenu
@@ -100,24 +100,27 @@ export function UncategorizedView() {
         }}
       />
     );
-  }
+  }, []);
 
-  function onClickConnect(itemId: string, selectedCollections: string[]) {
-    if (!events) {
-      return;
-    } else if (events.length === 1) {
-      // addConnections(events[currentIndex!].id, selectedCollections);
-      // setSelectedCollections([]);
-      // setEvents([]);
-      void addConnections(itemId, selectedCollections);
-      setEvents([]);
-    } else {
-      void addConnections(itemId, selectedCollections);
-      setEvents(events.filter((block) => block.id !== itemId));
-      // carouselRef.current?.next();
-    }
-    Keyboard.dismiss();
-  }
+  const onClickConnect = useCallback(
+    (itemId: string, selectedCollections: string[]) => {
+      if (!events) {
+        return;
+      } else if (events.length === 1) {
+        // addConnections(events[currentIndex!].id, selectedCollections);
+        // setSelectedCollections([]);
+        // setEvents([]);
+        void addConnections(itemId, selectedCollections);
+        setEvents([]);
+      } else {
+        void addConnections(itemId, selectedCollections);
+        setEvents(events.filter((block) => block.id !== itemId));
+        // carouselRef.current?.next();
+      }
+      Keyboard.dismiss();
+    },
+    [events]
+  );
 
   const width = Dimensions.get("window").width;
   const insets = useSafeAreaInsets();
@@ -126,13 +129,16 @@ export function UncategorizedView() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [searchValue, setSearchValue] = useState("");
 
-  function handleDeleteBlock(blockId: string) {
-    if (!events) {
-      return;
-    }
-    void deleteBlock(blockId);
-    setEvents(events.filter((block) => block.id !== blockId));
-  }
+  const handleDeleteBlock = useCallback(
+    (blockId: string) => {
+      if (!events) {
+        return;
+      }
+      void deleteBlock(blockId);
+      setEvents(events.filter((block) => block.id !== blockId));
+    },
+    [events]
+  );
 
   function CarouselItem({ item, index }: { item: Block; index: number }) {
     useEffect(() => {
