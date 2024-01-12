@@ -32,7 +32,6 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  // const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const [loaded, error] = useFonts({
     Inter: require("@tamagui/font-inter/otf/Inter-Medium.otf"),
@@ -63,19 +62,12 @@ export default function RootLayout() {
           <HoldMenuProvider
             theme={colorScheme || undefined}
             safeAreaInsets={insets}
-            // onOpen={() => {
-            //   if (Keyboard.isVisible()) {
-            //     setKeyboardVisible(true);
-            //     Keyboard.dismiss();
-            //   }
-            // }}
-            // onClose={() => {
-            //   if (keyboardVisible) {
-            //     setKeyboardVisible(false);
-            //     // lol we need to have a ref to a text input..
-            //     // Keyboard.show()
-            //   }
-            // }}
+            // @ts-ignore
+            onOpen={() => {
+              if (Keyboard.isVisible()) {
+                Keyboard.dismiss();
+              }
+            }}
           >
             <UserProvider>
               <DatabaseProvider>

@@ -563,6 +563,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       console.log("insert id not found", insertId);
     }
 
+    if (connections?.length) {
+      await addConnections(String(insertId), connections);
+    }
+
     // TODO: change this to just fetch the new row info
     if (!ignoreFetch) {
       setBlocks([
@@ -572,10 +576,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           numConnections: connections?.length || 0,
         },
       ]);
-    }
-
-    if (connections?.length) {
-      await addConnections(String(insertId), connections);
     }
 
     return insertId!.toString();

@@ -3,12 +3,11 @@ import {
   SafeAreaView,
   ScrollView,
   Platform,
-  Keyboard,
   Dimensions,
 } from "react-native";
 import { StyledButton, StyledTextArea, Icon } from "./Themed";
-import { View, XStack, YStack, Theme } from "tamagui";
-import { useContext, useEffect, useRef, useState } from "react";
+import { XStack, YStack } from "tamagui";
+import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
 import { Audio } from "expo-av";
