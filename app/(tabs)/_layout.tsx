@@ -60,31 +60,29 @@ export default function TabLayout() {
 }
 
 export function MainHeaderIcons() {
-  return null;
-
-  // const theme = useTheme();
-  // return (
-  //   <XStack
-  //     space="$4"
-  //     paddingRight="$3"
-  //     alignItems="center"
-  //     height="100%"
-  //     marginBottom="$2"
-  //   >
-  //     <Link href="/profile/" asChild>
-  //       <Pressable>
-  //         {({ pressed }) => (
-  //           <FontAwesome
-  //             name="user"
-  //             size={25}
-  //             color={theme.color.get()}
-  //             style={{ opacity: pressed ? 0.5 : 1 }}
-  //           />
-  //         )}
-  //       </Pressable>
-  //     </Link>
-  //   </XStack>
-  // );
+  const theme = useTheme();
+  return (
+    <XStack
+      space="$4"
+      paddingRight="$3"
+      alignItems="center"
+      height="100%"
+      marginBottom="$2"
+    >
+      <Link href="/feedback" asChild>
+        <Pressable>
+          {({ pressed }) => (
+            <FontAwesome
+              name="bug"
+              size={25}
+              color={theme.color.get()}
+              style={{ opacity: pressed ? 0.5 : 1 }}
+            />
+          )}
+        </Pressable>
+      </Link>
+    </XStack>
+  );
 }
 
 export function HeaderIcon({
