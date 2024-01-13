@@ -1,5 +1,5 @@
 import { YStack, Spinner, XStack, ScrollView } from "tamagui";
-import { Collection } from "../utils/dataTypes";
+import { Collection, RemoteSourceType } from "../utils/dataTypes";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { ArenaLogo, StyledButton, StyledParagraph, StyledText } from "./Themed";
@@ -32,6 +32,7 @@ export function CollectionDetailView({
     fullDeleteCollection,
     arenaAccessToken,
     getCollectionItems,
+    updateCollection,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -81,17 +82,39 @@ export function CollectionDetailView({
       return;
     }
 
-    const collectionItems = await getCollectionItems(id);
-    const { newChannel, numItemsAdded, numItemsFailed } = await createChannel({
-      accessToken: arenaAccessToken,
-      title,
-      itemsToAdd: collectionItems,
-    });
-    alert(
-      `Created ${newChannel.title} on Are.na and added ${numItemsAdded} items.${
-        numItemsFailed > 0 ? ` ${numItemsFailed} items failed to add.` : ""
-      }}`
-    );
+    setIsLoading(true);
+    try {
+      const collectionItems = await getCollectionItems(id);
+      // TODO: show progress bar status
+      const { newChannel, numItemsAdded, numItemsFailed } = await createChannel(
+        {
+          accessToken: arenaAccessToken,
+          title,
+          itemsToAdd: collectionItems,
+        }
+      );
+      await updateCollection(id, {
+        remoteSourceType: RemoteSourceType.Arena,
+        remoteSourceInfo: {
+          arenaId: newChannel.id.toString(),
+          arenaClass: "Collection",
+        },
+      });
+      alert(
+        `Created ${
+          newChannel.title
+        } on Are.na and added ${numItemsAdded} items.${
+          numItemsFailed > 0 ? ` ${numItemsFailed} items failed to add.` : ""
+        }}`
+      );
+    } catch (err) {
+      console.error(err);
+      alert(
+        "Failed to link to Are.na. Please try again on a stable connection."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
