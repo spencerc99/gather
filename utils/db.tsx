@@ -95,6 +95,9 @@ function mapDbBlockToBlock(block: any): Block {
     content: mapBlockContentToPath(block.content, block.type),
     createdAt: convertDbTimestampToDate(block.created_timestamp),
     updatedAt: convertDbTimestampToDate(block.updated_timestamp),
+    remoteConnectedAt: block.remote_connected_at
+      ? new Date(block.remote_connected_at)
+      : undefined,
     remoteSourceType: block.remote_source_type as RemoteSourceType,
     remoteSourceInfo: block.remote_source_info
       ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
@@ -736,12 +739,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
   const SelectBlockSql = `WITH block_connections AS (
             SELECT    connections.block_id,
+                      MIN(connections.remote_created_at) AS remote_connected_at,
                       COUNT(connections.collection_id) as num_connections
             FROM      connections
             GROUP BY  1
           )
           SELECT    blocks.*,
-                    COALESCE(block_connections.num_connections, 0) as num_connections
+                    COALESCE(block_connections.num_connections, 0) as num_connections,
+                    block_connections.remote_connected_at as remote_connected_at
           FROM      blocks
           LEFT JOIN block_connections ON block_connections.block_id = blocks.id`;
 
@@ -1556,7 +1561,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         createBlocks,
         blocks,
         localBlocks: useMemo(() => {
-          return blocks.filter((b) => b.remoteSourceType === null);
+          // only ignore those imported (not directly texted in app)
+          // this works because adding to arena is done post connection when not importing
+          return blocks.filter(
+            (b) =>
+              !b.remoteConnectedAt ||
+              b.remoteConnectedAt.getTime() > b.createdAt.getTime()
+          );
         }, [blocks]),
         getBlock,
         updateBlock,
