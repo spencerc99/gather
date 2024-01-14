@@ -35,7 +35,11 @@ export function TextForageView({
 }) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
-  const { createBlock: addBlock, shareIntent } = useContext(DatabaseContext);
+  const {
+    createBlock: addBlock,
+    shareIntent,
+    fetchBlocks,
+  } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
   const insets = useSafeAreaInsets();
@@ -119,6 +123,7 @@ export function TextForageView({
             });
           })
         );
+        fetchBlocks();
       }
 
       if (savedTextValue) {
