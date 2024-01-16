@@ -11,7 +11,7 @@ interface UserDbInfo extends UserInsertInfo {
   createdAt: string;
 }
 
-interface UserInfo extends UserInsertInfo {
+export interface UserInfo extends UserInsertInfo {
   createdAt: Date;
 }
 

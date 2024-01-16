@@ -22,6 +22,7 @@ import { useDebounce, useDebounceValue } from "tamagui";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {
   ArenaChannelInfo,
+  ArenaSyncManagerSingleton,
   ArenaTokenStorageKey,
   RawArenaItem,
   addBlockToChannel,
@@ -66,6 +67,9 @@ import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { UserContext } from "./user";
 import { filterItemsBySearchValue } from "./search";
 import { ensure } from "./react";
+import { registerBackgroundFetchAsync } from "./background";
+
+console.log("==============[APP START]==============");
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -410,15 +414,29 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
     return () => unsubscribe();
   }, []);
+  const performedInitialSyncWithArena = useRef<boolean>(false);
 
   useEffect(() => {
     // TODO: change this to only when you go to the collection? or only for most recent collections? i think this is freezing up the app on start
-    if (!currentUser || !arenaAccessToken) {
+    if (
+      !currentUser ||
+      !arenaAccessToken ||
+      performedInitialSyncWithArena.current
+    ) {
       return;
     }
-    InteractionManager.runAfterInteractions(async () => {
-      await syncWithArena();
+    // InteractionManager.runAfterInteractions(async () => {
+    //   await syncWithArena();
+    // });
+    // void syncWithArena();
+    ArenaSyncManagerSingleton.init({
+      arenaAccessToken,
+      currentUser,
+      syncWithArena,
     });
+    void registerBackgroundFetchAsync();
+
+    performedInitialSyncWithArena.current = true;
   }, [arenaAccessToken, currentUser]);
 
   const queryClient = useQueryClient();
@@ -1408,22 +1426,22 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return result as SQLite.ResultSet;
   }
 
-  async function syncWithArena() {
+  const syncWithArena = async () => {
     try {
       await debouncedTriggerBlockSync();
       const { lastSyncedAt } = await getLastSyncedRemoteInfo();
       // if passed 6 hours, sync again
-      if (
-        !lastSyncedAt ||
-        new Date().getTime() >
-          new Date(lastSyncedAt).getTime() + 1000 * 60 * 60 * 6
-      ) {
-        await trySyncNewArenaBlocks();
-      }
+      // if (
+      //   !lastSyncedAt ||
+      //   new Date().getTime() >
+      //     new Date(lastSyncedAt).getTime() + 1000 * 60 * 60 * 6
+      // ) {
+      await trySyncNewArenaBlocks();
+      // }
     } catch (err) {
       console.error(err);
     }
-  }
+  };
 
   async function trySyncNewArenaBlocks() {
     if (!arenaAccessToken) {
@@ -1441,6 +1459,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         const collectionsToSync = result.rows.map((collection) => ({
           ...mapDbCollectionToCollection(collection),
         }));
+          console.log(
+        `[SYNCING] syncing ${collectionsToSync.length} channels from Arena`
+      );
         for (const collectionToSync of collectionsToSync) {
           InteractionManager.runAfterInteractions(async () => {
             await syncNewRemoteItemsForCollection(collectionToSync);
@@ -1680,7 +1701,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         const channelInfo = await getChannelInfo(channelId, arenaAccessToken);
         // TODO: this could get a little out of sync if we allow editing the title on our end and arena doesn't update properly
         // so it needs to take into account the updatedAt timestamp to be fully safe.
-        console.log("Title:", channelInfo.title);
         if (channelInfo.title !== collection.title) {
           console.log(
             `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`

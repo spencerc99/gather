@@ -30,6 +30,9 @@
         "com.apple.security.application-groups": [
           "group.net.tiny-inter.gather.widget"
         ]
+      },
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch"]
       }
     },
     "android": {

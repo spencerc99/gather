@@ -1,6 +1,7 @@
 import * as FileSystem from "expo-file-system";
 import { Block, LastSyncedInfo } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
+import { UserInfo } from "./user";
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET;
@@ -682,3 +683,33 @@ export async function createChannel({
     numItemsFailed,
   };
 }
+
+class ArenaSyncManager {
+  arenaAccessToken: string | null = null;
+  currentUser: UserInfo | null = null;
+  syncWithArena: () => void = () => {};
+
+  init({
+    arenaAccessToken,
+    currentUser,
+    syncWithArena,
+  }: {
+    arenaAccessToken: string | null;
+    currentUser: UserInfo | null;
+    syncWithArena: () => void;
+  }) {
+    this.arenaAccessToken = arenaAccessToken;
+    this.currentUser = currentUser;
+    this.syncWithArena = syncWithArena;
+  }
+
+  sync() {
+    if (this.arenaAccessToken && this.currentUser) {
+      console.log("syncing with arena");
+      this.syncWithArena();
+    }
+  }
+}
+
+export const ArenaSyncManagerSingleton: ArenaSyncManager =
+  new ArenaSyncManager();
