@@ -165,6 +165,7 @@ export function ArenaChannelMultiSelect({
               flexShrink={1}
               theme="red"
               disabled={!selectedChannels.length}
+              onPress={() => setSelectedChannels([])}
             >
               <StyledText>clear ({selectedChannels.length})</StyledText>
             </StyledButton>

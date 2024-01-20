@@ -64,6 +64,8 @@ export default function ProfileScreen() {
         )
       ).then(() => {
         fetchCollections();
+        alert(`Imported ${selectedChannels.length} channels`);
+        setSelectedChannels([]);
       });
     } catch (error) {
       console.error(error);
