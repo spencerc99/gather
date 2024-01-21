@@ -1,13 +1,19 @@
-import { Stack, usePathname, useRouter } from "expo-router";
+import { Stack, useFocusEffect, usePathname, useRouter } from "expo-router";
 import { StyleSheet } from "react-native";
 import { StyledText, StyledView } from "../components/Themed";
-import useShareIntent, { isShareIntentUrl } from "../hooks/useShareIntent";
-import { useContext, useEffect } from "react";
-import { DatabaseContext } from "../utils/db";
+import { isShareIntentUrl } from "../hooks/useShareIntent";
 
 export default function NotFoundScreen() {
   const pathname = usePathname();
   const router = useRouter();
+
+  useFocusEffect(() => {
+    if (isShareIntentUrl(pathname)) {
+      router.replace({
+        pathname: "/home",
+      });
+    }
+  });
 
   return (
     <>
