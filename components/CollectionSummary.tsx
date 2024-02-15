@@ -34,9 +34,9 @@ export function CollectionSummary({
     <XStack
       paddingVertical="$4"
       width="100%"
-      paddingHorizontal="$2"
-      borderWidth={2}
-      borderRadius={4}
+      paddingHorizontal="$3"
+      // borderWidth={1}
+      borderRadius={16}
       borderColor={theme.color.get()}
       backgroundColor={theme.background.get()}
       space="$3"

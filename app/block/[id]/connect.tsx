@@ -52,23 +52,21 @@ export default function BlockConnectModal() {
         }}
       />
       <StyledView paddingHorizontal="$2" height="100%">
-        <StyledButton
-          position="absolute"
-          bottom={40}
-          zIndex={1}
-          onPress={onConnect}
-          width="100%"
-          disabled={areArraysEqual(
-            initialConnectedCollections,
-            selectedCollections
-          )}
-        >
-          Connect
-        </StyledButton>
         <SelectCollectionsList
           selectedCollections={selectedCollections}
           setSelectedCollections={setSelectedCollections}
-          scrollContainerPaddingBottom={200}
+          scrollContainerPaddingBottom={150}
+          extraSearchContent={
+            <StyledButton
+              onPress={onConnect}
+              disabled={areArraysEqual(
+                initialConnectedCollections,
+                selectedCollections
+              )}
+            >
+              Connect
+            </StyledButton>
+          }
         />
         <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
       </StyledView>

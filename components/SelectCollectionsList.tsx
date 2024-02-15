@@ -39,14 +39,7 @@ const SelectCollectionView = memo(
       {horizontal ? (
         <CollectionThumbnail collection={collection} viewProps={viewProps} />
       ) : (
-        <CollectionSummary
-          collection={collection}
-          viewProps={
-            viewProps || {
-              borderWidth: 1,
-            }
-          }
-        />
+        <CollectionSummary collection={collection} viewProps={viewProps} />
       )}
     </Pressable>
   )
@@ -59,6 +52,7 @@ export function SelectCollectionsList({
   horizontal,
   searchValue: propSearch,
   setSearchValue: propSetSearchValue,
+  extraSearchContent,
 }: {
   selectedCollections: string[];
   setSelectedCollections: (selectedCollections: string[]) => void;
@@ -66,6 +60,7 @@ export function SelectCollectionsList({
   horizontal?: boolean;
   searchValue?: string;
   setSearchValue?: (newSearch: string) => void;
+  extraSearchContent?: React.ReactNode;
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [internalSearchValue, internalSetSearchValue] = useState("");
@@ -136,7 +131,6 @@ export function SelectCollectionsList({
       const viewProps = selectedCollections.includes(collection.id)
         ? {
             backgroundColor: "$green4",
-            borderWidth: 2,
             borderColor: "$green10",
           }
         : undefined;
@@ -265,13 +259,18 @@ export function SelectCollectionsList({
 
   return (
     <Stack flexDirection={"column"}>
-      <SearchBarInput
-        backgroundColor="$gray4"
-        searchValue={searchValue}
-        setSearchValue={setSearchValue}
-        placeholder="Search a collection..."
-        width="100%"
-      />
+      <XStack gap="$1" padding="$1" marginBottom="$2">
+        <SearchBarInput
+          containerProps={{
+            flex: 1,
+          }}
+          backgroundColor="$gray4"
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+          placeholder="Search a collection..."
+        />
+        {extraSearchContent}
+      </XStack>
       {renderCollectionsList()}
     </Stack>
   );

@@ -173,13 +173,15 @@ export function Icon(props: GetProps<typeof IconComponent>) {
 export function InputWithIcon({
   icon,
   iconSize,
+  containerProps,
   ...props
 }: GetProps<typeof StyledInput> & {
   icon: GetProps<typeof IconComponent>["name"];
   iconSize?: GetProps<typeof IconComponent>["size"];
+  containerProps?: GetProps<typeof Stack>;
 }) {
   return (
-    <Stack position="relative">
+    <Stack position="relative" {...containerProps}>
       <YStack
         position="absolute"
         zIndex={1}
@@ -198,11 +200,14 @@ export function InputWithIcon({
 export function SearchBarInput({
   searchValue,
   setSearchValue,
+  containerProps,
   ...props
 }: GetProps<typeof StyledInput> & {
   searchValue: string;
   setSearchValue: (newValue: string) => void;
+  containerProps?: GetProps<typeof Stack>;
 }) {
+  // TODO: add clear input
   return (
     <InputWithIcon
       icon="search"
@@ -212,6 +217,7 @@ export function SearchBarInput({
       backgroundColor="$gray4"
       value={searchValue}
       onChangeText={(text) => setSearchValue(text)}
+      containerProps={containerProps}
       {...props}
     />
   );
