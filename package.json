@@ -60,7 +60,8 @@
     "react-native-web": "~0.19.6",
     "tamagui": "^1.79.11",
     "url-metadata": "^3.3.1",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "expo-application": "~5.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

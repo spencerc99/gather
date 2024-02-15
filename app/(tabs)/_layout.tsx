@@ -61,6 +61,7 @@ export default function TabLayout() {
 
 export function MainHeaderIcons() {
   const theme = useTheme();
+  return null;
   return (
     <XStack
       space="$4"

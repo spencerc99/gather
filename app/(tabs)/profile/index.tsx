@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { Keyboard, Platform } from "react-native";
+import { Image, Linking, Platform } from "react-native";
 import {
   Avatar,
   AlertDialog,
@@ -16,6 +16,7 @@ import {
   XStack,
   YStack,
 } from "tamagui";
+import * as Application from "expo-application";
 import { DatabaseContext } from "../../../utils/db";
 import {
   ButtonWithConfirm,
@@ -34,6 +35,12 @@ import dayjs from "dayjs";
 import { ArenaChannelMultiSelect } from "../../../components/arena/ArenaChannelMultiSelect";
 import { ArenaChannelSummary } from "../../../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../../../utils/arena";
+
+const Subject = `[Gather] feedback`;
+const Body = `I wish|like|want|dislike...`;
+const FeedbackLink = `mailto:spencerc99@gmail.com?subject=${encodeURIComponent(
+  Subject
+)}&body=${encodeURIComponent(Body)}`;
 
 export default function ProfileScreen() {
   const {
@@ -108,7 +115,7 @@ export default function ProfileScreen() {
           </YStack>
         </YStack>
       )}
-      <H3>Are.na Settings</H3>
+      <H3>Are.na</H3>
       <ArenaLogin path="internal" />
       <ArenaChannelMultiSelect
         setSelectedChannels={setSelectedChannels}
@@ -135,6 +142,39 @@ export default function ProfileScreen() {
           ? `Importing ${selectedChannels.length} channels...`
           : `Import ${selectedChannels.length} channels`}
       </StyledButton>
+
+      <H3>Gather</H3>
+      {/* Add ability to change icon */}
+      <StyledButton
+        icon={<Icon name="gift" />}
+        onPress={() => {
+          Linking.openURL(FeedbackLink).catch((error) => {
+            console.log(error);
+          });
+        }}
+      >
+        Send me Feedback
+      </StyledButton>
+      {/* <LinkButton>Share</LinkButton> */}
+      {/* <LinkButton>Tip</LinkButton> */}
+      {/* <StyledButton>
+        What's new
+      </StyledButton> */}
+
+      <StyledParagraph>
+        Thank you for giving your space and time to try this app.
+      </StyledParagraph>
+      <YStack alignItems="center">
+        <Image
+          source={require("../../../assets/images/icon.png")}
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 16,
+          }}
+        />
+        <StyledText>{Application.nativeBuildVersion}</StyledText>
+      </YStack>
       <H3>
         Internal Dev Tools{" "}
         <StyledButton
@@ -189,6 +229,24 @@ export default function ProfileScreen() {
           <StyledButton disabled={isLoading} onPress={fetchBlocks}>
             Refresh Blocks
           </StyledButton>
+          <XStack>
+            <StyledLabel bold>Token</StyledLabel>
+            <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
+          </XStack>
+          <StyledButton
+            onPress={() => {
+              AsyncStorage.setItem("seenIntro", "false");
+            }}
+          >
+            Reset intro seen
+          </StyledButton>
+          <StyledButton
+            onPress={() => {
+              AsyncStorage.removeItem(UserInfoId);
+            }}
+          >
+            Clear user
+          </StyledButton>
           <StyledParagraph>
             Only do this if directed to do it in order to reset your schemas. It
             will delete all your data.
@@ -224,24 +282,6 @@ export default function ProfileScreen() {
             }}
           >
             Reset Databases
-          </StyledButton>
-          <XStack>
-            <StyledLabel bold>Token</StyledLabel>
-            <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
-          </XStack>
-          <StyledButton
-            onPress={() => {
-              AsyncStorage.setItem("seenIntro", "false");
-            }}
-          >
-            Reset intro seen
-          </StyledButton>
-          <StyledButton
-            onPress={() => {
-              AsyncStorage.removeItem(UserInfoId);
-            }}
-          >
-            Clear user
           </StyledButton>
           {__DEV__ && (
             <YStack space="$1">
