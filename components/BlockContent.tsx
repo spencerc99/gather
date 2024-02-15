@@ -57,7 +57,7 @@ export function BlockContent({
       containerProps = {
         borderColor: theme.color.get(),
         backgroundColor: theme.background.get(),
-        borderWidth: 1,
+        borderWidth: 0.25,
         padding: 12,
         ...textContainerProps,
       };
@@ -67,8 +67,16 @@ export function BlockContent({
         <MediaView
           media={content}
           blockType={type}
-          style={style}
           alt={`Image ${title} ${description}`}
+          style={
+            style?.width || style?.height
+              ? {
+                  minWidth: style?.width,
+                  minHeight: style?.height,
+                  ...style,
+                }
+              : style
+          }
         />
       );
       break;
@@ -77,7 +85,15 @@ export function BlockContent({
         <MediaView
           media={content}
           blockType={type}
-          style={style}
+          style={
+            style?.width || style?.height
+              ? {
+                  minWidth: style?.width,
+                  minHeight: style?.height,
+                  ...style,
+                }
+              : style
+          }
           alt={`Image ${title} ${description}`}
         />
       );

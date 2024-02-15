@@ -18,6 +18,7 @@ import {
   Image,
   Label,
   StackProps,
+  Spinner,
 } from "tamagui";
 import { Image as ExpoImage } from "expo-image";
 import { Link, LinkProps } from "expo-router";
@@ -296,11 +297,14 @@ export function ButtonWithConfirm({
 
 export function AspectRatioImage({
   uri: initUri,
+  loadingSize = "small",
   otherProps,
 }: {
   uri?: string;
+  loadingSize?: "small" | "large";
   otherProps?: Omit<ImageProps, "source">;
 }) {
+  const [loading, setLoading] = useState(false);
   const uri = useMemo(
     () =>
       initUri && initUri.startsWith(PHOTOS_FOLDER)
@@ -308,7 +312,7 @@ export function AspectRatioImage({
         : initUri,
     [initUri]
   );
-  const [aspectRatio, setAspectRatio] = useState(otherProps?.aspectRatio);
+  const [aspectRatio, setAspectRatio] = useState(otherProps?.aspectRatio || 1);
 
   useEffect(() => {
     if (!uri) {
@@ -325,26 +329,49 @@ export function AspectRatioImage({
   }, [uri]);
 
   return (
-    <Image
-      source={
-        uri
-          ? {
-              uri,
-            }
-          : require("../assets/images/placeholder-image.jpg")
-      }
-      resizeMode="contain"
-      // TODO: neither of these are working fix...
-      // esp. that images have no width/height initially
-      defaultSource={require("../assets/images/loading-image.gif")}
-      loadingIndicatorSource={require("../assets/images/loading-image.gif")}
-      aspectRatio={aspectRatio}
-      // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
-      // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling
-      // to the latest react-native image handling undefined width / height for the source
-      width="100%"
-      {...otherProps}
-    />
+    <Stack>
+      <Image
+        source={
+          uri
+            ? {
+                uri,
+                // ...(otherProps?.width || otherProps?.height
+                //   ? {
+                //       width: otherProps?.width,
+                //       height: otherProps?.height,
+                //     }
+                //   : {}),
+              }
+            : require("../assets/images/placeholder-image.jpg")
+        }
+        resizeMode="contain"
+        aspectRatio={aspectRatio}
+        // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
+        // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling
+        // to the latest react-native image handling undefined width / height for the source
+        width="100%"
+        onLoadStart={() => {
+          setLoading(true);
+        }}
+        onLoadEnd={() => {
+          setLoading(false);
+        }}
+        {...otherProps}
+      />
+      {loading && (
+        <Stack
+          position="absolute"
+          width="100%"
+          height="100%"
+          flex={1}
+          alignItems="center"
+          justifyContent="center"
+          backgroundColor={loading ? "$gray6" : undefined}
+        >
+          <Spinner color="$orange8" size={loadingSize} />
+        </Stack>
+      )}
+    </Stack>
   );
 }
 

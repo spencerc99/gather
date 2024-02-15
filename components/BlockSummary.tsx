@@ -59,14 +59,20 @@ function useBlockMenuItems(
                 switch (type) {
                   case BlockType.Text:
                     await Clipboard.setStringAsync(content);
+                    break;
+
                   case BlockType.Link:
                     await Clipboard.setUrlAsync(source!);
+                    break;
+
                   case BlockType.Image:
                   case BlockType.Video:
                     const base64 = await FileSystem.readAsStringAsync(content, {
                       encoding: "base64",
                     });
                     Clipboard.setImageAsync(base64);
+                    break;
+
                   case BlockType.Audio:
                   case BlockType.Document:
                     throw new Error("unsupported copy");
@@ -231,6 +237,8 @@ export function BlockTextSummary({
   const { updateBlock } = useContext(DatabaseContext);
   const [isEditing, setIsEditing] = useState(false);
 
+  const showBackground = [BlockType.Text, BlockType.Link].includes(type);
+
   async function commitEdit(newContent: string | null) {
     try {
       if (newContent !== null) {
@@ -265,7 +273,7 @@ export function BlockTextSummary({
           ...blockStyle,
         }}
         textContainerProps={{
-          borderWidth: 1,
+          // borderWidth: 1,
           borderRadius: 4,
           borderColor: theme.color.get(),
           space: "$2",
@@ -280,7 +288,13 @@ export function BlockTextSummary({
           // TODO: don't render content for link without image (content === '')
           <YStack>
             {content}
-            <YStack alignItems="flex-end" paddingBottom="$1" maxWidth={250}>
+            <YStack
+              alignItems="flex-end"
+              maxWidth={250}
+              flexShrink={1}
+              paddingHorizontal="$2"
+              paddingVertical="$1"
+            >
               <StyledText ellipse={true}>{title}</StyledText>
               <StyledText metadata ellipse={true}>
                 {source}
@@ -301,7 +315,11 @@ export function BlockTextSummary({
   const renderedSummary = (
     <YStack space="$1">
       <HoldItem items={blockMenuItems} closeOnTap>
-        <StyledView backgroundColor="$gray6" borderRadius="$4">
+        <StyledView
+          backgroundColor={showBackground ? "$gray6" : undefined}
+          borderRadius="$4"
+          height="auto"
+        >
           {renderContent()}
         </StyledView>
       </HoldItem>
