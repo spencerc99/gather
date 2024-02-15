@@ -329,7 +329,7 @@ export function AspectRatioImage({
   }, [uri]);
 
   return (
-    <Stack>
+    <Stack overflow="hidden">
       <Image
         source={
           uri
@@ -368,7 +368,7 @@ export function AspectRatioImage({
           justifyContent="center"
           backgroundColor={loading ? "$gray6" : undefined}
         >
-          <Spinner color="$orange8" size={loadingSize} />
+          <Spinner color="$orange9" size={loadingSize} />
         </Stack>
       )}
     </Stack>
@@ -443,11 +443,13 @@ export function ArenaLogo({
           ? require("../assets/images/arena-inverted.png")
           : require("../assets/images/arena.png")
       }
-      width={size}
-      height={size}
       style={{
+        width: size,
+        height: size,
         ...style,
       }}
+      width={size}
+      height={size}
     />
   );
 }

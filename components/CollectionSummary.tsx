@@ -117,6 +117,8 @@ export function CollectionThumbnail({
       // TODO: literally have no idea why this is needed. Otherwise it grows BEYOND ITS CONTAINER to become like 400px. what the fuck
       // i hate react native so much.
       height={140}
+      borderWidth={2}
+      borderColor="transparent"
       {...viewProps}
       paddingBottom="$1"
       overflow="hidden"
@@ -130,6 +132,8 @@ export function CollectionThumbnail({
           // account for the border lmfao this is insane code.
           maxWidth: 100,
           maxHeight: 100,
+          width: 100,
+          height: 100,
         }}
       />
       <SizableText numberOfLines={2} paddingHorizontal="$1.5" size="$3">

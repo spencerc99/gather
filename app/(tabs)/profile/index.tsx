@@ -173,7 +173,10 @@ export default function ProfileScreen() {
             borderRadius: 16,
           }}
         />
-        <StyledText>{Application.nativeBuildVersion}</StyledText>
+        <StyledText>
+          {Application.nativeApplicationVersion} (
+          {Application.nativeBuildVersion})
+        </StyledText>
       </YStack>
       <H3>
         Internal Dev Tools{" "}
