@@ -4,7 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { BlockType } from "../utils/mimeTypes";
 import { Platform, Pressable, StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
-import { PropsWithChildren, useContext, useMemo, useState } from "react";
+import { PropsWithChildren, memo, useContext, useMemo, useState } from "react";
 import { Icon, IconComponent, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
 import { TextProps, XStack, YStack, useTheme } from "tamagui";
@@ -312,25 +312,28 @@ export function BlockTextSummary({
     }
   }
 
-  const renderedSummary = (
-    <YStack space="$1">
-      <HoldItem items={blockMenuItems} closeOnTap>
-        <StyledView
-          backgroundColor={showBackground ? "$gray6" : undefined}
-          borderRadius="$4"
-          height="auto"
-        >
-          {renderContent()}
-        </StyledView>
-      </HoldItem>
-      {!hideMetadata && (
-        <BlockMetadata
-          block={block}
-          textProps={{ textAlign: "right" }}
-          isRemoteCollection={isRemoteCollection}
-        />
-      )}
-    </YStack>
+  const renderedSummary = useMemo(
+    () => (
+      <YStack space="$1">
+        <HoldItem items={blockMenuItems} closeOnTap>
+          <StyledView
+            backgroundColor={showBackground ? "$gray6" : undefined}
+            borderRadius="$4"
+            height="auto"
+          >
+            {renderContent()}
+          </StyledView>
+        </HoldItem>
+        {!hideMetadata && (
+          <BlockMetadata
+            block={block}
+            textProps={{ textAlign: "right" }}
+            isRemoteCollection={isRemoteCollection}
+          />
+        )}
+      </YStack>
+    ),
+    [block, hideMetadata, isRemoteCollection, showBackground, blockMenuItems]
   );
   return shouldLink && !isEditing ? (
     <Link

@@ -119,7 +119,6 @@ export function BlockContent({
               commitEdit?.(editableContent);
             }}
             theme="green"
-            // size={}
             height="$2"
             icon={<Icon name="check" />}
             disabled={editableContent === content || editableContent === ""}

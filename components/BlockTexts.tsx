@@ -166,6 +166,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     [isRemoteCollection]
   );
 
+  // TODO: paginate blocks by chunking
   return blocks === null ? (
     <Spinner size="large" />
   ) : blocks.length === 0 && !collectionId ? (
