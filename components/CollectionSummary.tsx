@@ -116,7 +116,7 @@ export function CollectionThumbnail({
       width={100}
       // TODO: literally have no idea why this is needed. Otherwise it grows BEYOND ITS CONTAINER to become like 400px. what the fuck
       // i hate react native so much.
-      height={140}
+      height={145}
       borderWidth={2}
       borderColor="transparent"
       {...viewProps}

@@ -174,7 +174,7 @@ export function SelectCollectionsList({
           <XStack
             space="$2"
             alignItems="center"
-            paddingVertical="$3"
+            paddingVertical="$2"
             // TODO: figure this out
             onPress={(e) => {
               e.preventDefault();
@@ -259,7 +259,11 @@ export function SelectCollectionsList({
 
   return (
     <Stack flexDirection={"column"}>
-      <XStack gap="$1" padding="$1" marginBottom="$2">
+      <XStack
+        gap="$1"
+        padding="$1"
+        marginBottom={horizontal ? undefined : "$2"}
+      >
         <SearchBarInput
           containerProps={{
             flex: 1,
