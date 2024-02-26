@@ -33,10 +33,6 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#efdbb6"
-      },
       "permissions": ["android.permission.RECORD_AUDIO"],
       "package": "net.tiny_inter.gather"
     },
@@ -63,17 +59,25 @@
             "NSExtensionActivationSupportsImageWithMaxCount": 1
           }
         }
+      ],
+      [
+        "expo-dynamic-app-icon",
+        {
+          // DEFAULT icon = icon.png
+          "water": {
+            "image": "./assets/images/icon-water.png",
+            "prerendered": true
+          },
+          "clouds": {
+            "image": "./assets/images/icon-clouds.png",
+            "prerendered": true
+          },
+          "hand": {
+            "image": "./assets/images/icon-hand.png",
+            "prerendered": true
+          }
+        }
       ]
-      // [
-      //   "./widget.plugin.ts",
-      //   {
-      //     "widgetName": "reminder",
-      //     "ios": {
-      //       "devTeamId": "6YG47PZS56",
-      //       "appGroupIdentifier": "group.net.tiny-inter.gather"
-      //     }
-      //   }
-      // ]
     ],
     "experiments": {
       "typedRoutes": true

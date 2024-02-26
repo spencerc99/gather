@@ -15,6 +15,7 @@ import {
   View,
   XStack,
   YStack,
+  H4,
 } from "tamagui";
 import * as Application from "expo-application";
 import { DatabaseContext } from "../../../utils/db";
@@ -26,7 +27,7 @@ import {
   StyledParagraph,
   StyledText,
 } from "../../../components/Themed";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { ArenaLogin } from "../../../views/ArenaLogin";
 import { UserContext, UserInfoId } from "../../../utils/user";
 import { stringToColor } from "../../../utils";
@@ -35,12 +36,32 @@ import { ArenaChannelMultiSelect } from "../../../components/arena/ArenaChannelM
 import { ArenaChannelSummary } from "../../../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../../../utils/arena";
 import { removeItem, setBoolean, setItem } from "../../../utils/asyncStorage";
+import { getAppIcon, setAppIcon } from "expo-dynamic-app-icon";
 
 const Subject = `[Gather] feedback`;
 const Body = `I wish|like|want|dislike...`;
 const FeedbackLink = `mailto:spencerc99@gmail.com?subject=${encodeURIComponent(
   Subject
 )}&body=${encodeURIComponent(Body)}`;
+
+const AppIcons = [
+  {
+    iconName: "DEFAULT",
+    source: require(`../../../assets/images/icon.png`),
+  },
+  {
+    iconName: "clouds",
+    source: require(`../../../assets/images/icon-clouds.png`),
+  },
+  {
+    iconName: "water",
+    source: require(`../../../assets/images/icon-water.png`),
+  },
+  {
+    iconName: "hand",
+    source: require(`../../../assets/images/icon-hand.png`),
+  },
+];
 
 export default function ProfileScreen() {
   const {
@@ -147,7 +168,8 @@ export default function ProfileScreen() {
         </StyledButton>
 
         <H3>Gather</H3>
-        {/* Add ability to change icon */}
+        {/* thanks to https://github.com/outsung/expo-dynamic-app-icon/tree/main/example */}
+        {AppIconSelect}
         <StyledButton
           icon={<Icon name="gift" />}
           onPress={() => {
@@ -336,5 +358,43 @@ export default function ProfileScreen() {
         <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function AppIconSelect() {
+  const [appIcon, setAppIcon] = useState<string>(getAppIcon());
+
+  function onSelectIcon(iconName: string) {
+    const iconType = iconName;
+    setAppIcon(iconType);
+    setAppIcon(iconType);
+  }
+
+  return (
+    <>
+      <H4>App Icons</H4>
+      <XStack gap="$1.5">
+        {AppIcons.map(({ iconName, source }) => {
+          const selected = appIcon === iconName;
+          console.log(`${iconName ? `icon-${iconName}` : "icon"}`);
+          return (
+            <Stack
+              onPress={() => onSelectIcon(iconName)}
+              borderWidth={1}
+              borderColor={selected ? "$green10" : "transparent"}
+            >
+              <Image
+                source={source}
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 16,
+                }}
+              />
+            </Stack>
+          );
+        })}
+      </XStack>
+    </>
   );
 }
