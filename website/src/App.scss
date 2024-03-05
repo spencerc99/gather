@@ -1,0 +1,62 @@
+html,
+body {
+  background: rgb(239, 239, 239);
+  font-family: "EB Garamond";
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5em;
+  margin-top: 5em;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+}
+
+.description {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  font-size: 1.5em;
+}
+
+.carousel {
+  display: flex;
+  gap: 1em;
+  img {
+    max-height: 600px;
+    border-radius: 8px;
+  }
+}
+
+footer {
+  margin-top: 5em;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  text-align: center;
+  font-size: 1.2em;
+
+  a {
+    text-decoration: none;
+    color: #4d5fff;
+  }
+}
+
+.medium-zoom--opened {
+  .medium-zoom-overlay {
+    opacity: 0.8 !important;
+  }
+}
+.medium-zoom-image--opened {
+  object-fit: contain;
+  opacity: 1;
+}
