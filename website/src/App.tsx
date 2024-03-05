@@ -19,6 +19,13 @@ function App() {
           <ImageZoom src="/organize-screen.png" />
           <ImageZoom src="/texts-screen.png" />
         </div>
+
+        <div className="cta">
+          <p>
+            Testflight opening soon. Register your interest by messaging{" "}
+            <a href="mailto:spencerc99@gmail.com">Spencer</a>
+          </p>
+        </div>
         <div className="description">
           <p>
             <strong>Gather is...</strong>
