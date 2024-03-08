@@ -27,6 +27,7 @@ function App() {
           </p>
         </div>
         <div className="description">
+          {/* TODO: make these all telescopic that swap between and have a button that allows you to randomize */}
           <p>
             <strong>Gather is...</strong>
           </p>
@@ -77,12 +78,6 @@ function App() {
             <li>
               present live views of your collections in your existing digital
               environments
-              <ul>
-                <li>
-                  with custom permissions (just you, select list of
-                  collaborators, open to the internet [append-only])
-                </li>
-              </ul>
             </li>
           </ul>
           <p>
@@ -90,7 +85,7 @@ function App() {
           </p>
           <ul>
             <li>
-              &quot;scrapbook / field guide / marked up collection of
+              a &quot;scrapbook / field guide / marked up collection of
               poetry&quot; vs. &quot;art coffee book&quot;
               <ul>
                 <li>
@@ -109,28 +104,51 @@ function App() {
             <strong>that can be used for...</strong>
           </p>
           <ul>
-            <li>my grateful log (prompt-first practices or collections)</li>
-            <li>conversation screenshots</li>
+            <li>things you're grateful for</li>
+            <li>things that rewired your brain</li>
             <li>songs that slap</li>
-            <li>moments i love living</li>
-            <li>things i want to remember</li>
-            <li>orange things</li>
-            <li>descriptions of people</li>
-            <li>behind the scenes</li>
-            <li>fits log</li>
-            <li>mood journal</li>
-            <li>failure resume</li>
             <li>
-              statements of purpose / what i care about (inspired by @katherine)
+              moments{" "}
+              <a href="https://spencers.cafe/projects/i-love-living">
+                i love living
+              </a>
             </li>
-            <li>latest photo of moon</li>
-            <li>last motivational watch</li>
-            <li>converting my &quot;things i enjoy&quot; list</li>
-            <li>latest mantra to live by</li>
             <li>
-              things you want to revisit embedded into your algorithmic feeds:{" "}
-              <a href="https://bulletin.spencerchang.me/">
-                https://bulletin.spencerchang.me/
+              <a href="https://www.are.na/spencer-chang/i-want-to-remember-this-fih_jry0poi">
+                things i want to remember
+              </a>
+            </li>
+            <li>orange things</li>
+            <li>peoplewatching log</li>
+            <li>
+              <a href="https://spencerchang.me/fits">fits log</a>
+            </li>
+            <li>mood journal</li>
+            <li>
+              <a href="https://www.are.na/spencer-chang/wow-geoi3s6ev74">
+                wow moments
+              </a>
+            </li>
+            <li>
+              <a href="https://kayserifserif.place/">statements of purpose</a>
+            </li>
+            <li>
+              <a href="https://www.aliciaguo.com/nuggets/">musings</a>
+            </li>
+            <li>
+              <a href="https://www.spencerchang.me/window/">
+                photos of the sky
+              </a>
+            </li>
+            <li>
+              <a href="https://www.are.na/spencer-chang/motivation-ju83elph4iw">
+                last motivational watch
+              </a>
+            </li>
+            <li>
+              things{" "}
+              <a href="https://www.spencerchang.me/#:~:text=A%20non%2Dexhaustive%20list%20of%20the%20things%20I%20enjoy%3A">
+                you enjoy
               </a>
             </li>
           </ul>
