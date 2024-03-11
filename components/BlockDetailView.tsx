@@ -6,17 +6,24 @@ import {
   StyledButton,
   Icon,
   StyledText,
+  EditableTextOnClick,
 } from "./Themed";
 import { Pressable } from "react-native";
 import { BlockSummary } from "./BlockSummary";
 import { useContext, useEffect, useState } from "react";
 import { ConnectionSummary } from "./ConnectionSummary";
 import { Connection } from "../utils/dataTypes";
-import { ScrollView, YStack } from "tamagui";
-import { Link, useRouter } from "expo-router";
+import { ScrollView, Spinner, XStack, YStack } from "tamagui";
+import { Link, Stack, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 
-export function BlockDetailView({ block }: { block: Block }) {
+export function BlockDetailView({
+  block,
+  setBlock,
+}: {
+  block: Block;
+  setBlock: (newBlock: Block) => void;
+}) {
   const {
     id,
     title,
@@ -31,32 +38,71 @@ export function BlockDetailView({ block }: { block: Block }) {
   } = block;
 
   const [connections, setConnections] = useState<Connection[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const { getConnectionsForBlock } = useContext(DatabaseContext);
+  const { getConnectionsForBlock, updateBlock } = useContext(DatabaseContext);
   useEffect(() => {
     getConnectionsForBlock(id.toString()).then((connections) => {
       setConnections(connections);
     });
   }, [id]);
 
+  async function update(updateFn: () => ReturnType<typeof updateBlock>) {
+    setIsLoading(true);
+    try {
+      const newBlock = await updateFn();
+      if (newBlock) {
+        setBlock(newBlock);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <ScrollView paddingBottom="$2">
-      <YStack space="$2">
-        {/* block details */}
-        <StyledParagraph title>{title}</StyledParagraph>
-        {/* {renderContent()} */}
-        <BlockSummary
-          block={block}
-          style={{ width: "100%", height: "auto", aspectRatio: "1/1" }}
+      <Stack.Screen
+        options={{
+          title: "",
+          headerTitle: () =>
+            isLoading ? (
+              <XStack gap="$2" justifyContent="center">
+                <Spinner />
+                <StyledText>Updating...</StyledText>
+              </XStack>
+            ) : null,
+        }}
+      />
+      <YStack gap="$2">
+        <EditableTextOnClick
+          inputProps={{ title: true }}
+          text={title}
+          defaultText="Add a title..."
+          disabled={isLoading}
+          onEdit={async (newTitle) => {
+            await update(
+              async () => await updateBlock(id, { title: newTitle })
+            );
+          }}
         />
+        {/* {renderContent()} */}
+        <BlockSummary block={block} style={{ width: "100%", height: "auto" }} />
         {__DEV__ && <StyledParagraph metadata>ID: {id}</StyledParagraph>}
         {/* TODO: don't show hold item actions and render them inline instead */}
-        {/* TODO: change all these to labels and make them editable with a save */}
-        {description && (
-          <StyledParagraph metadata>{description}</StyledParagraph>
-        )}
-        <StyledView>
+        <EditableTextOnClick
+          inputProps={{ metadata: true }}
+          text={description}
+          defaultText="Add a description..."
+          multiline
+          disabled={isLoading}
+          onEdit={async (newDescription) => {
+            await update(
+              async () => await updateBlock(id, { description: newDescription })
+            );
+          }}
+        />
+        <StyledView gap="$1">
           {/* <StyledParagraph metadata>By: {createdBy}</StyledParagraph> */}
           {source && (
             <StyledText metadata>

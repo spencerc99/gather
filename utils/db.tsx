@@ -147,7 +147,10 @@ interface DatabaseContextProps {
   createBlock: (block: BlockInsertInfo) => Promise<string>;
   createBlocks: (blocks: BlocksInsertInfo) => Promise<string[]>;
   getBlock: (blockId: string) => Promise<Block>;
-  updateBlock: (blockId: string, editInfo: BlockEditInfo) => Promise<void>;
+  updateBlock: (
+    blockId: string,
+    editInfo: BlockEditInfo
+  ) => Promise<Block | undefined>;
   deleteBlock: (id: string) => void;
 
   getConnectionsForBlock: (blockId: string) => Promise<Connection[]>;
@@ -201,7 +204,9 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   getBlock: async () => {
     throw new Error("not yet loaded");
   },
-  updateBlock: async () => {},
+  updateBlock: async () => {
+    throw new Error("not yet loaded");
+  },
   deleteBlock: () => {},
 
   getConnectionsForBlock: async () => [],
@@ -892,7 +897,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   async function updateBlock(
     blockId: string,
     editInfo: BlockEditInfo
-  ): Promise<void> {
+  ): Promise<Block | undefined> {
     if (Object.keys(editInfo).length === 0) {
       return;
     }
@@ -925,13 +930,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     handleSqlErrors(result);
 
-    // TODO: handle remote update
-
-    setBlocks(
-      blocks.map((b) =>
+    setBlocks([
+      ...blocks.map((b) =>
         b.id !== blockId ? b : { ...b, ...mapDbBlockToBlock(result.rows[0]) }
-      )
-    );
+      ),
+    ]);
+
+    return {
+      ...blocks.find((b) => b.id === blockId),
+      ...mapDbBlockToBlock(result.rows[0]),
+    };
   }
 
   async function getCollectionItems(

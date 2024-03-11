@@ -19,14 +19,18 @@ import {
   Label,
   StackProps,
   Spinner,
+  ParagraphProps,
+  InputProps,
+  Input,
 } from "tamagui";
 import { Image as ExpoImage } from "expo-image";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
+import { ensure } from "../utils/react";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
@@ -137,6 +141,138 @@ export function LinkButton(props: LinkButtonProps) {
   );
 }
 
+export function EditModeText({
+  text,
+  defaultText,
+  textProps,
+  inputProps,
+  multiline,
+  editing,
+  setText,
+}: {
+  text: string | undefined;
+  defaultText: string;
+  inputProps?: GetProps<typeof StyledInput>;
+  textProps?: GetProps<typeof StyledParagraph>;
+  multiline?: boolean;
+  editing: boolean;
+  setText: (newText: string) => void;
+}) {
+  const InputComponent = multiline ? StyledTextArea : StyledInput;
+
+  const paragraphProps = !text
+    ? { placeholder: true, ...textProps }
+    : { ...textProps };
+
+  return editing ? (
+    <InputComponent
+      value={text}
+      placeholder={defaultText}
+      onChangeText={setText}
+      {...inputProps}
+      selectTextOnFocus
+    />
+  ) : (
+    <StyledParagraph {...paragraphProps}>{text || defaultText}</StyledParagraph>
+  );
+}
+
+export function EditableTextOnClick({
+  text,
+  defaultText,
+  inputProps,
+  multiline,
+  onEdit,
+  disabled,
+  isEditing,
+  setIsEditing,
+}: {
+  text: string | undefined;
+  defaultText: string;
+  inputProps?: GetProps<typeof StyledInput>;
+  multiline?: boolean;
+  onEdit: (newText: string) => void;
+  disabled?: boolean;
+  isEditing?: boolean;
+  setIsEditing?: (isEditing: boolean) => void;
+}) {
+  ensure(
+    (!isEditing && !setIsEditing) || (isEditing && setIsEditing),
+    "isEditing and setIsEditing must be both defined or both undefined"
+  );
+
+  const [editingInternal, setEditingInternal] = useState(false);
+  const editing = isEditing ?? editingInternal;
+  const setEditing = setIsEditing ?? setEditingInternal;
+
+  const [editableContent, setEditableContent] = useState(text);
+  const inputRef = useRef<Input>(null);
+
+  function commitEdit(newContent?: string | null) {
+    setEditing(false);
+    inputRef.current?.blur();
+    if (newContent === null || newContent === undefined) {
+      setEditableContent(text);
+      return;
+    }
+    setEditableContent(newContent);
+    onEdit(newContent);
+  }
+
+  const InputComponent = multiline ? StyledTextArea : StyledInput;
+
+  return (
+    <YStack gap="$2">
+      <InputComponent
+        ref={inputRef}
+        value={editableContent}
+        placeholder={defaultText}
+        onChangeText={setEditableContent}
+        {...inputProps}
+        onPressIn={() => setEditing(true)}
+        {...(!editing
+          ? {
+              borderWidth: 0,
+              backgroundColor: "transparent",
+              minHeight: "auto",
+              padding: 0,
+            }
+          : {})}
+        selectTextOnFocus
+      />
+      {editing && (
+        <XStack gap="$2">
+          <StyledButton
+            onPress={() => {
+              commitEdit(null);
+            }}
+            theme="red"
+            // size={}
+            height="$2"
+            icon={<Icon name="close" />}
+          />
+          <StyledButton
+            onPress={() => {
+              commitEdit(editableContent);
+            }}
+            theme="green"
+            height="$2"
+            icon={<Icon name="check" />}
+            disabled={
+              editableContent === text || editableContent === "" || disabled
+            }
+          />
+        </XStack>
+      )}
+    </YStack>
+  );
+  // : (
+  //   <StyledParagraph {...paragraphProps} onPress={() => setEditing(true)}>
+  //     {text || defaultText}
+  //   </StyledParagraph>
+  // );
+}
+
 export const StyledInput = styled(DefaultInput, {
   width: "100%",
 
@@ -151,6 +287,7 @@ export const StyledInput = styled(DefaultInput, {
         },
       },
     },
+    ...TextVariants,
   } as const,
 });
 export const StyledTextArea = styled(DefaultTextArea, {

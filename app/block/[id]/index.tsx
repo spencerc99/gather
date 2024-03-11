@@ -11,8 +11,14 @@ export default function BlockDetailScreen() {
   const { getBlock } = useContext(DatabaseContext);
 
   useEffect(() => {
-    getBlock(id.toString()).then((block) => setBlock(block));
+    fetchBlock();
   }, [id]);
+
+  function fetchBlock() {
+    getBlock(id.toString()).then((block) => {
+      setBlock(block);
+    });
+  }
 
   if (!block) {
     return <Spinner size="large" color="$orange4" />;
@@ -24,7 +30,7 @@ export default function BlockDetailScreen() {
         padding: "10%",
       }}
     >
-      <BlockDetailView block={block} />
+      <BlockDetailView block={block} setBlock={setBlock} />
     </ScrollView>
   );
 }

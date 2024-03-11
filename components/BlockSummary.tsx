@@ -232,12 +232,14 @@ export function BlockTextSummary({
   blockStyle?: object;
   isRemoteCollection?: boolean;
 }) {
-  const { id, type, source, title } = block;
+  const { id, type, source, title, description } = block;
   const theme = useTheme();
   const { updateBlock } = useContext(DatabaseContext);
   const [isEditing, setIsEditing] = useState(false);
 
-  const showBackground = [BlockType.Text, BlockType.Link].includes(type);
+  const showBackground =
+    [BlockType.Text, BlockType.Link].includes(type) ||
+    ([BlockType.Image].includes(type) && Boolean(title));
 
   async function commitEdit(newContent: string | null) {
     try {
@@ -302,11 +304,28 @@ export function BlockTextSummary({
             </YStack>
           </YStack>
         );
-        return source ? (
-          <ExternalLink href={source}>{inner}</ExternalLink>
-        ) : (
-          inner
-        );
+
+        return inner;
+      case BlockType.Image:
+        if (title) {
+          return (
+            <YStack>
+              {content}
+              <YStack
+                alignItems="flex-end"
+                maxWidth={250}
+                flexShrink={1}
+                paddingHorizontal="$2"
+                paddingVertical="$1"
+              >
+                <StyledText ellipse={true}>{title}</StyledText>
+                <StyledText metadata ellipse={true} numberOfLines={1}>
+                  {description}
+                </StyledText>
+              </YStack>
+            </YStack>
+          );
+        }
       default:
         return content;
     }

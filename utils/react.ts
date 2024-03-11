@@ -8,3 +8,9 @@ export function ensureExists(x: string | null | undefined): string {
   }
   return x;
 }
+
+export function ensure(x: unknown, message: string): void {
+  if (!x) {
+    throw new Error(message);
+  }
+}
