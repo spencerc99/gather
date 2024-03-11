@@ -35,11 +35,7 @@ export function TextForageView({
 }) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
-  const {
-    createBlock: addBlock,
-    shareIntent,
-    fetchBlocks,
-  } = useContext(DatabaseContext);
+  const { createBlocks, shareIntent } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
   const insets = useSafeAreaInsets();
@@ -103,27 +99,26 @@ export function TextForageView({
     const savedTextValue = textValue;
     setTextValue("");
     setMedias([]);
-    // TODO: add latest block to list now so it shows up immediately
+    const blocksToInsert = [];
 
     try {
       if (savedMedias.length) {
-        await Promise.all(
+        const mediaToInsert = await Promise.all(
           savedMedias.map(async ({ uri, type }) => {
             // TODO: this is only accounting for iphone.
             const fileUri = await getFsPathForMediaResult(
               uri,
               type === BlockType.Image ? "jpg" : "mp4"
             );
-            return addBlock({
+            return {
               createdBy: currentUser!.id,
               content: fileUri,
               // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
               type,
-              collectionsToConnect: collectionId ? [collectionId] : [],
-            });
+            };
           })
         );
-        fetchBlocks();
+        blocksToInsert.push(...mediaToInsert);
       }
 
       if (savedTextValue) {
@@ -131,7 +126,7 @@ export function TextForageView({
         if (isUrl(savedTextValue)) {
           const { title, description, images, url, favicon } =
             await extractDataFromUrl(savedTextValue);
-          await addBlock({
+          blocksToInsert.push({
             createdBy: currentUser!.id,
             // TODO: try to capture a picture of the url always
             content: images?.[0] || favicon || "",
@@ -142,7 +137,7 @@ export function TextForageView({
             collectionsToConnect: collectionId ? [collectionId] : [],
           });
         } else {
-          await addBlock({
+          blocksToInsert.push({
             createdBy: currentUser!.id,
             content: savedTextValue,
             type: BlockType.Text,
@@ -150,6 +145,11 @@ export function TextForageView({
           });
         }
       }
+
+      await createBlocks({
+        blocksToInsert,
+        collectionId,
+      });
     } catch (err) {
       console.error(err);
     }
