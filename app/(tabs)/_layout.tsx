@@ -47,6 +47,21 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="review"
+        options={{
+          tabBarLabel: "Review",
+          headerTitle: "",
+          // compass
+          // sticky-note
+          // hourglass-2
+          // eercast
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="eercast" color={color} />
+          ),
+          headerRight: () => headerIcons,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           tabBarLabel: "Profile",

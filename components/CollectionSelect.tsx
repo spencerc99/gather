@@ -9,6 +9,7 @@ import {
   YStack,
   XStack,
   useDebounceValue,
+  GetProps,
   // setupNativeSheet,
 } from "tamagui";
 import { DatabaseContext } from "../utils/db";
@@ -27,12 +28,16 @@ export function CollectionSelect({
   collectionPlaceholder = "New collection",
   triggerProps = {},
   onTriggerSelect,
+  selectProps,
+  hideChevron,
 }: {
   selectedCollection: string | null;
   setSelectedCollection: (selectedCollection: string | null) => void;
   collectionPlaceholder?: string;
   triggerProps?: SelectTriggerProps;
   onTriggerSelect?: () => void;
+  selectProps?: GetProps<typeof Select>;
+  hideChevron?: boolean;
 }) {
   const { collections, createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
@@ -73,6 +78,7 @@ export function CollectionSelect({
           setSearchValue("");
         }
       }}
+      {...selectProps}
     >
       <Select.Trigger
         elevation="$3"
@@ -82,13 +88,15 @@ export function CollectionSelect({
         }}
       >
         <Select.Value placeholder={collectionPlaceholder} />{" "}
-        <Icon
-          name="chevron-down"
-          size={12}
-          position="absolute"
-          right={7}
-          top="68%"
-        />
+        {!hideChevron && (
+          <Icon
+            name="chevron-down"
+            size={12}
+            position="absolute"
+            right={7}
+            top="68%"
+          />
+        )}
       </Select.Trigger>
 
       <Adapt when="sm" platform="touch">

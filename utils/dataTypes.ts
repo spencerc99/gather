@@ -70,6 +70,7 @@ export interface Block extends Omit<BlockInsertInfo, "collectionsToConnect"> {
   updatedAt: Date;
   numConnections: number;
   remoteConnectedAt?: Date | null; // only present when selecting from a single collection
+  collectionIds: string[];
 }
 
 export interface BlockWithCollectionInfo extends Block {

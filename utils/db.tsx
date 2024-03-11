@@ -752,11 +752,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const SelectBlockSql = `WITH block_connections AS (
             SELECT    connections.block_id,
                       MIN(connections.remote_created_at) AS remote_connected_at,
-                      COUNT(connections.collection_id) as num_connections
+                      COUNT(connections.collection_id) as num_connections,
+                      json_group_array(connections.collection_id) as collection_ids
             FROM      connections
             GROUP BY  1
           )
           SELECT    blocks.*,
+                    block_connections.collection_ids as collection_ids,
                     COALESCE(block_connections.num_connections, 0) as num_connections,
                     block_connections.remote_connected_at as remote_connected_at
           FROM      blocks

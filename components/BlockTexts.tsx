@@ -143,6 +143,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       return;
     }
     // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
+    // this is tricky becuase we need `remoteConnectedAt` for the particular collectionId involved... I suppose we could just fetch all of those too in the big block fetch.
     // TODO: can also push the sort to the DB
     const collectionBlocks = await getCollectionItems(collectionId);
     setBlocks(collectionBlocks);
