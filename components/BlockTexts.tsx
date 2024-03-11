@@ -111,6 +111,8 @@ const BlockView = memo(
   )
 );
 
+const RenderChunkSize = 15;
+
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
   const {
     localBlocks: allBlocks,
@@ -157,6 +159,18 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       ),
     [blocks]
   );
+
+  const [pages, setPages] = useState(1);
+
+  const blocksToRender = useMemo(
+    () => sortedBlocks.slice(0, pages * RenderChunkSize),
+    [sortedBlocks, pages]
+  );
+
+  function fetchMoreBlocks() {
+    setPages(pages + 1);
+  }
+
   const isRemoteCollection = collection?.remoteSourceType !== undefined;
 
   const renderBlock = useCallback(
@@ -241,10 +255,12 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     <>
       <FlatList
         renderItem={renderBlock}
-        data={sortedBlocks}
+        data={blocksToRender}
         scrollEventThrottle={150}
         ref={scrollRef}
         scrollsToTop={false}
+        onEndReachedThreshold={0.3}
+        onEndReached={fetchMoreBlocks}
         onScroll={(e) => {
           if (isScrolling) {
             return;
