@@ -55,6 +55,7 @@ import {
   updateLastSyncedRemoteInfo,
 } from "./asyncStorage";
 import { Indices, Migrations } from "./db/migrations";
+import { useDebounce } from "tamagui";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -314,6 +315,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
+  const debouncedTrySyncPendingArenaBlocks = useDebounce(
+    trySyncPendingArenaBlocks,
+    10 * 1000 // once every 10 seconds
+  );
 
   useEffect(() => {
     void initDatabases();
@@ -664,7 +669,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
 
   const deleteBlock = async (id: string, ignoreRemote?: boolean) => {
-    console.log("DELETING");
     await deleteBlocksById([id], ignoreRemote);
   };
 
@@ -1395,7 +1399,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }))
     );
     void fetchCollections();
-    void trySyncPendingArenaBlocks();
+    void debouncedTrySyncPendingArenaBlocks();
   }
 
   async function upsertConnections(connections: ConnectionInsertInfo[]) {
