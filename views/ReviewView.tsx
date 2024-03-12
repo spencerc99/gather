@@ -8,10 +8,20 @@ import {
 } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
-import { BlockSummary, BlockTextSummary } from "../components/BlockSummary";
+import {
+  BlockReviewSummary,
+  BlockSummary,
+  BlockTextSummary,
+} from "../components/BlockSummary";
 import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
 import { FlatList, SafeAreaView } from "react-native";
-import { Icon, StyledButton, StyledLabel } from "../components/Themed";
+import {
+  Icon,
+  StyledButton,
+  StyledLabel,
+  StyledParagraph,
+  StyledText,
+} from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
@@ -38,6 +48,7 @@ export function ReviewView() {
   }
 
   useEffect(() => {
+    console.log("randomizing");
     randomizeBlocks();
     // have some logic of storing what has been reviewed..
   }, []);
@@ -48,9 +59,11 @@ export function ReviewView() {
   }
 
   const filteredBlocks = useMemo(() => {
+    console.log("filtering", selectedCollection);
     return randomBlocks.filter(
       (block) =>
-        !selectedCollection || block.collectionIds?.includes(selectedCollection)
+        selectedCollection === null ||
+        block.collectionIds?.includes(selectedCollection)
     );
   }, [selectedCollection, randomBlocks]);
 
@@ -69,13 +82,13 @@ export function ReviewView() {
     switch (view) {
       case ViewType.Carousel:
         return (
-          <YStack flex={1}>
+          <YStack flex={1} paddingHorizontal="$2">
             <Carousel
               ref={carouselRef}
               loop={false}
               vertical
               height={height}
-              data={randomBlocks}
+              data={filteredBlocks}
               windowSize={5}
               renderItem={({ item, index }) => (
                 <YStack
@@ -84,8 +97,9 @@ export function ReviewView() {
                   flex={1}
                   flexGrow={1}
                   marginBottom="50%"
+                  width="100%"
                 >
-                  <BlockTextSummary
+                  <BlockReviewSummary
                     shouldLink
                     block={item}
                     style={{
@@ -95,6 +109,10 @@ export function ReviewView() {
                       width: "100%",
                       maxHeight: 400,
                       borderRadius: 8,
+                    }}
+                    containerProps={{
+                      width: "100%",
+                      minWidth: "100%",
                     }}
                   />
                 </YStack>
@@ -111,11 +129,21 @@ export function ReviewView() {
     }
   }
 
+  console.log("filteredBlocks", filteredBlocks.length);
+
   return !filteredBlocks.length ? (
-    <Spinner size="large" />
+    <YStack height="100%" justifyContent="center">
+      <Spinner size="large" />
+    </YStack>
   ) : (
     <YStack gap="$2" flex={1}>
-      <XStack marginTop="$2" position="absolute" width="100%" zIndex={1}>
+      <XStack
+        marginTop="$2"
+        position="absolute"
+        width="100%"
+        zIndex={1}
+        paddingHorizontal="$1.5"
+      >
         <XStack alignItems="center" width="100%" justifyContent="space-between">
           <XStack
             paddingHorizontal="$3"
@@ -139,6 +167,7 @@ export function ReviewView() {
                   backgroundColor: "$gray4",
                   padding: "$2",
                   borderWidth: 0,
+                  borderRadius: "$1",
                 }}
               />
             </YStack>
