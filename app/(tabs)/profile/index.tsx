@@ -183,7 +183,7 @@ export default function ProfileScreen() {
         <StyledButton
           onPress={() => setShowInternalTools(!showInternalTools)}
           circular
-          size="$2"
+          size="$5"
           theme="white"
           backgroundColor="$gray6"
           icon={

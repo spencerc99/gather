@@ -243,7 +243,7 @@ export function TextForageView({
                         style={{
                           aspectRatio: 1,
                           resizeMode: "cover",
-                          borderRadius: 8,
+                          borderRadius: "$2",
                         }}
                       />
                       <StyledButton

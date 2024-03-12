@@ -76,7 +76,7 @@ export function CollectionSummary({
           otherProps={{
             aspectRatio: 1,
             resizeMode: "cover",
-            borderRadius: 8,
+            borderRadius: "$2",
             height: 40,
             width: 40,
           }}
@@ -128,7 +128,7 @@ export function CollectionThumbnail({
         otherProps={{
           aspectRatio: 1,
           resizeMode: "cover",
-          borderRadius: 8,
+          borderRadius: "$2",
           // account for the border lmfao this is insane code.
           maxWidth: 100,
           maxHeight: 100,

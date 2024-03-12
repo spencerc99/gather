@@ -7,7 +7,14 @@ import { HoldItem } from "react-native-hold-menu";
 import { PropsWithChildren, memo, useContext, useMemo, useState } from "react";
 import { Icon, IconComponent, StyledText, StyledView } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import { TextProps, XStack, YStack, useTheme } from "tamagui";
+import {
+  GetProps,
+  TextProps,
+  XStack,
+  YStack,
+  YStackProps,
+  useTheme,
+} from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { Link, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
@@ -122,6 +129,7 @@ export function BlockSummary({
   shouldLink,
   style,
   blockStyle,
+  containerProps,
 }: {
   block: Block;
   hideMetadata?: boolean;
@@ -129,6 +137,7 @@ export function BlockSummary({
   shouldLink?: boolean;
   style?: object;
   blockStyle?: object;
+  containerProps?: GetProps<typeof YStack>;
 }) {
   const { id, title, createdAt } = block;
   const { updateBlock } = useContext(DatabaseContext);
@@ -160,13 +169,14 @@ export function BlockSummary({
       containerStyle={style}
       mediaStyle={{
         aspectRatio: 1,
+        borderRadius: "$2",
         ...blockStyle,
       }}
     />
   );
 
   const renderedSummary = (
-    <YStack space="$1" alignItems="center" key={id}>
+    <YStack gap="$2" alignItems="center" key={id} {...containerProps}>
       {hideHoldMenu ? (
         renderedBlockContent
       ) : (
@@ -236,6 +246,7 @@ export function BlockTextSummary({
   const theme = useTheme();
   const { updateBlock } = useContext(DatabaseContext);
   const [isEditing, setIsEditing] = useState(false);
+  const widthProperty = blockStyle?.width || 250;
 
   const showBackground =
     [BlockType.Text, BlockType.Link].includes(type) ||
@@ -270,13 +281,13 @@ export function BlockTextSummary({
         commitEdit={commitEdit}
         containerStyle={style}
         mediaStyle={{
-          width: 250,
-          borderRadius: 4,
+          width: widthProperty,
+          borderRadius: "$2",
           ...blockStyle,
         }}
         textContainerProps={{
           // borderWidth: 1,
-          borderRadius: 4,
+          borderRadius: "$2",
           borderColor: theme.color.get(),
           space: "$2",
           padding: "$3",
@@ -292,7 +303,7 @@ export function BlockTextSummary({
             {content}
             <YStack
               alignItems="flex-end"
-              maxWidth={250}
+              maxWidth={widthProperty}
               flexShrink={1}
               paddingHorizontal="$2"
               paddingVertical="$1"
@@ -313,7 +324,7 @@ export function BlockTextSummary({
               {content}
               <YStack
                 alignItems="flex-end"
-                maxWidth={250}
+                maxWidth={widthProperty}
                 flexShrink={1}
                 paddingHorizontal="$2"
                 paddingVertical="$1"

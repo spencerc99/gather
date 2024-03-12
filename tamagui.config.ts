@@ -47,6 +47,9 @@ const bodyFont = createInterFont(
     face: {
       700: { normal: "InterBold" },
     },
+    size: {
+      small: 10,
+    },
   },
   {
     sizeSize: (size) => Math.round(size * 1.1),

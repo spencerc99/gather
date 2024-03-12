@@ -86,6 +86,12 @@ const PressableButton = styled(DefaultButton, {
   color: "$color",
   // taken from https://github.com/tamagui/tamagui/issues/1156
   variants: {
+    size: {
+      $small: {
+        height: "$2.5",
+        paddingHorizontal: "$2.5",
+      },
+    },
     disabled: {
       true: {
         opacity: 0.5,
@@ -481,7 +487,7 @@ export function AspectRatioImage({
               }
             : require("../assets/images/placeholder-image.jpg")
         }
-        resizeMode="contain"
+        resizeMode="cover"
         aspectRatio={aspectRatio}
         // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
         // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling

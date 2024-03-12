@@ -95,8 +95,12 @@ export function UncategorizedView() {
         block={block}
         key={block.id}
         style={{
-          // TODO: fix this height overflowing
-          maxWidth: "90%",
+          width: "100%",
+          height: "100%",
+        }}
+        containerProps={{
+          width: "90%",
+          aspectRatio: 1,
         }}
       />
     );
@@ -161,9 +165,8 @@ export function UncategorizedView() {
           top={6}
           right={6}
           zIndex={5}
-          icon={<Icon name="trash" size={20} />}
-          height="$2"
-          paddingHorizontal="$2"
+          size="$small"
+          icon={<Icon name="trash" size="$2" />}
           theme="red"
           onPress={() => {
             handleDeleteBlock(item.id);

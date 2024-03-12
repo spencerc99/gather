@@ -58,6 +58,7 @@ export function BlockContent({
         borderColor: theme.color.get(),
         backgroundColor: theme.background.get(),
         borderWidth: 0.25,
+        borderRadius: "$2",
         padding: 12,
         ...textContainerProps,
       };
