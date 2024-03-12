@@ -9,6 +9,7 @@ import { CollectionSelect } from "../components/CollectionSelect";
 import { Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { CollectionToReviewKey, useStickyValue } from "../utils/asyncStorage";
+import { shuffleArray } from "../utils";
 
 const RenderChunkSize = 25;
 
@@ -19,10 +20,10 @@ enum ViewType {
 
 export function ReviewView() {
   const { blocks } = useContext(DatabaseContext);
-  const [randomBlocks, setRandomBlocks] = useState<Block[]>([]);
   const [selectedCollection, setSelectedCollection] = useStickyValue<
     string | null
   >(CollectionToReviewKey, null);
+  const [outputBlocks, setOutputBlocks] = useState<Block[]>(blocks);
   const [view, setView] = useState<ViewType>(ViewType.Carousel);
   function toggleView() {
     setView((prev) =>
@@ -35,18 +36,22 @@ export function ReviewView() {
     // have some logic of storing what has been reviewed..
   }, []);
 
-  function randomizeBlocks() {
-    const randomized = [...blocks].sort(() => Math.random() - 0.5);
-    setRandomBlocks(randomized);
-  }
+  useEffect(() => {
+    if (selectedCollection === null) {
+      setOutputBlocks(blocks);
+    } else {
+      setOutputBlocks(
+        blocks.filter((block) =>
+          block.collectionIds?.includes(selectedCollection)
+        )
+      );
+    }
+  }, [selectedCollection]);
 
-  const filteredBlocks = useMemo(() => {
-    return randomBlocks.filter(
-      (block) =>
-        selectedCollection === null ||
-        block.collectionIds?.includes(selectedCollection)
-    );
-  }, [selectedCollection, randomBlocks]);
+  function randomizeBlocks() {
+    const randomized = shuffleArray(outputBlocks);
+    setOutputBlocks(randomized);
+  }
 
   // Gestures
   // swipe down at very top to shuffle
@@ -69,7 +74,7 @@ export function ReviewView() {
               loop={false}
               vertical
               height={height}
-              data={filteredBlocks}
+              data={outputBlocks}
               windowSize={5}
               renderItem={({ item, index }) => (
                 <YStack
@@ -104,13 +109,13 @@ export function ReviewView() {
       case ViewType.Feed:
         return (
           <YStack marginTop="$10" flex={1}>
-            <FeedView blocks={filteredBlocks} />
+            <FeedView blocks={outputBlocks} />
           </YStack>
         );
     }
   }
 
-  return !filteredBlocks.length ? (
+  return !outputBlocks.length ? (
     <YStack height="100%" justifyContent="center">
       <Spinner size="large" />
     </YStack>
@@ -201,17 +206,17 @@ export function FeedView({ blocks }: { blocks: Block[] }) {
     );
   }
 
-  const outputBlocks = useMemo(
-    () =>
-      [...blocks].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    [blocks]
-  );
+  //   const outputBlocks = useMemo(
+  //     () =>
+  //       [...blocks].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+  //     [blocks]
+  //   );
 
   const [pages, setPages] = useState(1);
 
   const blocksToRender = useMemo(
-    () => outputBlocks.slice(0, pages * RenderChunkSize),
-    [outputBlocks, pages]
+    () => blocks.slice(0, pages * RenderChunkSize),
+    [blocks, pages]
   );
 
   function fetchMoreBlocks() {
