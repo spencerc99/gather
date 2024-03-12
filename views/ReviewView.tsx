@@ -1,26 +1,41 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import { BlockSummary, BlockTextSummary } from "../components/BlockSummary";
-import { Spinner, XStack, YStack } from "tamagui";
-import { FlatList } from "react-native";
+import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
+import { FlatList, SafeAreaView } from "react-native";
 import { Icon, StyledButton, StyledLabel } from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { Keyboard } from "react-native";
+import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
+import { CollectionToReviewKey, useStickyValue } from "../utils/asyncStorage";
 
 const RenderChunkSize = 25;
 
-export function ReviewView() {
-  return <RevisitView />;
+enum ViewType {
+  Carousel = "carousel",
+  Feed = "feed",
 }
 
-function RevisitView() {
+export function ReviewView() {
   const { blocks } = useContext(DatabaseContext);
   const [randomBlocks, setRandomBlocks] = useState<Block[]>([]);
-  const [idx, setIdx] = useState(0);
-  const [selectedCollection, setSelectedCollection] = useState<string | null>(
-    null
-  );
+  const [selectedCollection, setSelectedCollection] = useStickyValue<
+    string | null
+  >(CollectionToReviewKey, null);
+  const [view, setView] = useState<ViewType>(ViewType.Carousel);
+  function toggleView() {
+    setView((prev) =>
+      prev === ViewType.Carousel ? ViewType.Feed : ViewType.Carousel
+    );
+  }
 
   useEffect(() => {
     randomizeBlocks();
@@ -32,86 +47,129 @@ function RevisitView() {
     setRandomBlocks(randomized);
   }
 
-  const filteredBlocks = useMemo(
-    () =>
-      randomBlocks.filter(
-        (block) =>
-          !selectedCollection ||
-          block.collectionIds?.includes(selectedCollection)
-      ),
-    [selectedCollection, randomBlocks]
-  );
+  const filteredBlocks = useMemo(() => {
+    return randomBlocks.filter(
+      (block) =>
+        !selectedCollection || block.collectionIds?.includes(selectedCollection)
+    );
+  }, [selectedCollection, randomBlocks]);
+
+  // Gestures
+  // swipe down at very top to shuffle
+  //   const nativeGesture = Gesture.Native();
+  //   const scrollPanGesture = Gesture.Pan();
+  //   const composedGestures = Gesture.Simultaneous(
+  //     scrollPanGesture,
+  //     nativeGesture
+  //   );
+  const height = useWindowDimensions().height;
+  const carouselRef = useRef<ICarouselInstance>(null);
+
+  function renderView() {
+    switch (view) {
+      case ViewType.Carousel:
+        return (
+          <YStack flex={1}>
+            <Carousel
+              ref={carouselRef}
+              loop={false}
+              vertical
+              height={height}
+              data={randomBlocks}
+              windowSize={5}
+              renderItem={({ item, index }) => (
+                <YStack
+                  alignItems="center"
+                  justifyContent="center"
+                  flex={1}
+                  flexGrow={1}
+                  marginBottom="50%"
+                >
+                  <BlockTextSummary
+                    shouldLink
+                    block={item}
+                    style={{
+                      width: "100%",
+                    }}
+                    blockStyle={{
+                      width: "100%",
+                      maxHeight: 400,
+                      borderRadius: 8,
+                    }}
+                  />
+                </YStack>
+              )}
+            />
+          </YStack>
+        );
+      case ViewType.Feed:
+        return (
+          <YStack marginTop="$10" flex={1}>
+            <FeedView blocks={filteredBlocks} />
+          </YStack>
+        );
+    }
+  }
 
   return !filteredBlocks.length ? (
     <Spinner size="large" />
   ) : (
     <YStack gap="$2" flex={1}>
-      <XStack
-        marginTop="$2"
-        justifyContent="center"
-        position="absolute"
-        width="100%"
-        zIndex={1}
-      >
-        <XStack
-          paddingHorizontal="$5"
-          paddingVertical="$2"
-          backgroundColor="$gray1"
-          elevation="$4"
-          borderRadius={100}
-          gap="$1.5"
-          alignItems="center"
-        >
-          <StyledLabel>Showing </StyledLabel>
-          <YStack maxWidth={200}>
-            <CollectionSelect
-              onTriggerSelect={() => {
-                Keyboard.dismiss();
-              }}
-              hideChevron
-              selectedCollection={selectedCollection}
-              setSelectedCollection={setSelectedCollection}
-              collectionPlaceholder="All collections"
-              triggerProps={{
-                theme: "orange",
-                backgroundColor: "$orange4",
-                padding: "$2",
-              }}
-            />
-          </YStack>
-          <StyledButton
-            size="$small"
-            onPress={randomizeBlocks}
-            icon={<Icon name="random" />}
-          ></StyledButton>
+      <XStack marginTop="$2" position="absolute" width="100%" zIndex={1}>
+        <XStack alignItems="center" width="100%" justifyContent="space-between">
+          <XStack
+            paddingHorizontal="$3"
+            borderRadius={100}
+            paddingRight={0}
+            backgroundColor="$gray1"
+            elevation="$4"
+            maxWidth="50%"
+          >
+            <StyledLabel>Reviewing </StyledLabel>
+            <YStack marginLeft="$1">
+              <CollectionSelect
+                onTriggerSelect={() => {
+                  Keyboard.dismiss();
+                }}
+                hideChevron
+                selectedCollection={selectedCollection}
+                setSelectedCollection={setSelectedCollection}
+                collectionPlaceholder="All collections"
+                triggerProps={{
+                  backgroundColor: "$gray4",
+                  padding: "$2",
+                  borderWidth: 0,
+                }}
+              />
+            </YStack>
+          </XStack>
+          <XStack gap="$2">
+            {/* square */}
+            <StyledButton
+              size="$small"
+              onPress={randomizeBlocks}
+              icon={<Icon name="random" />}
+              borderRadius={100}
+            ></StyledButton>
+            <StyledButton
+              size="$small"
+              icon={
+                <Icon
+                  name={view === ViewType.Carousel ? "th-large" : "square"}
+                />
+              }
+              theme="gray"
+              onPress={toggleView}
+            ></StyledButton>
+          </XStack>
         </XStack>
       </XStack>
-      <YStack
-        flexGrow={1}
-        flex={1}
-        alignItems="center"
-        justifyContent="center"
-        marginHorizontal="$2"
-      >
-        <BlockTextSummary
-          shouldLink
-          block={filteredBlocks[idx]}
-          style={{
-            width: "100%",
-          }}
-          blockStyle={{
-            width: "100%",
-            maxHeight: 400,
-            borderRadius: 8,
-          }}
-        />
-      </YStack>
+      {renderView()}
     </YStack>
   );
 }
 
-export function FeedView() {
-  const { blocks } = useContext(DatabaseContext);
+export function FeedView({ blocks }: { blocks: Block[] }) {
   function renderBlock(block: Block) {
     return (
       <BlockSummary
@@ -149,7 +207,7 @@ export function FeedView() {
 
   // TODO: use tabs to render blocks + collections
   return (
-    <YStack gap="$4" paddingHorizontal="$2" flexGrow={1}>
+    <YStack gap="$4" paddingHorizontal="$2" flex={1}>
       <FlatList
         numColumns={2}
         renderItem={({ item }) => renderBlock(item)}
@@ -158,6 +216,7 @@ export function FeedView() {
           display: "flex",
           alignItems: "center",
           gap: 16,
+          paddingBottom: 36,
         }}
         onEndReachedThreshold={0.3}
         onEndReached={fetchMoreBlocks}

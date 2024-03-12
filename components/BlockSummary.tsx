@@ -234,6 +234,7 @@ export function BlockTextSummary({
   style,
   blockStyle,
   isRemoteCollection,
+  containerProps,
 }: {
   block: Block;
   shouldLink?: boolean;
@@ -241,6 +242,7 @@ export function BlockTextSummary({
   style?: object;
   blockStyle?: object;
   isRemoteCollection?: boolean;
+  containerProps?: GetProps<typeof YStack>;
 }) {
   const { id, type, source, title, description } = block;
   const theme = useTheme();
@@ -344,7 +346,7 @@ export function BlockTextSummary({
 
   const renderedSummary = useMemo(
     () => (
-      <YStack space="$1">
+      <YStack space="$1" {...containerProps}>
         <HoldItem items={blockMenuItems} closeOnTap>
           <StyledView
             backgroundColor={showBackground ? "$gray6" : undefined}

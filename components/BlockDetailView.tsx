@@ -86,8 +86,13 @@ export function BlockDetailView({
             );
           }}
         />
-        {/* {renderContent()} */}
-        <BlockSummary block={block} style={{ width: "100%", height: "auto" }} />
+        <BlockSummary
+          block={block}
+          style={{ width: "100%", height: "auto" }}
+          blockStyle={{
+            resizeMode: "contain",
+          }}
+        />
         {__DEV__ && <StyledParagraph metadata>ID: {id}</StyledParagraph>}
         {/* TODO: don't show hold item actions and render them inline instead */}
         <EditableTextOnClick
@@ -134,6 +139,7 @@ export function BlockDetailView({
         {connections.map((connection) => (
           // TODO: jump to the location of the block??
           <Link
+            key={connection.collectionId}
             href={{
               pathname: "/(tabs)/home",
               params: {
@@ -143,10 +149,7 @@ export function BlockDetailView({
             asChild
           >
             <Pressable>
-              <ConnectionSummary
-                key={connection.collectionId}
-                connection={connection}
-              />
+              <ConnectionSummary connection={connection} />
             </Pressable>
           </Link>
         ))}
