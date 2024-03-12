@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { StyledButton, StyledTextArea, Icon } from "./Themed";
 import { XStack, YStack } from "tamagui";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { DatabaseContext } from "../utils/db";
 import { Audio } from "expo-av";
@@ -20,6 +20,23 @@ import { getFsPathForMediaResult } from "../utils/blobs";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { BlockType } from "../utils/mimeTypes";
 import { FeedView } from "./FeedView";
+
+const Placeholders = [
+  "Who do you love and why?",
+  "What was the last link you sent?",
+  "What texture did you last pick up in your camera roll?",
+  "What was the last interesting thing you overhead?",
+  "What do you want to remember?",
+  "What caught your eye about the world today?",
+  "What are you grateful for?",
+  "What do you appreciate about a friend?",
+  "What was your last photo of the sky?",
+  "How do you describe yourself?",
+  "What made you love life today?",
+  "What was the last song you found that slaps?",
+  "Describe the last person you saw.",
+  "What words do you want to live by?.",
+];
 
 interface PickedMedia {
   uri: string;
@@ -38,6 +55,10 @@ export function TextForageView({
   const { createBlocks, shareIntent } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
+  const textPlaceholder = useMemo(
+    () => Placeholders[Math.floor(Math.random() * Placeholders.length)],
+    []
+  );
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -222,16 +243,14 @@ export function TextForageView({
         <BlockTexts collectionId={collectionId} />
         <YStack
           height="auto"
-          borderTopWidth={1}
           borderTopEndRadius={4}
           borderTopStartRadius={4}
           borderRadius={4}
-          paddingTop="$2"
-          borderColor="$gray9"
+          paddingTop="$2.5"
           elevation="$2"
           backgroundColor="$background"
         >
-          <XStack space="$1" width="100%">
+          <XStack gap="$1" width="100%">
             {medias.length > 0 && (
               <ScrollView horizontal={true}>
                 <XStack flexWrap="wrap">
@@ -247,8 +266,8 @@ export function TextForageView({
                         }}
                       />
                       <StyledButton
-                        icon={<Icon name="remove" size={12} />}
-                        size="$1.5"
+                        icon={<Icon name="remove" />}
+                        size="$small"
                         theme="red"
                         circular
                         position="absolute"
@@ -264,32 +283,33 @@ export function TextForageView({
               </ScrollView>
             )}
           </XStack>
-          <XStack alignItems="flex-start" gap={4} width="100%" marginBottom={8}>
-            {/* radial menu? */}
-            {/* <StyledButton
+          {/* <XStack alignItems="flex-start" gap={4} width="100%" marginBottom={8}> */}
+          {/* radial menu? */}
+          {/* <StyledButton
               icon={<Icon name="photo" />}
               onPress={pickImage}
               theme="orange"
             /> */}
-            {/* <StyledButton
+          {/* <StyledButton
               icon={<Icon name="file" />}
               onPress={pickFile}
               theme="purple"
             /> */}
-            {/* TODO: access camera */}
-            {/* <StyledButton
+          {/* TODO: access camera */}
+          {/* <StyledButton
               icon={
                 recording ? <Icon name="stop" /> : <Icon name="microphone" />
               }
               theme="green"
               onPress={recording ? stopRecording : startRecording}
             /> */}
-          </XStack>
+          {/* </XStack> */}
           <XStack
             alignItems="center"
             justifyContent="center"
             padding="$2"
-            space="$2"
+            paddingTop={0}
+            gap="$2"
           >
             <StyledButton
               icon={<Icon size={24} name="photo" />}
@@ -298,7 +318,7 @@ export function TextForageView({
               alignSelf="flex-end"
             />
             <StyledTextArea
-              placeholder="Save a thought, photo, or link..."
+              placeholder={textPlaceholder}
               minHeight={undefined}
               flex={1}
               maxLength={2000}

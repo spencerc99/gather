@@ -103,6 +103,9 @@ function mapDbBlockToBlock(block: any): Block {
     remoteSourceInfo: block.remote_source_info
       ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
       : null,
+    collectionIds: block.collection_ids
+      ? JSON.parse(block.collection_ids).map((c) => c.toString())
+      : [],
   } as Block;
 }
 
@@ -952,11 +955,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           sql: `
             WITH block_connections AS (
               SELECT    block_id,
+                        json_group_array(connections.collection_id) as collection_ids,
                         COUNT(collection_id) as num_connections
               FROM      connections
               GROUP BY  1
             )
             SELECT      blocks.*,
+                        block_connections.collection_ids as collection_ids,
                         connections.remote_created_at as remote_connected_at,
                         COALESCE(block_connections.num_connections, 0) as num_connections
             FROM        blocks
