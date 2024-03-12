@@ -1,27 +1,10 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
-import {
-  BlockReviewSummary,
-  BlockSummary,
-  BlockTextSummary,
-} from "../components/BlockSummary";
+import { BlockReviewSummary, BlockSummary } from "../components/BlockSummary";
 import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
-import { FlatList, SafeAreaView } from "react-native";
-import {
-  Icon,
-  StyledButton,
-  StyledLabel,
-  StyledParagraph,
-  StyledText,
-} from "../components/Themed";
+import { FlatList } from "react-native";
+import { Icon, StyledButton, StyledLabel } from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
@@ -48,7 +31,6 @@ export function ReviewView() {
   }
 
   useEffect(() => {
-    console.log("randomizing");
     randomizeBlocks();
     // have some logic of storing what has been reviewed..
   }, []);
@@ -59,7 +41,6 @@ export function ReviewView() {
   }
 
   const filteredBlocks = useMemo(() => {
-    console.log("filtering", selectedCollection);
     return randomBlocks.filter(
       (block) =>
         selectedCollection === null ||
@@ -128,8 +109,6 @@ export function ReviewView() {
         );
     }
   }
-
-  console.log("filteredBlocks", filteredBlocks.length);
 
   return !filteredBlocks.length ? (
     <YStack height="100%" justifyContent="center">
