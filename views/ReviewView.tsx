@@ -63,7 +63,7 @@ export function ReviewView() {
     switch (view) {
       case ViewType.Carousel:
         return (
-          <YStack flex={1} paddingHorizontal="$2">
+          <YStack flex={1} paddingHorizontal="$4">
             <Carousel
               ref={carouselRef}
               loop={false}
@@ -126,11 +126,17 @@ export function ReviewView() {
         <XStack alignItems="center" width="100%" justifyContent="space-between">
           <XStack
             paddingHorizontal="$3"
-            borderRadius={100}
+            borderTopLeftRadius={100}
+            borderBottomLeftRadius={100}
+            borderTopRightRadius="$1"
+            borderBottomRightRadius="$1"
             paddingRight={0}
-            backgroundColor="$gray1"
+            backgroundColor="$gray2"
             elevation="$4"
-            maxWidth="50%"
+            maxWidth="60%"
+            overflow="hidden"
+            borderWidth={0.25}
+            borderColor="$gray8"
           >
             <StyledLabel>Reviewing </StyledLabel>
             <YStack marginLeft="$1">
@@ -143,9 +149,8 @@ export function ReviewView() {
                 setSelectedCollection={setSelectedCollection}
                 collectionPlaceholder="All collections"
                 triggerProps={{
-                  backgroundColor: "$gray4",
+                  backgroundColor: "$gray6",
                   padding: "$2",
-                  borderWidth: 0,
                   borderRadius: "$1",
                 }}
               />

@@ -418,7 +418,7 @@ export function BlockReviewSummary({
   const widthProperty = blockStyle?.width || 250;
 
   const showBackground =
-    [BlockType.Text, BlockType.Link].includes(type) ||
+    [BlockType.Link].includes(type) ||
     ([BlockType.Image].includes(type) && Boolean(title));
 
   const { blockMenuItems } = useBlockMenuItems(block);
@@ -448,35 +448,32 @@ export function BlockReviewSummary({
       />
     );
     switch (type) {
-      case BlockType.Link:
-      case BlockType.Image:
+      default:
         return (
           // TODO: don't render content for link without image (content === '')
           <YStack>
             {content}
-            <YStack
-              alignItems="flex-end"
-              maxWidth={widthProperty}
-              flexShrink={1}
-              paddingHorizontal="$2"
-              paddingVertical="$1.5"
-            >
-              {source && (
-                <StyledText metadata ellipse={true}>
-                  {source}
-                </StyledText>
-              )}
-              {description && (
-                <StyledText metadata ellipse={true} numberOfLines={3}>
-                  {description}
-                </StyledText>
-              )}
-            </YStack>
+            {(description || source) && (
+              <YStack
+                maxWidth={widthProperty}
+                flexShrink={1}
+                paddingHorizontal="$2"
+                paddingVertical="$2"
+              >
+                {source && (
+                  <StyledText metadata ellipse={true}>
+                    {source}
+                  </StyledText>
+                )}
+                {description && (
+                  <StyledText ellipse={true} numberOfLines={3}>
+                    {description}
+                  </StyledText>
+                )}
+              </YStack>
+            )}
           </YStack>
         );
-
-      default:
-        return content;
     }
   }
 

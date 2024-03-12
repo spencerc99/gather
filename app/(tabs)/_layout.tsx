@@ -39,7 +39,7 @@ export default function TabLayout() {
         name="organize"
         options={{
           tabBarLabel: "Organize",
-          headerTitle: "",
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <TabBarIcon name="archive" color={color} />
           ),
@@ -50,7 +50,7 @@ export default function TabLayout() {
         name="review"
         options={{
           tabBarLabel: "Review",
-          headerTitle: "",
+          headerShown: false,
           // compass
           // sticky-note
           // hourglass-2
@@ -65,7 +65,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           tabBarLabel: "Profile",
-          headerTitle: "",
+          headerShown: false,
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
           headerRight: () => headerIcons,
         }}

@@ -356,6 +356,7 @@ export function SearchBarInput({
     <InputWithIcon
       icon="search"
       placeholder="Search..."
+      clearButtonMode="always"
       enterKeyHint="search"
       width="100%"
       backgroundColor="$gray4"
