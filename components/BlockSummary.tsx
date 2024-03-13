@@ -34,6 +34,7 @@ import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
 import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
+import { jsxJoin } from "../utils/react";
 
 function useBlockMenuItems(
   block: Block,
@@ -179,6 +180,9 @@ export function BlockSummary({
       isEditing={isEditing}
       commitEdit={commitEdit}
       containerStyle={style}
+      textContainerProps={{
+        minWidth: "100%",
+      }}
       mediaStyle={{
         aspectRatio: 1,
         borderRadius: "$2",
@@ -186,6 +190,37 @@ export function BlockSummary({
       }}
     />
   );
+
+  function renderMetadata() {
+    const {
+      type,
+      createdAt,
+      remoteConnectedAt,
+      source,
+      numConnections,
+      remoteSourceInfo,
+    } = block;
+
+    const relativeDate = getRelativeDate(
+      remoteConnectedAt ? new Date(remoteConnectedAt) : createdAt
+    );
+    let metadata = [<>{relativeDate}</>];
+    switch (type) {
+      case BlockType.Link:
+        metadata.push(
+          <>
+            from <ExternalLink href={source!}>{source}</ExternalLink>
+          </>
+        );
+        break;
+    }
+
+    return (
+      <StyledText metadata ellipse={true} textAlign="right">
+        {jsxJoin(" • ", metadata)}
+      </StyledText>
+    );
+  }
 
   const renderedSummary = (
     <YStack gap="$2" alignItems="center" key={id} {...containerProps}>
@@ -196,14 +231,7 @@ export function BlockSummary({
           {renderedBlockContent}
         </HoldItem>
       )}
-      {!hideMetadata &&
-        (title ? (
-          <StyledText metadata ellipse={true}>
-            {title}
-          </StyledText>
-        ) : (
-          <BlockMetadata block={block} />
-        ))}
+      {!hideMetadata && renderMetadata()}
     </YStack>
   );
 
@@ -295,6 +323,7 @@ export function BlockTextSummary({
         containerStyle={style}
         mediaStyle={{
           width: widthProperty,
+          maxWidth: widthProperty,
           borderRadius: "$2",
           ...blockStyle,
         }}

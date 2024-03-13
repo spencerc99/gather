@@ -105,10 +105,13 @@ export function BlockDetailView({
           />
           <BlockSummary
             block={block}
-            style={{ width: "100%", height: "auto" }}
             blockStyle={{
               resizeMode: "contain",
             }}
+            containerProps={{
+              paddingBottom: "$2",
+            }}
+            hideMetadata
           />
           {__DEV__ && <StyledParagraph metadata>ID: {id}</StyledParagraph>}
           {/* TODO: don't show hold item actions and render them inline instead */}
