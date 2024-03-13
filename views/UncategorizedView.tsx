@@ -259,7 +259,6 @@ export function UncategorizedView() {
       contentContainerStyle={{
         flexDirection: "column",
       }}
-      keyboardVerticalOffset={insets.top + 60}
     >
       <XStack flex={1}>
         <Carousel
