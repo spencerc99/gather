@@ -109,7 +109,7 @@ export function CollectionSelect({
             stiffness: 120,
           }}
           dismissOnSnapToBottom
-          snapPoints={[92]}
+          snapPoints={[85]}
         >
           <Sheet.Handle />
           <Sheet.Frame>

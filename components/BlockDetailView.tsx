@@ -7,6 +7,7 @@ import {
   Icon,
   StyledText,
   EditableTextOnClick,
+  AspectRatioImage,
 } from "./Themed";
 import { KeyboardAvoidingView, Platform, Pressable } from "react-native";
 import { BlockSummary } from "./BlockSummary";
@@ -23,6 +24,8 @@ import {
 import { Link, Stack, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { MediaView } from "./MediaView";
+import { BlockContent } from "./BlockContent";
 
 export function BlockDetailView({
   block,
@@ -66,7 +69,6 @@ export function BlockDetailView({
       setIsLoading(false);
     }
   }
-  const { height } = useWindowDimensions();
 
   return (
     <>
@@ -107,6 +109,8 @@ export function BlockDetailView({
             block={block}
             blockStyle={{
               resizeMode: "contain",
+              height: "auto",
+              aspectRatio: undefined,
             }}
             containerProps={{
               paddingBottom: "$2",

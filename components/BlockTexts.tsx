@@ -65,10 +65,8 @@ export const InspoBlocks = [
 ];
 
 const RightActions = memo(() => (
-  <YStack alignItems="center" padding="$2">
-    <StyledButton circular size="$3">
-      <Icon name="link" />
-    </StyledButton>
+  <YStack alignItems="center" padding="$2" justifyContent="center">
+    <StyledButton circular size="$6" icon={<Icon name="link" />}></StyledButton>
   </YStack>
 ));
 

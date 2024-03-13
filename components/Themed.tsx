@@ -466,7 +466,6 @@ export function AspectRatioImage({
     if (otherProps?.aspectRatio) {
       return;
     }
-
     Image.getSize(uri, (width, height) => {
       setAspectRatio(width / height);
     });
@@ -489,7 +488,6 @@ export function AspectRatioImage({
             : require("../assets/images/placeholder-image.jpg")
         }
         resizeMode="cover"
-        aspectRatio={aspectRatio}
         // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
         // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling
         // to the latest react-native image handling undefined width / height for the source
@@ -501,6 +499,7 @@ export function AspectRatioImage({
           setLoading(false);
         }}
         {...otherProps}
+        aspectRatio={aspectRatio}
       />
       {loading && (
         <Stack

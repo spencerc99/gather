@@ -230,31 +230,33 @@ export function SelectCollectionsList({
             </XStack>
           </ScrollView>
         ) : (
-          <YStack space="$1">
-            {searchValue && (
-              <StyledButton
-                onPress={async () => {
-                  await onClickCreateCollection();
-                }}
-                noTextWrap={true}
-                height="auto"
-                paddingVertical={16}
-              >
-                <SizableText
-                  userSelect="none"
-                  cursor="pointer"
-                  color="$color"
-                  size="$true"
+          <ScrollView>
+            <YStack space="$1">
+              {searchValue && (
+                <StyledButton
+                  onPress={async () => {
+                    await onClickCreateCollection();
+                  }}
+                  noTextWrap={true}
+                  height="auto"
+                  paddingVertical={16}
                 >
-                  New collection{" "}
-                  <SizableText style={{ fontWeight: 700 }}>
-                    {searchValue}
+                  <SizableText
+                    userSelect="none"
+                    cursor="pointer"
+                    color="$color"
+                    size="$true"
+                  >
+                    New collection{" "}
+                    <SizableText style={{ fontWeight: 700 }}>
+                      {searchValue}
+                    </SizableText>
                   </SizableText>
-                </SizableText>
-              </StyledButton>
-            )}
-            {renderCollections()}
-          </YStack>
+                </StyledButton>
+              )}
+              {renderCollections()}
+            </YStack>
+          </ScrollView>
         )}
       </Stack>
     );
