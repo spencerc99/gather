@@ -903,6 +903,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     blockId: string,
     editInfo: BlockEditInfo
   ): Promise<Block | undefined> {
+    // TODO: needs to sync to are.na, maybe a modifiedTimestamp and syncedTimestamp
     if (Object.keys(editInfo).length === 0) {
       return;
     }
