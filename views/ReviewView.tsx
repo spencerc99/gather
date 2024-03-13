@@ -82,7 +82,7 @@ export function ReviewView() {
                   justifyContent="center"
                   flex={1}
                   flexGrow={1}
-                  marginBottom="50%"
+                  marginBottom="45%"
                   width="100%"
                 >
                   <BlockReviewSummary
@@ -126,7 +126,7 @@ export function ReviewView() {
         position="absolute"
         width="100%"
         zIndex={1}
-        paddingHorizontal="$1.5"
+        paddingHorizontal="$2"
       >
         <XStack alignItems="center" width="100%" justifyContent="space-between">
           <XStack
@@ -136,12 +136,11 @@ export function ReviewView() {
             borderTopRightRadius="$1"
             borderBottomRightRadius="$1"
             paddingRight={0}
-            backgroundColor="$gray2"
+            backgroundColor="$background"
             elevation="$4"
-            maxWidth="60%"
             overflow="hidden"
-            borderWidth={0.25}
-            borderColor="$gray8"
+            borderWidth={0.5}
+            borderColor="$gray7"
           >
             <StyledLabel>Reviewing </StyledLabel>
             <YStack marginLeft="$1">
@@ -154,14 +153,15 @@ export function ReviewView() {
                 setSelectedCollection={setSelectedCollection}
                 collectionPlaceholder="All collections"
                 triggerProps={{
-                  backgroundColor: "$gray6",
+                  backgroundColor: "$orange6",
                   padding: "$2",
                   borderRadius: "$1",
+                  maxWidth: 190,
                 }}
               />
             </YStack>
           </XStack>
-          <XStack gap="$2">
+          <XStack gap="$1">
             {/* square */}
             <StyledButton
               size="$small"
@@ -176,7 +176,7 @@ export function ReviewView() {
                   name={view === ViewType.Carousel ? "th-large" : "square"}
                 />
               }
-              theme="gray"
+              backgroundColor="$gray6"
               onPress={toggleView}
             ></StyledButton>
           </XStack>
