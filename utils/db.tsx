@@ -8,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
@@ -323,9 +324,40 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
-  const debouncedTrySyncPendingArenaBlocks = useDebounce(
-    trySyncPendingArenaBlocks,
-    10 * 1000 // once every 10 seconds
+
+  // Ref to keep track of whether the sync is already running
+  const isSyncingRef = useRef(false);
+
+  // Queue to store the triggers
+  const triggerQueueRef = useRef<(() => void)[]>([]);
+
+  // Function to trigger the sync
+  const triggerBlockSync = () => {
+    const syncFunction = async () => {
+      isSyncingRef.current = true;
+      try {
+        await trySyncPendingArenaBlocks();
+        const nextTrigger = triggerQueueRef.current.shift();
+        if (nextTrigger) {
+          await nextTrigger();
+        }
+      } finally {
+        isSyncingRef.current = false;
+      }
+    };
+
+    if (triggerQueueRef.current.length === 0 && !isSyncingRef.current) {
+      // If the queue is empty, start the sync process
+      triggerQueueRef.current.push(syncFunction);
+      syncFunction();
+    } else {
+      // If the queue is not empty, add the sync function to the queue
+      triggerQueueRef.current.push(syncFunction);
+    }
+  };
+  const debouncedTriggerBlockSync = useDebounce(
+    triggerBlockSync,
+    10 * 1000 // batch updates every 10 seconds
   );
 
   useEffect(() => {
@@ -1066,7 +1098,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     ) {
       return;
     }
-    void trySyncPendingArenaBlocks();
+    void debouncedTriggerBlockSync();
   }
 
   async function getArenaAccessToken(): Promise<string | null> {
@@ -1115,7 +1147,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function syncWithArena() {
     try {
-      await trySyncPendingArenaBlocks();
+      await debouncedTriggerBlockSync();
       const { lastSyncedAt } = await getLastSyncedRemoteInfo();
       // if passed 6 hours, sync again
       if (
@@ -1415,7 +1447,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }))
     );
     void fetchCollections();
-    void debouncedTrySyncPendingArenaBlocks();
+    void debouncedTriggerBlockSync();
   }
 
   async function upsertConnections(connections: ConnectionInsertInfo[]) {
