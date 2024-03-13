@@ -91,7 +91,6 @@ export function UncategorizedView() {
   const renderBlock = useCallback((block: Block) => {
     return (
       <BlockSummary
-        hideHoldMenu
         block={block}
         key={block.id}
         style={{
