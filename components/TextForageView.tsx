@@ -246,14 +246,13 @@ export function TextForageView({
           borderTopEndRadius={4}
           borderTopStartRadius={4}
           borderRadius={4}
-          paddingTop="$2.5"
           elevation="$2"
           backgroundColor="$background"
         >
           <XStack gap="$1" width="100%">
             {medias.length > 0 && (
               <ScrollView horizontal={true}>
-                <XStack flexWrap="wrap">
+                <XStack flexWrap="wrap" gap="$2" paddingTop="$1">
                   {medias.map(({ uri, type }, idx) => (
                     <YStack width={150} height={150} key={uri} borderRadius={8}>
                       <MediaView
@@ -267,11 +266,11 @@ export function TextForageView({
                       />
                       <StyledButton
                         icon={<Icon name="remove" />}
-                        size="$small"
+                        size="$5"
                         theme="red"
                         circular
                         position="absolute"
-                        top={2}
+                        top={4}
                         right={2}
                         onPress={() => {
                           removeMedia(idx);
@@ -308,7 +307,6 @@ export function TextForageView({
             alignItems="center"
             justifyContent="center"
             padding="$2"
-            paddingTop={0}
             gap="$2"
           >
             <StyledButton

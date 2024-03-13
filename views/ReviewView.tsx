@@ -117,7 +117,7 @@ export function ReviewView() {
 
   return !outputBlocks.length ? (
     <YStack height="100%" justifyContent="center">
-      <Spinner size="large" />
+      <Spinner size="large" color="$orange9" />
     </YStack>
   ) : (
     <YStack gap="$2" flex={1}>

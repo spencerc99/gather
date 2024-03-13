@@ -232,7 +232,7 @@ export function UncategorizedView() {
 
   return !events ? (
     <YStack height="100%" justifyContent="center">
-      <Spinner size="large" />
+      <Spinner size="large" color="$orange9" />
     </YStack>
   ) : events.length === 0 ? (
     <YStack

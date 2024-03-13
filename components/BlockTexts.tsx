@@ -183,7 +183,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
 
   // TODO: paginate blocks by chunking
   return blocks === null ? (
-    <Spinner size="large" />
+    <Spinner size="large" color="$orange9" />
   ) : blocks.length === 0 && !collectionId ? (
     <ScrollView
       style={{
