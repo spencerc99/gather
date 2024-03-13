@@ -28,9 +28,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          tabBarLabel: "Chats",
+          tabBarLabel: "Collect",
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="comments" color={color} />
+            // <TabBarIcon name="camera-retro" color={color} />
+            // <TabBarIcon name="envelope" color={color} />
+            <TabBarIcon name="paperclip" color={color} />
+            // <TabBarIcon name="save" color={color} />
+            // <TabBarIcon name="thumb-tack" color={color} />
+            // <TabBarIcon name="ticket" color={color} />
           ),
           headerRight: () => headerIcons,
         }}
