@@ -173,7 +173,6 @@ export function BlockSummary({
     onClickEdit: () => setIsEditing(true),
   });
 
-  const theme = useTheme();
   const renderedBlockContent = (
     <BlockContent
       {...block}
@@ -281,13 +280,12 @@ export function BlockTextSummary({
   }
 
   const { blockMenuItems } = useBlockMenuItems(block, {
-    onClickEdit: () => setIsEditing(true),
+    onClickEdit: () => {
+      setIsEditing(true);
+    },
   });
 
   function renderContent() {
-    // if (!block.content && block.type === BlockType.Link) {
-    //   return null;
-    // }
     const content = (
       <BlockContent
         key={id}
@@ -378,7 +376,16 @@ export function BlockTextSummary({
         )}
       </YStack>
     ),
-    [block, hideMetadata, isRemoteCollection, showBackground, blockMenuItems]
+    [
+      block,
+      hideMetadata,
+      isRemoteCollection,
+      showBackground,
+      blockMenuItems,
+      isEditing,
+      blockStyle,
+      containerProps,
+    ]
   );
   return shouldLink && !isEditing ? (
     <Link
