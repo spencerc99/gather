@@ -10,9 +10,9 @@ main {
   align-items: center;
   gap: 5em;
   margin-top: 5em;
-  max-width: 800px;
   margin-left: auto;
   margin-right: auto;
+  padding: 0 2em;
 }
 
 .logo {
@@ -26,6 +26,7 @@ main {
   flex-direction: column;
   gap: 0.25em;
   font-size: 1.5em;
+  max-width: 800px;
 }
 
 .cta {
@@ -38,9 +39,12 @@ main {
 
 .carousel {
   display: flex;
+  max-width: 1200px;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 1em;
   img {
-    max-height: 600px;
+    max-height: 500px;
     border-radius: 8px;
   }
 }
