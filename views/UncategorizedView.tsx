@@ -91,7 +91,6 @@ export function UncategorizedView() {
   const renderBlock = useCallback((block: Block) => {
     return (
       <BlockSummary
-        hideHoldMenu
         block={block}
         key={block.id}
         style={{
@@ -232,7 +231,9 @@ export function UncategorizedView() {
   }
 
   return !events ? (
-    <Spinner size="large" />
+    <YStack height="100%" justifyContent="center">
+      <Spinner size="large" color="$orange9" />
+    </YStack>
   ) : events.length === 0 ? (
     <YStack
       height="100%"
@@ -257,7 +258,6 @@ export function UncategorizedView() {
       contentContainerStyle={{
         flexDirection: "column",
       }}
-      keyboardVerticalOffset={insets.top + 60}
     >
       <XStack flex={1}>
         <Carousel

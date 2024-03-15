@@ -35,7 +35,6 @@ export function CollectionSummary({
       paddingVertical="$4"
       width="100%"
       paddingHorizontal="$3"
-      // borderWidth={1}
       borderRadius={16}
       borderColor={theme.color.get()}
       backgroundColor={theme.background.get()}
@@ -44,7 +43,7 @@ export function CollectionSummary({
     >
       {/* TODO: this doesnt work with long overflowing titles im gonna kms */}
       <YStack flexGrow={1}>
-        <XStack>
+        <XStack overflow="hidden">
           <StyledParagraph
             title
             flexGrow={1}

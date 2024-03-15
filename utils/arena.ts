@@ -499,6 +499,26 @@ export async function addBlockToChannel({
       },
     });
     response = await resp.json();
+    const { title, description } = block;
+    if (title || (description && resp.ok)) {
+      const url = withQueryParams(`${ArenaApiUrl}/blocks/${response.id}`, {
+        title,
+        description,
+      });
+      const updateMetadata = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${arenaToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!updateMetadata.ok) {
+        console.error(
+          `failed to update block metadata in arena ${updateMetadata.status}`,
+          updateMetadata
+        );
+      }
+    }
   }
   if (!resp.ok) {
     console.error(`failed to add block to arena channel ${resp.status}`, resp);

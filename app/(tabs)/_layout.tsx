@@ -28,9 +28,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          tabBarLabel: "Chats",
+          tabBarLabel: "Collect",
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="comments" color={color} />
+            // <TabBarIcon name="camera-retro" color={color} />
+            // <TabBarIcon name="envelope" color={color} />
+            <TabBarIcon name="paperclip" color={color} />
+            // <TabBarIcon name="save" color={color} />
+            // <TabBarIcon name="thumb-tack" color={color} />
+            // <TabBarIcon name="ticket" color={color} />
           ),
           headerRight: () => headerIcons,
         }}
@@ -39,9 +44,24 @@ export default function TabLayout() {
         name="organize"
         options={{
           tabBarLabel: "Organize",
-          headerTitle: "",
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <TabBarIcon name="archive" color={color} />
+          ),
+          headerRight: () => headerIcons,
+        }}
+      />
+      <Tabs.Screen
+        name="review"
+        options={{
+          tabBarLabel: "Review",
+          headerShown: false,
+          // compass
+          // sticky-note
+          // hourglass-2
+          // eercast
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="eercast" color={color} />
           ),
           headerRight: () => headerIcons,
         }}
@@ -50,7 +70,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           tabBarLabel: "Profile",
-          headerTitle: "",
+          headerShown: false,
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
           headerRight: () => headerIcons,
         }}

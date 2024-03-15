@@ -150,6 +150,7 @@ export function SelectCollectionsList({
   function renderCollections() {
     return (
       <FlatList
+        scrollEnabled={false}
         horizontal={Boolean(horizontal)}
         keyboardShouldPersistTaps={"handled"}
         data={filteredCollections}
@@ -171,87 +172,91 @@ export function SelectCollectionsList({
           : { paddingBottom: scrollContainerPaddingBottom })}
       >
         {horizontal ? (
-          <XStack
-            space="$2"
-            alignItems="center"
-            paddingVertical="$2"
-            // TODO: figure this out
-            onPress={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            {!searchValue && collections.length === 0 && (
-              <YStack height={140} width={110} justifyContent="center">
-                <LinkButton
-                  href="/modal"
-                  icon={<Icon name="plus" />}
-                  height="auto"
-                  minHeight={40}
-                  paddingVertical="$1"
-                >
-                  <SizableText
-                    userSelect="none"
-                    cursor="pointer"
-                    color="$color"
-                    size="$true"
+          <ScrollView horizontal>
+            <XStack
+              space="$2"
+              alignItems="center"
+              paddingVertical="$2"
+              // TODO: figure this out
+              onPress={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              {!searchValue && collections.length === 0 && (
+                <YStack height={140} width={110} justifyContent="center">
+                  <LinkButton
+                    href="/modal"
+                    icon={<Icon name="plus" />}
+                    height="auto"
+                    minHeight={40}
+                    paddingVertical="$1"
                   >
-                    <SizableText>New collection</SizableText>
-                  </SizableText>
-                </LinkButton>
-              </YStack>
-            )}
-            {searchValue && (
-              // Matches the height of CollectionThumbnail lol
-              <YStack height={140} width={100} justifyContent="center">
+                    <SizableText
+                      userSelect="none"
+                      cursor="pointer"
+                      color="$color"
+                      size="$true"
+                    >
+                      <SizableText>New collection</SizableText>
+                    </SizableText>
+                  </LinkButton>
+                </YStack>
+              )}
+              {searchValue && (
+                // Matches the height of CollectionThumbnail lol
+                <YStack height={140} width={100} justifyContent="center">
+                  <StyledButton
+                    onPress={async () => {
+                      await onClickCreateCollection();
+                    }}
+                    icon={<Icon name="plus" />}
+                    height="auto"
+                    minHeight={40}
+                  >
+                    <SizableText
+                      userSelect="none"
+                      cursor="pointer"
+                      color="$color"
+                      size="$true"
+                      style={{ fontWeight: 700 }}
+                    >
+                      <SizableText>{searchValue}</SizableText>
+                    </SizableText>
+                  </StyledButton>
+                </YStack>
+              )}
+              {renderCollections()}
+            </XStack>
+          </ScrollView>
+        ) : (
+          <ScrollView>
+            <YStack space="$1">
+              {searchValue && (
                 <StyledButton
                   onPress={async () => {
                     await onClickCreateCollection();
                   }}
-                  icon={<Icon name="plus" />}
+                  noTextWrap={true}
                   height="auto"
-                  minHeight={40}
+                  paddingVertical={16}
                 >
                   <SizableText
                     userSelect="none"
                     cursor="pointer"
                     color="$color"
                     size="$true"
-                    style={{ fontWeight: 700 }}
                   >
-                    <SizableText>{searchValue}</SizableText>
+                    New collection{" "}
+                    <SizableText style={{ fontWeight: 700 }}>
+                      {searchValue}
+                    </SizableText>
                   </SizableText>
                 </StyledButton>
-              </YStack>
-            )}
-            {renderCollections()}
-          </XStack>
-        ) : (
-          <YStack space="$1">
-            {searchValue && (
-              <StyledButton
-                onPress={async () => {
-                  await onClickCreateCollection();
-                }}
-                noTextWrap={true}
-                height="auto"
-                paddingVertical={16}
-              >
-                <SizableText
-                  userSelect="none"
-                  cursor="pointer"
-                  color="$color"
-                  size="$true"
-                >
-                  New collection{" "}
-                  <SizableText style={{ fontWeight: 700 }}>
-                    {searchValue}
-                  </SizableText>
-                </SizableText>
-              </StyledButton>
-            )}
-            {renderCollections()}
-          </YStack>
+              )}
+              {renderCollections()}
+            </YStack>
+          </ScrollView>
         )}
       </Stack>
     );

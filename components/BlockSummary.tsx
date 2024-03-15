@@ -4,8 +4,21 @@ import * as WebBrowser from "expo-web-browser";
 import { BlockType } from "../utils/mimeTypes";
 import { Platform, Pressable, StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
-import { PropsWithChildren, memo, useContext, useMemo, useState } from "react";
-import { Icon, IconComponent, StyledText, StyledView } from "./Themed";
+import {
+  PropsWithChildren,
+  memo,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  Icon,
+  IconComponent,
+  StyledParagraph,
+  StyledText,
+  StyledView,
+} from "./Themed";
 import { BlockContent } from "./BlockContent";
 import {
   GetProps,
@@ -21,6 +34,7 @@ import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
 import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
+import { jsxJoin } from "../utils/react";
 
 function useBlockMenuItems(
   block: Block,
@@ -160,13 +174,15 @@ export function BlockSummary({
     onClickEdit: () => setIsEditing(true),
   });
 
-  const theme = useTheme();
   const renderedBlockContent = (
     <BlockContent
       {...block}
       isEditing={isEditing}
       commitEdit={commitEdit}
       containerStyle={style}
+      textContainerProps={{
+        minWidth: "100%",
+      }}
       mediaStyle={{
         aspectRatio: 1,
         borderRadius: "$2",
@@ -174,6 +190,37 @@ export function BlockSummary({
       }}
     />
   );
+
+  function renderMetadata() {
+    const {
+      type,
+      createdAt,
+      remoteConnectedAt,
+      source,
+      numConnections,
+      remoteSourceInfo,
+    } = block;
+
+    const relativeDate = getRelativeDate(
+      remoteConnectedAt ? new Date(remoteConnectedAt) : createdAt
+    );
+    let metadata = [<>{relativeDate}</>];
+    switch (type) {
+      case BlockType.Link:
+        metadata.push(
+          <>
+            from <ExternalLink href={source!}>{source}</ExternalLink>
+          </>
+        );
+        break;
+    }
+
+    return (
+      <StyledText metadata ellipse={true} textAlign="right">
+        {jsxJoin(" • ", metadata)}
+      </StyledText>
+    );
+  }
 
   const renderedSummary = (
     <YStack gap="$2" alignItems="center" key={id} {...containerProps}>
@@ -184,14 +231,7 @@ export function BlockSummary({
           {renderedBlockContent}
         </HoldItem>
       )}
-      {!hideMetadata &&
-        (title ? (
-          <StyledText metadata ellipse={true}>
-            {title}
-          </StyledText>
-        ) : (
-          <BlockMetadata block={block} />
-        ))}
+      {!hideMetadata && renderMetadata()}
     </YStack>
   );
 
@@ -234,6 +274,7 @@ export function BlockTextSummary({
   style,
   blockStyle,
   isRemoteCollection,
+  containerProps,
 }: {
   block: Block;
   shouldLink?: boolean;
@@ -241,6 +282,7 @@ export function BlockTextSummary({
   style?: object;
   blockStyle?: object;
   isRemoteCollection?: boolean;
+  containerProps?: GetProps<typeof YStack>;
 }) {
   const { id, type, source, title, description } = block;
   const theme = useTheme();
@@ -266,13 +308,12 @@ export function BlockTextSummary({
   }
 
   const { blockMenuItems } = useBlockMenuItems(block, {
-    onClickEdit: () => setIsEditing(true),
+    onClickEdit: () => {
+      setIsEditing(true);
+    },
   });
 
   function renderContent() {
-    // if (!block.content && block.type === BlockType.Link) {
-    //   return null;
-    // }
     const content = (
       <BlockContent
         key={id}
@@ -282,6 +323,7 @@ export function BlockTextSummary({
         containerStyle={style}
         mediaStyle={{
           width: widthProperty,
+          maxWidth: widthProperty,
           borderRadius: "$2",
           ...blockStyle,
         }}
@@ -344,7 +386,7 @@ export function BlockTextSummary({
 
   const renderedSummary = useMemo(
     () => (
-      <YStack space="$1">
+      <YStack space="$1" {...containerProps}>
         <HoldItem items={blockMenuItems} closeOnTap>
           <StyledView
             backgroundColor={showBackground ? "$gray6" : undefined}
@@ -363,9 +405,138 @@ export function BlockTextSummary({
         )}
       </YStack>
     ),
-    [block, hideMetadata, isRemoteCollection, showBackground, blockMenuItems]
+    [
+      block,
+      hideMetadata,
+      isRemoteCollection,
+      showBackground,
+      blockMenuItems,
+      isEditing,
+      blockStyle,
+      containerProps,
+    ]
   );
   return shouldLink && !isEditing ? (
+    <Link
+      href={{
+        pathname: "/block/[id]/",
+        params: { id: block.id },
+      }}
+      key={block.id}
+      asChild
+    >
+      <Pressable>{renderedSummary}</Pressable>
+    </Link>
+  ) : (
+    renderedSummary
+  );
+}
+
+export function BlockReviewSummary({
+  block,
+  hideMetadata,
+  shouldLink,
+  style,
+  blockStyle,
+  isRemoteCollection,
+  containerProps,
+}: {
+  block: Block;
+  shouldLink?: boolean;
+  hideMetadata?: boolean;
+  style?: object;
+  blockStyle?: object;
+  isRemoteCollection?: boolean;
+  containerProps?: GetProps<typeof YStack>;
+}) {
+  const { id, type, source, title, description } = block;
+  const theme = useTheme();
+  const widthProperty = blockStyle?.width || 250;
+
+  const showBackground =
+    [BlockType.Link].includes(type) ||
+    ([BlockType.Image].includes(type) && Boolean(title));
+
+  const { blockMenuItems } = useBlockMenuItems(block);
+
+  function renderContent() {
+    // if (!block.content && block.type === BlockType.Link) {
+    //   return null;
+    // }
+    const content = (
+      <BlockContent
+        key={id}
+        {...block}
+        containerStyle={style}
+        mediaStyle={{
+          width: widthProperty,
+          borderRadius: "$2",
+          ...blockStyle,
+        }}
+        textContainerProps={{
+          // borderWidth: 1,
+          borderRadius: "$2",
+          borderColor: theme.color.get(),
+          space: "$2",
+          padding: "$3",
+          width: "100%",
+        }}
+      />
+    );
+    switch (type) {
+      default:
+        return (
+          // TODO: don't render content for link without image (content === '')
+          <YStack>
+            {content}
+            {(description || source) && (
+              <YStack
+                maxWidth={widthProperty}
+                flexShrink={1}
+                paddingHorizontal="$2"
+                paddingVertical="$2"
+              >
+                {source && (
+                  <StyledText metadata ellipse={true}>
+                    {source}
+                  </StyledText>
+                )}
+                {description && (
+                  <StyledText ellipse={true} numberOfLines={3}>
+                    {description}
+                  </StyledText>
+                )}
+              </YStack>
+            )}
+          </YStack>
+        );
+    }
+  }
+
+  const renderedSummary = useMemo(
+    () => (
+      <YStack gap="$1.5" {...containerProps}>
+        {title && (
+          <StyledParagraph title textAlign="center">
+            {title}
+          </StyledParagraph>
+        )}
+        <HoldItem items={blockMenuItems} closeOnTap>
+          <StyledView
+            backgroundColor={showBackground ? "$gray6" : undefined}
+            borderRadius="$4"
+            height="auto"
+            width="100%"
+          >
+            {renderContent()}
+          </StyledView>
+        </HoldItem>
+        {!hideMetadata && <BlockConnections block={block} />}
+      </YStack>
+    ),
+    [block, hideMetadata, isRemoteCollection, showBackground, blockMenuItems]
+  );
+  return shouldLink ? (
     <Link
       href={{
         pathname: "/block/[id]/",
@@ -428,6 +599,32 @@ export function BlockMetadata({
   return (
     <StyledText metadata ellipse={true} textAlign="right">
       {metadata}
+    </StyledText>
+  );
+}
+
+export function BlockConnections({ block }: { block: Block }) {
+  const { collectionIds } = block;
+  const { getCollection } = useContext(DatabaseContext);
+  const [collectionsToShow, setCollectionsToShow] = useState<string[]>([]);
+
+  useEffect(() => {
+    Promise.all(
+      (collectionIds || []).map(async (collectionId) => {
+        const collection = await getCollection(collectionId);
+        return collection?.title;
+      })
+    ).then((c) => setCollectionsToShow(c.filter(Boolean)));
+  }, []);
+
+  return (
+    <StyledText metadata numberOfLines={3}>
+      {collectionsToShow.map((c) => (
+        <>
+          <IconComponent name="link" size={12} color="$gray9" /> {c}
+          {"  "}
+        </>
+      ))}
     </StyledText>
   );
 }

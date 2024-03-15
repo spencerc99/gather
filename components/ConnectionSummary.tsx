@@ -17,12 +17,10 @@ export function ConnectionSummary({ connection }: { connection: Connection }) {
 
   return (
     <StyledView
-      display="flex"
-      flexDirection="column"
-      paddingVertical={16}
-      paddingHorizontal={12}
-      borderWidth={1}
+      paddingVertical="$4"
       width="100%"
+      paddingHorizontal="$3"
+      borderRadius={16}
       borderColor={theme.color.get()}
       backgroundColor={theme.background.get()}
     >

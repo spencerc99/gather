@@ -21,16 +21,8 @@ export default function BlockDetailScreen() {
   }
 
   if (!block) {
-    return <Spinner size="large" color="$orange4" />;
+    return <Spinner size="large" color="$orange9" />;
   }
 
-  return (
-    <ScrollView
-      contentContainerStyle={{
-        padding: "10%",
-      }}
-    >
-      <BlockDetailView block={block} setBlock={setBlock} />
-    </ScrollView>
-  );
+  return <BlockDetailView block={block} setBlock={setBlock} />;
 }

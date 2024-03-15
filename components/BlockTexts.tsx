@@ -65,10 +65,8 @@ export const InspoBlocks = [
 ];
 
 const RightActions = memo(() => (
-  <YStack alignItems="center" padding="$2">
-    <StyledButton circular size="$3">
-      <Icon name="link" />
-    </StyledButton>
+  <YStack alignItems="center" padding="$2" justifyContent="center">
+    <StyledButton circular size="$6" icon={<Icon name="link" />}></StyledButton>
   </YStack>
 ));
 
@@ -143,6 +141,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       return;
     }
     // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
+    // this is tricky becuase we need `remoteConnectedAt` for the particular collectionId involved... I suppose we could just fetch all of those too in the big block fetch.
     // TODO: can also push the sort to the DB
     const collectionBlocks = await getCollectionItems(collectionId);
     setBlocks(collectionBlocks);
@@ -182,7 +181,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
 
   // TODO: paginate blocks by chunking
   return blocks === null ? (
-    <Spinner size="large" />
+    <Spinner size="large" color="$orange9" />
   ) : blocks.length === 0 && !collectionId ? (
     <ScrollView
       style={{

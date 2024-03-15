@@ -32,7 +32,7 @@ export default function BlockConnectModal() {
   }, [id]);
 
   if (!block) {
-    return <Spinner size="large" color="$orange4" />;
+    return <Spinner size="large" color="$orange9" />;
   }
 
   async function onConnect() {

@@ -14,3 +14,10 @@ export function ensure(x: unknown, message: string): void {
     throw new Error(message);
   }
 }
+
+export function jsxJoin(
+  separator: string,
+  elements: Array<React.ReactNode>
+): React.ReactNode {
+  return elements.reduce((prev, curr) => [prev, separator, curr]);
+}

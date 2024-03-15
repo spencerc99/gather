@@ -82,7 +82,7 @@ export function ChatDetailView({
                 collectionPlaceholder="All collections"
                 triggerProps={{
                   theme: "orange",
-                  backgroundColor: "$orange4",
+                  backgroundColor: "$orange6",
                 }}
               />
             </YStack>
