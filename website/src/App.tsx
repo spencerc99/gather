@@ -156,7 +156,24 @@ function App() {
         </div>
       </main>
       <footer>
-        built by <a href="https://spencerchang.me">spencer chang</a>
+        <p>
+          created by <a href="https://spencerchang.me">spencer chang</a>
+        </p>
+
+        <div
+          style={{
+            color: "gray",
+          }}
+        >
+          with support from
+        </div>
+        <div className="logos">
+          <a href="https://canvas.xyz" target="_blank">
+            <div>
+              <img src="https://canvas.xyz/logo.svg" />
+            </div>
+          </a>
+        </div>
       </footer>
     </>
   );
