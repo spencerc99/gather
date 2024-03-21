@@ -50,10 +50,12 @@ import {
   DatabaseBlockInsert,
 } from "./dataTypes";
 import {
+  CollectionToReviewKey,
   getLastSyncedInfoForChannel,
   getLastSyncedRemoteInfo,
   updateLastSyncedInfoForChannel,
   updateLastSyncedRemoteInfo,
+  useStickyValue,
 } from "./asyncStorage";
 import { Indices, Migrations } from "./db/migrations";
 import { useDebounce } from "tamagui";
@@ -194,6 +196,8 @@ interface DatabaseContextProps {
   trySyncPendingArenaBlocks: () => void;
   trySyncNewArenaBlocks: () => void;
   getPendingArenaBlocks: () => any;
+  selectedReviewCollection: string | null;
+  setSelectedReviewCollection: (collectionId: string | null) => void;
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
@@ -247,6 +251,8 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   trySyncPendingArenaBlocks: () => {},
   trySyncNewArenaBlocks: () => {},
   getPendingArenaBlocks: () => {},
+  selectedReviewCollection: null,
+  setSelectedReviewCollection: () => {},
 });
 
 function camelCaseToSnakeCase(str: string) {
@@ -324,6 +330,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
+  const [selectedReviewCollection, setSelectedReviewCollection] =
+    useStickyValue<string | null>(CollectionToReviewKey, null);
 
   // Ref to keep track of whether the sync is already running
   const isSyncingRef = useRef(false);
@@ -1640,6 +1648,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         arenaAccessToken,
         updateArenaAccessToken,
         tryImportArenaChannel,
+        selectedReviewCollection,
+        setSelectedReviewCollection,
         // internal
         db,
         initDatabases,

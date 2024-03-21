@@ -111,6 +111,13 @@ const BlockView = memo(
 
 const RenderChunkSize = 15;
 
+function getEarlierDate(a: null | Date, b: Date) {
+  if (!a) {
+    return b;
+  }
+  return a.getTime() < b.getTime() ? a : b;
+}
+
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
   const {
     localBlocks: allBlocks,
@@ -153,8 +160,9 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
       // so it is the reverse of what it should be
       [...(blocks || [])].sort(
         (a, b) =>
-          new Date(b.remoteConnectedAt || b.createdAt).getTime() -
-          new Date(a.remoteConnectedAt || a.createdAt).getTime()
+          // Uses earlier date to match with whether it came from are.na or from Gather first..
+          getEarlierDate(b.remoteConnectedAt, b.createdAt).getTime() -
+          getEarlierDate(a.remoteConnectedAt, a.createdAt).getTime()
       ),
     [blocks]
   );

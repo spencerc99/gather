@@ -8,7 +8,6 @@ import { Icon, StyledButton, StyledLabel } from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
-import { CollectionToReviewKey, useStickyValue } from "../utils/asyncStorage";
 import { shuffleArray } from "../utils";
 
 const RenderChunkSize = 25;
@@ -19,10 +18,9 @@ enum ViewType {
 }
 
 export function ReviewView() {
-  const { blocks } = useContext(DatabaseContext);
-  const [selectedCollection, setSelectedCollection] = useStickyValue<
-    string | null
-  >(CollectionToReviewKey, null);
+  const { blocks, selectedReviewCollection, setSelectedReviewCollection } =
+    useContext(DatabaseContext);
+
   const [outputBlocks, setOutputBlocks] = useState<Block[]>(blocks);
   const [view, setView] = useState<ViewType>(ViewType.Carousel);
   function toggleView() {
@@ -37,16 +35,16 @@ export function ReviewView() {
   }, []);
 
   useEffect(() => {
-    if (selectedCollection === null) {
+    if (selectedReviewCollection === null) {
       setOutputBlocks(blocks);
     } else {
       setOutputBlocks(
         blocks.filter((block) =>
-          block.collectionIds?.includes(selectedCollection)
+          block.collectionIds?.includes(selectedReviewCollection)
         )
       );
     }
-  }, [selectedCollection]);
+  }, [selectedReviewCollection]);
 
   function randomizeBlocks() {
     const randomized = shuffleArray(outputBlocks);
@@ -149,8 +147,8 @@ export function ReviewView() {
                   Keyboard.dismiss();
                 }}
                 hideChevron
-                selectedCollection={selectedCollection}
-                setSelectedCollection={setSelectedCollection}
+                selectedCollection={selectedReviewCollection}
+                setSelectedCollection={setSelectedReviewCollection}
                 collectionPlaceholder="All collections"
                 triggerProps={{
                   backgroundColor: "$orange6",
