@@ -149,7 +149,7 @@ function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
 
 interface DatabaseContextProps {
   blocks: Block[];
-  localBlocks: Block[];
+  localBlocks: Block[] | null;
   createBlock: (block: BlockInsertInfo) => Promise<string>;
   createBlocks: (blocks: BlocksInsertInfo) => Promise<string[]>;
   getBlock: (blockId: string) => Promise<Block>;
@@ -201,8 +201,8 @@ interface DatabaseContextProps {
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
-  blocks: [],
-  localBlocks: [],
+  blocks: null,
+  localBlocks: null,
   createBlock: async () => {
     throw new Error("not yet loaded");
   },
@@ -327,7 +327,7 @@ function handleSqlErrors(
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const { currentUser } = useContext(UserContext);
 
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
   const [selectedReviewCollection, setSelectedReviewCollection] =
@@ -802,7 +802,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                     COALESCE(block_connections.num_connections, 0) as num_connections,
                     block_connections.remote_connected_at as remote_connected_at
           FROM      blocks
-          LEFT JOIN block_connections ON block_connections.block_id = blocks.id`;
+          LEFT JOIN block_connections ON block_connections.block_id = blocks.id
+          ORDER BY  MIN(block_connections.remote_connected_at, blocks.created_timestamp) DESC;`;
 
   function fetchBlocks() {
     db.transaction((tx) => {
@@ -1012,7 +1013,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             LEFT JOIN   block_connections ON blocks.id = block_connections.block_id
             WHERE       connections.collection_id = ?${
               whereClause ? ` AND ${whereClause}` : ""
-            };`,
+            }
+            ORDER BY MIN(connections.remote_created_at, blocks.created_timestamp) DESC;`,
           args: [collectionId],
         },
       ],
@@ -1623,11 +1625,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         localBlocks: useMemo(() => {
           // only ignore those imported (not directly texted in app)
           // this works because adding to arena is done post connection when not importing
-          return blocks.filter(
-            (b) =>
-              !b.remoteConnectedAt ||
-              b.remoteConnectedAt.getTime() > b.createdAt.getTime()
-          );
+          return !blocks
+            ? null
+            : blocks.filter(
+                (b) =>
+                  !b.remoteConnectedAt ||
+                  b.remoteConnectedAt.getTime() > b.createdAt.getTime()
+              );
         }, [blocks]),
         getBlock,
         updateBlock,

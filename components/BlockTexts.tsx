@@ -120,7 +120,7 @@ function getEarlierDate(a: null | Date, b: Date) {
 
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
   const {
-    localBlocks: allBlocks,
+    blocks: allBlocks,
     getCollectionItems,
     collections,
   } = useContext(DatabaseContext);
@@ -189,7 +189,9 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
 
   // TODO: paginate blocks by chunking
   return blocks === null ? (
-    <Spinner size="large" color="$orange9" />
+    <YStack justifyContent="center" alignItems="center" flexGrow={1}>
+      <Spinner size="large" color="$orange9" />
+    </YStack>
   ) : blocks.length === 0 && !collectionId ? (
     <ScrollView
       style={{

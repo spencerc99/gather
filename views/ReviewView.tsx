@@ -2,13 +2,22 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import { BlockReviewSummary, BlockSummary } from "../components/BlockSummary";
-import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
+import {
+  Adapt,
+  Select,
+  Sheet,
+  Spinner,
+  XStack,
+  YStack,
+  useWindowDimensions,
+} from "tamagui";
 import { FlatList } from "react-native";
 import { Icon, StyledButton, StyledLabel } from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { shuffleArray } from "../utils";
+import { afterAnimations } from "../utils/afterAnimations";
 
 const RenderChunkSize = 25;
 
@@ -18,10 +27,14 @@ enum ViewType {
 }
 
 export function ReviewView() {
-  const { blocks, selectedReviewCollection, setSelectedReviewCollection } =
-    useContext(DatabaseContext);
+  const {
+    blocks,
+    getCollectionItems,
+    selectedReviewCollection,
+    setSelectedReviewCollection,
+  } = useContext(DatabaseContext);
 
-  const [outputBlocks, setOutputBlocks] = useState<Block[]>(blocks);
+  const [outputBlocks, setOutputBlocks] = useState<Block[] | null>(null);
   const [view, setView] = useState<ViewType>(ViewType.Carousel);
   function toggleView() {
     setView((prev) =>
@@ -30,95 +43,29 @@ export function ReviewView() {
   }
 
   useEffect(() => {
-    randomizeBlocks();
-    // have some logic of storing what has been reviewed..
-  }, []);
+    void fetchBlocks();
+  }, [selectedReviewCollection, blocks]);
 
-  useEffect(() => {
-    if (selectedReviewCollection === null) {
+  async function fetchBlocks() {
+    if (!selectedReviewCollection) {
       setOutputBlocks(blocks);
-    } else {
-      setOutputBlocks(
-        blocks.filter((block) =>
-          block.collectionIds?.includes(selectedReviewCollection)
-        )
-      );
+      return;
     }
-  }, [selectedReviewCollection]);
+    // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
+    // this is tricky becuase we need `remoteConnectedAt` for the particular collectionId involved... I suppose we could just fetch all of those too in the big block fetch.
+    // TODO: can also push the sort to the DB
+    const collectionBlocks = await getCollectionItems(selectedReviewCollection);
+    setOutputBlocks(collectionBlocks);
+  }
 
   function randomizeBlocks() {
+    if (!outputBlocks) {
+      return;
+    }
     const randomized = shuffleArray(outputBlocks);
     setOutputBlocks(randomized);
   }
-
-  // Gestures
-  // swipe down at very top to shuffle
-  //   const nativeGesture = Gesture.Native();
-  //   const scrollPanGesture = Gesture.Pan();
-  //   const composedGestures = Gesture.Simultaneous(
-  //     scrollPanGesture,
-  //     nativeGesture
-  //   );
-  const height = useWindowDimensions().height;
-  const carouselRef = useRef<ICarouselInstance>(null);
-
-  function renderView() {
-    switch (view) {
-      case ViewType.Carousel:
-        return (
-          <YStack flex={1} paddingHorizontal="$4">
-            <Carousel
-              ref={carouselRef}
-              loop={false}
-              vertical
-              height={height}
-              data={outputBlocks}
-              windowSize={5}
-              renderItem={({ item, index }) => (
-                <YStack
-                  alignItems="center"
-                  justifyContent="center"
-                  flex={1}
-                  flexGrow={1}
-                  marginBottom="50%"
-                  width="100%"
-                  maxHeight="70%"
-                  paddingTop="$15"
-                >
-                  <BlockReviewSummary
-                    shouldLink
-                    block={item}
-                    style={{
-                      width: "100%",
-                    }}
-                    blockStyle={{
-                      width: "100%",
-                      borderRadius: 8,
-                    }}
-                    containerProps={{
-                      width: "100%",
-                      minWidth: "100%",
-                    }}
-                  />
-                </YStack>
-              )}
-            />
-          </YStack>
-        );
-      case ViewType.Feed:
-        return (
-          <YStack marginTop="$10" flex={1}>
-            <FeedView blocks={outputBlocks} />
-          </YStack>
-        );
-    }
-  }
-
-  return !outputBlocks.length ? (
-    <YStack height="100%" justifyContent="center">
-      <Spinner size="large" color="$orange9" />
-    </YStack>
-  ) : (
+  return (
     <YStack gap="$2" flex={1}>
       <XStack
         marginTop="$2"
@@ -162,6 +109,7 @@ export function ReviewView() {
           </XStack>
           <XStack gap="$1">
             {/* square */}
+            {/* <SortSelect/> */}
             <StyledButton
               size="$small"
               onPress={randomizeBlocks}
@@ -181,9 +129,85 @@ export function ReviewView() {
           </XStack>
         </XStack>
       </XStack>
-      {renderView()}
+      {afterAnimations(ReviewItems)({ view, outputBlocks })}
     </YStack>
   );
+}
+
+function ReviewItems({
+  view,
+  outputBlocks,
+}: {
+  view: ViewType;
+  outputBlocks: Block[] | null;
+}) {
+  // Gestures
+  // swipe down at very top to shuffle
+  //   const nativeGesture = Gesture.Native();
+  //   const scrollPanGesture = Gesture.Pan();
+  //   const composedGestures = Gesture.Simultaneous(
+  //     scrollPanGesture,
+  //     nativeGesture
+  //   );
+  const height = useWindowDimensions().height;
+  const carouselRef = useRef<ICarouselInstance>(null);
+
+  if (!outputBlocks)
+    return (
+      <YStack height="100%" justifyContent="center">
+        <Spinner size="large" color="$orange9" />
+      </YStack>
+    );
+
+  switch (view) {
+    case ViewType.Carousel:
+      return (
+        <YStack flex={1} paddingHorizontal="$4">
+          <Carousel
+            ref={carouselRef}
+            loop={false}
+            vertical
+            height={height}
+            data={outputBlocks}
+            windowSize={5}
+            renderItem={({ item, index }) => (
+              <YStack
+                alignItems="center"
+                justifyContent="center"
+                flex={1}
+                flexGrow={1}
+                marginBottom="50%"
+                width="100%"
+                maxHeight="70%"
+                paddingTop="$15"
+              >
+                <BlockReviewSummary
+                  shouldLink
+                  block={item}
+                  style={{
+                    width: "100%",
+                  }}
+                  blockStyle={{
+                    width: "100%",
+                    borderRadius: 8,
+                  }}
+                  containerProps={{
+                    width: "100%",
+                    minWidth: "100%",
+                  }}
+                />
+              </YStack>
+            )}
+          />
+        </YStack>
+      );
+    case ViewType.Feed:
+      return (
+        <YStack marginTop="$10" flex={1}>
+          <FeedView blocks={outputBlocks} />
+        </YStack>
+      );
+  }
 }
 
 export function FeedView({ blocks }: { blocks: Block[] }) {
@@ -239,5 +263,44 @@ export function FeedView({ blocks }: { blocks: Block[] }) {
         onEndReached={fetchMoreBlocks}
       ></FlatList>
     </YStack>
+  );
+}
+
+function SortSelect() {
+  return (
+    <Select defaultValue="one" native>
+      <Select.Trigger maxWidth="$6" padding="$1" justifyContent="center">
+        <Select.Value placeholder="Sort..." />
+      </Select.Trigger>
+      <Adapt when="sm" platform="touch">
+        {/* or <Select.Sheet> */}
+
+        <Sheet dismissOnOverlayPress>
+          <Sheet.Frame>
+            <Adapt.Contents />
+          </Sheet.Frame>
+          <Sheet.Overlay
+            animation="lazy"
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+          />
+        </Sheet>
+      </Adapt>
+      <Select.Content>
+        <Select.Viewport>
+          <Select.Group>
+            <Select.Item value="creation" index={0}>
+              <Select.ItemText>creation</Select.ItemText>
+            </Select.Item>
+            <Select.Item value="random" index={1}>
+              <Select.ItemText>random</Select.ItemText>
+            </Select.Item>
+            <Select.Item value="hlelo" index={2}>
+              <Select.ItemText>hlelo</Select.ItemText>
+            </Select.Item>
+          </Select.Group>
+        </Select.Viewport>
+      </Select.Content>
+    </Select>
   );
 }

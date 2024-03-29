@@ -1,5 +1,6 @@
 import { SafeAreaView } from "react-native";
 import { ReviewView } from "../../../views/ReviewView";
+import { afterAnimations } from "../../../utils/afterAnimations";
 
 export default function ReviewScreen() {
   return (
@@ -8,7 +9,8 @@ export default function ReviewScreen() {
         flex: 1,
       }}
     >
-      <ReviewView />
+      {/* TODO: this takes too long to load rn.. eventually figure out how to do progressive loading on the page */}
+      {afterAnimations(ReviewView)()}
     </SafeAreaView>
   );
 }

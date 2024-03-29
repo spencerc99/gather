@@ -66,7 +66,7 @@ export function useStickyValue<T>(key: string, initialValue: T) {
   const setAndPersistValue = useCallback(
     (newValue: T) => {
       setValue(newValue);
-      setItem(key, newValue);
+      void setItem(key, newValue);
     },
     [key]
   );
