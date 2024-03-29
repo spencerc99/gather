@@ -313,6 +313,7 @@ export function TextForageView({
               icon={<Icon size={24} name="photo" />}
               onPress={pickImage}
               paddingHorizontal="$2"
+              theme="grey"
               alignSelf="flex-end"
             />
             <StyledTextArea
@@ -328,18 +329,17 @@ export function TextForageView({
               enablesReturnKeyAutomatically
             />
             <StyledButton
-              size="$4"
               onPress={async () => {
                 void onSaveResult();
               }}
-              theme="green"
               chromeless
               paddingHorizontal="$2"
               disabled={!textValue && !medias.length}
               alignSelf="flex-end"
-            >
-              <Icon name="arrow-circle-up" size={30} color="$green10" />
-            </StyledButton>
+              icon={
+                <Icon name="arrow-circle-right" size={28} color="$green10" />
+              }
+            ></StyledButton>
           </XStack>
         </YStack>
       </KeyboardAvoidingView>

@@ -80,8 +80,10 @@ export function ReviewView() {
                   justifyContent="center"
                   flex={1}
                   flexGrow={1}
-                  marginBottom="45%"
+                  marginBottom="50%"
                   width="100%"
+                  maxHeight="70%"
+                  paddingTop="$15"
                 >
                   <BlockReviewSummary
                     shouldLink
@@ -91,7 +93,6 @@ export function ReviewView() {
                     }}
                     blockStyle={{
                       width: "100%",
-                      maxHeight: 400,
                       borderRadius: 8,
                     }}
                     containerProps={{
@@ -137,8 +138,8 @@ export function ReviewView() {
             backgroundColor="$background"
             elevation="$4"
             overflow="hidden"
-            borderWidth={0.5}
-            borderColor="$gray7"
+            // borderWidth={0.5}
+            // borderColor="$gray7"
           >
             <StyledLabel>Reviewing </StyledLabel>
             <YStack marginLeft="$1">

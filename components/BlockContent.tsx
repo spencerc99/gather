@@ -41,7 +41,7 @@ export function BlockContent({
   switch (type) {
     case BlockType.Text:
       renderedContent = (
-        <ScrollView flexShrink={1} flexGrow={0} maxHeight={"auto"}>
+        <ScrollView flexShrink={1} flexGrow={0}>
           {!isEditing ? (
             <Paragraph {...textProps}>{content}</Paragraph>
           ) : (
