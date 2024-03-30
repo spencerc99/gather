@@ -32,6 +32,7 @@
     "expo-config-plugin-ios-share-extension": "^0.0.4",
     "expo-crypto": "~12.4.1",
     "expo-document-picker": "~11.5.4",
+    "expo-dynamic-app-icon": "^1.2.0",
     "expo-file-system": "~15.4.4",
     "expo-font": "~11.4.0",
     "expo-haptics": "^12.6.0",

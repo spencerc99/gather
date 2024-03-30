@@ -11,7 +11,7 @@ import { ArenaChannelInfo, getUserChannels } from "../../utils/arena";
 import { RemoteSourceType } from "../../utils/dataTypes";
 import { DatabaseContext } from "../../utils/db";
 import { filterItemsBySearchValue } from "../../utils/search";
-import { SearchBarInput, StyledButton, StyledText } from "../Themed";
+import { Icon, SearchBarInput, StyledButton, StyledText } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
 import { FlatList } from "react-native";
 
@@ -135,9 +135,27 @@ export function ArenaChannelMultiSelect({
 
   return (
     <Stack>
-      <StyledButton onPress={() => setOpen(true)}>
-        {!channels ? "Loading from are.na..." : "Select channels to import"}
-      </StyledButton>
+      <XStack justifyContent="center" width="100%" alignItems="center" gap="$2">
+        <StyledButton flexGrow={1} onPress={() => setOpen(true)} theme="grey">
+          {!channels
+            ? "Loading from are.na..."
+            : selectedChannels.length > 0
+            ? "Configure channels"
+            : "Select channels to import"}
+        </StyledButton>
+        {selectedChannels.length > 0 && (
+          <StyledButton
+            flexShrink={1}
+            theme="grey"
+            borderRadius={100}
+            disabled={!selectedChannels.length}
+            onPress={() => setSelectedChannels([])}
+            size="$small"
+          >
+            cancel
+          </StyledButton>
+        )}
+      </XStack>
 
       <Sheet
         open={open}
@@ -152,8 +170,8 @@ export function ArenaChannelMultiSelect({
           exitStyle={{ opacity: 0 }}
         />
         <Sheet.Handle />
-        <Sheet.Frame padding="$1" space="$2">
-          <XStack margin="$2">
+        <Sheet.Frame padding="$1" gap="$2">
+          <XStack margin="$2" alignItems="center">
             <Stack flexGrow={1} paddingRight="$2">
               <SearchBarInput
                 backgroundColor="$gray4"
@@ -163,11 +181,16 @@ export function ArenaChannelMultiSelect({
             </Stack>
             <StyledButton
               flexShrink={1}
-              theme="red"
+              theme="grey"
+              borderRadius={100}
               disabled={!selectedChannels.length}
-              onPress={() => setSelectedChannels([])}
+              onPress={() => {
+                setSelectedChannels([]);
+                setOpen(false);
+              }}
+              size="$small"
             >
-              <StyledText>clear ({selectedChannels.length})</StyledText>
+              cancel
             </StyledButton>
           </XStack>
           <Sheet.ScrollView>
