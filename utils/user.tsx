@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useEffect, useState } from "react";
+import { getItem, setItem } from "./asyncStorage";
 
 interface UserInsertInfo {
   email: string;
@@ -35,17 +35,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
 
   useEffect(() => {
-    AsyncStorage.getItem(UserInfoId).then((user) => {
-      if (!user) {
-        return;
-      }
-      const rawUser = JSON.parse(user) as UserDbInfo;
-      const deserializedUser: UserInfo = {
-        ...rawUser,
-        createdAt: new Date(rawUser.createdAt),
-      };
-      setUser(deserializedUser);
-    });
+    const user = getItem<UserDbInfo>(UserInfoId);
+    if (!user) {
+      return;
+    }
+    const deserializedUser: UserInfo = {
+      ...user,
+      createdAt: new Date(user.createdAt),
+    };
+    setUser(deserializedUser);
   }, []);
 
   function serializeUser(user: UserInfo): string {
@@ -61,13 +59,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
 
     const newUser = { ...user, email: newEmail };
-    await AsyncStorage.setItem(UserInfoId, serializeUser(newUser));
+    setItem(UserInfoId, serializeUser(newUser));
     setUser(newUser);
   }
 
   async function setupUser(user: UserInsertInfo) {
     const newUser = { ...user, createdAt: new Date() } as UserInfo;
-    await AsyncStorage.setItem(UserInfoId, serializeUser(newUser));
+    setItem(UserInfoId, serializeUser(newUser));
     setUser(newUser);
   }
 

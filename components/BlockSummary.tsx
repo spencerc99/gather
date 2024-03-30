@@ -5,6 +5,7 @@ import { BlockType } from "../utils/mimeTypes";
 import { Platform, Pressable, StyleSheet } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
 import {
+  Fragment,
   PropsWithChildren,
   memo,
   useContext,
@@ -204,13 +205,13 @@ export function BlockSummary({
     const relativeDate = getRelativeDate(
       remoteConnectedAt ? new Date(remoteConnectedAt) : createdAt
     );
-    let metadata = [<>{relativeDate}</>];
+    let metadata = [<Fragment key="date">{relativeDate}</Fragment>];
     switch (type) {
       case BlockType.Link:
         metadata.push(
-          <>
+          <Fragment key={"link"}>
             from <ExternalLink href={source!}>{source}</ExternalLink>
-          </>
+          </Fragment>
         );
         break;
     }
@@ -620,10 +621,10 @@ export function BlockConnections({ block }: { block: Block }) {
   return (
     <StyledText metadata numberOfLines={3}>
       {collectionsToShow.map((c) => (
-        <>
+        <Fragment key={c}>
           <IconComponent name="link" size={12} color="$gray9" /> {c}
           {"  "}
-        </>
+        </Fragment>
       ))}
     </StyledText>
   );

@@ -28,13 +28,13 @@ import {
 } from "../../../components/Themed";
 import { useContext, useEffect, useState } from "react";
 import { ArenaLogin } from "../../../views/ArenaLogin";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { UserContext, UserInfoId } from "../../../utils/user";
 import { stringToColor } from "../../../utils";
 import dayjs from "dayjs";
 import { ArenaChannelMultiSelect } from "../../../components/arena/ArenaChannelMultiSelect";
 import { ArenaChannelSummary } from "../../../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../../../utils/arena";
+import { removeItem, setBoolean, setItem } from "../../../utils/asyncStorage";
 
 const Subject = `[Gather] feedback`;
 const Body = `I wish|like|want|dislike...`;
@@ -241,14 +241,14 @@ export default function ProfileScreen() {
             </XStack>
             <StyledButton
               onPress={() => {
-                AsyncStorage.setItem("seenIntro", "false");
+                setBoolean("seenIntro", false);
               }}
             >
               Reset intro seen
             </StyledButton>
             <StyledButton
               onPress={() => {
-                AsyncStorage.removeItem(UserInfoId);
+                removeItem(UserInfoId);
               }}
             >
               Clear user

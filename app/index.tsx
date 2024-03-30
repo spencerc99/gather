@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getBoolean, getItem } from "../utils/asyncStorage";
 
 export default function App() {
   const router = useRouter();
@@ -12,9 +12,8 @@ export default function App() {
   }, [seenIntro]);
 
   useFocusEffect(() => {
-    AsyncStorage.getItem("seenIntro").then((value) => {
-      setSeenIntro(Boolean(value ? JSON.parse(value) : value));
-    });
+    const hasSeenIntro = getBoolean("seenIntro");
+    setSeenIntro(Boolean(hasSeenIntro));
   });
 
   return null;

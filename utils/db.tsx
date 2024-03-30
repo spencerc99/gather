@@ -370,14 +370,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   );
 
   // TODO: REMOVE MIGRATION AFTER
-  const [hasMigrated, setHasMigrated] = useState(hasMigratedFromAsyncStorage);
-
   function handleMigrateFromAsyncStorage() {
     if (!hasMigratedFromAsyncStorage) {
       InteractionManager.runAfterInteractions(async () => {
         try {
           await migrateFromAsyncStorage();
-          setHasMigrated(true);
         } catch (e) {
           // TODO: fall back to AsyncStorage? Wipe storage clean and use MMKV? Crash app?
         }

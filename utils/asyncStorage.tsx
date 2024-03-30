@@ -44,6 +44,7 @@ export function updateLastSyncedRemoteInfo(): void {
     })
   );
 }
+
 export function getItem<T = any>(key: string): T | null {
   const data = storage.getString(key);
 
@@ -51,7 +52,11 @@ export function getItem<T = any>(key: string): T | null {
 }
 
 export function setItem<T>(key: string, value: T): void {
-  storage.set(key, JSON.stringify(value));
+  storage.set(key, typeof value === "string" ? value : JSON.stringify(value));
+}
+
+export function removeItem(key: string): void {
+  storage.delete(key);
 }
 
 export function useStickyValue<T>(key: string, initialValue: T) {
@@ -70,4 +75,11 @@ export function useStickyValue<T>(key: string, initialValue: T) {
     [key]
   );
   return [value, setAndPersistValue] as const;
+}
+
+export function getBoolean(key: string): boolean | undefined {
+  return storage.getBoolean(key);
+}
+export function setBoolean(key: string, value: boolean): void {
+  storage.set(key, value);
 }
