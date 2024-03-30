@@ -17,7 +17,6 @@ import {
   StyledText,
 } from "../components/Themed";
 import { ArenaLogin } from "../views/ArenaLogin";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { InspoBlocks } from "../components/BlockTexts";
 import { BlockContent } from "../components/BlockContent";
 import { Dimensions, Image } from "react-native";
@@ -29,6 +28,7 @@ import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../utils/arena";
 import { UserContext } from "../utils/user";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { setBoolean, setItem } from "../utils/asyncStorage";
 
 const NumSteps = 3;
 // source https://uibakery.io/regex-library/email
@@ -74,7 +74,7 @@ export default function IntroScreen() {
 
   async function nextStep() {
     if (step === NumSteps - 1) {
-      await AsyncStorage.setItem("seenIntro", "true");
+      setBoolean("seenIntro", true);
       router.replace("/home");
     }
     setStep(step + 1);

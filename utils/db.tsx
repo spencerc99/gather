@@ -1,4 +1,5 @@
-import { Platform } from "react-native";
+import { InteractionManager, Platform } from "react-native";
+import { hasMigratedFromAsyncStorage, migrateFromAsyncStorage } from "./mmkv";
 import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
@@ -368,12 +369,27 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     10 * 1000 // batch updates every 10 seconds
   );
 
+  // TODO: REMOVE MIGRATION AFTER
+  function handleMigrateFromAsyncStorage() {
+    if (!hasMigratedFromAsyncStorage) {
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          await migrateFromAsyncStorage();
+        } catch (e) {
+          // TODO: fall back to AsyncStorage? Wipe storage clean and use MMKV? Crash app?
+        }
+      });
+    }
+  }
+  // TODO: REMOVE MIGRATION AFTER
+
   useEffect(() => {
     void initDatabases();
     void intializeFilesystemFolder();
     void getArenaAccessToken().then((accessToken) => {
       setArenaAccessToken(accessToken);
     });
+    void handleMigrateFromAsyncStorage();
   }, []);
 
   useEffect(() => {

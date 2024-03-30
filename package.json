@@ -24,6 +24,7 @@
     "@react-navigation/native": "^6.0.2",
     "dayjs": "^1.11.10",
     "expo": "~49.0.11",
+    "expo-application": "~5.3.0",
     "expo-auth-session": "~5.0.2",
     "expo-av": "~13.4.1",
     "expo-blur": "^12.6.0",
@@ -52,6 +53,7 @@
     "react-native-hold-menu": "^0.1.6",
     "react-native-ios-modal": "^0.1.8",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
+    "react-native-mmkv": "^2.12.0",
     "react-native-reanimated": "~3.3.0",
     "react-native-reanimated-carousel": "^3.5.1",
     "react-native-receive-sharing-intent": "^2.0.0",
@@ -60,8 +62,7 @@
     "react-native-web": "~0.19.6",
     "tamagui": "^1.89.11",
     "url-metadata": "^3.3.1",
-    "uuid": "^9.0.1",
-    "expo-application": "~5.3.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

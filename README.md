@@ -7,6 +7,15 @@ a client for the forage protocol and a local-first Are.na client.
 - run `npm install` to install dependencies
 - `npx expo start` starts development servers cross-platform
 
+### IOS
+
+if you add any native plugins, make sure to run
+
+```
+npm run prebuild
+npm run ios
+```
+
 ### Release
 
 #### IOS
