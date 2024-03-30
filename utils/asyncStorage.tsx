@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LastSyncedInfo } from "./dataTypes";
 import { useCallback, useEffect, useState } from "react";
+import { storage } from "./mmkv";
 
 const LastSyncedAtKey = "lastSyncedAt";
 interface LastSyncedRemoteInfo {
@@ -8,10 +8,10 @@ interface LastSyncedRemoteInfo {
 }
 export const CollectionToReviewKey = "collectionToReview";
 
-export async function getLastSyncedInfoForChannel(
+export function getLastSyncedInfoForChannel(
   channelId: string
-): Promise<LastSyncedInfo | null> {
-  const info = await AsyncStorage.getItem(channelId);
+): LastSyncedInfo | null {
+  const info = storage.getString(channelId);
   if (!info) {
     return null;
   }
@@ -23,50 +23,49 @@ export async function getLastSyncedInfoForChannel(
   } as LastSyncedInfo;
 }
 
-export async function updateLastSyncedInfoForChannel(
+export function updateLastSyncedInfoForChannel(
   channelId: string,
   lastSyncedInfo: LastSyncedInfo | null
-): Promise<void> {
-  await AsyncStorage.setItem(channelId, JSON.stringify(lastSyncedInfo));
+): void {
+  storage.set(channelId, JSON.stringify(lastSyncedInfo));
 }
 
-export async function getLastSyncedRemoteInfo(): Promise<LastSyncedRemoteInfo> {
-  const info = await AsyncStorage.getItem(LastSyncedAtKey);
-  return info === null
+export function getLastSyncedRemoteInfo(): LastSyncedRemoteInfo {
+  const info = storage.getString(LastSyncedAtKey);
+  return !info
     ? { lastSyncedAt: null }
     : (JSON.parse(info) as LastSyncedRemoteInfo);
 }
-export async function updateLastSyncedRemoteInfo(): Promise<void> {
-  await AsyncStorage.setItem(
+export function updateLastSyncedRemoteInfo(): void {
+  storage.set(
     LastSyncedAtKey,
     JSON.stringify({
       lastSyncedAt: new Date().toISOString(),
     })
   );
 }
-export async function getItem<T = any>(key: string): Promise<T | null> {
-  return await AsyncStorage.getItem(key).then((data) =>
-    data ? (JSON.parse(data) as T) : null
-  );
+export function getItem<T = any>(key: string): T | null {
+  const data = storage.getString(key);
+
+  return data ? (JSON.parse(data) as T) : null;
 }
 
-export async function setItem<T>(key: string, value: T): Promise<void> {
-  await AsyncStorage.setItem(key, JSON.stringify(value));
+export function setItem<T>(key: string, value: T): void {
+  storage.set(key, JSON.stringify(value));
 }
 
 export function useStickyValue<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(initialValue);
   useEffect(() => {
-    getItem<T>(key).then((data) => {
-      if (data) {
-        setValue(data);
-      }
-    });
+    const data = getItem<T>(key);
+    if (data) {
+      setValue(data);
+    }
   }, [key]);
   const setAndPersistValue = useCallback(
     (newValue: T) => {
       setValue(newValue);
-      void setItem(key, newValue);
+      setItem(key, newValue);
     },
     [key]
   );
