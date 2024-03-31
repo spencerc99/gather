@@ -162,7 +162,7 @@ function ReviewItems({
   switch (view) {
     case ViewType.Carousel:
       return (
-        <YStack flex={1} paddingHorizontal="$4">
+        <YStack flex={1} paddingHorizontal="$4" width="100%">
           <Carousel
             ref={carouselRef}
             loop={false}
@@ -176,10 +176,9 @@ function ReviewItems({
                 justifyContent="center"
                 flex={1}
                 flexGrow={1}
-                marginBottom="50%"
+                marginBottom="40%"
                 width="100%"
-                maxHeight="70%"
-                paddingTop="$15"
+                height="100%"
               >
                 <BlockReviewSummary
                   shouldLink
@@ -190,6 +189,7 @@ function ReviewItems({
                   blockStyle={{
                     width: "100%",
                     borderRadius: 8,
+                    maxHeight: height / 2,
                   }}
                   containerProps={{
                     width: "100%",
