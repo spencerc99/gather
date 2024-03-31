@@ -1,4 +1,5 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { StatusBar } from "expo-status-bar";
 import {
   DarkTheme,
   DefaultTheme,
@@ -135,6 +136,7 @@ function RootLayoutNav() {
           presentation: "modal",
         }}
       />
+      <StatusBar style="auto" />
     </Stack>
   );
 }

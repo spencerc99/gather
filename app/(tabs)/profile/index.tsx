@@ -1,4 +1,3 @@
-import { StatusBar } from "expo-status-bar";
 import { Image, Linking, Platform, SafeAreaView } from "react-native";
 import {
   Avatar,
@@ -359,9 +358,7 @@ export default function ProfileScreen() {
       >
         Reset Databases
       </ButtonWithConfirm> */}
-          {/* Use a light status bar on iOS to account for the black space above the modal */}
         </YStack>
-        <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
       </ScrollView>
     </SafeAreaView>
   );
