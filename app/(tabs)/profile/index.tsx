@@ -90,7 +90,7 @@ export default function ProfileScreen() {
           async (channel) => await tryImportArenaChannel(channel.id.toString())
         )
       ).then(() => {
-        fetchCollections();
+        void fetchCollections();
         alert(`Imported ${selectedChannels.length} channels`);
         setSelectedChannels([]);
       });

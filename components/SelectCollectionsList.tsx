@@ -4,6 +4,7 @@ import { Collection } from "../utils/dataTypes";
 import {
   ScrollView,
   SizableText,
+  Spinner,
   Stack,
   View,
   XStack,
@@ -65,6 +66,8 @@ export function SelectCollectionsList({
   const { collections, createCollection } = useContext(DatabaseContext);
   const [internalSearchValue, internalSetSearchValue] = useState("");
   const { currentUser } = useContext(UserContext);
+  const [loading, setLoading] = useState(false);
+  const createdCollections = useMemo(() => new Set<string>(), []);
 
   const searchValue = useMemo(
     () => (propSetSearchValue && propSearch ? propSearch : internalSearchValue),
@@ -203,16 +206,25 @@ export function SelectCollectionsList({
                   </LinkButton>
                 </YStack>
               )}
-              {searchValue && (
+              {searchValue && !createdCollections.has(searchValue) && (
                 // Matches the height of CollectionThumbnail lol
                 <YStack height={140} width={100} justifyContent="center">
                   <StyledButton
                     onPress={async () => {
-                      await onClickCreateCollection();
+                      try {
+                        setLoading(true);
+                        await onClickCreateCollection();
+                        createdCollections.add(searchValue);
+                      } finally {
+                        setLoading(false);
+                      }
                     }}
-                    icon={<Icon name="plus" />}
+                    icon={
+                      loading ? <Spinner size="small" /> : <Icon name="plus" />
+                    }
                     height="auto"
                     minHeight={40}
+                    disabled={loading}
                   >
                     <SizableText
                       userSelect="none"

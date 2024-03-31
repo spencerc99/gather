@@ -83,9 +83,6 @@ export function UncategorizedView() {
       } as Block;
     });
     setEvents(newEvents);
-    // if (newEvents.length) {
-    //   setCurrentIndex(0);
-    // }
   }
 
   const renderBlock = useCallback((block: Block) => {

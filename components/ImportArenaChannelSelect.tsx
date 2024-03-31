@@ -20,8 +20,7 @@ export function ImportArenaChannelSelect({
   overlayProps?: YStackProps;
   modal?: boolean;
 }) {
-  const { tryImportArenaChannel, fetchCollections } =
-    useContext(DatabaseContext);
+  const { tryImportArenaChannel } = useContext(DatabaseContext);
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     null
   );
@@ -36,9 +35,6 @@ export function ImportArenaChannelSelect({
         selectedCollection || undefined
       );
       setArenaChannel("");
-      // TODO: this should not be needed because `createCollection` calls it
-      // but for some reason not showing up.. maybe a read-replica thing?
-      fetchCollections();
       onSuccess?.();
       alert(
         'Imported channel "' +

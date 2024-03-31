@@ -190,8 +190,8 @@ interface DatabaseContextProps {
   // internal
   db: SQLite.SQLiteDatabase;
   initDatabases: () => Promise<void>;
-  fetchBlocks: () => void;
-  fetchCollections: () => void;
+  fetchBlocks: () => Promise<void>;
+  fetchCollections: () => Promise<void>;
   trySyncPendingArenaBlocks: () => void;
   trySyncNewArenaBlocks: () => void;
   getPendingArenaBlocks: () => any;
@@ -245,8 +245,8 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
 
   db,
   initDatabases: async () => {},
-  fetchBlocks: () => {},
-  fetchCollections: () => {},
+  fetchBlocks: async () => {},
+  fetchCollections: async () => {},
   trySyncPendingArenaBlocks: () => {},
   trySyncNewArenaBlocks: () => {},
   getPendingArenaBlocks: () => {},
@@ -456,8 +456,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         console.error(err);
       }
     }, false);
-    fetchBlocks();
-    fetchCollections();
+    await fetchBlocks();
+    await fetchCollections();
   }
 
   async function insertBlocks(blocksToInsert: DatabaseBlockInsert[]) {
@@ -528,7 +528,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const blockIds = await Promise.all(
       blocksToInsert.map(async (block) => createBlock(block, true))
     );
-    fetchBlocks();
+    await fetchBlocks();
 
     if (collectionId) {
       const blockConnections = blockIds.map((blockId, idx) => ({
@@ -679,9 +679,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         inParam(`DELETE FROM connections where block_id IN (?#);`, blockIds)
       );
     });
-    fetchBlocks();
-    // TODO: this is only because we rely on items count for each collection and its cached
-    fetchCollections();
+    // TODO: fetchCollections only because we rely on items count for each collection and its cached
+    await Promise.all([fetchBlocks(), fetchCollections()]);
   };
 
   // TODO: this should really just be a separate thing that sweeps up any things to delete
@@ -784,7 +783,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     handleSqlErrors(result);
 
-    fetchCollections();
+    await fetchCollections();
 
     return result.insertId!.toString();
   };
@@ -804,19 +803,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           LEFT JOIN block_connections ON block_connections.block_id = blocks.id
           ORDER BY  MIN(block_connections.remote_connected_at, blocks.created_timestamp) DESC;`;
 
-  function fetchBlocks() {
-    db.transaction((tx) => {
-      tx.executeSql(
-        `${SelectBlockSql};`,
-        [],
-        (_, { rows: { _array } }) => {
-          setBlocks(_array.map((block) => mapDbBlockToBlock(block)));
+  async function fetchBlocks() {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `${SelectBlockSql};`,
+          args: [],
         },
-        (err) => {
-          throw err;
-        }
-      );
-    });
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    setBlocks(result.rows.map((block) => mapDbBlockToBlock(block)));
   }
   const SelectCollectionInfoSql = `WITH block_connections AS (
               SELECT      id, 
@@ -858,25 +856,27 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           LEFT JOIN connections ON annotated_collections.id = connections.collection_id
           GROUP BY 1,2,3,4,5,6,7`;
 
-  function fetchCollections() {
-    db.transaction(
-      (tx) => {
-        tx.executeSql(
-          `${SelectCollectionInfoSql};`,
-          [],
-          (_, { rows: { _array } }) => {
-            setCollections([
-              ..._array.map((collection) => {
-                return mapDbCollectionToCollection(collection);
-              }),
-            ]);
-          }
-        );
-      },
-      (err) => {
-        throw err;
-      }
-    );
+  async function fetchCollections() {
+    try {
+      const [result] = await db.execAsync(
+        [
+          {
+            sql: `${SelectCollectionInfoSql};`,
+            args: [],
+          },
+        ],
+        true
+      );
+      handleSqlErrors(result);
+
+      setCollections([
+        ...result.rows.map((collection) => {
+          return mapDbCollectionToCollection(collection);
+        }),
+      ]);
+    } catch (err) {
+      throw err;
+    }
   }
 
   async function fetchBlock(blockId: string): Promise<Block> {

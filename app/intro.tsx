@@ -62,7 +62,7 @@ export default function IntroScreen() {
           async (channel) => await tryImportArenaChannel(channel.id.toString())
         )
       ).then(() => {
-        fetchCollections();
+        return fetchCollections();
       });
     } catch (error) {
       console.error(error);
