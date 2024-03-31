@@ -18,6 +18,8 @@ import { CreateCollectionButton } from "./CreateCollectionButton";
 import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
 import { filterItemsBySearchValue } from "../utils/search";
+import { Swipeable } from "react-native-gesture-handler";
+import { Alert } from "react-native";
 // import { ModalView } from "react-native-ios-modal";
 
 // setupNativeSheet("ios", ModalView);
@@ -39,7 +41,8 @@ export function CollectionSelect({
   selectProps?: GetProps<typeof Select>;
   hideChevron?: boolean;
 }) {
-  const { collections, createCollection } = useContext(DatabaseContext);
+  const { collections, createCollection, deleteCollection } =
+    useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const { currentUser: user } = useContext(UserContext);
@@ -187,27 +190,73 @@ export function CollectionSelect({
                 </Select.Item>
               )}
               {filteredCollections.map((collection, idx) => (
-                <Select.Item
-                  index={idx + 1}
+                <Swipeable
                   key={collection.id}
-                  value={collection.id}
-                  backgroundColor={
-                    selectedCollection === collection.id ? "$green4" : undefined
-                  }
+                  containerStyle={{
+                    overflow: "visible",
+                  }}
+                  friction={2}
+                  renderRightActions={() => (
+                    <YStack
+                      alignItems="center"
+                      padding="$2"
+                      justifyContent="center"
+                    >
+                      <StyledButton
+                        circular
+                        theme="red"
+                        size="$6"
+                        icon={<Icon name="trash" />}
+                      ></StyledButton>
+                    </YStack>
+                  )}
+                  onSwipeableOpen={(direction, swipeable) => {
+                    if (direction === "left") {
+                      return;
+                    }
+                    // open modal to confirm delete
+                    Alert.alert("Delete Collection?", undefined, [
+                      {
+                        text: "Cancel",
+                        onPress: () => {
+                          swipeable.close();
+                        },
+                        style: "cancel",
+                      },
+                      {
+                        text: "Delete",
+                        onPress: () => {
+                          deleteCollection(collection.id);
+                        },
+                        style: "destructive",
+                      },
+                    ]);
+                  }}
                 >
-                  <CollectionSummary
-                    collection={collection}
-                    viewProps={{
-                      borderWidth: 0,
-                      paddingHorizontal: 0,
-                      paddingVertical: 0,
-                      backgroundColor: "inherit",
-                    }}
-                  />
-                  <Select.ItemText display="none">
-                    {collection.title}
-                  </Select.ItemText>
-                </Select.Item>
+                  <Select.Item
+                    index={idx + 1}
+                    key={collection.id}
+                    value={collection.id}
+                    backgroundColor={
+                      selectedCollection === collection.id
+                        ? "$green4"
+                        : undefined
+                    }
+                  >
+                    <CollectionSummary
+                      collection={collection}
+                      viewProps={{
+                        borderWidth: 0,
+                        paddingHorizontal: 0,
+                        paddingVertical: 0,
+                        backgroundColor: "inherit",
+                      }}
+                    />
+                    <Select.ItemText display="none">
+                      {collection.title}
+                    </Select.ItemText>
+                  </Select.Item>
+                </Swipeable>
               ))}
             </Select.Group>
           </Sheet.ScrollView>
