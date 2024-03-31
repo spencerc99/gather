@@ -389,7 +389,7 @@ function AppIconSelect() {
               onPress={() => onSelectIcon(iconName)}
               borderWidth={2}
               borderColor={selected ? "$green10" : "transparent"}
-              borderRadius={16}
+              borderRadius={18}
             >
               <Image
                 source={source}
