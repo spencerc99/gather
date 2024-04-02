@@ -194,8 +194,10 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
             <BlockReviewSummary
               shouldLink
               block={item}
+              // TODO: not scrolling properly
               style={{
                 width: "100%",
+                maxHeight: height / 2,
               }}
               blockStyle={{
                 width: "100%",

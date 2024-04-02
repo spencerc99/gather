@@ -69,6 +69,7 @@ export function BlockDetailView({
       setIsLoading(false);
     }
   }
+  const height = useWindowDimensions().height;
 
   return (
     <>
@@ -111,6 +112,9 @@ export function BlockDetailView({
               resizeMode: "contain",
               height: "auto",
               aspectRatio: undefined,
+            }}
+            style={{
+              maxHeight: height / 2,
             }}
             containerProps={{
               paddingBottom: "$2",
