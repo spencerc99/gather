@@ -8,7 +8,7 @@ import {
 import { useFonts } from "expo-font";
 import { Link, SplashScreen, Stack, usePathname, useRouter } from "expo-router";
 import { useContext, useEffect } from "react";
-import { Keyboard, useColorScheme } from "react-native";
+import { Keyboard, useColorScheme, InteractionManager } from "react-native";
 import { DatabaseContext, DatabaseProvider } from "../utils/db";
 import { HoldMenuProvider } from "react-native-hold-menu";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,6 +29,8 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+InteractionManager.setDeadline(1000);
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

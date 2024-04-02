@@ -2,7 +2,7 @@ import { LastSyncedInfo } from "./dataTypes";
 import { useCallback, useEffect, useState } from "react";
 import { storage } from "./mmkv";
 
-const LastSyncedAtKey = "lastSyncedAt";
+export const LastSyncedAtKey = "lastSyncedAt";
 interface LastSyncedRemoteInfo {
   lastSyncedAt: string | null;
 }

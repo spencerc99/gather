@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { InteractionManager, Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
@@ -368,10 +368,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   );
 
   useEffect(() => {
-    void initDatabases();
-    void intializeFilesystemFolder();
-    void getArenaAccessToken().then((accessToken) => {
-      setArenaAccessToken(accessToken);
+    InteractionManager.runAfterInteractions(async () => {
+      await Promise.all([
+        initDatabases(),
+        intializeFilesystemFolder(),
+        getArenaAccessToken().then((accessToken) => {
+          setArenaAccessToken(accessToken);
+        }),
+      ]);
     });
   }, []);
 
@@ -380,7 +384,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (!currentUser || !arenaAccessToken) {
       return;
     }
-    void syncWithArena();
+    InteractionManager.runAfterInteractions(async () => {
+      await syncWithArena();
+    });
   }, [arenaAccessToken, currentUser]);
 
   async function initDatabases() {
@@ -1176,20 +1182,21 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
 
-    const result = await getArenaCollections();
-    const collectionsToSync = result.rows.map((collection) => ({
-      ...mapDbCollectionToCollection(collection),
-    }));
-
-    try {
-      for (const collectionToSync of collectionsToSync) {
-        await syncNewRemoteItemsForCollection(collectionToSync);
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        const result = await getArenaCollections();
+        const collectionsToSync = result.rows.map((collection) => ({
+          ...mapDbCollectionToCollection(collection),
+        }));
+        for (const collectionToSync of collectionsToSync) {
+          InteractionManager.runAfterInteractions(async () => {
+            await syncNewRemoteItemsForCollection(collectionToSync);
+          });
+        }
+      } finally {
+        await updateLastSyncedRemoteInfo();
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      await updateLastSyncedRemoteInfo();
-    }
+    });
   }
 
   async function trySyncPendingArenaBlocks() {
@@ -1232,47 +1239,54 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       string,
       string | undefined
     > = {};
+
     for (const connToSync of connectionsToSync) {
-      const newRemoteItem = await syncBlockToArena(
-        connToSync.collectionRemoteSourceInfo!.arenaId!,
-        connToSync
-      );
-      if (newRemoteItem) {
-        blockCollectionIdToRemoteConnectedAt[
-          `${connToSync.id}-${connToSync.collectionId}`
-        ] = newRemoteItem.connected_at;
-      }
+      InteractionManager.runAfterInteractions(async () => {
+        const newRemoteItem = await syncBlockToArena(
+          connToSync.collectionRemoteSourceInfo!.arenaId!,
+          connToSync
+        );
+        if (newRemoteItem) {
+          blockCollectionIdToRemoteConnectedAt[
+            `${connToSync.id}-${connToSync.collectionId}`
+          ] = newRemoteItem.connected_at;
+        }
+      });
     }
 
-    const succesfullySyncedConnections = connectionsToSync.filter(
-      (conn) =>
-        blockCollectionIdToRemoteConnectedAt[`${conn.id}-${conn.collectionId}`]
-    );
-    if (succesfullySyncedConnections.length === 0) {
-      return;
-    }
-
-    await upsertConnections(
-      succesfullySyncedConnections.map((conn) => ({
-        blockId: conn.id,
-        collectionId: conn.collectionId,
-        remoteCreatedAt:
+    InteractionManager.runAfterInteractions(async () => {
+      const succesfullySyncedConnections = connectionsToSync.filter(
+        (conn) =>
           blockCollectionIdToRemoteConnectedAt[
             `${conn.id}-${conn.collectionId}`
-          ],
-      }))
-    );
+          ]
+      );
+      if (succesfullySyncedConnections.length === 0) {
+        return;
+      }
 
-    console.log(
-      `Successfully synced ${connectionsToSync
-        .filter(
-          (conn) =>
+      await upsertConnections(
+        succesfullySyncedConnections.map((conn) => ({
+          blockId: conn.id,
+          collectionId: conn.collectionId,
+          remoteCreatedAt:
             blockCollectionIdToRemoteConnectedAt[
               `${conn.id}-${conn.collectionId}`
-            ]
-        )
-        .map((c) => `${c.id}-${c.collectionId}`)} to arena`
-    );
+            ],
+        }))
+      );
+
+      console.log(
+        `Successfully synced ${connectionsToSync
+          .filter(
+            (conn) =>
+              blockCollectionIdToRemoteConnectedAt[
+                `${conn.id}-${conn.collectionId}`
+              ]
+          )
+          .map((c) => `${c.id}-${c.collectionId}`)} to arena`
+      );
+    });
   }
 
   async function syncBlockToArena(
@@ -1455,8 +1469,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         blockId,
       }))
     );
-    void fetchCollections();
-    void debouncedTriggerBlockSync();
+    InteractionManager.runAfterInteractions(async () => {
+      await fetchCollections();
+      await debouncedTriggerBlockSync();
+    });
   }
 
   async function upsertConnections(connections: ConnectionInsertInfo[]) {

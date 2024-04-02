@@ -13,7 +13,7 @@ import { DatabaseContext } from "../../utils/db";
 import { filterItemsBySearchValue } from "../../utils/search";
 import { Icon, SearchBarInput, StyledButton, StyledText } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
-import { FlatList } from "react-native";
+import { FlatList, InteractionManager } from "react-native";
 
 const ChannelView = memo(
   ({
@@ -56,8 +56,10 @@ export function ArenaChannelMultiSelect({
 
   useEffect(() => {
     if (arenaAccessToken) {
-      void getUserChannels(arenaAccessToken).then((channels) => {
-        setChannels(channels);
+      InteractionManager.runAfterInteractions(async () => {
+        await getUserChannels(arenaAccessToken).then((channels) => {
+          setChannels(channels);
+        });
       });
     } else {
       setChannels([]);

@@ -141,6 +141,26 @@ function ReviewItems({
   view: ViewType;
   outputBlocks: Block[] | null;
 }) {
+  if (!outputBlocks)
+    return (
+      <YStack height="100%" justifyContent="center">
+        <Spinner size="large" color="$orange9" />
+      </YStack>
+    );
+
+  switch (view) {
+    case ViewType.Carousel:
+      return <CarouselView outputBlocks={outputBlocks} />;
+    case ViewType.Feed:
+      return (
+        <YStack marginTop="$10" flex={1}>
+          <FeedView blocks={outputBlocks} />
+        </YStack>
+      );
+  }
+}
+
+export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
   // Gestures
   // swipe down at very top to shuffle
   //   const nativeGesture = Gesture.Native();
@@ -152,62 +172,46 @@ function ReviewItems({
   const height = useWindowDimensions().height;
   const carouselRef = useRef<ICarouselInstance>(null);
 
-  if (!outputBlocks)
-    return (
-      <YStack height="100%" justifyContent="center">
-        <Spinner size="large" color="$orange9" />
-      </YStack>
-    );
-
-  switch (view) {
-    case ViewType.Carousel:
-      return (
-        <YStack flex={1} paddingHorizontal="$4" width="100%">
-          <Carousel
-            ref={carouselRef}
-            loop={false}
-            vertical
-            height={height}
-            data={outputBlocks}
-            windowSize={5}
-            renderItem={({ item, index }) => (
-              <YStack
-                alignItems="center"
-                justifyContent="center"
-                flex={1}
-                flexGrow={1}
-                marginBottom="40%"
-                width="100%"
-                height="100%"
-              >
-                <BlockReviewSummary
-                  shouldLink
-                  block={item}
-                  style={{
-                    width: "100%",
-                  }}
-                  blockStyle={{
-                    width: "100%",
-                    borderRadius: 8,
-                    maxHeight: height / 2,
-                  }}
-                  containerProps={{
-                    width: "100%",
-                    minWidth: "100%",
-                  }}
-                />
-              </YStack>
-            )}
-          />
-        </YStack>
-      );
-    case ViewType.Feed:
-      return (
-        <YStack marginTop="$10" flex={1}>
-          <FeedView blocks={outputBlocks} />
-        </YStack>
-      );
-  }
+  return (
+    <YStack flex={1} paddingHorizontal="$4" width="100%">
+      <Carousel
+        ref={carouselRef}
+        loop={false}
+        vertical
+        height={height}
+        data={outputBlocks}
+        windowSize={5}
+        renderItem={({ item, index }) => (
+          <YStack
+            alignItems="center"
+            justifyContent="center"
+            flex={1}
+            flexGrow={1}
+            marginBottom="40%"
+            width="100%"
+            height="100%"
+          >
+            <BlockReviewSummary
+              shouldLink
+              block={item}
+              style={{
+                width: "100%",
+              }}
+              blockStyle={{
+                width: "100%",
+                borderRadius: 8,
+                maxHeight: height / 2,
+              }}
+              containerProps={{
+                width: "100%",
+                minWidth: "100%",
+              }}
+            />
+          </YStack>
+        )}
+      />
+    </YStack>
+  );
 }
 
 export function FeedView({ blocks }: { blocks: Block[] }) {

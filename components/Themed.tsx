@@ -27,7 +27,7 @@ import { Image as ExpoImage } from "expo-image";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Keyboard, useColorScheme } from "react-native";
+import { InteractionManager, Keyboard, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
 import { ensure } from "../utils/react";

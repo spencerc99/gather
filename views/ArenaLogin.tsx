@@ -5,7 +5,7 @@ import {
   useAuthRequest,
 } from "expo-auth-session";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { Image } from "react-native";
+import { Image, InteractionManager } from "react-native";
 import {
   ArenaLogo,
   Icon,
@@ -173,8 +173,10 @@ export function SelectArenaChannel({
 
   useEffect(() => {
     if (arenaAccessToken) {
-      void getUserChannels(arenaAccessToken).then((channels) => {
-        setChannels(channels);
+      InteractionManager.runAfterInteractions(async () => {
+        await getUserChannels(arenaAccessToken).then((channels) => {
+          setChannels(channels);
+        });
       });
     } else {
       setChannels([]);

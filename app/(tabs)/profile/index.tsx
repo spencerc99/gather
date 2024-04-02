@@ -34,8 +34,8 @@ import dayjs from "dayjs";
 import { ArenaChannelMultiSelect } from "../../../components/arena/ArenaChannelMultiSelect";
 import { ArenaChannelSummary } from "../../../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../../../utils/arena";
-import { removeItem, setBoolean, setItem } from "../../../utils/asyncStorage";
 import { getAppIcon, setAppIcon } from "expo-dynamic-app-icon";
+import { InternalDevTools } from "../../../views/InternalDevTools";
 
 const Subject = `[Gather] feedback`;
 const Body = `I wish|like|want|dislike...`;
@@ -63,24 +63,15 @@ const AppIcons = [
 ];
 
 export default function ProfileScreen() {
-  const {
-    db,
-    fetchBlocks,
-    fetchCollections,
-    trySyncPendingArenaBlocks,
-    trySyncNewArenaBlocks,
-    getPendingArenaBlocks,
-    arenaAccessToken,
-    tryImportArenaChannel,
-  } = useContext(DatabaseContext);
+  const { fetchCollections, tryImportArenaChannel } =
+    useContext(DatabaseContext);
 
   const { currentUser } = useContext(UserContext);
 
-  const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
     []
   );
-  const [showInternalTools, setShowInternalTools] = useState(false);
+
   async function importSelectedChannels() {
     // TODO: this would ideally do it in the background asynchronously
     setIsLoading(true);
@@ -102,16 +93,18 @@ export default function ProfileScreen() {
     }
   }
 
-  useEffect(() => {
-    if (!__DEV__) {
-      return;
-    }
-    getPendingArenaBlocks().then((result) =>
-      setPendingArenaBlocks(result.rows)
-    );
-  }, []);
-
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const [appIcon, setIcon] = useState<string>(getAppIcon());
+
+  function onSelectIcon(iconName: string) {
+    const iconType = iconName;
+    setAppIcon(iconType);
+    setIcon(iconType);
+  }
+  const appIconSource = AppIcons.find(
+    (icon) => icon.iconName === appIcon
+  )?.source;
 
   return (
     <SafeAreaView>
@@ -171,7 +164,7 @@ export default function ProfileScreen() {
 
           <H3>Gather</H3>
           {/* thanks to https://github.com/outsung/expo-dynamic-app-icon/tree/main/example */}
-          <AppIconSelect />
+          <AppIconSelect appIcon={appIcon} onSelectIcon={onSelectIcon} />
           <StyledButton
             icon={<Icon name="gift" />}
             onPress={() => {
@@ -193,7 +186,7 @@ export default function ProfileScreen() {
           </StyledParagraph>
           <YStack alignItems="center">
             <Image
-              source={require("../../../assets/images/icon.png")}
+              source={appIconSource}
               style={{
                 width: 64,
                 height: 64,
@@ -205,174 +198,20 @@ export default function ProfileScreen() {
               {Application.nativeBuildVersion})
             </StyledText>
           </YStack>
-          <H3>
-            Internal Dev Tools{" "}
-            <StyledButton
-              onPress={() => setShowInternalTools(!showInternalTools)}
-              circular
-              size="$5"
-              theme="white"
-              backgroundColor="$gray6"
-              icon={
-                <Icon
-                  name={showInternalTools ? "chevron-up" : "chevron-down"}
-                />
-              }
-            ></StyledButton>
-          </H3>
-          {showInternalTools && (
-            <YStack space="$2">
-              <StyledText>
-                These are available for testing and debugging purposes. If you
-                run into any issues, please contact Spencer first, and he might
-                direct you to these buttons if there are issues :)
-              </StyledText>
-              <StyledButton
-                disabled={isLoading}
-                onPress={async () => {
-                  setIsLoading(true);
-                  try {
-                    await trySyncPendingArenaBlocks();
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-              >
-                <StyledParagraph>
-                  Sync to Arena ({pendingArenaBlocks.length} pending)
-                </StyledParagraph>
-              </StyledButton>
-              <StyledButton
-                disabled={isLoading}
-                onPress={async () => {
-                  setIsLoading(true);
-                  try {
-                    await trySyncNewArenaBlocks();
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-              >
-                <StyledParagraph>Sync from Arena</StyledParagraph>
-              </StyledButton>
-              <StyledButton disabled={isLoading} onPress={fetchCollections}>
-                Refresh Collections
-              </StyledButton>
-              <StyledButton disabled={isLoading} onPress={fetchBlocks}>
-                Refresh Blocks
-              </StyledButton>
-              <XStack>
-                <StyledLabel bold>Token</StyledLabel>
-                <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
-              </XStack>
-              <StyledButton
-                onPress={() => {
-                  setBoolean("seenIntro", false);
-                }}
-              >
-                Reset intro seen
-              </StyledButton>
-              <StyledButton
-                onPress={() => {
-                  removeItem(UserInfoId);
-                }}
-              >
-                Clear user
-              </StyledButton>
-              <StyledParagraph>
-                Only do this if directed to do it in order to reset your
-                schemas. It will delete all your data.
-              </StyledParagraph>
-              <StyledButton
-                disabled={isLoading}
-                icon={isLoading ? <Spinner size="small" /> : null}
-                theme="red"
-                backgroundColor="$red8"
-                onPress={async () => {
-                  setIsLoading(true);
-                  try {
-                    const results = await db.execAsync(
-                      [
-                        { sql: `DROP TABLE IF EXISTS collections;`, args: [] },
-                        { sql: `DROP TABLE IF EXISTS blocks;`, args: [] },
-                        { sql: `DROP TABLE IF EXISTS connections;`, args: [] },
-                      ],
-                      false
-                    );
-
-                    results
-                      .filter((result) => "error" in result)
-                      .forEach((result) => {
-                        throw result;
-                      });
-                    // await initDatabases();
-                  } catch (err) {
-                    throw err;
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-              >
-                Reset Databases
-              </StyledButton>
-              {__DEV__ && (
-                <YStack space="$1">
-                  <H3>pending blocks</H3>
-                  <StyledParagraph>
-                    {JSON.stringify(pendingArenaBlocks, null, 2)}
-                  </StyledParagraph>
-                </YStack>
-              )}
-            </YStack>
-          )}
-          {/* TODO: bring this back when working */}
-          {/* <ButtonWithConfirm
-        disabled={isLoading}
-        icon={isLoading ? <Spinner size="small" /> : null}
-        theme="red"
-        backgroundColor="$red8"
-        onPress={async () => {
-          setIsLoading(true);
-          try {
-            const results = await db.execAsync(
-              [
-                { sql: `DROP TABLE IF EXISTS collections;`, args: [] },
-                { sql: `DROP TABLE IF EXISTS blocks;`, args: [] },
-                { sql: `DROP TABLE IF EXISTS connections;`, args: [] },
-              ],
-              false
-            );
-
-            results
-              .filter((result) => "error" in result)
-              .forEach((result) => {
-                throw result;
-              });
-            await initDatabases();
-          } catch (err) {
-            throw err;
-          } finally {
-            setIsLoading(false);
-          }
-        }}
-      >
-        Reset Databases
-      </ButtonWithConfirm> */}
+          <InternalDevTools isLoading={isLoading} setIsLoading={setIsLoading} />
         </YStack>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function AppIconSelect() {
-  const [appIcon, setIcon] = useState<string>(getAppIcon());
-
-  function onSelectIcon(iconName: string) {
-    const iconType = iconName;
-    setAppIcon(iconType);
-    setIcon(iconType);
-  }
-
+function AppIconSelect({
+  appIcon,
+  onSelectIcon,
+}: {
+  appIcon: string;
+  onSelectIcon: (iconName: string) => void;
+}) {
   return (
     <YStack gap="$2">
       <StyledText fontStyle="italic">Choose Your Icon</StyledText>
