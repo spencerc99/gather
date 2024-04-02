@@ -202,10 +202,10 @@ export function BlockSummary({
       remoteSourceInfo,
     } = block;
 
-    const relativeDate = getRelativeDate(
-      remoteConnectedAt ? new Date(remoteConnectedAt) : createdAt
-    );
-    let metadata = [<Fragment key="date">{relativeDate}</Fragment>];
+    const date = remoteConnectedAt ? new Date(remoteConnectedAt) : createdAt;
+
+    const dateDisplay = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    let metadata = [<Fragment key="date">{dateDisplay}</Fragment>];
     switch (type) {
       case BlockType.Link:
         metadata.push(
@@ -402,6 +402,7 @@ export function BlockTextSummary({
             block={block}
             textProps={{ textAlign: "right" }}
             isRemoteCollection={isRemoteCollection}
+            dateKind="relative"
           />
         )}
       </YStack>
@@ -557,10 +558,12 @@ export function BlockMetadata({
   block,
   textProps,
   isRemoteCollection,
+  dateKind,
 }: {
   block: Block;
   textProps?: TextProps;
   isRemoteCollection?: boolean;
+  dateKind?: "relative" | "absolute";
 }) {
   const {
     type,
@@ -581,14 +584,17 @@ export function BlockMetadata({
     //   );
     //   break;
     default:
-      const relativeDate = getRelativeDate(
+      const date =
         isRemoteCollection && remoteConnectedAt
           ? new Date(remoteConnectedAt)
-          : createdAt
-      );
+          : createdAt;
+      const dateInfo =
+        dateKind === "relative"
+          ? getRelativeDate(date)
+          : `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
       metadata = (
         <>
-          {relativeDate}
+          {dateInfo}
           {"  "}
           {numConnections}{" "}
           <IconComponent name="link" size={12} color="$gray9" />
