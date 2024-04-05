@@ -789,7 +789,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     handleSqlErrors(result);
 
-    await fetchCollections();
+    fetchCollections();
 
     return result.insertId!.toString();
   };
@@ -1443,7 +1443,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               lastContents[lastContents.length - 1].connected_at,
             lastSyncedBlockId: lastContents[lastContents.length - 1].id,
           });
-          await fetchBlocks();
+          fetchBlocks();
         }
         break;
       default:
@@ -1470,7 +1470,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }))
     );
     InteractionManager.runAfterInteractions(async () => {
-      await fetchCollections();
+      fetchCollections();
       await debouncedTriggerBlockSync();
     });
   }
@@ -1538,8 +1538,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }
     }
 
-    await fetchCollections();
-    await fetchBlocks();
+    fetchCollections();
+    fetchBlocks();
   }
 
   async function getConnectionsForBlock(
