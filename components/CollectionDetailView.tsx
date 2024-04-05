@@ -17,14 +17,11 @@ export function CollectionDetailView({
     title,
     description,
     createdAt,
-    createdBy,
-    collaborators,
     updatedAt,
     numBlocks: numItems,
     lastConnectedAt,
     remoteSourceInfo,
     remoteSourceType,
-    thumbnail,
   } = collection;
   const {
     syncNewRemoteItems,
@@ -33,6 +30,7 @@ export function CollectionDetailView({
     arenaAccessToken,
     getCollectionItems,
     updateCollection,
+    upsertConnections,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -86,25 +84,34 @@ export function CollectionDetailView({
     try {
       const collectionItems = await getCollectionItems(id);
       // TODO: show progress bar status
-      const { newChannel, numItemsAdded, numItemsFailed } = await createChannel(
-        {
-          accessToken: arenaAccessToken,
-          title,
-          itemsToAdd: collectionItems,
-        }
-      );
-      await updateCollection(id, {
-        remoteSourceType: RemoteSourceType.Arena,
-        remoteSourceInfo: {
-          arenaId: newChannel.id.toString(),
-          arenaClass: "Collection",
-        },
+      const { newChannel, addedInfo, numItemsFailed } = await createChannel({
+        accessToken: arenaAccessToken,
+        title,
+        itemsToAdd: collectionItems,
       });
+      await Promise.all([
+        upsertConnections(
+          addedInfo.map((info) => ({
+            blockId: info.id,
+            collectionId: id,
+            remoteCreatedAt: info.connected_at,
+          }))
+        ),
+        updateCollection(id, {
+          remoteSourceType: RemoteSourceType.Arena,
+          remoteSourceInfo: {
+            arenaId: newChannel.id.toString(),
+            arenaClass: "Collection",
+          },
+        }),
+      ]);
       alert(
-        `Created ${
-          newChannel.title
-        } on Are.na and added ${numItemsAdded} items.${
-          numItemsFailed > 0 ? ` ${numItemsFailed} items failed to add.` : ""
+        `Created ${newChannel.title} on Are.na and added ${
+          addedInfo.length
+        } items.${
+          numItemsFailed > 0
+            ? ` ${numItemsFailed} items failed to add. We will try to sync the failed ones again later.`
+            : ""
         }}`
       );
     } catch (err) {

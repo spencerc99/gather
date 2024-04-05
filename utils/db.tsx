@@ -173,6 +173,7 @@ interface DatabaseContextProps {
   fullDeleteCollection: (id: string) => Promise<void>;
 
   addConnections(blockId: string, collectionIds: string[]): Promise<void>;
+  upsertConnections(connections: ConnectionInsertInfo[]): Promise<void>;
   replaceConnections(blockId: string, collectionIds: string[]): Promise<void>;
 
   // share intent
@@ -232,6 +233,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   syncNewRemoteItems: async () => {},
 
   addConnections: async () => {},
+  upsertConnections: async () => {},
   replaceConnections: async () => {},
 
   setShareIntent: () => {},
@@ -1660,6 +1662,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         getCollection,
         addConnections,
         replaceConnections,
+        upsertConnections,
         deleteCollection,
         fullDeleteCollection,
         getCollectionItems,

@@ -605,6 +605,7 @@ export async function getUserChannels(
   return fetchedItems;
 }
 
+// TODO: this doesn't set the remote_created_at on connection
 export async function createChannel({
   accessToken,
   title,
@@ -618,7 +619,7 @@ export async function createChannel({
   itemsToAdd?: Block[];
 }): Promise<{
   newChannel: ArenaChannelInfo;
-  numItemsAdded: number;
+  addedInfo: { id: string; connected_at: string }[];
   numItemsFailed: number;
 }> {
   const url = `${ArenaApiUrl}/channels`;
@@ -639,18 +640,21 @@ export async function createChannel({
     throw new Error(JSON.stringify(maybeChannel));
   }
 
-  let numItemsAdded = 0;
+  const adddedInfo = [];
   let numItemsFailed = 0;
   if (itemsToAdd?.length) {
     const { id } = maybeChannel;
     for (const block of itemsToAdd) {
       try {
-        await addBlockToChannel({
+        const item = await addBlockToChannel({
           channelId: id.toString(),
           block,
           arenaToken: accessToken,
         });
-        numItemsAdded++;
+        adddedInfo.push({
+          id: block.id,
+          connected_at: item.connected_at,
+        });
       } catch (e) {
         console.error(e);
         numItemsFailed++;
@@ -660,7 +664,7 @@ export async function createChannel({
 
   return {
     newChannel: maybeChannel,
-    numItemsAdded,
+    addedInfo,
     numItemsFailed,
   };
 }
