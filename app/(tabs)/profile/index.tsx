@@ -45,7 +45,7 @@ const FeedbackLink = `mailto:spencerc99@gmail.com?subject=${encodeURIComponent(
 
 const AppIcons = [
   {
-    iconName: "DEFAULT",
+    iconName: "moon",
     source: require(`../../../assets/images/icon.png`),
   },
   {
@@ -217,11 +217,13 @@ function AppIconSelect({
       <StyledText fontStyle="italic">Choose Your Icon</StyledText>
       <XStack gap="$2" justifyContent="center">
         {AppIcons.map(({ iconName, source }) => {
-          const selected = appIcon === iconName;
+          const selected =
+            appIcon === iconName ||
+            (appIcon === "DEFAULT" && iconName === "moon");
 
           return (
             <Stack
-              key={iconName || "default"}
+              key={iconName}
               onPress={() => onSelectIcon(iconName)}
               borderWidth={2}
               borderColor={selected ? "$green10" : "transparent"}

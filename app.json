@@ -64,6 +64,10 @@
         "expo-dynamic-app-icon",
         {
           // DEFAULT icon = icon.png
+          "moon": {
+            "image": "./assets/images/icon.png",
+            "prerendered": true
+          },
           "water": {
             "image": "./assets/images/icon-water.png",
             "prerendered": true

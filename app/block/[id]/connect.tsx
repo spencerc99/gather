@@ -40,7 +40,8 @@ export default function BlockConnectModal() {
       return;
     }
 
-    await replaceConnections(block.id, selectedCollections);
+    // TODO: turn this into try/catch and error toast if fails.
+    replaceConnections(block.id, selectedCollections);
     router.replace("..");
   }
 

@@ -33,3 +33,9 @@ eas submit -p ios
 ```
 
 provide the filepath and then it will submit it to testflight automatically.
+
+## Common Errors
+
+### `npm run ios` fails with `CommandError: Failed to build iOS project. "xcodebuild" exited with error code 65. Duplicate tasks error.`
+
+open `ios` folder in XCode and delete duplicate ShareExtension tasks. re-run.

@@ -110,7 +110,6 @@ export function BlockDetailView({
             block={block}
             blockStyle={{
               resizeMode: "contain",
-              height: "auto",
               aspectRatio: undefined,
             }}
             style={{
