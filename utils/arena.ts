@@ -640,7 +640,7 @@ export async function createChannel({
     throw new Error(JSON.stringify(maybeChannel));
   }
 
-  const adddedInfo = [];
+  const addedInfo = [];
   let numItemsFailed = 0;
   if (itemsToAdd?.length) {
     const { id } = maybeChannel;
@@ -651,7 +651,7 @@ export async function createChannel({
           block,
           arenaToken: accessToken,
         });
-        adddedInfo.push({
+        addedInfo.push({
           id: block.id,
           connected_at: item.connected_at,
         });
