@@ -111,12 +111,13 @@ export function BlockDetailView({
             blockStyle={{
               resizeMode: "contain",
               aspectRatio: undefined,
+              maxHeight: "100%",
             }}
-            style={{
-              maxHeight: height / 2,
-            }}
+            style={{}}
             containerProps={{
               paddingBottom: "$2",
+              maxHeight: height / 2,
+              width: "100%",
             }}
             hideMetadata
           />
