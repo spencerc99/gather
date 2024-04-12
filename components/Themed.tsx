@@ -235,6 +235,7 @@ export function EditableTextOnClick({
         placeholder={defaultText}
         onChangeText={setEditableContent}
         {...inputProps}
+        multiline
         onPressIn={() => setEditing(true)}
         {...(!editing
           ? {
