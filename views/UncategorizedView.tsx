@@ -268,6 +268,10 @@ export function UncategorizedView() {
               stiffness: 250,
             },
           }}
+          // this is for scrolling really fast
+          // pagingEnabled={false}
+          minScrollDistancePerSwipe={0.01}
+          scrollAnimationDuration={50}
           width={width}
           data={events}
           windowSize={7}
