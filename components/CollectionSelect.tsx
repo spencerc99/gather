@@ -72,9 +72,12 @@ export function CollectionSelect({
 
   return (
     <Select
-      onValueChange={setSelectedCollection}
+      // TODO: dumb because sometimes it is a number...
+      onValueChange={(val) => setSelectedCollection(val ? val.toString() : val)}
       // @ts-ignore
-      value={selectedCollection}
+      value={
+        selectedCollection ? selectedCollection.toString() : selectedCollection
+      }
       disablePreventBodyScroll
       onOpenChange={(isOpen) => {
         if (!isOpen) {
