@@ -181,6 +181,8 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
         height={height}
         data={outputBlocks}
         windowSize={5}
+        minScrollDistancePerSwipe={0.01}
+        pagingEnabled={false}
         renderItem={({ item, index }) => (
           <YStack
             alignItems="center"
