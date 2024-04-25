@@ -1,6 +1,7 @@
 const { NODE_ENV } = process.env;
 
 const inProduction = NODE_ENV === "production";
+console.log("inProduction?", inProduction);
 
 module.exports = function (api) {
   api.cache(true);

@@ -39,3 +39,7 @@ provide the filepath and then it will submit it to testflight automatically.
 ### `npm run ios` fails with `CommandError: Failed to build iOS project. "xcodebuild" exited with error code 65. Duplicate tasks error.`
 
 open `ios` folder in XCode and delete duplicate ShareExtension tasks. re-run.
+
+### `npm run build-ios` fails with `...Gather.app/main.jsbundle does not exist. This must be a bug with React Native, please report it here: https://github.com/facebook/react-native/issues
+
+???
