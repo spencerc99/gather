@@ -42,6 +42,7 @@ export function UncategorizedView() {
     void fetchEvents();
   }, []);
 
+  // TODO: do some time delay?
   useFocusEffect(initData);
 
   async function fetchEvents() {
@@ -274,7 +275,7 @@ export function UncategorizedView() {
           scrollAnimationDuration={50}
           width={width}
           data={events}
-          windowSize={7}
+          windowSize={5}
           renderItem={({ item, index }) => CarouselItem({ item, index })}
         />
       </XStack>
