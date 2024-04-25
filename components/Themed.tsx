@@ -235,7 +235,8 @@ export function EditableTextOnClick({
         placeholder={defaultText}
         onChangeText={setEditableContent}
         {...inputProps}
-        multiline
+        autogrow
+        onSubmitEditing={() => commitEdit(editableContent)}
         onPressIn={() => setEditing(true)}
         {...(!editing
           ? {

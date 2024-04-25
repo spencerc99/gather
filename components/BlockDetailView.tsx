@@ -96,7 +96,10 @@ export function BlockDetailView({
         />
         <YStack gap="$2" marginBottom="$2" flexGrow={1}>
           <EditableTextOnClick
-            inputProps={{ title: true }}
+            inputProps={{
+              title: true,
+              enterKeyHint: "done",
+            }}
             text={title}
             defaultText="Add a title..."
             disabled={isLoading}
