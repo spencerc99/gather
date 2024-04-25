@@ -11,7 +11,7 @@
     "test": "jest --watchAll",
     "postinstall": "patch-package",
     "android": "expo run:android",
-    "build-ios": "EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./builds\" eas build -p ios --local --non-interactive",
+    "build-ios": "NODE_ENV=production EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./builds\" eas build -p ios --local --non-interactive",
     "submit-ios": "eas submit -p ios --non-interactive --path=\"./builds/$(ls -1 builds | sort | tail -n 1)\"",
     "build-and-submit-ios": "npm run build-ios && npm run submit-ios"
   },
@@ -72,6 +72,7 @@
     "@types/react": "~18.2.14",
     "@types/react-test-renderer": "^18.0.2",
     "@types/uuid": "^9.0.5",
+    "babel-plugin-transform-remove-console": "^6.9.4",
     "jest": "^29.2.1",
     "jest-expo": "~49.0.0",
     "react-test-renderer": "18.2.0",
