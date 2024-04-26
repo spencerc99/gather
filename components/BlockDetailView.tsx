@@ -21,11 +21,12 @@ import {
   YStack,
   useWindowDimensions,
 } from "tamagui";
-import { Link, Stack, useRouter } from "expo-router";
+import { Link, Stack, useNavigation, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { MediaView } from "./MediaView";
 import { BlockContent } from "./BlockContent";
+import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 
 export function BlockDetailView({
   block,
@@ -57,6 +58,7 @@ export function BlockDetailView({
       setConnections(connections);
     });
   }, [id]);
+  useFixExpoRouter3NavigationTitle();
 
   async function update(updateFn: () => ReturnType<typeof updateBlock>) {
     setIsLoading(true);
