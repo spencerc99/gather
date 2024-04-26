@@ -147,9 +147,13 @@ function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
   return chunks;
 }
 
+const BlockSelectLimit = 15;
+const CollectionSelectLimit = 20;
+
 interface DatabaseContextProps {
-  blocks: Block[];
-  localBlocks: Block[] | null;
+  // blocks: Block[];
+  getBlocks: (page?: number) => Promise<Block[]>;
+  // localBlocks: Block[] | null;
   createBlock: (block: BlockInsertInfo) => Promise<string>;
   createBlocks: (blocks: BlocksInsertInfo) => Promise<string[]>;
   getBlock: (blockId: string) => Promise<Block>;
@@ -158,16 +162,20 @@ interface DatabaseContextProps {
     editInfo: BlockEditInfo
   ) => Promise<Block | undefined>;
   deleteBlock: (id: string) => void;
-
+  getBlockCount: () => Promise<number>;
   getConnectionsForBlock: (blockId: string) => Promise<Connection[]>;
 
-  collections: Collection[];
+  // collections: Collection[];
+  getCollections: (page?: number) => Promise<Collection[]>;
   createCollection: (collection: CollectionInsertInfo) => Promise<string>;
   updateCollection: (
     collectionId: string,
     editInfo: CollectionEditInfo
   ) => Promise<void>;
-  getCollectionItems: (collectionId: string) => Promise<CollectionBlock[]>;
+  getCollectionItems: (
+    collectionId: string,
+    options?: { whereClause?: string; havingClause?: string; page?: number }
+  ) => Promise<CollectionBlock[]>;
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => Promise<void>;
@@ -203,7 +211,6 @@ interface DatabaseContextProps {
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
   blocks: null,
-  localBlocks: null,
   createBlock: async () => {
     throw new Error("not yet loaded");
   },
@@ -815,9 +822,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                     block_connections.remote_connected_at as remote_connected_at
           FROM      blocks
           LEFT JOIN block_connections ON block_connections.block_id = blocks.id
-          ORDER BY  MIN(block_connections.remote_connected_at, blocks.created_timestamp) DESC;`;
+          ORDER BY  MIN(block_connections.remote_connected_at, blocks.created_timestamp) DESC`;
+  const SelectBlocksSql = (page: number = 0) =>
+    `${SelectBlockSql} LIMIT ${BlockSelectLimit} OFFSET ${
+      page * BlockSelectLimit
+    };`;
 
-  async function fetchBlocks() {
+  async function fetchBlocks(page?: number) {
     const [result] = await db.execAsync(
       [
         {
@@ -830,6 +841,35 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     handleSqlErrors(result);
     setBlocks(result.rows.map((block) => mapDbBlockToBlock(block)));
   }
+
+  async function getBlocks(page?: number): Promise<Block[]> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `${SelectBlocksSql(page)};`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows.map((block) => mapDbBlockToBlock(block));
+  }
+
+  async function getBlockCount(): Promise<number> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `SELECT COUNT(*) as count FROM blocks;`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows[0].count;
+  }
+
   const SelectCollectionInfoSql = `WITH block_connections AS (
               SELECT      id, 
                           content, 
@@ -870,6 +910,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           LEFT JOIN connections ON annotated_collections.id = connections.collection_id
           GROUP BY 1,2,3,4,5,6,7`;
 
+  const SelectCollectionsSql = (page: number = 0) => `
+          ${SelectCollectionInfoSql}
+          ORDER BY  MAX(connections.created_timestamp) DESC
+          LIMIT ${CollectionSelectLimit} OFFSET ${
+    page * CollectionSelectLimit
+  };`;
+
   async function fetchCollections() {
     try {
       const [result] = await db.execAsync(
@@ -888,6 +935,27 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           return mapDbCollectionToCollection(collection);
         }),
       ]);
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async function getCollections(page?: number): Promise<Collection[]> {
+    try {
+      const [result] = await db.execAsync(
+        [
+          {
+            sql: `${SelectCollectionsSql(page)};`,
+            args: [],
+          },
+        ],
+        true
+      );
+      handleSqlErrors(result);
+
+      return result.rows.map((collection) => {
+        return mapDbCollectionToCollection(collection);
+      });
     } catch (err) {
       throw err;
     }
@@ -1004,7 +1072,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function getCollectionItems(
     collectionId: string,
-    { whereClause }: { whereClause?: string; havingClause?: string } = {}
+    {
+      whereClause,
+      page = 0,
+    }: { whereClause?: string; havingClause?: string; page?: number } = {}
   ): Promise<CollectionBlock[]> {
     const [result] = await db.execAsync(
       [
@@ -1027,7 +1098,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             WHERE       connections.collection_id = ?${
               whereClause ? ` AND ${whereClause}` : ""
             }
-            ORDER BY MIN(connections.remote_created_at, blocks.created_timestamp) DESC;`,
+            ORDER BY MIN(connections.remote_created_at, blocks.created_timestamp) DESC
+            LIMIT ${BlockSelectLimit} OFFSET ${page * BlockSelectLimit};`,
           args: [collectionId],
         },
       ],
@@ -1651,25 +1723,26 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       value={{
         createBlock,
         createBlocks,
-        blocks,
-        localBlocks: useMemo(() => {
-          // only ignore those imported (not directly texted in app)
-          // this works because adding to arena is done post connection when not importing
-          return !blocks
-            ? null
-            : blocks.filter(
-                (b) =>
-                  !b.remoteConnectedAt ||
-                  b.remoteConnectedAt.getTime() > b.createdAt.getTime()
-              );
-        }, [blocks]),
+        // blocks,
+        // localBlocks: useMemo(() => {
+        //   // only ignore those imported (not directly texted in app)
+        //   // this works because adding to arena is done post connection when not importing
+        //   return !blocks
+        //     ? null
+        //     : blocks.filter(
+        //         (b) =>
+        //           !b.remoteConnectedAt ||
+        //           b.remoteConnectedAt.getTime() > b.createdAt.getTime()
+        //       );
+        // }, [blocks]),
+        getBlockCount,
         getBlock,
         updateBlock,
         deleteBlock,
         setShareIntent,
         shareIntent,
         getConnectionsForBlock,
-        collections,
+        // collections,
         createCollection,
         updateCollection,
         getCollection,
@@ -1685,6 +1758,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         tryImportArenaChannel,
         selectedReviewCollection,
         setSelectedReviewCollection,
+        getBlocks,
+        getCollections,
         // internal
         db,
         initDatabases,

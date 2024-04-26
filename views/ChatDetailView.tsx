@@ -13,7 +13,6 @@ export function ChatDetailView({
 }: {
   initialCollectionId: string | null;
 }) {
-  const { collections } = useContext(DatabaseContext);
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     initialCollectionId
   );
@@ -22,15 +21,6 @@ export function ChatDetailView({
   useEffect(() => {
     setSelectedCollection(initialCollectionId);
   }, [initialCollectionId]);
-
-  useEffect(() => {
-    if (
-      selectedCollection &&
-      !collections.some((c) => c.id === selectedCollection)
-    ) {
-      setSelectedCollection(null);
-    }
-  }, [collections.length]);
 
   return (
     <>

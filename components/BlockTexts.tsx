@@ -129,11 +129,8 @@ function getEarlierDate(a: null | Date, b: Date) {
 }
 
 export function BlockTexts({ collectionId }: { collectionId?: string }) {
-  const {
-    blocks: allBlocks,
-    getCollectionItems,
-    collections,
-  } = useContext(DatabaseContext);
+  const { getBlocks, getCollectionItems, getCollection } =
+    useContext(DatabaseContext);
   const [collection, setCollection] = useState<undefined | Collection>(
     undefined
   );
@@ -147,14 +144,16 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
 
   useEffect(() => {
     void fetchBlocks();
-  }, [collectionId, allBlocks]);
+  }, [collectionId]);
   useEffect(() => {
-    setCollection(collections.find((c) => c.id === collectionId));
+    if (collectionId) {
+      getCollection(collectionId).then(setCollection);
+    }
   }, [collectionId]);
 
   async function fetchBlocks() {
     if (!collectionId) {
-      setBlocks(allBlocks);
+      getBlocks().then(setBlocks);
       return;
     }
     // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
@@ -185,6 +184,13 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   );
 
   function fetchMoreBlocks() {
+    if (collectionId) {
+      getCollectionItems(collectionId, { page: pages }).then(setBlocks);
+    } else {
+      getBlocks(pages).then((newBlocks) => {
+        setBlocks([...(blocks || []), ...newBlocks]);
+      });
+    }
     setPages(pages + 1);
   }
 

@@ -1,4 +1,11 @@
-import { memo, useCallback, useContext, useMemo, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { DatabaseContext } from "../utils/db";
 import { Collection } from "../utils/dataTypes";
 import {
@@ -63,11 +70,16 @@ export function SelectCollectionsList({
   setSearchValue?: (newSearch: string) => void;
   extraSearchContent?: React.ReactNode;
 }) {
-  const { collections, createCollection } = useContext(DatabaseContext);
+  const { getCollections, createCollection } = useContext(DatabaseContext);
+  const [collections, setCollections] = useState<Collection[] | null>(null);
   const [internalSearchValue, internalSetSearchValue] = useState("");
   const { currentUser } = useContext(UserContext);
   const [loading, setLoading] = useState(false);
   const createdCollections = useMemo(() => new Set<string>(), []);
+
+  useEffect(() => {
+    getCollections().then(setCollections);
+  });
 
   const searchValue = useMemo(
     () => (propSetSearchValue && propSearch ? propSearch : internalSearchValue),
@@ -88,7 +100,7 @@ export function SelectCollectionsList({
   // sort by lastConnectedAt descending
   const sortedCollections = useMemo(
     () =>
-      [...collections].sort(
+      [...(collections || [])].sort(
         (a, b) =>
           (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
           (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
@@ -151,6 +163,9 @@ export function SelectCollectionsList({
   );
 
   function renderCollections() {
+    if (collections === null) {
+      return <Spinner color="$orange9" size="small" />;
+    }
     return (
       <FlatList
         scrollEnabled={false}
@@ -186,7 +201,7 @@ export function SelectCollectionsList({
                 e.stopPropagation();
               }}
             >
-              {!searchValue && collections.length === 0 && (
+              {!searchValue && collections?.length === 0 && (
                 <YStack height={140} width={110} justifyContent="center">
                   <LinkButton
                     href="/modal"

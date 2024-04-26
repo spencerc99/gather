@@ -34,12 +34,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 
 export function UncategorizedView() {
-  const { db, blocks, addConnections, getConnectionsForBlock, deleteBlock } =
-    useContext(DatabaseContext);
+  const {
+    db,
+    getBlockCount,
+    addConnections,
+    getConnectionsForBlock,
+    deleteBlock,
+  } = useContext(DatabaseContext);
+  const [totalBlocks, setTotalBlocks] = useState<number | null>(null);
   const [events, setEvents] = useState<Block[] | null>(null);
 
   const initData = useCallback(() => {
     void fetchEvents();
+    void getBlockCount().then((count) => {
+      setTotalBlocks(count);
+    });
   }, []);
 
   // TODO: do some time delay?
@@ -175,7 +184,8 @@ export function UncategorizedView() {
           width="100%"
           marginTop="$1"
         >
-          {index + 1} / {events.length} unsorted, {blocks.length} total
+          {index + 1} / {events.length} unsorted,{" "}
+          {totalBlocks === null ? "..." : totalBlocks} total
         </StyledText>
         <YStack
           paddingVertical="$2"

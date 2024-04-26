@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import {
   Adapt,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   XStack,
   useDebounceValue,
   GetProps,
+  Spinner,
   // setupNativeSheet,
 } from "tamagui";
 import { DatabaseContext } from "../utils/db";
@@ -20,6 +21,7 @@ import { CollectionSummary } from "./CollectionSummary";
 import { filterItemsBySearchValue } from "../utils/search";
 import { Swipeable } from "react-native-gesture-handler";
 import { Alert } from "react-native";
+import { Collection } from "../utils/dataTypes";
 // import { ModalView } from "react-native-ios-modal";
 
 // setupNativeSheet("ios", ModalView);
@@ -41,16 +43,21 @@ export function CollectionSelect({
   selectProps?: GetProps<typeof Select>;
   hideChevron?: boolean;
 }) {
-  const { collections, createCollection, deleteCollection } =
+  const { getCollections, createCollection, deleteCollection } =
     useContext(DatabaseContext);
+  const [collections, setCollections] = useState<Collection[] | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const { currentUser: user } = useContext(UserContext);
 
+  useEffect(() => {
+    getCollections().then(setCollections);
+  }, []);
+
   // sort by lastConnectedAt descending
   const sortedCollections = useMemo(
     () =>
-      [...collections].sort(
+      [...(collections || [])].sort(
         (a, b) =>
           (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
           (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
@@ -192,75 +199,79 @@ export function CollectionSelect({
                   </Select.ItemText>
                 </Select.Item>
               )}
-              {filteredCollections.map((collection, idx) => (
-                <Swipeable
-                  key={collection.id}
-                  containerStyle={{
-                    overflow: "visible",
-                  }}
-                  friction={2}
-                  renderRightActions={() => (
-                    <YStack
-                      alignItems="center"
-                      padding="$2"
-                      justifyContent="center"
-                    >
-                      <StyledButton
-                        circular
-                        theme="red"
-                        size="$6"
-                        icon={<Icon name="trash" />}
-                      ></StyledButton>
-                    </YStack>
-                  )}
-                  onSwipeableOpen={(direction, swipeable) => {
-                    if (direction === "left") {
-                      return;
-                    }
-                    // open modal to confirm delete
-                    Alert.alert("Delete Collection?", undefined, [
-                      {
-                        text: "Cancel",
-                        onPress: () => {
-                          swipeable.close();
-                        },
-                        style: "cancel",
-                      },
-                      {
-                        text: "Delete",
-                        onPress: () => {
-                          deleteCollection(collection.id);
-                        },
-                        style: "destructive",
-                      },
-                    ]);
-                  }}
-                >
-                  <Select.Item
-                    index={idx + 1}
+              {collections === null ? (
+                <Spinner color="$orange9" size="large" />
+              ) : (
+                filteredCollections.map((collection, idx) => (
+                  <Swipeable
                     key={collection.id}
-                    value={collection.id}
-                    backgroundColor={
-                      selectedCollection === collection.id
-                        ? "$green4"
-                        : undefined
-                    }
+                    containerStyle={{
+                      overflow: "visible",
+                    }}
+                    friction={2}
+                    renderRightActions={() => (
+                      <YStack
+                        alignItems="center"
+                        padding="$2"
+                        justifyContent="center"
+                      >
+                        <StyledButton
+                          circular
+                          theme="red"
+                          size="$6"
+                          icon={<Icon name="trash" />}
+                        ></StyledButton>
+                      </YStack>
+                    )}
+                    onSwipeableOpen={(direction, swipeable) => {
+                      if (direction === "left") {
+                        return;
+                      }
+                      // open modal to confirm delete
+                      Alert.alert("Delete Collection?", undefined, [
+                        {
+                          text: "Cancel",
+                          onPress: () => {
+                            swipeable.close();
+                          },
+                          style: "cancel",
+                        },
+                        {
+                          text: "Delete",
+                          onPress: () => {
+                            deleteCollection(collection.id);
+                          },
+                          style: "destructive",
+                        },
+                      ]);
+                    }}
                   >
-                    <CollectionSummary
-                      collection={collection}
-                      viewProps={{
-                        borderWidth: 0,
-                        paddingHorizontal: 0,
-                        paddingVertical: 0,
-                        backgroundColor: "inherit",
-                      }}
-                    />
-                    <Select.ItemText display="none">
-                      {collection.title}
-                    </Select.ItemText>
-                  </Select.Item>
-                </Swipeable>
-              ))}
+                    <Select.Item
+                      index={idx + 1}
+                      key={collection.id}
+                      value={collection.id}
+                      backgroundColor={
+                        selectedCollection === collection.id
+                          ? "$green4"
+                          : undefined
+                      }
+                    >
+                      <CollectionSummary
+                        collection={collection}
+                        viewProps={{
+                          borderWidth: 0,
+                          paddingHorizontal: 0,
+                          paddingVertical: 0,
+                          backgroundColor: "inherit",
+                        }}
+                      />
+                      <Select.ItemText display="none">
+                        {collection.title}
+                      </Select.ItemText>
+                    </Select.Item>
+                  </Swipeable>
+                ))
+              )}
             </Select.Group>
           </Sheet.ScrollView>
         </Select.Viewport>
