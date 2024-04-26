@@ -76,10 +76,11 @@ export function SelectCollectionsList({
   const { currentUser } = useContext(UserContext);
   const [loading, setLoading] = useState(false);
   const createdCollections = useMemo(() => new Set<string>(), []);
+  const [pages, setPages] = useState(1);
 
   useEffect(() => {
     getCollections().then(setCollections);
-  });
+  }, []);
 
   const searchValue = useMemo(
     () => (propSetSearchValue && propSearch ? propSearch : internalSearchValue),
@@ -96,6 +97,15 @@ export function SelectCollectionsList({
     },
     [propSetSearchValue, internalSetSearchValue]
   );
+
+  function fetchMoreCollections() {
+    console.log("fetching more collections", pages);
+    getCollections(pages).then((newCollections) => {
+      console.log(newCollections);
+      setCollections([...(collections || []), ...newCollections]);
+    });
+    setPages((currPage) => currPage + 1);
+  }
 
   // sort by lastConnectedAt descending
   const sortedCollections = useMemo(
@@ -176,6 +186,11 @@ export function SelectCollectionsList({
           gap: horizontal ? 8 : 4,
         }}
         renderItem={renderCollection}
+        onEndReachedThreshold={0.2}
+        // TODO: debounce this and add only after scrolled..?
+        onEndReached={() => {
+          fetchMoreCollections();
+        }}
       />
     );
   }

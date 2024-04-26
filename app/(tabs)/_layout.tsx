@@ -27,6 +27,8 @@ export default function TabLayout() {
         tabBarStyle: {
           // backgroundColor: "transparent",
         },
+        // TODO: this helps a lot with RAM but makes it a bit jank bc it reloads every time you navigate..
+        // unmountOnBlur: true,
       }}
     >
       <Tabs.Screen

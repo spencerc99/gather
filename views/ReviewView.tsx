@@ -33,7 +33,7 @@ enum ViewType {
 
 export function ReviewView() {
   const {
-    blocks,
+    getBlocks,
     getCollectionItems,
     selectedReviewCollection,
     setSelectedReviewCollection,
@@ -49,16 +49,14 @@ export function ReviewView() {
 
   useEffect(() => {
     void fetchBlocks();
-  }, [selectedReviewCollection, blocks]);
+  }, [selectedReviewCollection]);
 
   async function fetchBlocks() {
     if (!selectedReviewCollection) {
-      setOutputBlocks(blocks);
+      getBlocks().then(setOutputBlocks);
       return;
     }
-    // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
-    // this is tricky becuase we need `remoteConnectedAt` for the particular collectionId involved... I suppose we could just fetch all of those too in the big block fetch.
-    // TODO: can also push the sort to the DB
+
     const collectionBlocks = await getCollectionItems(selectedReviewCollection);
     setOutputBlocks(collectionBlocks);
   }
@@ -248,12 +246,19 @@ export function FeedView({ blocks }: { blocks: Block[] }) {
   const [pages, setPages] = useState(1);
 
   const blocksToRender = useMemo(
-    () => blocks.slice(0, pages * RenderChunkSize),
-    [blocks, pages]
+    () => sortedBlocks.slice(0, pages * RenderChunkSize),
+    [sortedBlocks, pages]
   );
 
   function fetchMoreBlocks() {
-    setPages(pages + 1);
+    if (collectionId) {
+      getCollectionItems(collectionId, { page: pages }).then(setBlocks);
+    } else {
+      getBlocks(pages).then((newBlocks) => {
+        setBlocks([...(blocks || []), ...newBlocks]);
+      });
+    }
+    setPages((currPage) => currPage + 1);
   }
 
   // TODO: use tabs to render blocks + collections

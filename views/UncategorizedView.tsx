@@ -49,6 +49,9 @@ export function UncategorizedView() {
     void getBlockCount().then((count) => {
       setTotalBlocks(count);
     });
+    return () => {
+      setEvents(null);
+    };
   }, []);
 
   // TODO: do some time delay?

@@ -16,6 +16,9 @@ import { TamaguiProvider, Theme } from "tamagui";
 import { config } from "../tamagui.config";
 import { UserProvider } from "../utils/user";
 import useShareIntent from "../hooks/useShareIntent";
+import { enableFreeze } from "react-native-screens";
+
+enableFreeze(true);
 
 export {
   // Catch any errors thrown by the Layout component.

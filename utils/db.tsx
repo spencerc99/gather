@@ -148,7 +148,7 @@ function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
 }
 
 const BlockSelectLimit = 15;
-const CollectionSelectLimit = 20;
+const CollectionSelectLimit = 15;
 
 interface DatabaseContextProps {
   // blocks: Block[];
@@ -167,6 +167,7 @@ interface DatabaseContextProps {
 
   // collections: Collection[];
   getCollections: (page?: number) => Promise<Collection[]>;
+  getArenaCollectionIds: () => Promise<Set<string>>;
   createCollection: (collection: CollectionInsertInfo) => Promise<string>;
   updateCollection: (
     collectionId: string,
@@ -437,7 +438,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
               created_by TEXT NOT NULL,
               remote_source_type varchar(128),
-              remote_source_info blob 
+              remote_source_info blob ,
+              arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'))
           );`
           ),
         ]);
@@ -959,6 +961,30 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     } catch (err) {
       throw err;
     }
+  }
+
+  // TODO: genericize
+  async function getArenaCollectionIds(
+    remoteSourceType?: RemoteSourceType
+  ): Promise<Set<string>> {
+    const [result] = await db.execAsync(
+      [
+        !remoteSourceType
+          ? {
+              sql: `SELECT arena_id FROM collections WHERE remote_source_type IS NOT NULL AND arena_id IS NOT NULL;`,
+              args: [remoteSourceType],
+            }
+          : {
+              sql: `SELECT arena_id FROM collections WHERE remote_source_type = ? AND arena_id IS NOT NULL;`,
+              args: [remoteSourceType],
+            },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return new Set(
+      result.rows.map((collection) => collection["arena_id"].toString())
+    );
   }
 
   async function fetchBlock(blockId: string): Promise<Block> {
@@ -1746,6 +1772,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         createCollection,
         updateCollection,
         getCollection,
+        getArenaCollectionIds,
         addConnections,
         replaceConnections,
         upsertConnections,

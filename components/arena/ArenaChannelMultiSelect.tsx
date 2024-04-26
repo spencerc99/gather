@@ -48,11 +48,15 @@ export function ArenaChannelMultiSelect({
   selectedChannels: ArenaChannelInfo[];
   setSelectedChannels: (selectedChannels: ArenaChannelInfo[]) => void;
 }) {
-  const { arenaAccessToken, collections } = useContext(DatabaseContext);
+  const { arenaAccessToken, getArenaCollectionIds } =
+    useContext(DatabaseContext);
   const [channels, setChannels] = useState<ArenaChannelInfo[] | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const [open, setOpen] = useState(false);
+  const [remoteCollectionIds, setRemoteCollectionIds] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     if (arenaAccessToken) {
@@ -60,24 +64,14 @@ export function ArenaChannelMultiSelect({
         await getUserChannels(arenaAccessToken).then((channels) => {
           setChannels(channels);
         });
+        await getArenaCollectionIds().then((remoteCollectionIds) => {
+          setRemoteCollectionIds(remoteCollectionIds);
+        });
       });
     } else {
       setChannels([]);
     }
   }, [arenaAccessToken]);
-  const remoteCollectionIds = useMemo(
-    () =>
-      new Set(
-        collections
-          .filter(
-            (c) =>
-              c.remoteSourceType === RemoteSourceType.Arena &&
-              c.remoteSourceInfo?.arenaId
-          )
-          .map((c) => c.remoteSourceInfo?.arenaId)
-      ),
-    [collections]
-  );
 
   const toggleChannel = useCallback(
     (channel: ArenaChannelInfo, isSelected: boolean) => {
@@ -99,7 +93,7 @@ export function ArenaChannelMultiSelect({
       channels?.filter((c) => {
         return !remoteCollectionIds.has(c.id.toString());
       }),
-    [channels, collections]
+    [channels]
   );
   const filteredChannels = useMemo(
     () =>
