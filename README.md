@@ -40,6 +40,6 @@ provide the filepath and then it will submit it to testflight automatically.
 
 open `ios` folder in XCode and delete duplicate ShareExtension tasks. re-run.
 
-### `npm run build-ios` fails with `...Gather.app/main.jsbundle does not exist. This must be a bug with React Native, please report it here: https://github.com/facebook/react-native/issues
+### `npm run build-ios` fails with `See Xcode logs for full errors`
 
-???
+run EAS_LOCAL_BUILD_SKIP_CLEANUP=1 npm run build-ios to keep logs around in local `logs`. inspect the logs to see what went wrong.
