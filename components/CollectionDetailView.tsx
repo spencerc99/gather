@@ -6,6 +6,7 @@ import { ArenaLogo, StyledButton, StyledParagraph, StyledText } from "./Themed";
 import { ExternalLink } from "./ExternalLink";
 import { Stack, useRouter } from "expo-router";
 import { createChannel } from "../utils/arena";
+import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 
 export function CollectionDetailView({
   collection,
@@ -43,6 +44,7 @@ export function CollectionDetailView({
       setIsLoading(false);
     }
   }
+  useFixExpoRouter3NavigationTitle();
 
   //   TODO: add confirmation dialog https://tamagui.dev/docs/components/alert-dialog/1.0.0
   async function onPressDelete() {
