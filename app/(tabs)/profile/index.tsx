@@ -102,9 +102,9 @@ export default function ProfileScreen() {
     setAppIcon(iconType);
     setIcon(iconType);
   }
-  const appIconSource = AppIcons.find(
-    (icon) => icon.iconName === appIcon
-  )?.source;
+  const appIconSource =
+    AppIcons.find((icon) => icon.iconName === appIcon)?.source ||
+    AppIcons[0].source;
 
   return (
     <SafeAreaView>
