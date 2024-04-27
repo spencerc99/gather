@@ -1,11 +1,22 @@
-import * as WebBrowser from "expo-web-browser";
 import {
   exchangeCodeAsync,
   makeRedirectUri,
   useAuthRequest,
 } from "expo-auth-session";
-import { useContext, useEffect, useMemo, useState } from "react";
-import { InteractionManager } from "react-native";
+import Constants from "expo-constants";
+import * as WebBrowser from "expo-web-browser";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { FlatList } from "react-native";
+import {
+  Adapt,
+  Select,
+  Sheet,
+  Spinner,
+  XStack,
+  YStack,
+  YStackProps,
+  useDebounceValue,
+} from "tamagui";
 import {
   ArenaLogo,
   Icon,
@@ -14,28 +25,15 @@ import {
   StyledInput,
   StyledLabel,
 } from "../components/Themed";
-import Constants from "expo-constants";
-import {
-  Adapt,
-  Sheet,
-  Select,
-  Spinner,
-  XStack,
-  YStack,
-  useDebounceValue,
-  YStackProps,
-} from "tamagui";
+import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
 import {
   ArenaChannelInfo,
   ArenaChannelRegex,
   ArenaClientId,
   ArenaClientSecret,
-  getUserChannels,
+  useArenaUserChannels,
 } from "../utils/arena";
 import { DatabaseContext } from "../utils/db";
-import { filterItemsBySearchValue } from "../utils/search";
-import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
-import { useQuery } from "@tanstack/react-query";
 
 const SCHEME = Constants.platform?.scheme;
 
@@ -159,48 +157,48 @@ export function SelectArenaChannel({
   overlayProps?: YStackProps;
   modal?: boolean;
 }) {
-  const { arenaAccessToken, getArenaCollectionIds } =
-    useContext(DatabaseContext);
+  const { arenaAccessToken } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
+  const [open, setOpen] = useState(false);
   const debouncedSearch = useDebounceValue(searchValue, 300);
 
-  const { data: remoteCollectionIds } = useQuery({
-    queryKey: ["collections", "ids"],
-    queryFn: async () => {
-      return await getArenaCollectionIds();
+  const { channels, isLoading, isFetchingNextPage, fetchMore } =
+    useArenaUserChannels(debouncedSearch);
+
+  const renderChannel = useCallback(
+    ({
+      item,
+      index: idx,
+    }: {
+      item: ArenaChannelInfo & { isDisabled: boolean };
+      index: number;
+    }) => {
+      const channel = item;
+      const { isDisabled } = channel;
+      return (
+        <Select.Item
+          disabled={isDisabled}
+          index={idx + 1}
+          key={channel.id}
+          value={channel.id.toString()}
+          backgroundColor={
+            arenaChannel === channel.id.toString() ? "$green4" : undefined
+          }
+          opacity={isDisabled ? 0.5 : undefined}
+        >
+          <ArenaChannelSummary
+            channel={channel}
+            isDisabled={isDisabled}
+            viewProps={{
+              paddingHorizontal: 0,
+              paddingVertical: 0,
+            }}
+          />
+          <Select.ItemText display="none">{channel.title}</Select.ItemText>
+        </Select.Item>
+      );
     },
-  });
-
-  const { data: channels } = useQuery({
-    queryKey: ["channels"],
-    queryFn: async () => {
-      if (!arenaAccessToken) {
-        return [];
-      }
-
-      const { done } = InteractionManager.runAfterInteractions(async () => {
-        return await getUserChannels(arenaAccessToken);
-      });
-      return (await done()) as ArenaChannelInfo[];
-    },
-  });
-
-  const nonDisabledChannels = useMemo(
-    () =>
-      channels?.filter((c) => {
-        return !remoteCollectionIds?.has(c.id.toString());
-      }),
-    [channels]
-  );
-
-  // TODO: make this factor into query and change for ArenaChannelMultiSelect too
-  // TODO: turn this all into a hook lol
-  const filteredChannels = useMemo(
-    () =>
-      debouncedSearch === ""
-        ? nonDisabledChannels
-        : filterItemsBySearchValue(channels || [], debouncedSearch, ["title"]),
-    [channels, debouncedSearch, nonDisabledChannels]
+    []
   );
 
   return arenaAccessToken ? (
@@ -210,6 +208,8 @@ export function SelectArenaChannel({
       // @ts-ignore
       value={arenaChannel}
       disablePreventBodyScroll
+      open={open}
+      onOpenChange={setOpen}
     >
       <Select.Trigger elevation="$3" disabled={!channels}>
         <Select.Value
@@ -261,46 +261,41 @@ export function SelectArenaChannel({
               placeholder="Search channels..."
             />
           </YStack>
-          <Sheet.ScrollView
-            contentContainerStyle={{
-              // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
-              paddingBottom: 24,
-            }}
-          >
-            <Select.Group>
-              {filteredChannels?.map((channel, idx) => {
-                const isDisabled = remoteCollectionIds.has(
-                  channel.id.toString()
-                );
-                return (
-                  <Select.Item
-                    disabled={isDisabled}
-                    index={idx + 1}
-                    key={channel.id}
-                    value={channel.id.toString()}
-                    backgroundColor={
-                      arenaChannel === channel.id.toString()
-                        ? "$green4"
-                        : undefined
-                    }
-                    opacity={isDisabled ? 0.5 : undefined}
+          {isLoading ? (
+            <Spinner size="small" color="$orange9" />
+          ) : (
+            <FlatList
+              contentContainerStyle={{
+                // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
+                paddingBottom: 24,
+              }}
+              onScroll={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              data={channels}
+              renderItem={renderChannel}
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <YStack
+                    justifyContent="center"
+                    alignSelf="center"
+                    alignItems="center"
+                    width="100%"
                   >
-                    <ArenaChannelSummary
-                      channel={channel}
-                      isDisabled={isDisabled}
-                      viewProps={{
-                        paddingHorizontal: 0,
-                        paddingVertical: 0,
-                      }}
-                    />
-                    <Select.ItemText display="none">
-                      {channel.title}
-                    </Select.ItemText>
-                  </Select.Item>
-                );
-              })}
-            </Select.Group>
-          </Sheet.ScrollView>
+                    <Spinner size="small" color="$orange9" />
+                  </YStack>
+                ) : null
+              }
+              onEndReachedThreshold={0.3}
+              onEndReached={() => {
+                if (!open) {
+                  return;
+                }
+                fetchMore();
+              }}
+            />
+          )}
         </Select.Viewport>
 
         <Select.ScrollDownButton

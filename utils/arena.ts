@@ -1,6 +1,11 @@
-import { Block, LastSyncedInfo } from "./dataTypes";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
+import { useContext, useMemo } from "react";
+import { useDebounce, useDebounceValue } from "tamagui";
+import { Block, LastSyncedInfo } from "./dataTypes";
+import { DatabaseContext } from "./db";
 import { BlockType, MimeType } from "./mimeTypes";
+import { filterItemsBySearchValue } from "./search";
 
 export const ArenaClientId = "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE";
 // TODO: move these before open sourcing repo
@@ -569,13 +574,15 @@ async function getUserInfo(accessToken: string): Promise<RawArenaUser> {
   }).then((r) => r.json());
 }
 
+interface UserChannelResponse {
+  channels: ArenaChannelInfo[];
+  nextPage?: number;
+}
+
 export async function getUserChannels(
   accessToken: string,
-  { page = 1, per = 20 }: { page?: number; per?: number } = {}
-): Promise<ArenaChannelInfo[]> {
-  // TODO: this doens't handle pagination, need for it to stream search results
-  // maybe save the last result in state and then try to update
-  const NumFetches = 1;
+  { page = 1, per = 30 }: { page?: number; per?: number } = {}
+): Promise<UserChannelResponse> {
   const userInfo = await getUserInfo(accessToken);
   const baseUrl = withQueryParams(
     `https://api.are.na/v2/users/${userInfo.id}/channels`,
@@ -584,8 +591,6 @@ export async function getUserChannels(
       page,
     }
   );
-  let fetchedItems: ArenaChannelInfo[] = [];
-  let numFetches = 0;
   try {
     const resp = await fetch(baseUrl, {
       headers: {
@@ -593,14 +598,17 @@ export async function getUserChannels(
       },
     });
     const respBody = await resp.json();
-    // TODO: resolve mismatch in length here
-    let contents: ArenaChannelInfo[] = respBody.channels;
-    fetchedItems.push(...contents);
+    return {
+      channels: respBody.channels,
+      nextPage:
+        respBody.current_page < respBody.total_pages
+          ? respBody.current_page + 1
+          : undefined,
+    };
   } catch (e) {
     console.error(e);
     throw e;
   }
-  return fetchedItems;
 }
 
 // TODO: this doesn't set the remote_created_at on connection
@@ -664,5 +672,72 @@ export async function createChannel({
     newChannel: maybeChannel,
     addedInfo,
     numItemsFailed,
+  };
+}
+
+export function useArenaUserChannels(searchValue: string) {
+  const { arenaAccessToken, getArenaCollectionIds } =
+    useContext(DatabaseContext);
+  const debouncedSearch = useDebounceValue(searchValue, 300);
+
+  const { data: remoteCollectionIds } = useQuery({
+    queryKey: ["collections", "ids"],
+    queryFn: async () => await getArenaCollectionIds(),
+  });
+
+  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["channels"],
+      initialPageParam: 1,
+      queryFn: async ({ pageParam }) => {
+        if (!arenaAccessToken) {
+          return {
+            channels: [],
+            lastPage: undefined,
+            nextPage: undefined,
+          };
+        }
+
+        const resp = await getUserChannels(arenaAccessToken, {
+          page: pageParam,
+        });
+        return {
+          ...resp,
+          lastPage: pageParam > 1 ? pageParam - 1 : undefined,
+        };
+      },
+      getPreviousPageParam: (firstPage) => firstPage.lastPage,
+      getNextPageParam: (lastPage) => {
+        return lastPage.nextPage;
+      },
+    });
+  function tryFetchMore() {
+    if (hasNextPage) {
+      fetchNextPage();
+    }
+  }
+  const fetchMore = useDebounce(tryFetchMore, 300);
+  const annotatedChannels = data?.pages
+    .flatMap((p) => p.channels)
+    .map((c) => ({
+      ...c,
+      isDisabled: Boolean(remoteCollectionIds?.has(c.id.toString())),
+    }));
+
+  // TODO: SEARCH
+  const filteredChannels = useMemo(() => {
+    const nonDisabledChannels = annotatedChannels?.filter((c) => !c.isDisabled);
+    return debouncedSearch === ""
+      ? nonDisabledChannels
+      : filterItemsBySearchValue(annotatedChannels || [], debouncedSearch, [
+          "title",
+        ]);
+  }, [annotatedChannels, debouncedSearch, remoteCollectionIds]);
+
+  return {
+    channels: filteredChannels,
+    isLoading,
+    isFetchingNextPage,
+    fetchMore,
   };
 }

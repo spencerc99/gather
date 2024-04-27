@@ -1,28 +1,25 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useContext, useMemo, useState } from "react";
+import { Alert } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import {
   Adapt,
-  ScrollView,
+  GetProps,
   Select,
+  SelectTriggerProps,
   Sheet,
   SizableText,
-  SelectTriggerProps,
-  YStack,
-  XStack,
-  useDebounceValue,
-  GetProps,
   Spinner,
-  // setupNativeSheet,
+  XStack,
+  YStack,
+  useDebounceValue,
 } from "tamagui";
 import { DatabaseContext } from "../utils/db";
-import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
-import { CreateCollectionButton } from "./CreateCollectionButton";
+import { filterItemsBySearchValue } from "../utils/search";
 import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
-import { filterItemsBySearchValue } from "../utils/search";
-import { Swipeable } from "react-native-gesture-handler";
-import { Alert } from "react-native";
-import { Collection } from "../utils/dataTypes";
-import { useQuery } from "@tanstack/react-query";
+import { CreateCollectionButton } from "./CreateCollectionButton";
+import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
 // import { ModalView } from "react-native-ios-modal";
 
 // setupNativeSheet("ios", ModalView);
@@ -202,6 +199,7 @@ export function CollectionSelect({
                   </Select.ItemText>
                 </Select.Item>
               )}
+              {/* TODO: change to FlatList */}
               {!collections ? (
                 <Spinner color="$orange9" size="large" />
               ) : (
