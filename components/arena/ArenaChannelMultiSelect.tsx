@@ -14,6 +14,7 @@ import { filterItemsBySearchValue } from "../../utils/search";
 import { Icon, SearchBarInput, StyledButton, StyledText } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
 import { FlatList, InteractionManager } from "react-native";
+import { useQuery } from "@tanstack/react-query";
 
 const ChannelView = memo(
   ({
@@ -54,18 +55,20 @@ export function ArenaChannelMultiSelect({
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const [open, setOpen] = useState(false);
-  const [remoteCollectionIds, setRemoteCollectionIds] = useState<Set<string>>(
-    new Set()
-  );
+
+  const { data: remoteCollectionIds } = useQuery({
+    queryKey: ["collections", "ids"],
+    queryFn: async () => {
+      return await getArenaCollectionIds();
+    },
+  });
+  console.log(remoteCollectionIds);
 
   useEffect(() => {
     if (arenaAccessToken) {
       InteractionManager.runAfterInteractions(async () => {
         await getUserChannels(arenaAccessToken).then((channels) => {
           setChannels(channels);
-        });
-        await getArenaCollectionIds().then((remoteCollectionIds) => {
-          setRemoteCollectionIds(remoteCollectionIds);
         });
       });
     } else {
@@ -91,7 +94,7 @@ export function ArenaChannelMultiSelect({
   const nonDisabledChannels = useMemo(
     () =>
       channels?.filter((c) => {
-        return !remoteCollectionIds.has(c.id.toString());
+        return !remoteCollectionIds?.has(c.id.toString());
       }),
     [channels]
   );
@@ -111,7 +114,9 @@ export function ArenaChannelMultiSelect({
   const renderChannel = useCallback(
     ({ item, index: idx }: { item: ArenaChannelInfo; index: number }) => {
       const channel = item;
-      const isDisabled = remoteCollectionIds.has(channel.id.toString());
+      const isDisabled = Boolean(
+        remoteCollectionIds?.has(channel.id.toString())
+      );
       const isSelected = selectedChannelIds.includes(channel.id.toString());
       return (
         <ChannelView

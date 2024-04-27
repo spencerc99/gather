@@ -22,6 +22,7 @@ import { filterItemsBySearchValue } from "../utils/search";
 import { Swipeable } from "react-native-gesture-handler";
 import { Alert } from "react-native";
 import { Collection } from "../utils/dataTypes";
+import { useQuery } from "@tanstack/react-query";
 // import { ModalView } from "react-native-ios-modal";
 
 // setupNativeSheet("ios", ModalView);
@@ -43,34 +44,36 @@ export function CollectionSelect({
   selectProps?: GetProps<typeof Select>;
   hideChevron?: boolean;
 }) {
-  const { getCollections, createCollection, deleteCollection } =
+  const { createCollection, getCollections, deleteCollection } =
     useContext(DatabaseContext);
-  const [collections, setCollections] = useState<Collection[] | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const { currentUser: user } = useContext(UserContext);
-
-  useEffect(() => {
-    getCollections().then(setCollections);
-  }, []);
+  // TODO: collapse with SelectCollectionsList
+  const { data: collections } = useQuery({
+    queryKey: ["collections", "select"],
+    queryFn: async () => {
+      return await getCollections({ page: null });
+    },
+  });
 
   // sort by lastConnectedAt descending
-  const sortedCollections = useMemo(
-    () =>
-      [...(collections || [])].sort(
-        (a, b) =>
-          (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
-          (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
-      ),
-    [collections]
-  );
+  // const sortedCollections = useMemo(
+  //   () =>
+  //     [...(collections || [])].sort(
+  //       (a, b) =>
+  //         (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
+  //         (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
+  //     ),
+  //   [collections]
+  // );
   const filteredCollections = useMemo(
     () =>
-      filterItemsBySearchValue(sortedCollections, debouncedSearch, [
+      filterItemsBySearchValue(collections || [], debouncedSearch, [
         "title",
         "description",
       ]),
-    [sortedCollections, debouncedSearch]
+    [collections, debouncedSearch]
   );
 
   if (!user) {
@@ -199,7 +202,7 @@ export function CollectionSelect({
                   </Select.ItemText>
                 </Select.Item>
               )}
-              {collections === null ? (
+              {!collections ? (
                 <Spinner color="$orange9" size="large" />
               ) : (
                 filteredCollections.map((collection, idx) => (

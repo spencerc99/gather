@@ -9,7 +9,7 @@ import {
 } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block, Collection, CollectionBlock } from "../utils/dataTypes";
-import { Image, Spinner, XStack, YStack, useTheme } from "tamagui";
+import { Image, Spinner, XStack, YStack, useDebounce, useTheme } from "tamagui";
 import {
   Icon,
   IconType,
@@ -139,8 +139,7 @@ export function BlockTexts({
   fetchMoreBlocks: () => void;
   isFetchingNextPage: boolean;
 }) {
-  const { getBlocks, getCollectionItems, getCollection } =
-    useContext(DatabaseContext);
+  const { getCollection } = useContext(DatabaseContext);
   const [collection, setCollection] = useState<undefined | Collection>(
     undefined
   );
@@ -148,6 +147,7 @@ export function BlockTexts({
     useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
 
+  const debouncedFetchMoreBlocks = useDebounce(fetchMoreBlocks, 300);
   const width = Dimensions.get("window").width;
   const scrollRef = useRef<FlatList>(null);
 
@@ -181,7 +181,7 @@ export function BlockTexts({
   );
 
   // TODO: paginate blocks by chunking
-  return blocks === null || blocks === undefined ? (
+  return !blocks ? (
     <YStack justifyContent="center" alignItems="center" flexGrow={1}>
       <Spinner size="large" color="$orange9" />
     </YStack>
@@ -262,7 +262,7 @@ export function BlockTexts({
         ref={scrollRef}
         scrollsToTop={false}
         onEndReachedThreshold={0.3}
-        onEndReached={fetchMoreBlocks}
+        onEndReached={debouncedFetchMoreBlocks}
         onScroll={(e) => {
           if (isScrolling) {
             return;

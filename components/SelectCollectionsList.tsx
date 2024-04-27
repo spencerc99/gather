@@ -16,6 +16,7 @@ import {
   View,
   XStack,
   YStack,
+  useDebounce,
   useDebounceValue,
 } from "tamagui";
 import {
@@ -29,6 +30,7 @@ import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
 import { FlatList, Pressable } from "react-native";
 import { UserContext } from "../utils/user";
 import { filterItemsBySearchValue } from "../utils/search";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 const SelectCollectionView = memo(
   ({
@@ -71,16 +73,35 @@ export function SelectCollectionsList({
   extraSearchContent?: React.ReactNode;
 }) {
   const { getCollections, createCollection } = useContext(DatabaseContext);
-  const [collections, setCollections] = useState<Collection[] | null>(null);
   const [internalSearchValue, internalSetSearchValue] = useState("");
   const { currentUser } = useContext(UserContext);
   const [loading, setLoading] = useState(false);
   const createdCollections = useMemo(() => new Set<string>(), []);
-  const [pages, setPages] = useState(1);
+  // const debouncedFetchMoreCollections = useDebounce(fetchMoreCollections, 300);
 
-  useEffect(() => {
-    getCollections().then(setCollections);
-  }, []);
+  // const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
+  //   useInfiniteQuery({
+  //     queryKey: ["collections"],
+  //     queryFn: async ({ pageParam, queryKey }) => {
+  //       const collections = await getCollections({ page: pageParam });
+
+  //       return {
+  //         collections,
+  //         nextId: pageParam + 1,
+  //         previousId: pageParam === 0 ? undefined : pageParam - 1,
+  //       };
+  //     },
+  //     initialPageParam: 0,
+  //     getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
+  //     getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
+  //   });
+  // const collections = data?.pages.flatMap((p) => p.collections);
+  const { data: collections } = useQuery({
+    queryKey: ["collections"],
+    queryFn: async () => {
+      return await getCollections({ page: null });
+    },
+  });
 
   const searchValue = useMemo(
     () => (propSetSearchValue && propSearch ? propSearch : internalSearchValue),
@@ -98,32 +119,31 @@ export function SelectCollectionsList({
     [propSetSearchValue, internalSetSearchValue]
   );
 
-  function fetchMoreCollections() {
-    console.log("fetching more collections", pages);
-    getCollections(pages).then((newCollections) => {
-      console.log(newCollections);
-      setCollections([...(collections || []), ...newCollections]);
-    });
-    setPages((currPage) => currPage + 1);
-  }
+  // TODO: page this and add search
+  // function fetchMoreCollections() {
+  //   if (!hasNextPage) {
+  //     return;
+  //   }
+  //   fetchNextPage();
+  // }
 
   // sort by lastConnectedAt descending
-  const sortedCollections = useMemo(
-    () =>
-      [...(collections || [])].sort(
-        (a, b) =>
-          (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
-          (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
-      ),
-    [collections]
-  );
+  // const sortedCollections = useMemo(
+  //   () =>
+  //     [...(collections || [])].sort(
+  //       (a, b) =>
+  //         (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
+  //         (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
+  //     ),
+  //   [collections]
+  // );
   const filteredCollections = useMemo(
     () =>
-      filterItemsBySearchValue(sortedCollections, debouncedSearch, [
+      filterItemsBySearchValue(collections || [], debouncedSearch, [
         "title",
         "description",
       ]),
-    [sortedCollections, debouncedSearch]
+    [collections, debouncedSearch]
   );
 
   const toggleCollection = useCallback(
@@ -186,11 +206,10 @@ export function SelectCollectionsList({
           gap: horizontal ? 8 : 4,
         }}
         renderItem={renderCollection}
-        onEndReachedThreshold={0.2}
-        // TODO: debounce this and add only after scrolled..?
-        onEndReached={() => {
-          fetchMoreCollections();
-        }}
+        // onEndReachedThreshold={0.2}
+        // onEndReached={() => {
+        //   debouncedFetchMoreCollections();
+        // }}
       />
     );
   }

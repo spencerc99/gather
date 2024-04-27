@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { DatabaseContext } from "../utils/db";
-import { Block } from "../utils/dataTypes";
+import { Block, SortType } from "../utils/dataTypes";
 import { BlockReviewSummary, BlockSummary } from "../components/BlockSummary";
 import {
   Adapt,
@@ -9,6 +9,7 @@ import {
   Spinner,
   XStack,
   YStack,
+  useDebounce,
   useWindowDimensions,
 } from "tamagui";
 import { FlatList } from "react-native";
@@ -23,8 +24,7 @@ import { Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { shuffleArray } from "../utils";
 import { afterAnimations } from "../utils/afterAnimations";
-
-const RenderChunkSize = 25;
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 enum ViewType {
   Carousel = "carousel",
@@ -39,35 +39,53 @@ export function ReviewView() {
     setSelectedReviewCollection,
   } = useContext(DatabaseContext);
 
-  const [outputBlocks, setOutputBlocks] = useState<Block[] | null>(null);
   const [view, setView] = useState<ViewType>(ViewType.Carousel);
+  const [sortType, setSortType] = useState<SortType>(SortType.Random);
   function toggleView() {
     setView((prev) =>
       prev === ViewType.Carousel ? ViewType.Feed : ViewType.Carousel
     );
   }
+  const queryKey = ["blocks", selectedReviewCollection, { sortType }];
 
-  useEffect(() => {
-    void fetchBlocks();
-  }, [selectedReviewCollection]);
+  const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey,
+      queryFn: async ({ pageParam, queryKey }) => {
+        const [_, collectionId] = queryKey;
 
-  async function fetchBlocks() {
-    if (!selectedReviewCollection) {
-      getBlocks().then(setOutputBlocks);
-      return;
-    }
+        const blocks = !collectionId
+          ? await getBlocks({ page: pageParam, sortType })
+          : await getCollectionItems(collectionId, {
+              page: pageParam,
+            });
 
-    const collectionBlocks = await getCollectionItems(selectedReviewCollection);
-    setOutputBlocks(collectionBlocks);
-  }
+        return {
+          blocks,
+          nextId: pageParam + 1,
+          previousId: pageParam === 0 ? undefined : pageParam - 1,
+        };
+      },
+      initialPageParam: 0,
+      getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
+      getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
+    });
+  const outputBlocks = data?.pages.flatMap((p) => p.blocks);
 
+  const queryClient = useQueryClient();
   function randomizeBlocks() {
-    if (!outputBlocks) {
+    queryClient.invalidateQueries({
+      queryKey: ["blocks", selectedReviewCollection, { sortType }],
+    });
+  }
+
+  function fetchMoreBlocks() {
+    if (!hasNextPage) {
       return;
     }
-    const randomized = shuffleArray(outputBlocks);
-    setOutputBlocks(randomized);
+    fetchNextPage();
   }
+
   return (
     <YStack gap="$2" flex={1}>
       <XStack
@@ -130,7 +148,12 @@ export function ReviewView() {
           </XStack>
         </XStack>
       </XStack>
-      {afterAnimations(ReviewItems)({ view, outputBlocks })}
+      {afterAnimations(ReviewItems)({
+        view,
+        outputBlocks,
+        fetchMoreBlocks,
+        isFetchingNextPage,
+      })}
     </YStack>
   );
 }
@@ -138,9 +161,13 @@ export function ReviewView() {
 function ReviewItems({
   view,
   outputBlocks,
+  fetchMoreBlocks,
+  isFetchingNextPage,
 }: {
   view: ViewType;
   outputBlocks: Block[] | null;
+  fetchMoreBlocks: () => void;
+  isFetchingNextPage: boolean;
 }) {
   if (!outputBlocks)
     return (
@@ -155,7 +182,11 @@ function ReviewItems({
     case ViewType.Feed:
       return (
         <YStack marginTop="$10" flex={1}>
-          <FeedView blocks={outputBlocks} />
+          <FeedView
+            blocks={outputBlocks}
+            fetchMoreBlocks={fetchMoreBlocks}
+            isFetchingNextPage={isFetchingNextPage}
+          />
         </YStack>
       );
   }
@@ -218,7 +249,17 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
   );
 }
 
-export function FeedView({ blocks }: { blocks: Block[] }) {
+export function FeedView({
+  blocks,
+  fetchMoreBlocks,
+  isFetchingNextPage,
+}: {
+  blocks: Block[];
+  fetchMoreBlocks: () => void;
+  isFetchingNextPage: boolean;
+}) {
+  const debouncedFetchMoreBlocks = useDebounce(fetchMoreBlocks, 300);
+
   function renderBlock(block: Block) {
     return (
       <BlockSummary
@@ -237,37 +278,13 @@ export function FeedView({ blocks }: { blocks: Block[] }) {
     );
   }
 
-  //   const outputBlocks = useMemo(
-  //     () =>
-  //       [...blocks].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-  //     [blocks]
-  //   );
-
-  const [pages, setPages] = useState(1);
-
-  const blocksToRender = useMemo(
-    () => sortedBlocks.slice(0, pages * RenderChunkSize),
-    [sortedBlocks, pages]
-  );
-
-  function fetchMoreBlocks() {
-    if (collectionId) {
-      getCollectionItems(collectionId, { page: pages }).then(setBlocks);
-    } else {
-      getBlocks(pages).then((newBlocks) => {
-        setBlocks([...(blocks || []), ...newBlocks]);
-      });
-    }
-    setPages((currPage) => currPage + 1);
-  }
-
   // TODO: use tabs to render blocks + collections
   return (
     <YStack gap="$4" paddingHorizontal="$2" flex={1}>
       <FlatList
         numColumns={2}
         renderItem={({ item }) => renderBlock(item)}
-        data={blocksToRender}
+        data={blocks}
         contentContainerStyle={{
           display: "flex",
           alignItems: "center",
@@ -275,7 +292,19 @@ export function FeedView({ blocks }: { blocks: Block[] }) {
           paddingBottom: 36,
         }}
         onEndReachedThreshold={0.3}
-        onEndReached={fetchMoreBlocks}
+        onEndReached={debouncedFetchMoreBlocks}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <YStack
+              justifyContent="center"
+              alignSelf="center"
+              alignItems="center"
+              width="100%"
+            >
+              <Spinner size="small" color="$orange9" />
+            </YStack>
+          ) : null
+        }
       ></FlatList>
     </YStack>
   );

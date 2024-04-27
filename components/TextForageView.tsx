@@ -67,25 +67,25 @@ export function TextForageView({
     []
   );
   const insets = useSafeAreaInsets();
-  const queryKey = ["blocks", collectionId === null ? "all" : collectionId];
+  const queryKey = ["blocks", collectionId];
 
   // TODO: toast the error
   const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useInfiniteQuery({
       queryKey,
-      queryFn: async ({ pageParam, queryKey }) => {
+      queryFn: async ({ pageParam: page, queryKey }) => {
         const [_, collectionId] = queryKey;
 
         const blocks = !collectionId
-          ? await getBlocks(pageParam)
+          ? await getBlocks({ page })
           : await getCollectionItems(collectionId, {
-              page: pageParam,
+              page: page,
             });
 
         return {
           blocks,
-          nextId: pageParam + 1,
-          previousId: pageParam === 0 ? undefined : pageParam - 1,
+          nextId: page + 1,
+          previousId: page === 0 ? undefined : page - 1,
         };
       },
       initialPageParam: 0,
@@ -93,14 +93,6 @@ export function TextForageView({
       getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
       getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
     });
-  const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: createBlocks,
-    onSuccess: () => {
-      console.log("invalidating!");
-      queryClient.invalidateQueries({ queryKey });
-    },
-  });
 
   const blocks = data?.pages.flatMap((p) => p.blocks);
 
@@ -243,7 +235,7 @@ export function TextForageView({
         }
       }
 
-      await mutation.mutateAsync({
+      await createBlocksMutation({
         blocksToInsert,
         collectionId,
       });
