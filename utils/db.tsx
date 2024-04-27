@@ -824,7 +824,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                     block_connections.remote_connected_at as remote_connected_at
           FROM      blocks
           LEFT JOIN block_connections ON block_connections.block_id = blocks.id
-          ORDER BY  MIN(block_connections.remote_connected_at, blocks.created_timestamp) DESC`;
+          ORDER BY  MIN(COALESCE(block_connections.remote_connected_at, blocks.created_timestamp), blocks.created_timestamp) DESC`; // coalesce to get around it being null..
   const SelectBlocksSql = (page: number = 0) =>
     `${SelectBlockSql} LIMIT ${BlockSelectLimit} OFFSET ${
       page * BlockSelectLimit

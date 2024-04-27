@@ -17,6 +17,9 @@ import { config } from "../tamagui.config";
 import { UserProvider } from "../utils/user";
 import useShareIntent from "../hooks/useShareIntent";
 import { enableFreeze } from "react-native-screens";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const client = new QueryClient();
 
 enableFreeze(true);
 
@@ -65,22 +68,24 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <TamaguiProvider config={config}>
         <Theme name={colorScheme === "dark" ? "dark" : "light"}>
-          <HoldMenuProvider
-            theme={colorScheme || undefined}
-            safeAreaInsets={insets}
-            // @ts-ignore
-            onOpen={() => {
-              if (Keyboard.isVisible()) {
-                Keyboard.dismiss();
-              }
-            }}
-          >
-            <UserProvider>
-              <DatabaseProvider>
-                <RootLayoutNav />
-              </DatabaseProvider>
-            </UserProvider>
-          </HoldMenuProvider>
+          <QueryClientProvider client={client}>
+            <HoldMenuProvider
+              theme={colorScheme || undefined}
+              safeAreaInsets={insets}
+              // @ts-ignore
+              onOpen={() => {
+                if (Keyboard.isVisible()) {
+                  Keyboard.dismiss();
+                }
+              }}
+            >
+              <UserProvider>
+                <DatabaseProvider>
+                  <RootLayoutNav />
+                </DatabaseProvider>
+              </UserProvider>
+            </HoldMenuProvider>
+          </QueryClientProvider>
         </Theme>
       </TamaguiProvider>
     </ThemeProvider>

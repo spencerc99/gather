@@ -20,6 +20,12 @@ import { getFsPathForMediaResult } from "../utils/blobs";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { BlockType } from "../utils/mimeTypes";
 import { FeedView } from "./FeedView";
+import { CollectionBlock } from "../utils/dataTypes";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -52,7 +58,8 @@ export function TextForageView({
 }) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
-  const { createBlocks, shareIntent } = useContext(DatabaseContext);
+  const { createBlocks, shareIntent, getBlocks, getCollectionItems } =
+    useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
   const textPlaceholder = useMemo(
@@ -60,6 +67,42 @@ export function TextForageView({
     []
   );
   const insets = useSafeAreaInsets();
+  const queryKey = ["blocks", collectionId === null ? "all" : collectionId];
+
+  // TODO: toast the error
+  const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey,
+      queryFn: async ({ pageParam, queryKey }) => {
+        const [_, collectionId] = queryKey;
+
+        const blocks = !collectionId
+          ? await getBlocks(pageParam)
+          : await getCollectionItems(collectionId, {
+              page: pageParam,
+            });
+
+        return {
+          blocks,
+          nextId: pageParam + 1,
+          previousId: pageParam === 0 ? undefined : pageParam - 1,
+        };
+      },
+      initialPageParam: 0,
+      // TODO:
+      getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
+      getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
+    });
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: createBlocks,
+    onSuccess: () => {
+      console.log("invalidating!");
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const blocks = data?.pages.flatMap((p) => p.blocks);
 
   useEffect(() => {
     if (shareIntent !== null) {
@@ -75,6 +118,39 @@ export function TextForageView({
       }
     }
   }, [shareIntent]);
+
+  function fetchMoreBlocks() {
+    if (!hasNextPage) {
+      return;
+    }
+    fetchNextPage();
+  }
+
+  // const [blocks, setBlocks] = useState<CollectionBlock[] | null>(null);
+  // const [pages, setPages] = useState(1);
+  // useEffect(() => {
+  //   void fetchBlocks();
+  // }, [collectionId]);
+
+  // async function fetchBlocks() {
+  //   if (!collectionId) {
+  //     getBlocks().then(setBlocks);
+  //     return;
+  //   }
+
+  //   const collectionBlocks = await getCollectionItems(collectionId);
+  //   setBlocks(collectionBlocks);
+  // }
+  // function fetchMoreBlocks() {
+  //   if (collectionId) {
+  //     getCollectionItems(collectionId, { page: pages }).then(setBlocks);
+  //   } else {
+  //     getBlocks(pages).then((newBlocks) => {
+  //       setBlocks([...(blocks || []), ...newBlocks]);
+  //     });
+  //   }
+  //   setPages((currPage) => currPage + 1);
+  // }
 
   if (!currentUser) {
     return null;
@@ -167,10 +243,11 @@ export function TextForageView({
         }
       }
 
-      await createBlocks({
+      await mutation.mutateAsync({
         blocksToInsert,
         collectionId,
       });
+      // TODO: this needs to trigger a refresh in below rendering components
     } catch (err) {
       console.error(err);
     }
@@ -240,7 +317,12 @@ export function TextForageView({
         // TODO: make this smaller when there is a collectionId (because tabs don't show)
         keyboardVerticalOffset={insets.top + 44}
       >
-        <BlockTexts collectionId={collectionId} />
+        <BlockTexts
+          collectionId={collectionId}
+          blocks={blocks}
+          fetchMoreBlocks={fetchMoreBlocks}
+          isFetchingNextPage={isFetchingNextPage}
+        />
         <YStack
           height="auto"
           borderTopEndRadius={4}

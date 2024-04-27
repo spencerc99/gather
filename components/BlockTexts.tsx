@@ -128,7 +128,17 @@ function getEarlierDate(a: null | Date, b: Date) {
   return a.getTime() < b.getTime() ? a : b;
 }
 
-export function BlockTexts({ collectionId }: { collectionId?: string }) {
+export function BlockTexts({
+  blocks,
+  collectionId,
+  fetchMoreBlocks,
+  isFetchingNextPage,
+}: {
+  blocks: CollectionBlock[] | null;
+  collectionId?: string;
+  fetchMoreBlocks: () => void;
+  isFetchingNextPage: boolean;
+}) {
   const { getBlocks, getCollectionItems, getCollection } =
     useContext(DatabaseContext);
   const [collection, setCollection] = useState<undefined | Collection>(
@@ -139,58 +149,27 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   const [isScrolling, setIsScrolling] = useState(false);
 
   const width = Dimensions.get("window").width;
-  const [blocks, setBlocks] = useState<CollectionBlock[] | null>(null);
   const scrollRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    void fetchBlocks();
-  }, [collectionId]);
   useEffect(() => {
     if (collectionId) {
       getCollection(collectionId).then(setCollection);
     }
   }, [collectionId]);
 
-  async function fetchBlocks() {
-    if (!collectionId) {
-      getBlocks().then(setBlocks);
-      return;
-    }
-
-    const collectionBlocks = await getCollectionItems(collectionId);
-    setBlocks(collectionBlocks);
-  }
-
-  const sortedBlocks = useMemo(
-    () =>
-      // NOTE: this is sorted descending because we use "inverted" prop on FlatList
-      // so it is the reverse of what it should be
-      [...(blocks || [])].sort(
-        (a, b) =>
-          // Uses earlier date to match with whether it came from are.na or from Gather first..
-          getEarlierDate(b.remoteConnectedAt, b.createdAt).getTime() -
-          getEarlierDate(a.remoteConnectedAt, a.createdAt).getTime()
-      ),
-    [blocks]
-  );
-
-  const [pages, setPages] = useState(1);
-
-  const blocksToRender = useMemo(
-    () => sortedBlocks.slice(0, pages * RenderChunkSize),
-    [sortedBlocks, pages]
-  );
-
-  function fetchMoreBlocks() {
-    if (collectionId) {
-      getCollectionItems(collectionId, { page: pages }).then(setBlocks);
-    } else {
-      getBlocks(pages).then((newBlocks) => {
-        setBlocks([...(blocks || []), ...newBlocks]);
-      });
-    }
-    setPages((currPage) => currPage + 1);
-  }
+  // const sortedBlocks = useMemo(
+  //   () =>
+  //     // NOTE: this is sorted descending because we use "inverted" prop on FlatList
+  //     // so it is the reverse of what it should be
+  //     [...(blocks || [])].sort(
+  //       (a, b) =>
+  //         // Uses earlier date to match with whether it came from are.na or from Gather first..
+  //         getEarlierDate(b.remoteConnectedAt, b.createdAt).getTime() -
+  //         getEarlierDate(a.remoteConnectedAt, a.createdAt).getTime()
+  //     ),
+  //   [blocks]
+  // );
+  const sortedBlocks = blocks;
 
   const isRemoteCollection = collection?.remoteSourceType !== undefined;
 
@@ -202,7 +181,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   );
 
   // TODO: paginate blocks by chunking
-  return blocks === null ? (
+  return blocks === null || blocks === undefined ? (
     <YStack justifyContent="center" alignItems="center" flexGrow={1}>
       <Spinner size="large" color="$orange9" />
     </YStack>
@@ -278,7 +257,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     <>
       <FlatList
         renderItem={renderBlock}
-        data={blocksToRender}
+        data={sortedBlocks}
         scrollEventThrottle={150}
         ref={scrollRef}
         scrollsToTop={false}
@@ -294,6 +273,18 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
             setShowBackToBottomIndicator(false);
           }
         }}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <YStack
+              justifyContent="center"
+              alignSelf="center"
+              alignItems="center"
+              width="100%"
+            >
+              <Spinner size="small" color="$orange9" />
+            </YStack>
+          ) : null
+        }
         inverted
         contentContainerStyle={{
           flexGrow: 1,
@@ -305,13 +296,15 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
           alignItems: "flex-end",
         }}
       ></FlatList>
+      {/* TODO: this shows weird if the text field is growing */}
       {showBackToBottomIndicator && (
         <Animated.View
           entering={FadeIn}
           exiting={FadeOut}
           position="absolute"
-          bottom={90}
+          bottom={85}
           left={10}
+          zIndex={10}
         >
           <StyledButton
             height="$3"
