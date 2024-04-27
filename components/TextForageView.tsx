@@ -118,32 +118,6 @@ export function TextForageView({
     fetchNextPage();
   }
 
-  // const [blocks, setBlocks] = useState<CollectionBlock[] | null>(null);
-  // const [pages, setPages] = useState(1);
-  // useEffect(() => {
-  //   void fetchBlocks();
-  // }, [collectionId]);
-
-  // async function fetchBlocks() {
-  //   if (!collectionId) {
-  //     getBlocks().then(setBlocks);
-  //     return;
-  //   }
-
-  //   const collectionBlocks = await getCollectionItems(collectionId);
-  //   setBlocks(collectionBlocks);
-  // }
-  // function fetchMoreBlocks() {
-  //   if (collectionId) {
-  //     getCollectionItems(collectionId, { page: pages }).then(setBlocks);
-  //   } else {
-  //     getBlocks(pages).then((newBlocks) => {
-  //       setBlocks([...(blocks || []), ...newBlocks]);
-  //     });
-  //   }
-  //   setPages((currPage) => currPage + 1);
-  // }
-
   if (!currentUser) {
     return null;
   }

@@ -1,10 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { IconProps } from "@expo/vector-icons/build/createIconSet";
 import { Link, LinkProps, Tabs } from "expo-router";
 import { Pressable, useColorScheme } from "react-native";
-import Colors from "../../constants/Styles";
 import { XStack, YStack, useTheme } from "tamagui";
-import { IconProps } from "@expo/vector-icons/build/createIconSet";
-import { Ionicons } from "@expo/vector-icons";
+import Colors from "../../constants/Styles";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/

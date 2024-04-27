@@ -5,7 +5,7 @@ import {
   useAuthRequest,
 } from "expo-auth-session";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { Image, InteractionManager } from "react-native";
+import { InteractionManager } from "react-native";
 import {
   ArenaLogo,
   Icon,
@@ -13,14 +13,11 @@ import {
   StyledButton,
   StyledInput,
   StyledLabel,
-  StyledParagraph,
-  StyledText,
 } from "../components/Themed";
 import Constants from "expo-constants";
 import {
   Adapt,
   Sheet,
-  ScrollView,
   Select,
   Spinner,
   XStack,
@@ -35,14 +32,10 @@ import {
   ArenaClientSecret,
   getUserChannels,
 } from "../utils/arena";
-import {
-  DatabaseContext,
-  mapSnakeCaseToCamelCaseProperties,
-} from "../utils/db";
-import { CollectionSummary } from "../components/CollectionSummary";
-import { RemoteSourceType } from "../utils/dataTypes";
+import { DatabaseContext } from "../utils/db";
 import { filterItemsBySearchValue } from "../utils/search";
 import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
+import { useQuery } from "@tanstack/react-query";
 
 const SCHEME = Constants.platform?.scheme;
 
@@ -166,45 +159,42 @@ export function SelectArenaChannel({
   overlayProps?: YStackProps;
   modal?: boolean;
 }) {
-  const { arenaAccessToken, collections } = useContext(DatabaseContext);
-  const [channels, setChannels] = useState<ArenaChannelInfo[] | null>(null);
+  const { arenaAccessToken, getArenaCollectionIds } =
+    useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
 
-  useEffect(() => {
-    if (arenaAccessToken) {
-      InteractionManager.runAfterInteractions(async () => {
-        await getUserChannels(arenaAccessToken).then((channels) => {
-          setChannels(channels);
-        });
-      });
-    } else {
-      setChannels([]);
-    }
-  }, [arenaAccessToken]);
+  const { data: remoteCollectionIds } = useQuery({
+    queryKey: ["collections", "ids"],
+    queryFn: async () => {
+      return await getArenaCollectionIds();
+    },
+  });
 
-  const remoteCollectionIds = useMemo(
-    () =>
-      new Set(
-        collections
-          .filter(
-            (c) =>
-              c.remoteSourceType === RemoteSourceType.Arena &&
-              c.remoteSourceInfo?.arenaId
-          )
-          .map((c) => c.remoteSourceInfo?.arenaId)
-      ),
-    [collections]
-  );
+  const { data: channels } = useQuery({
+    queryKey: ["channels"],
+    queryFn: async () => {
+      if (!arenaAccessToken) {
+        return [];
+      }
+
+      const { done } = InteractionManager.runAfterInteractions(async () => {
+        return await getUserChannels(arenaAccessToken);
+      });
+      return (await done()) as ArenaChannelInfo[];
+    },
+  });
 
   const nonDisabledChannels = useMemo(
     () =>
       channels?.filter((c) => {
-        return !remoteCollectionIds.has(c.id.toString());
+        return !remoteCollectionIds?.has(c.id.toString());
       }),
-    [channels, collections]
+    [channels]
   );
 
+  // TODO: make this factor into query and change for ArenaChannelMultiSelect too
+  // TODO: turn this all into a hook lol
   const filteredChannels = useMemo(
     () =>
       debouncedSearch === ""

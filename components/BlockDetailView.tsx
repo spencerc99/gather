@@ -1,33 +1,23 @@
-import { DatabaseContext } from "../utils/db";
-import { Block } from "../utils/dataTypes";
-import {
-  StyledView,
-  StyledParagraph,
-  StyledButton,
-  Icon,
-  StyledText,
-  EditableTextOnClick,
-  AspectRatioImage,
-  IconType,
-} from "./Themed";
-import { KeyboardAvoidingView, Platform, Pressable } from "react-native";
-import { BlockSummary } from "./BlockSummary";
+import { Link, Stack, useRouter } from "expo-router";
 import { useContext, useEffect, useState } from "react";
-import { ConnectionSummary } from "./ConnectionSummary";
-import { Connection } from "../utils/dataTypes";
-import {
-  ScrollView,
-  Spinner,
-  XStack,
-  YStack,
-  useWindowDimensions,
-} from "tamagui";
-import { Link, Stack, useNavigation, useRouter } from "expo-router";
-import { ExternalLink } from "./ExternalLink";
+import { Pressable } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { MediaView } from "./MediaView";
-import { BlockContent } from "./BlockContent";
+import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
+import { Block, Connection } from "../utils/dataTypes";
+import { DatabaseContext } from "../utils/db";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
+import { BlockSummary } from "./BlockSummary";
+import { ConnectionSummary } from "./ConnectionSummary";
+import { ExternalLink } from "./ExternalLink";
+import {
+  EditableTextOnClick,
+  Icon,
+  IconType,
+  StyledButton,
+  StyledParagraph,
+  StyledText,
+  StyledView,
+} from "./Themed";
 
 export function BlockDetailView({
   block,
@@ -108,7 +98,11 @@ export function BlockDetailView({
             disabled={isLoading}
             onEdit={async (newTitle) => {
               await update(
-                async () => await updateBlock(id, { title: newTitle })
+                async () =>
+                  await updateBlock({
+                    blockId: id,
+                    editInfo: { title: newTitle },
+                  })
               );
             }}
           />
@@ -138,7 +132,10 @@ export function BlockDetailView({
             onEdit={async (newDescription) => {
               await update(
                 async () =>
-                  await updateBlock(id, { description: newDescription })
+                  await updateBlock({
+                    blockId: id,
+                    editInfo: { description: newDescription },
+                  })
               );
             }}
           />

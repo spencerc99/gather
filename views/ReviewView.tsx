@@ -1,7 +1,7 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { DatabaseContext } from "../utils/db";
-import { Block, SortType } from "../utils/dataTypes";
-import { BlockReviewSummary, BlockSummary } from "../components/BlockSummary";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useContext, useRef, useState } from "react";
+import { FlatList, Keyboard } from "react-native";
+import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import {
   Adapt,
   Select,
@@ -12,19 +12,17 @@ import {
   useDebounce,
   useWindowDimensions,
 } from "tamagui";
-import { FlatList } from "react-native";
+import { BlockReviewSummary, BlockSummary } from "../components/BlockSummary";
+import { CollectionSelect } from "../components/CollectionSelect";
 import {
   Icon,
   IconType,
   StyledButton,
   StyledLabel,
 } from "../components/Themed";
-import { CollectionSelect } from "../components/CollectionSelect";
-import { Keyboard } from "react-native";
-import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
-import { shuffleArray } from "../utils";
 import { afterAnimations } from "../utils/afterAnimations";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { Block, SortType } from "../utils/dataTypes";
+import { DatabaseContext } from "../utils/db";
 
 enum ViewType {
   Carousel = "carousel",
@@ -46,7 +44,7 @@ export function ReviewView() {
       prev === ViewType.Carousel ? ViewType.Feed : ViewType.Carousel
     );
   }
-  const queryKey = ["blocks", selectedReviewCollection, { sortType }];
+  const queryKey = ["blocks", selectedReviewCollection, { sortType }] as const;
 
   const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useInfiniteQuery({

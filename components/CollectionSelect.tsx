@@ -51,7 +51,7 @@ export function CollectionSelect({
   const { currentUser: user } = useContext(UserContext);
   // TODO: collapse with SelectCollectionsList
   const { data: collections } = useQuery({
-    queryKey: ["collections", "select"],
+    queryKey: ["collections"],
     queryFn: async () => {
       return await getCollections({ page: null });
     },

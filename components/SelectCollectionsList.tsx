@@ -1,36 +1,21 @@
-import {
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { DatabaseContext } from "../utils/db";
-import { Collection } from "../utils/dataTypes";
+import { useQuery } from "@tanstack/react-query";
+import { memo, useCallback, useContext, useMemo, useState } from "react";
+import { FlatList, Pressable } from "react-native";
 import {
   ScrollView,
   SizableText,
   Spinner,
   Stack,
-  View,
   XStack,
   YStack,
-  useDebounce,
   useDebounceValue,
 } from "tamagui";
-import {
-  Icon,
-  LinkButton,
-  SearchBarInput,
-  StyledButton,
-  StyledParagraph,
-} from "./Themed";
-import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
-import { FlatList, Pressable } from "react-native";
-import { UserContext } from "../utils/user";
+import { Collection } from "../utils/dataTypes";
+import { DatabaseContext } from "../utils/db";
 import { filterItemsBySearchValue } from "../utils/search";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { UserContext } from "../utils/user";
+import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
+import { Icon, LinkButton, SearchBarInput, StyledButton } from "./Themed";
 
 const SelectCollectionView = memo(
   ({

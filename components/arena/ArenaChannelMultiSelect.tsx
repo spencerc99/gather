@@ -1,17 +1,9 @@
-import {
-  useContext,
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  memo,
-} from "react";
-import { useDebounceValue, XStack, ScrollView, Stack, Sheet } from "tamagui";
+import { useContext, useState, useMemo, useCallback, memo } from "react";
+import { useDebounceValue, XStack, Stack, Sheet } from "tamagui";
 import { ArenaChannelInfo, getUserChannels } from "../../utils/arena";
-import { RemoteSourceType } from "../../utils/dataTypes";
 import { DatabaseContext } from "../../utils/db";
 import { filterItemsBySearchValue } from "../../utils/search";
-import { Icon, SearchBarInput, StyledButton, StyledText } from "../Themed";
+import { SearchBarInput, StyledButton } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
 import { FlatList, InteractionManager } from "react-native";
 import { useQuery } from "@tanstack/react-query";
@@ -51,7 +43,6 @@ export function ArenaChannelMultiSelect({
 }) {
   const { arenaAccessToken, getArenaCollectionIds } =
     useContext(DatabaseContext);
-  const [channels, setChannels] = useState<ArenaChannelInfo[] | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const [open, setOpen] = useState(false);
@@ -62,19 +53,20 @@ export function ArenaChannelMultiSelect({
       return await getArenaCollectionIds();
     },
   });
-  console.log(remoteCollectionIds);
 
-  useEffect(() => {
-    if (arenaAccessToken) {
-      InteractionManager.runAfterInteractions(async () => {
-        await getUserChannels(arenaAccessToken).then((channels) => {
-          setChannels(channels);
-        });
+  const { data: channels } = useQuery({
+    queryKey: ["channels"],
+    queryFn: async () => {
+      if (!arenaAccessToken) {
+        return [];
+      }
+
+      const { done } = InteractionManager.runAfterInteractions(async () => {
+        return await getUserChannels(arenaAccessToken);
       });
-    } else {
-      setChannels([]);
-    }
-  }, [arenaAccessToken]);
+      return (await done()) as ArenaChannelInfo[];
+    },
+  });
 
   const toggleChannel = useCallback(
     (channel: ArenaChannelInfo, isSelected: boolean) => {

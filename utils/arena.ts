@@ -214,6 +214,7 @@ export async function getChannelContents(
   let newItemsFound = lastSyncedInfo ? false : true;
   // TODO: fix as with below
   // const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
+  // TODO: this needs an API that only gets blocks AFTER given date.
   const baseUrl = `${ArenaChannelsApi}/${channelId}`;
   let numItemsFetched = 0;
   try {
@@ -569,7 +570,8 @@ async function getUserInfo(accessToken: string): Promise<RawArenaUser> {
 }
 
 export async function getUserChannels(
-  accessToken: string
+  accessToken: string,
+  { page = 1, per = 20 }: { page?: number; per?: number } = {}
 ): Promise<ArenaChannelInfo[]> {
   // TODO: this doens't handle pagination, need for it to stream search results
   // maybe save the last result in state and then try to update
@@ -578,26 +580,22 @@ export async function getUserChannels(
   const baseUrl = withQueryParams(
     `https://api.are.na/v2/users/${userInfo.id}/channels`,
     {
-      per: 30,
+      per,
+      page,
     }
   );
   let fetchedItems: ArenaChannelInfo[] = [];
   let numFetches = 0;
   try {
-    let nextUrl: string | undefined = baseUrl;
-    while (nextUrl && numFetches < NumFetches) {
-      const resp = await fetch(nextUrl, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const respBody = await resp.json();
-      // TODO: resolve mismatch in length here
-      let contents: ArenaChannelInfo[] = respBody.channels;
-      fetchedItems.push(...contents);
-      nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
-      numFetches++;
-    }
+    const resp = await fetch(baseUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const respBody = await resp.json();
+    // TODO: resolve mismatch in length here
+    let contents: ArenaChannelInfo[] = respBody.channels;
+    fetchedItems.push(...contents);
   } catch (e) {
     console.error(e);
     throw e;

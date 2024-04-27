@@ -164,7 +164,7 @@ export function BlockSummary({
   async function commitEdit(newContent: string | null) {
     try {
       if (newContent !== null) {
-        await updateBlock(id, { content: newContent });
+        await updateBlock({ blockId: id, editInfo: { content: newContent } });
       }
     } catch (err) {
       console.error(err);
@@ -301,7 +301,7 @@ export function BlockTextSummary({
   async function commitEdit(newContent: string | null) {
     try {
       if (newContent !== null) {
-        await updateBlock(id, { content: newContent });
+        await updateBlock({ blockId: id, editInfo: { content: newContent } });
       }
     } catch (err) {
       console.error(err);
