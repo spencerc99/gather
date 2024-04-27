@@ -8,6 +8,7 @@ import {
   StyledText,
   EditableTextOnClick,
   AspectRatioImage,
+  IconType,
 } from "./Themed";
 import { KeyboardAvoidingView, Platform, Pressable } from "react-native";
 import { BlockSummary } from "./BlockSummary";
@@ -159,7 +160,7 @@ export function BlockDetailView({
             </StyledParagraph>
           </StyledView>
           <StyledButton
-            icon={<Icon name="link" />}
+            icon={<Icon name="link" type={IconType.FontAwesome6Icon} />}
             onPress={() => {
               router.push({
                 pathname: "/block/[id]/connect",

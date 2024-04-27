@@ -310,7 +310,7 @@ export function TextForageView({
             gap="$2"
           >
             <StyledButton
-              icon={<Icon size={24} name="images" type={IconType.Ionicons} />}
+              icon={<Icon size={24} name="images" />}
               onPress={pickImage}
               paddingHorizontal="$2"
               theme="grey"

@@ -10,7 +10,13 @@ import {
 import { DatabaseContext } from "../utils/db";
 import { Block, Collection, CollectionBlock } from "../utils/dataTypes";
 import { Image, Spinner, XStack, YStack, useTheme } from "tamagui";
-import { Icon, StyledButton, StyledParagraph, StyledText } from "./Themed";
+import {
+  Icon,
+  IconType,
+  StyledButton,
+  StyledParagraph,
+  StyledText,
+} from "./Themed";
 import { BlockSummary, BlockTextSummary } from "./BlockSummary";
 import { Swipeable } from "react-native-gesture-handler";
 import { router, useRouter } from "expo-router";
@@ -66,7 +72,11 @@ export const InspoBlocks = [
 
 const RightActions = memo(() => (
   <YStack alignItems="center" padding="$2" justifyContent="center">
-    <StyledButton circular size="$6" icon={<Icon name="link" />}></StyledButton>
+    <StyledButton
+      circular
+      size="$6"
+      icon={<Icon name="link" type={IconType.FontAwesome6Icon} />}
+    ></StyledButton>
   </YStack>
 ));
 

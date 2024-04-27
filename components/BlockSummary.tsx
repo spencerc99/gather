@@ -16,6 +16,7 @@ import {
 import {
   Icon,
   IconComponent,
+  IconType,
   StyledParagraph,
   StyledText,
   StyledView,
@@ -54,7 +55,9 @@ function useBlockMenuItems(
         ? [
             {
               text: "View Source",
-              icon: () => <Icon name={"external-link"} />,
+              icon: () => (
+                <Icon name={"external-link"} type={IconType.FontAwesomeIcon} />
+              ),
               onPress: () => {
                 WebBrowser.openBrowserAsync(source!);
               },
@@ -63,7 +66,7 @@ function useBlockMenuItems(
         : []),
       {
         text: "Details",
-        icon: () => <Icon name="expand" />,
+        icon: () => <Icon name="expand" type={IconType.FontAwesomeIcon} />,
         onPress: () => {
           router.push({
             pathname: "/block/[id]/",
@@ -106,7 +109,7 @@ function useBlockMenuItems(
         ? [
             {
               text: "Edit",
-              icon: () => <Icon name="edit" />,
+              icon: () => <Icon name="edit" type={IconType.FontAwesomeIcon} />,
               onPress: () => {
                 onClickEdit();
               },
@@ -115,7 +118,7 @@ function useBlockMenuItems(
         : []),
       {
         text: "Connect",
-        icon: () => <Icon name="link" />,
+        icon: () => <Icon name="link" type={IconType.FontAwesome6Icon} />,
         onPress: () => {
           router.push({
             pathname: "/block/[id]/connect",
@@ -597,7 +600,12 @@ export function BlockMetadata({
           {dateInfo}
           {"  "}
           {numConnections}{" "}
-          <IconComponent name="link" size={12} color="$gray9" />
+          <IconComponent
+            name="link"
+            type={IconType.FontAwesome6Icon}
+            size={12}
+            color="$gray9"
+          />
         </>
       );
       break;
@@ -628,7 +636,13 @@ export function BlockConnections({ block }: { block: Block }) {
     <StyledText metadata numberOfLines={3}>
       {collectionsToShow.map((c) => (
         <Fragment key={c}>
-          <IconComponent name="link" size={12} color="$gray9" /> {c}
+          <IconComponent
+            name="link"
+            type={IconType.FontAwesome6Icon}
+            size={12}
+            color="$gray9"
+          />{" "}
+          {c}
           {"  "}
         </Fragment>
       ))}

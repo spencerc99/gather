@@ -12,7 +12,12 @@ import {
   useWindowDimensions,
 } from "tamagui";
 import { FlatList } from "react-native";
-import { Icon, StyledButton, StyledLabel } from "../components/Themed";
+import {
+  Icon,
+  IconType,
+  StyledButton,
+  StyledLabel,
+} from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
@@ -113,15 +118,13 @@ export function ReviewView() {
             <StyledButton
               size="$small"
               onPress={randomizeBlocks}
-              icon={<Icon name="random" />}
+              icon={<Icon name="random" type={IconType.FontAwesomeIcon} />}
               borderRadius={100}
             ></StyledButton>
             <StyledButton
               size="$small"
               icon={
-                <Icon
-                  name={view === ViewType.Carousel ? "th-large" : "square"}
-                />
+                <Icon name={view === ViewType.Carousel ? "grid" : "square"} />
               }
               backgroundColor="$gray6"
               onPress={toggleView}

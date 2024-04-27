@@ -121,7 +121,7 @@ export function BlockContent({
             }}
             theme="green"
             height="$2"
-            icon={<Icon name="check" />}
+            icon={<Icon name="checkmark" />}
             disabled={editableContent === content || editableContent === ""}
           />
         </XStack>

@@ -190,7 +190,7 @@ export function SelectCollectionsList({
                 <YStack height={140} width={110} justifyContent="center">
                   <LinkButton
                     href="/modal"
-                    icon={<Icon name="plus" />}
+                    icon={<Icon name="add-circle" />}
                     height="auto"
                     minHeight={40}
                     paddingVertical="$1"
@@ -220,7 +220,11 @@ export function SelectCollectionsList({
                       }
                     }}
                     icon={
-                      loading ? <Spinner size="small" /> : <Icon name="plus" />
+                      loading ? (
+                        <Spinner size="small" />
+                      ) : (
+                        <Icon name="add-circle" />
+                      )
                     }
                     height="auto"
                     minHeight={40}

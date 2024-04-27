@@ -25,7 +25,7 @@ import {
 } from "tamagui";
 import { Image as ExpoImage } from "expo-image";
 import { Link, LinkProps } from "expo-router";
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import { FontAwesome, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InteractionManager, Keyboard, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
@@ -265,7 +265,7 @@ export function EditableTextOnClick({
             }}
             theme="green"
             height="$2"
-            icon={<Icon name="check" />}
+            icon={<Icon name="checkmark" />}
             disabled={
               editableContent === text || editableContent === "" || disabled
             }
@@ -308,23 +308,38 @@ export const StyledTextArea = styled(DefaultTextArea, {
 export enum IconType {
   FontAwesomeIcon,
   Ionicons,
+  FontAwesome6Icon,
 }
 
-type CustomIconType =
-  | {
-      type?: IconType.FontAwesomeIcon;
-      name: keyof typeof FontAwesome.glyphMap;
-    }
-  | { type: IconType.Ionicons; name: keyof typeof Ionicons.glyphMap };
+type CustomIconType = {
+  [IconType.FontAwesome6Icon]: {
+    type: IconType.FontAwesome6Icon;
+    name: React.ComponentProps<typeof FontAwesome6>["name"];
+  };
+  [IconType.FontAwesomeIcon]: {
+    type: IconType.FontAwesomeIcon;
+    name: keyof typeof FontAwesome.glyphMap;
+  };
+  [IconType.Ionicons]: {
+    type: IconType.Ionicons;
+    name: keyof typeof Ionicons.glyphMap;
+  };
+};
 
-const CustomIcon = (
-  props: CustomIconType &
-    Omit<GetProps<typeof FontAwesome>, "type" | "name"> & { type?: IconType }
+// TODO: fix typing
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+const CustomIcon = <T extends IconType>(
+  props: Optional<
+    CustomIconType[T] & Omit<GetProps<typeof Ionicons>, "type" | "name">,
+    "type"
+  >
 ) => {
-  const { type = IconType.FontAwesomeIcon, name, ...otherProps } = props;
+  const { type = IconType.Ionicons, name, ...otherProps } = props;
 
   if (type === IconType.Ionicons) {
     return <Ionicons name={name} {...otherProps} />;
+  } else if (type === IconType.FontAwesome6Icon) {
+    return <FontAwesome6 name={name} {...otherProps} />;
   } else {
     return <FontAwesome name={name} {...otherProps} />;
   }
