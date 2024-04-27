@@ -4,15 +4,16 @@ import { Pressable, useColorScheme } from "react-native";
 import Colors from "../../constants/Styles";
 import { XStack, YStack, useTheme } from "tamagui";
 import { IconProps } from "@expo/vector-icons/build/createIconSet";
+import { Ionicons } from "@expo/vector-icons";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
  */
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>["name"];
+  name: React.ComponentProps<typeof Ionicons>["name"];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <Ionicons size={28} style={{ marginBottom: -12 }} {...props} />;
 }
 
 export default function TabLayout() {
@@ -23,30 +24,26 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarStyle: {
+          // backgroundColor: "transparent",
+        },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
-          tabBarLabel: "Collect",
-          tabBarIcon: ({ color }) => (
-            // <TabBarIcon name="camera-retro" color={color} />
-            // <TabBarIcon name="envelope" color={color} />
-            <TabBarIcon name="paperclip" color={color} />
-            // <TabBarIcon name="save" color={color} />
-            // <TabBarIcon name="thumb-tack" color={color} />
-            // <TabBarIcon name="ticket" color={color} />
-          ),
+          tabBarLabel: "",
+          tabBarIcon: ({ color }) => <TabBarIcon name="create" color={color} />,
           headerRight: () => headerIcons,
         }}
       />
       <Tabs.Screen
         name="organize"
         options={{
-          tabBarLabel: "Organize",
+          tabBarLabel: "",
           headerShown: false,
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="archive" color={color} />
+            <TabBarIcon name="file-tray-full" color={color} />
           ),
           headerRight: () => headerIcons,
         }}
@@ -54,14 +51,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="review"
         options={{
-          tabBarLabel: "Review",
+          tabBarLabel: "",
           headerShown: false,
           // compass
           // sticky-note
           // hourglass-2
           // eercast
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="eercast" color={color} />
+            <TabBarIcon name="aperture" color={color} />
           ),
           headerRight: () => headerIcons,
         }}
@@ -69,9 +66,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarLabel: "Profile",
+          tabBarLabel: "",
           headerShown: false,
-          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="person-circle" color={color} />
+          ),
           headerRight: () => headerIcons,
         }}
       />

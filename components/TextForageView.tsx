@@ -5,7 +5,7 @@ import {
   Platform,
   Dimensions,
 } from "react-native";
-import { StyledButton, StyledTextArea, Icon } from "./Themed";
+import { StyledButton, StyledTextArea, Icon, IconType } from "./Themed";
 import { XStack, YStack } from "tamagui";
 import { useContext, useEffect, useMemo, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
@@ -310,7 +310,7 @@ export function TextForageView({
             gap="$2"
           >
             <StyledButton
-              icon={<Icon size={24} name="photo" />}
+              icon={<Icon size={24} name="images" type={IconType.Ionicons} />}
               onPress={pickImage}
               paddingHorizontal="$2"
               theme="grey"
@@ -337,7 +337,12 @@ export function TextForageView({
               disabled={!textValue && !medias.length}
               alignSelf="flex-end"
               icon={
-                <Icon name="arrow-circle-right" size={28} color="$green10" />
+                <Icon
+                  name="arrow-forward-circle-sharp"
+                  size={28}
+                  color="$green10"
+                  type={IconType.Ionicons}
+                />
               }
             ></StyledButton>
           </XStack>

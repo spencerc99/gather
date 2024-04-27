@@ -25,7 +25,7 @@ import {
 } from "tamagui";
 import { Image as ExpoImage } from "expo-image";
 import { Link, LinkProps } from "expo-router";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { InteractionManager, Keyboard, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
@@ -305,7 +305,32 @@ export const StyledTextArea = styled(DefaultTextArea, {
   minHeight: 150,
 });
 
-export const IconComponent = styled(FontAwesome, {
+export enum IconType {
+  FontAwesomeIcon,
+  Ionicons,
+}
+
+type CustomIconType =
+  | {
+      type?: IconType.FontAwesomeIcon;
+      name: keyof typeof FontAwesome.glyphMap;
+    }
+  | { type: IconType.Ionicons; name: keyof typeof Ionicons.glyphMap };
+
+const CustomIcon = (
+  props: CustomIconType &
+    Omit<GetProps<typeof FontAwesome>, "type" | "name"> & { type?: IconType }
+) => {
+  const { type = IconType.FontAwesomeIcon, name, ...otherProps } = props;
+
+  if (type === IconType.Ionicons) {
+    return <Ionicons name={name} {...otherProps} />;
+  } else {
+    return <FontAwesome name={name} {...otherProps} />;
+  }
+};
+
+export const IconComponent = styled(CustomIcon, {
   color: "$color",
   // Background is "inherit" by default
   // TODO: 18 is not working here why????
