@@ -19,7 +19,6 @@ import { RawAnimations } from "../animations";
 import { BlockContent } from "../components/BlockContent";
 import { InspoBlocks } from "../components/BlockTexts";
 import {
-  SlidingScalePayment,
   StartingSlidingScaleValue,
   getSlidingPriceMoneyValue,
   getSlidingPricePaymentLink,
@@ -39,6 +38,7 @@ import { setBoolean } from "../utils/asyncStorage";
 import { DatabaseContext } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { ArenaLogin } from "../views/ArenaLogin";
+import { AboutSection } from "./about";
 
 const NumSteps = 4;
 // source https://uibakery.io/regex-library/email
@@ -57,6 +57,9 @@ export default function IntroScreen() {
   );
   const [checked, setChecked] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
+  const onSlideStart = () => setScrollEnabled(false);
+  const onSlideEnd = () => setScrollEnabled(true);
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
   const paymentLink = getSlidingPricePaymentLink(value[0]);
@@ -110,7 +113,7 @@ export default function IntroScreen() {
     onPress,
     ...rest
   }: {
-    text: string;
+    text: string | React.ReactNode;
     onPress?: () => void;
   } & Partial<ButtonProps>) {
     return (
@@ -137,8 +140,8 @@ export default function IntroScreen() {
           <>
             <H2>Welcome to Gather</H2>
             <StyledText marginBottom="$1">
-              Your messy space for gathering inspiration, moments, and
-              wonderings.
+              Your messy space for gathering inspiration, encounters, and
+              moments (no Internet required!)
             </StyledText>
             <YStack alignItems="center" marginBottom="$3">
               <Carousel
@@ -201,8 +204,8 @@ export default function IntroScreen() {
               <StyledText metadata>Send me updates</StyledText>
             </XStack>
             <StyledText metadata>
-              This information will only be used to send you updates if you
-              check the box. Otherwise, it stays completely on your device.
+              Your email is only recorded to send you updates if you check the
+              box.
             </StyledText>
             <NextStepButton
               text="Next"
@@ -216,37 +219,20 @@ export default function IntroScreen() {
       case 1:
         return (
           <>
-            <H2>Hi, I'm Spencer</H2>
-            <XStack justifyContent="center">
-              <Image
-                source={require("../assets/images/spencer-happy-taiwan.png")}
-                style={{
-                  maxWidth: 250,
-                  maxHeight: 250,
-                  borderRadius: 4,
-                  objectFit: "contain",
-                }}
-              />
-            </XStack>
-            <StyledText>
-              Gather is an indie project developed primarily by me with the
-              support of the good folks at canvas.xyz and are.na.
-            </StyledText>
-            <StyledText>
-              Making these kinds of indie software is how I make my living, but
-              I want it to be as accessible to as many people as possible. I'd
-              appreciate anything you can contribute to support its development
-              and ongoing maintenance!
-            </StyledText>
-            <YStack marginBottom="$5"></YStack>
-            <SlidingScalePayment
-              val={value}
-              setVal={setValue}
-            ></SlidingScalePayment>
+            <AboutSection
+              value={value}
+              setValue={setValue}
+              onSlideStart={onSlideStart}
+              onSlideEnd={onSlideEnd}
+            />
 
             <YStack gap="$3" marginTop="auto">
               <NextStepButton
-                text={`Donate $${moneyValue}`}
+                text={
+                  <StyledText>
+                    Contribute <StyledText bold>${moneyValue}</StyledText>
+                  </StyledText>
+                }
                 onPress={async () => {
                   await WebBrowser.openBrowserAsync(paymentLink);
                 }}
@@ -383,7 +369,11 @@ export default function IntroScreen() {
           backgroundColor: "#FFDBB2",
         }}
       >
-        <KeyboardAwareScrollView style={{ flex: 1 }} extraScrollHeight={70}>
+        <KeyboardAwareScrollView
+          style={{ flex: 1 }}
+          extraScrollHeight={70}
+          scrollEnabled={scrollEnabled}
+        >
           <YStack
             minHeight="100%"
             backgroundColor="#FFDBB2"

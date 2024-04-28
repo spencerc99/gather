@@ -1,18 +1,20 @@
-import { useState } from "react";
-import { H3, Slider, XStack, YStack } from "tamagui";
+import { useEffect, useMemo, useState } from "react";
+import { Image } from "react-native";
+import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
+import { H3, Slider, XStack, XStackProps, YStack } from "tamagui";
 import { StyledText } from "./Themed";
 
 export const SlidingPrice = [1, 3, 6, 9, 21, 33, 60];
 export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
 
 const PriceMessages = [
-  "I appreciate you if this is all you can afford",
-  "I appreciate you if this is all you can afford",
-  "Thank you for supporting me 🧡",
-  "Thank you for supporting me 🧡",
-  "Thank you for your generous support 🧡",
-  "Wow! thank you so much. This means a lot to me.",
-  "Wow! thank you so much. I'd love to send you a handwritten card.",
+  "No worries. I appreciate you paying what you can to support my work 🧡",
+  "No worries. I appreciate you paying what you can to support my work 🧡",
+  "Thank you for making this possible 🧡",
+  "Thank you for making this possible 🧡",
+  "Thank you so much for generous support 🧡",
+  "Thank you so much for generous support 🧡",
+  "Wow! Thank you so much for your generosity & giving me the space to do this work 🧡",
 ];
 
 const PaymentLinks = [
@@ -31,12 +33,52 @@ export function getSlidingPriceMoneyValue(value: number) {
 export function getSlidingPricePaymentLink(value: number) {
   return PaymentLinks[value - 1];
 }
+
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
+const FlowerOptions = [
+  require("../assets/images/yellow-flower-pixel.png"),
+  require("../assets/images/orange-flower-pixel.png"),
+  require("../assets/images/white-flower-pixel.png"),
+  require("../assets/images/purple-flower-pixel.png"),
+];
+
+function Flower({ style }: { style: XStackProps }) {
+  const randomFlower = useMemo(
+    () => FlowerOptions[Math.floor(Math.random() * FlowerOptions.length)],
+    []
+  );
+  const animatedWidth = useSharedValue(8);
+  const animatedHeight = useSharedValue(8);
+
+  useEffect(() => {
+    animatedWidth.value = withTiming(50, { duration: 500 });
+    animatedHeight.value = withTiming(50, { duration: 500 });
+  }, [animatedWidth, animatedHeight]);
+
+  return (
+    <XStack {...style}>
+      <AnimatedImage
+        source={randomFlower}
+        style={{
+          width: animatedWidth,
+          height: animatedHeight,
+        }}
+      />
+    </XStack>
+  );
+}
+
 export function SlidingScalePayment({
   val,
   setVal,
+  onSlideStart,
+  onSlideEnd,
 }: {
   val: number[];
   setVal: (value: number[]) => void;
+  onSlideStart?: () => void;
+  onSlideEnd?: () => void;
 }) {
   const [valueInternal, setValueInternal] = useState([
     StartingSlidingScaleValue,
@@ -45,18 +87,44 @@ export function SlidingScalePayment({
   const setValue = setVal ?? setValueInternal;
 
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
+  const numFlowers = Math.min(Math.max(2, Math.floor(moneyValue / 5)), 10);
+  const flowers = useMemo(() => {
+    return Array.from({ length: numFlowers }, (_, index) => (
+      <Flower
+        key={`${value[0]}-${index}`}
+        style={{
+          position: "absolute",
+          zIndex: -1,
+          bottom: -Math.random() * 20 - 40,
+          left: `${Math.round(Math.random() * 80)}%`,
+          transform: [{ rotate: `${Math.random() * 120 - 60}deg` }],
+          opacity: 0.7,
+        }}
+      />
+    ));
+  }, [numFlowers]);
   return (
     <YStack gap="$5">
+      <StyledText metadata bold>
+        Choose an amount that works for you
+      </StyledText>
       <Slider
         min={1}
         max={SlidingPrice.length}
         step={1}
         value={value}
         onValueChange={setValue}
+        defaultValue={[StartingSlidingScaleValue]}
         position="relative"
+        onSlideEnd={() => {
+          onSlideEnd?.();
+        }}
+        onSlideStart={() => {
+          onSlideStart?.();
+        }}
       >
-        <Slider.Track backgroundColor="$green5" size="$10">
-          <Slider.TrackActive backgroundColor="$green8" />
+        <Slider.Track backgroundColor="$green5" size="$15">
+          <Slider.TrackActive backgroundColor="$green8" zIndex={1} />
         </Slider.Track>
         <Slider.Thumb
           index={0}
@@ -65,25 +133,27 @@ export function SlidingScalePayment({
           size="$3"
           backgroundColor="$green10"
           borderColor="$green11"
-          zIndex={1}
+          zIndex={2}
         />
         <XStack
           justifyContent="space-between"
           position="absolute"
-          width="98%"
-          marginLeft="1%"
+          width="96%"
+          marginLeft="3%"
           zIndex={0}
+          alignItems="center"
         >
           {Array.from({ length: SlidingPrice.length }, (_, index) => (
-            <StyledText key={index} metadata fontSize="$7" elevation={5}>
-              |
+            <StyledText key={index} metadata fontSize="$7" elevation={5} bold>
+              ●
             </StyledText>
           ))}
         </XStack>
       </Slider>
-      <YStack alignItems="center">
+      <YStack alignItems="center" position="relative" gap="$2">
         <H3>${moneyValue}</H3>
         <StyledText>{PriceMessages[value[0] - 1]}</StyledText>
+        {value[0] >= StartingSlidingScaleValue ? flowers : null}
       </YStack>
     </YStack>
   );
