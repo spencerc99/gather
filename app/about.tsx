@@ -86,8 +86,8 @@ export function AboutSection({
         <ExternalLink href="https://gather.directory">
           <StyledText link>Gather</StyledText>
         </ExternalLink>{" "}
-        because I wanted a fast, simple way to archive & curate collections of
-        data. After several months of engineering (with help from friends{" "}
+        because I wanted a fast, simple way to archive & curate multimedia
+        collections. After several months of engineering (with help from friends{" "}
         <ExternalLink href="https://canvas.xyz">
           <StyledText link>canvas.xyz</StyledText>
         </ExternalLink>{" "}
