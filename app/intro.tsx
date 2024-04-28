@@ -1,36 +1,46 @@
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useContext, useEffect, useState } from "react";
+import { Alert, Dimensions, Image, SafeAreaView } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import Carousel from "react-native-reanimated-carousel";
 import {
-  H2,
-  YStack,
-  XStack,
-  Progress,
   ButtonProps,
+  Checkbox,
+  H2,
+  Progress,
+  Spinner,
   Stack,
   Theme,
-  Spinner,
+  XStack,
+  YStack,
 } from "tamagui";
+import { RawAnimations } from "../animations";
+import { BlockContent } from "../components/BlockContent";
+import { InspoBlocks } from "../components/BlockTexts";
+import {
+  SlidingScalePayment,
+  StartingSlidingScaleValue,
+  getSlidingPriceMoneyValue,
+  getSlidingPricePaymentLink,
+} from "../components/SlidingScalePayment";
 import {
   ArenaLogo,
+  Icon,
+  IconType,
   StyledButton,
   StyledInput,
   StyledText,
 } from "../components/Themed";
-import { ArenaLogin } from "../views/ArenaLogin";
-import { InspoBlocks } from "../components/BlockTexts";
-import { BlockContent } from "../components/BlockContent";
-import { Dimensions, Image } from "react-native";
-import Carousel from "react-native-reanimated-carousel";
-import { RawAnimations } from "../animations";
-import { DatabaseContext } from "../utils/db";
 import { ArenaChannelMultiSelect } from "../components/arena/ArenaChannelMultiSelect";
 import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../utils/arena";
+import { setBoolean } from "../utils/asyncStorage";
+import { DatabaseContext } from "../utils/db";
 import { UserContext } from "../utils/user";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { setBoolean, setItem } from "../utils/asyncStorage";
+import { ArenaLogin } from "../views/ArenaLogin";
 
-const NumSteps = 3;
+const NumSteps = 4;
 // source https://uibakery.io/regex-library/email
 const EmailRegex = /^\S+@\S+\.\S+$/;
 
@@ -45,13 +55,29 @@ export default function IntroScreen() {
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
     []
   );
+  const [checked, setChecked] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [value, setValue] = useState([StartingSlidingScaleValue]);
+  const moneyValue = getSlidingPriceMoneyValue(value[0]);
+  const paymentLink = getSlidingPricePaymentLink(value[0]);
 
   useEffect(() => {
     if (savedEmail) {
       setEmail(savedEmail);
     }
   }, [savedEmail]);
+
+  async function maybeSubscribeEmail() {
+    if (!checked) {
+      return;
+    }
+
+    try {
+      // TODO:
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   async function importSelectedChannels() {
     // TODO: this would ideally do it in the background asynchronously
@@ -72,6 +98,7 @@ export default function IntroScreen() {
 
   async function nextStep() {
     if (step === NumSteps - 1) {
+      void maybeSubscribeEmail();
       setBoolean("seenIntro", true);
       router.replace("/home");
     }
@@ -89,13 +116,12 @@ export default function IntroScreen() {
     return (
       <StyledButton
         backgroundColor="$blue8"
-        {...rest}
         onPress={async () => {
           await onPress?.();
           nextStep();
         }}
         marginTop="auto"
-        marginBottom="10%"
+        {...rest}
       >
         {text}
       </StyledButton>
@@ -163,9 +189,20 @@ export default function IntroScreen() {
               inputMode="email"
               returnKeyType="done"
             ></StyledInput>
+            <XStack alignItems="center" gap="$1.5">
+              <Checkbox
+                checked={checked}
+                onCheckedChange={(ch) => setChecked(Boolean(ch))}
+              >
+                <Checkbox.Indicator>
+                  <Icon name="checkmark" />
+                </Checkbox.Indicator>
+              </Checkbox>
+              <StyledText metadata>Send me updates</StyledText>
+            </XStack>
             <StyledText metadata>
-              This information will not be sent anywhere and is only used to
-              create your personal unique identifier.
+              This information will only be used to send you updates if you
+              check the box. Otherwise, it stays completely on your device.
             </StyledText>
             <NextStepButton
               text="Next"
@@ -177,6 +214,80 @@ export default function IntroScreen() {
           </>
         );
       case 1:
+        return (
+          <>
+            <H2>Hi, I'm Spencer</H2>
+            <XStack justifyContent="center">
+              <Image
+                source={require("../assets/images/spencer-happy-taiwan.png")}
+                style={{
+                  maxWidth: 250,
+                  maxHeight: 250,
+                  borderRadius: 4,
+                  objectFit: "contain",
+                }}
+              />
+            </XStack>
+            <StyledText>
+              Gather is an indie project developed primarily by me with the
+              support of the good folks at canvas.xyz and are.na.
+            </StyledText>
+            <StyledText>
+              Making these kinds of indie software is how I make my living, but
+              I want it to be as accessible to as many people as possible. I'd
+              appreciate anything you can contribute to support its development
+              and ongoing maintenance!
+            </StyledText>
+            <YStack marginBottom="$5"></YStack>
+            <SlidingScalePayment
+              val={value}
+              setVal={setValue}
+            ></SlidingScalePayment>
+
+            <YStack gap="$3" marginTop="auto">
+              <NextStepButton
+                text={`Donate $${moneyValue}`}
+                onPress={async () => {
+                  await WebBrowser.openBrowserAsync(paymentLink);
+                }}
+                marginBottom={0}
+              />
+              <StyledText
+                metadata
+                fontSize="$small"
+                textAlign="center"
+                onPress={() => {
+                  Alert.alert(
+                    "pretty please?",
+                    "This work, like all handmade software work, only happens because of people like you contributing a few dollars. Together, we can make it possible to create software with data that you own that isn't subject to ads or adverse incentives.",
+                    [
+                      {
+                        text: "Sorry I really can't",
+                        onPress: () => {
+                          Alert.alert(
+                            "Thanks anyways",
+                            "it's okay. I understand if you can't even contribute $1. I hope you enjoy the app and if you find a lot of use out of it, maybe you can contribute something later.",
+                            []
+                          );
+                          nextStep();
+                        },
+                        style: "default",
+                      },
+                      {
+                        text: "Ok you've convinced me",
+                        onPress: () => {},
+                        style: "cancel",
+                      },
+                    ]
+                  );
+                }}
+              >
+                I'm sorry I can't support you
+              </StyledText>
+            </YStack>
+          </>
+        );
+      case 2:
         return (
           <>
             <StyledText bold fontSize="$6">
@@ -235,7 +346,7 @@ export default function IntroScreen() {
             />
           </>
         );
-      case 2:
+      case 3:
         // collection examples
         return (
           <>
@@ -266,47 +377,75 @@ export default function IntroScreen() {
 
   return (
     <Theme name="light">
-      <KeyboardAwareScrollView style={{ flex: 1 }} extraScrollHeight={70}>
-        <YStack
-          minHeight="100%"
-          backgroundColor="#FFDBB2"
-          paddingHorizontal="10%"
-        >
-          <Progress
-            value={Math.max(1, (step / NumSteps) * 100)}
-            marginTop="2%"
-            borderRadius={4}
-          >
-            <Progress.Indicator animation="quick" />
-          </Progress>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: "#FFDBB2",
+        }}
+      >
+        <KeyboardAwareScrollView style={{ flex: 1 }} extraScrollHeight={70}>
           <YStack
-            paddingTop="8%"
-            justifyContent="center"
-            height="100%"
-            paddingBottom="20%"
-            gap="$3"
+            minHeight="100%"
+            backgroundColor="#FFDBB2"
+            paddingHorizontal="10%"
           >
-            <XStack flexGrow={0}>
-              <Image
-                source={require("../assets/images/icon.png")}
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 16,
-                }}
-              />
-            </XStack>
-            <YStack gap="$3" flexGrow={1}>
-              {renderStep()}
-            </YStack>
-            {/* {__DEV__ && (
+            <Progress
+              theme="blue"
+              value={Math.max(1, (step / NumSteps) * 100)}
+              marginTop="2%"
+              borderRadius={4}
+            >
+              <Progress.Indicator animation="quick" />
+            </Progress>
+            <YStack
+              paddingTop="8%"
+              justifyContent="center"
+              height="100%"
+              paddingBottom="20%"
+              gap="$3"
+            >
+              <XStack flexGrow={0} justifyContent="center">
+                {step > 0 && (
+                  <StyledButton
+                    position="absolute"
+                    theme="grey"
+                    size="$small"
+                    left={0}
+                    onPress={() => {
+                      setStep((stp) => stp - 1);
+                    }}
+                    icon={
+                      <Icon
+                        name="chevron-left"
+                        size={8}
+                        type={IconType.FontAwesomeIcon}
+                      />
+                    }
+                  >
+                    Back
+                  </StyledButton>
+                )}
+                <Image
+                  source={require("../assets/images/icon.png")}
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 16,
+                  }}
+                />
+              </XStack>
+              <YStack gap="$3" flexGrow={1}>
+                {renderStep()}
+              </YStack>
+              {/* {__DEV__ && (
               <StyledButton onPress={() => router.replace("/home")}>
                 home
               </StyledButton>
             )} */}
+            </YStack>
           </YStack>
-        </YStack>
-      </KeyboardAwareScrollView>
+        </KeyboardAwareScrollView>
+      </SafeAreaView>
     </Theme>
   );
 }

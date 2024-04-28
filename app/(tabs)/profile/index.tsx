@@ -1,40 +1,30 @@
-import { Image, Linking, Platform, SafeAreaView } from "react-native";
+import dayjs from "dayjs";
+import * as Application from "expo-application";
+import { getAppIcon, setAppIcon } from "expo-dynamic-app-icon";
+import { useContext, useState } from "react";
+import { Image, Linking, SafeAreaView } from "react-native";
 import {
   Avatar,
-  AlertDialog,
-  H2,
   H3,
-  Label,
   ScrollView,
-  Select,
-  Sheet,
   Spinner,
-  Theme,
   Stack,
-  View,
   XStack,
   YStack,
-  H4,
 } from "tamagui";
-import * as Application from "expo-application";
-import { DatabaseContext } from "../../../utils/db";
 import {
-  ButtonWithConfirm,
   Icon,
   StyledButton,
-  StyledLabel,
   StyledParagraph,
   StyledText,
 } from "../../../components/Themed";
-import { useContext, useEffect, useMemo, useState } from "react";
-import { ArenaLogin } from "../../../views/ArenaLogin";
-import { UserContext, UserInfoId } from "../../../utils/user";
-import { stringToColor } from "../../../utils";
-import dayjs from "dayjs";
 import { ArenaChannelMultiSelect } from "../../../components/arena/ArenaChannelMultiSelect";
 import { ArenaChannelSummary } from "../../../components/arena/ArenaChannelSummary";
+import { stringToColor } from "../../../utils";
 import { ArenaChannelInfo } from "../../../utils/arena";
-import { getAppIcon, setAppIcon } from "expo-dynamic-app-icon";
+import { DatabaseContext } from "../../../utils/db";
+import { UserContext } from "../../../utils/user";
+import { ArenaLogin } from "../../../views/ArenaLogin";
 import { InternalDevTools } from "../../../views/InternalDevTools";
 
 const Subject = `[Gather] feedback`;
@@ -239,6 +229,13 @@ function AppIconSelect({
           );
         })}
       </XStack>
+      {/* TODO: add open channel for adding to it? */}
+      <StyledText metadata>
+        I took all these photos between 2020-2023. They capture a snapshot of
+        moments of life that I want to hold onto in some way. They remind me
+        what it feels like to pay attention to the motion of the world. If you
+        have similar photos you'd like to share, I'd love to see them.
+      </StyledText>
     </YStack>
   );
 }
