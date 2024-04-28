@@ -163,6 +163,18 @@ export default function ProfileScreen() {
           >
             Send me Feedback
           </StyledButton>
+          <StyledButton
+            icon={<Icon name="gift" />}
+            onPress={() => {
+              Linking.openURL(
+                "https://buy.stripe.com/8wMg1p8gjf2g2m4bIN"
+              ).catch((error) => {
+                console.log(error);
+              });
+            }}
+          >
+            Support my work
+          </StyledButton>
           {/* <LinkButton>Share</LinkButton> */}
           {/* <LinkButton>Tip</LinkButton> */}
           {/* <StyledButton>

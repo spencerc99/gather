@@ -69,13 +69,13 @@ export function AboutSection({
 }) {
   return (
     <>
-      <H2>Hi, I'm Spencer</H2>
-      <XStack justifyContent="center">
+      <XStack>
+        <H2 flexWrap="wrap">Hi, I'm Spencer</H2>
         <Image
           source={require("../assets/images/spencer-happy-taiwan.png")}
           style={{
-            maxWidth: 250,
-            maxHeight: 250,
+            maxWidth: 130,
+            maxHeight: 150,
             borderRadius: 4,
             objectFit: "contain",
           }}
@@ -86,26 +86,25 @@ export function AboutSection({
         <ExternalLink href="https://gather.directory">
           <StyledText link>Gather</StyledText>
         </ExternalLink>{" "}
-        because I wanted a fast and easy way to archive and curate collections
-        of data from my phone. It emerged after several months of prototyping
-        with the support of some friends at{" "}
+        because I wanted a fast, simple way to archive & curate collections of
+        data. After several months of engineering (with help from friends{" "}
         <ExternalLink href="https://canvas.xyz">
           <StyledText link>canvas.xyz</StyledText>
         </ExternalLink>{" "}
-        and{" "}
+        &{" "}
         <ExternalLink href="https://are.na">
           <StyledText link>are.na</StyledText>
         </ExternalLink>
-        , and it expresses my very personal way of working with data.
+        ), it has become a personal expression of how I want to interact with
+        the data I collect.
       </StyledText>
       <StyledText>
-        I want my work to be as accessible as possible, but making{" "}
+        I want my work to be as accessible as possible, AND making{" "}
         <ExternalLink href="https://spencerchang.substack.com/p/ti-10-make-small-web-tools">
           <StyledText link>handmade software</StyledText>
         </ExternalLink>{" "}
-        like this is how I make my living as an in(ter)dependent engineer and
-        artist. Thanks for trying Gather and appreciate anything you can offer
-        to support!
+        like this is how I make my living as an indie engineer-artist. Thanks
+        you for anything you can offer to support my work!
       </StyledText>
       <YStack marginTop="$2">
         <SlidingScalePayment

@@ -14,17 +14,17 @@ const PriceMessages = [
   "Thank you for making this possible 🧡",
   "Thank you so much for generous support 🧡",
   "Thank you so much for generous support 🧡",
-  "Wow! Thank you so much for your generosity & giving me the space to do this work 🧡",
+  "Wow! Thank you so much for giving me the space to do this work. I'd love to send you a handwritten letter to show my gratitude 🧡",
 ];
 
 const PaymentLinks = [
-  "https://buy.stripe.com/00g7uT7cff2g1i05ko",
-  "https://buy.stripe.com/28o9D18gjcU88Ks147",
-  "https://buy.stripe.com/00gdThfIL1bq9Ow9AG",
-  "https://buy.stripe.com/8wMg1p8gjf2g2m4bIN",
-  "https://buy.stripe.com/14kg1peEH1bqd0I7sz",
-  "https://buy.stripe.com/bIY16vgMPf2g8KsfZ6",
-  "https://buy.stripe.com/9AQ2az40307m9OwaEN",
+  "https://buy.stripe.com/00g7uT7cff2g1i05ko", // $1
+  "https://buy.stripe.com/28o9D18gjcU88Ks147", // $3
+  "https://buy.stripe.com/00gdThfIL1bq9Ow9AG", // $6
+  "https://buy.stripe.com/8wMg1p8gjf2g2m4bIN", // $9
+  "https://buy.stripe.com/14kg1peEH1bqd0I7sz", // $21
+  "https://buy.stripe.com/bIY16vgMPf2g8KsfZ6", // $33
+  "https://buy.stripe.com/9AQ2az40307m9OwaEN", // $60
 ];
 
 export function getSlidingPriceMoneyValue(value: number) {
@@ -37,10 +37,10 @@ export function getSlidingPricePaymentLink(value: number) {
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const FlowerOptions = [
-  require("../assets/images/yellow-flower-pixel.png"),
-  require("../assets/images/orange-flower-pixel.png"),
-  require("../assets/images/white-flower-pixel.png"),
-  require("../assets/images/purple-flower-pixel.png"),
+  require("../assets/images/flower-yellow.png"),
+  require("../assets/images/flower-orange.png"),
+  require("../assets/images/flower-blue.png"),
+  require("../assets/images/flower-pink.png"),
 ];
 
 function Flower({ style }: { style: XStackProps }) {
@@ -52,8 +52,8 @@ function Flower({ style }: { style: XStackProps }) {
   const animatedHeight = useSharedValue(8);
 
   useEffect(() => {
-    animatedWidth.value = withTiming(50, { duration: 500 });
-    animatedHeight.value = withTiming(50, { duration: 500 });
+    animatedWidth.value = withTiming(30, { duration: 500 });
+    animatedHeight.value = withTiming(30, { duration: 500 });
   }, [animatedWidth, animatedHeight]);
 
   return (
@@ -89,19 +89,23 @@ export function SlidingScalePayment({
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
   const numFlowers = Math.min(Math.max(2, Math.floor(moneyValue / 5)), 10);
   const flowers = useMemo(() => {
-    return Array.from({ length: numFlowers }, (_, index) => (
-      <Flower
-        key={`${value[0]}-${index}`}
-        style={{
-          position: "absolute",
-          zIndex: -1,
-          bottom: -Math.random() * 20 - 40,
-          left: `${Math.round(Math.random() * 80)}%`,
-          transform: [{ rotate: `${Math.random() * 120 - 60}deg` }],
-          opacity: 0.7,
-        }}
-      />
-    ));
+    return Array.from({ length: numFlowers }, (_, index) => {
+      const topOrBottom = Math.random() > 0.5 ? "top" : "bottom";
+      const leftOrRight = Math.random() > 0.5 ? "left" : "right";
+      return (
+        <Flower
+          key={`${value[0]}-${index}`}
+          style={{
+            position: "absolute",
+            zIndex: -1,
+            [topOrBottom]: -Math.random() * 20 - 30,
+            [leftOrRight]: `${Math.random() * 30 - 5}%`,
+            transform: [{ rotate: `${Math.random() * 90 - 45}deg` }],
+            opacity: 0.9,
+          }}
+        />
+      );
+    });
   }, [numFlowers]);
   return (
     <YStack gap="$5">
@@ -152,8 +156,10 @@ export function SlidingScalePayment({
       </Slider>
       <YStack alignItems="center" position="relative" gap="$2">
         <H3>${moneyValue}</H3>
-        <StyledText>{PriceMessages[value[0] - 1]}</StyledText>
-        {value[0] >= StartingSlidingScaleValue ? flowers : null}
+        <YStack gap="$2" position="relative">
+          <StyledText>{PriceMessages[value[0] - 1]}</StyledText>
+          {value[0] >= StartingSlidingScaleValue ? flowers : null}
+        </YStack>
       </YStack>
     </YStack>
   );

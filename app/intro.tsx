@@ -251,8 +251,8 @@ export default function IntroScreen() {
                         text: "Sorry I really can't",
                         onPress: () => {
                           Alert.alert(
-                            "Thanks anyways",
-                            "it's okay. I understand if you can't even contribute $1. I hope you enjoy the app and if you find a lot of use out of it, maybe you can contribute something later.",
+                            "It's okay",
+                            "I hope you enjoy the app and if you find a lot of use, that you'll find a way to contribute later.",
                             []
                           );
                           nextStep();
@@ -268,7 +268,7 @@ export default function IntroScreen() {
                   );
                 }}
               >
-                I'm sorry I can't support you
+                I'm sorry I can't support you right now
               </StyledText>
             </YStack>
           </>
