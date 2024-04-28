@@ -8,8 +8,9 @@ import {
   YStack,
   useDebounceValue,
 } from "tamagui";
-import { ArenaChannelInfo, useArenaUserChannels } from "../../utils/arena";
+import { ArenaChannelInfo } from "../../utils/arena";
 import { DatabaseContext } from "../../utils/db";
+import { useArenaUserChannels } from "../../utils/hooks/useArenaUserChannels";
 import { SearchBarInput, StyledButton } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
 

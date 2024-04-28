@@ -31,9 +31,9 @@ import {
   ArenaChannelRegex,
   ArenaClientId,
   ArenaClientSecret,
-  useArenaUserChannels,
 } from "../utils/arena";
 import { DatabaseContext } from "../utils/db";
+import { useArenaUserChannels } from "../utils/hooks/useArenaUserChannels";
 
 const SCHEME = Constants.platform?.scheme;
 

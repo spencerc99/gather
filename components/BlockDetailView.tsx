@@ -1,10 +1,10 @@
 import { Link, Stack, useRouter } from "expo-router";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { Pressable } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
-import { Block, Connection } from "../utils/dataTypes";
-import { DatabaseContext } from "../utils/db";
+import { Block } from "../utils/dataTypes";
+import { DatabaseContext, useBlockConnections } from "../utils/db";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { BlockSummary } from "./BlockSummary";
 import { ConnectionSummary } from "./ConnectionSummary";
@@ -39,16 +39,14 @@ export function BlockDetailView({
     remoteSourceType,
   } = block;
 
-  const [connections, setConnections] = useState<Connection[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const { getConnectionsForBlock, updateBlock } = useContext(DatabaseContext);
-  useEffect(() => {
-    getConnectionsForBlock(id.toString()).then((connections) => {
-      setConnections(connections);
-    });
-  }, [id]);
+  const { updateBlock } = useContext(DatabaseContext);
+  const { data: connections, isLoading: loadingData } = useBlockConnections(
+    id.toString()
+  );
+
   useFixExpoRouter3NavigationTitle();
 
   async function update(updateFn: () => ReturnType<typeof updateBlock>) {
@@ -168,23 +166,27 @@ export function BlockDetailView({
             Connect
           </StyledButton>
           {/* TODO: separate by your connections vs. friends vs world? */}
-          {connections.map((connection) => (
-            // TODO: jump to the location of the block??
-            <Link
-              key={connection.collectionId}
-              href={{
-                pathname: "/(tabs)/home",
-                params: {
-                  collectionId: connection.collectionId,
-                },
-              }}
-              asChild
-            >
-              <Pressable>
-                <ConnectionSummary connection={connection} />
-              </Pressable>
-            </Link>
-          ))}
+          {loadingData ? (
+            <Spinner color="$orange9" size="small" />
+          ) : (
+            connections?.map((connection) => (
+              // TODO: jump to the location of the block??
+              <Link
+                key={connection.collectionId}
+                href={{
+                  pathname: "/(tabs)/home",
+                  params: {
+                    collectionId: connection.collectionId,
+                  },
+                }}
+                asChild
+              >
+                <Pressable>
+                  <ConnectionSummary connection={connection} />
+                </Pressable>
+              </Link>
+            ))
+          )}
         </YStack>
       </KeyboardAwareScrollView>
     </>

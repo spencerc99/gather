@@ -1,31 +1,26 @@
-import {
-  KeyboardAvoidingView,
-  SafeAreaView,
-  ScrollView,
-  Platform,
-  Dimensions,
-} from "react-native";
-import { StyledButton, StyledTextArea, Icon, IconType } from "./Themed";
-import { XStack, YStack } from "tamagui";
-import { useContext, useEffect, useMemo, useState } from "react";
-import * as ImagePicker from "expo-image-picker";
-import { DatabaseContext } from "../utils/db";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
-import { MediaView } from "./MediaView";
+import * as ImagePicker from "expo-image-picker";
+import { useContext, useEffect, useMemo, useState } from "react";
+import {
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { XStack, YStack } from "tamagui";
+import { getFsPathForMediaResult } from "../utils/blobs";
+import { DatabaseContext } from "../utils/db";
+import { BlockType } from "../utils/mimeTypes";
+import { extractDataFromUrl, isUrl } from "../utils/url";
 import { UserContext } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
-import { getFsPathForMediaResult } from "../utils/blobs";
-import { extractDataFromUrl, isUrl } from "../utils/url";
-import { BlockType } from "../utils/mimeTypes";
 import { FeedView } from "./FeedView";
-import { CollectionBlock } from "../utils/dataTypes";
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { MediaView } from "./MediaView";
+import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -67,14 +62,14 @@ export function TextForageView({
     []
   );
   const insets = useSafeAreaInsets();
-  const queryKey = ["blocks", collectionId];
+  const queryKey = ["blocks", { collectionId }] as const;
 
   // TODO: toast the error
   const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useInfiniteQuery({
       queryKey,
       queryFn: async ({ pageParam: page, queryKey }) => {
-        const [_, collectionId] = queryKey;
+        const [_, { collectionId }] = queryKey;
 
         const blocks = !collectionId
           ? await getBlocks({ page })
@@ -209,11 +204,10 @@ export function TextForageView({
         }
       }
 
-      await createBlocksMutation({
+      await createBlocks({
         blocksToInsert,
         collectionId,
       });
-      // TODO: this needs to trigger a refresh in below rendering components
     } catch (err) {
       console.error(err);
     }

@@ -1,23 +1,23 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { StatusBar } from "expo-status-bar";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Link, SplashScreen, Stack, usePathname, useRouter } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useContext, useEffect } from "react";
-import { Keyboard, useColorScheme, InteractionManager } from "react-native";
-import { DatabaseContext, DatabaseProvider } from "../utils/db";
+import { InteractionManager, Keyboard, useColorScheme } from "react-native";
 import { HoldMenuProvider } from "react-native-hold-menu";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { TamaguiProvider, Theme } from "tamagui";
-import { config } from "../tamagui.config";
-import { UserProvider } from "../utils/user";
-import useShareIntent from "../hooks/useShareIntent";
 import { enableFreeze } from "react-native-screens";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TamaguiProvider, Theme } from "tamagui";
+import useShareIntent from "../hooks/useShareIntent";
+import { config } from "../tamagui.config";
+import { DatabaseContext, DatabaseProvider } from "../utils/db";
+import { UserProvider } from "../utils/user";
 
 const client = new QueryClient();
 
@@ -82,6 +82,7 @@ export default function RootLayout() {
               <UserProvider>
                 <DatabaseProvider>
                   <RootLayoutNav />
+                  <StatusBar style="auto" />
                 </DatabaseProvider>
               </UserProvider>
             </HoldMenuProvider>
@@ -146,7 +147,6 @@ function RootLayoutNav() {
           presentation: "modal",
         }}
       />
-      <StatusBar style="auto" />
     </Stack>
   );
 }
