@@ -1,4 +1,5 @@
 import { InteractionManager, Platform } from "react-native";
+import NetInfo from "@react-native-community/netinfo";
 import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
@@ -331,6 +332,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState<boolean>(true);
   const [selectedReviewCollection, setSelectedReviewCollection] =
     useStickyValue<string | null>(CollectionToReviewKey, null);
 
@@ -379,6 +381,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         }),
       ]);
     });
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsConnected(Boolean(state.isConnected));
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -1184,6 +1190,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
 
+    // return early if no internet
+    if (!isConnected) {
+      return;
+    }
+
     InteractionManager.runAfterInteractions(async () => {
       try {
         const result = await getArenaCollections();
@@ -1203,6 +1214,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function trySyncPendingArenaBlocks() {
     if (!arenaAccessToken) {
+      return;
+    }
+
+    // return early if no internet
+    if (!isConnected) {
       return;
     }
 
@@ -1237,13 +1253,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       `Syncing ${connectionsToSync.length} pending connections to arena`
     );
 
-    const blockCollectionIdToRemoteConnectedAt: Record<
-      string,
-      string | undefined
-    > = {};
-
-    for (const connToSync of connectionsToSync) {
-      InteractionManager.runAfterInteractions(async () => {
+    InteractionManager.runAfterInteractions(async () => {
+      const blockCollectionIdToRemoteConnectedAt: Record<
+        string,
+        string | undefined
+      > = {};
+      for (const connToSync of connectionsToSync) {
         const newRemoteItem = await syncBlockToArena(
           connToSync.collectionRemoteSourceInfo!.arenaId!,
           connToSync
@@ -1253,10 +1268,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             `${connToSync.id}-${connToSync.collectionId}`
           ] = newRemoteItem.connected_at;
         }
-      });
-    }
+      }
 
-    InteractionManager.runAfterInteractions(async () => {
       const succesfullySyncedConnections = connectionsToSync.filter(
         (conn) =>
           blockCollectionIdToRemoteConnectedAt[
