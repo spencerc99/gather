@@ -9,7 +9,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
-import * as SecureStore from "expo-secure-store";
 import * as SQLite from "expo-sqlite";
 import {
   PropsWithChildren,
@@ -19,7 +18,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { InteractionManager, Platform } from "react-native";
 import { useDebounce } from "tamagui";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {

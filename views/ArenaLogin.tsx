@@ -267,7 +267,7 @@ export function SelectArenaChannel({
             <FlatList
               contentContainerStyle={{
                 // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
-                paddingBottom: 24,
+                paddingBottom: 64,
               }}
               onScroll={(e) => {
                 e.preventDefault();
