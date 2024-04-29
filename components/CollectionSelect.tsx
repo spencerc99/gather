@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { useContext, useMemo, useState } from "react";
-import { Alert } from "react-native";
+import { useCallback, useContext, useState } from "react";
+import { Alert, FlatList } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import {
   Adapt,
@@ -12,10 +11,9 @@ import {
   Spinner,
   XStack,
   YStack,
-  useDebounceValue,
 } from "tamagui";
-import { DatabaseContext } from "../utils/db";
-import { filterItemsBySearchValue } from "../utils/search";
+import { Collection } from "../utils/dataTypes";
+import { DatabaseContext, useCollections } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
 import { CreateCollectionButton } from "./CreateCollectionButton";
@@ -41,37 +39,95 @@ export function CollectionSelect({
   selectProps?: GetProps<typeof Select>;
   hideChevron?: boolean;
 }) {
-  const { createCollection, getCollections, deleteCollection } =
-    useContext(DatabaseContext);
+  const { createCollection, deleteCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
-  const debouncedSearch = useDebounceValue(searchValue, 300);
   const { currentUser: user } = useContext(UserContext);
-  // TODO: collapse with SelectCollectionsList
-  const { data: collections } = useQuery({
-    queryKey: ["collections"],
-    queryFn: async () => {
-      return await getCollections({ page: null });
-    },
-  });
+  const { collections, isLoading } = useCollections(searchValue);
 
-  // sort by lastConnectedAt descending
-  // const sortedCollections = useMemo(
-  //   () =>
-  //     [...(collections || [])].sort(
-  //       (a, b) =>
-  //         (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
-  //         (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
-  //     ),
-  //   [collections]
-  // );
-  const filteredCollections = useMemo(
-    () =>
-      filterItemsBySearchValue(collections || [], debouncedSearch, [
-        "title",
-        "description",
-      ]),
-    [collections, debouncedSearch]
+  // TODO: collapse with SelectCollectionsList
+  const renderCollection = useCallback(
+    ({ item: collection, index }: { item: Collection; index: number }) => {
+      return (
+        <Swipeable
+          key={collection.id}
+          containerStyle={{
+            overflow: "visible",
+          }}
+          friction={2}
+          renderRightActions={() => (
+            <YStack alignItems="center" padding="$2" justifyContent="center">
+              <StyledButton
+                circular
+                theme="red"
+                size="$6"
+                icon={<Icon name="trash" />}
+              ></StyledButton>
+            </YStack>
+          )}
+          onSwipeableOpen={(direction, swipeable) => {
+            if (direction === "left") {
+              return;
+            }
+            // open modal to confirm delete
+            Alert.alert("Delete Collection?", undefined, [
+              {
+                text: "Cancel",
+                onPress: () => {
+                  swipeable.close();
+                },
+                style: "cancel",
+              },
+              {
+                text: "Delete",
+                onPress: () => {
+                  deleteCollection(collection.id);
+                },
+                style: "destructive",
+              },
+            ]);
+          }}
+        >
+          <Select.Item
+            index={index + 1}
+            key={collection.id}
+            value={collection.id}
+            backgroundColor={
+              selectedCollection === collection.id ? "$green4" : undefined
+            }
+          >
+            <CollectionSummary
+              collection={collection}
+              viewProps={{
+                borderWidth: 0,
+                paddingHorizontal: 0,
+                paddingVertical: 0,
+                backgroundColor: "inherit",
+              }}
+            />
+            <Select.ItemText display="none">{collection.title}</Select.ItemText>
+          </Select.Item>
+        </Swipeable>
+      );
+    },
+    [selectedCollection]
   );
+
+  function renderCollections() {
+    if (isLoading) {
+      return <Spinner color="$orange9" size="small" />;
+    }
+    return (
+      <FlatList
+        scrollEnabled={false}
+        keyboardShouldPersistTaps={"handled"}
+        data={collections}
+        contentContainerStyle={{
+          gap: 4,
+        }}
+        renderItem={renderCollection}
+      />
+    );
+  }
 
   if (!user) {
     return;
@@ -199,80 +255,7 @@ export function CollectionSelect({
                   </Select.ItemText>
                 </Select.Item>
               )}
-              {/* TODO: change to FlatList */}
-              {!collections ? (
-                <Spinner color="$orange9" size="large" />
-              ) : (
-                filteredCollections.map((collection, idx) => (
-                  <Swipeable
-                    key={collection.id}
-                    containerStyle={{
-                      overflow: "visible",
-                    }}
-                    friction={2}
-                    renderRightActions={() => (
-                      <YStack
-                        alignItems="center"
-                        padding="$2"
-                        justifyContent="center"
-                      >
-                        <StyledButton
-                          circular
-                          theme="red"
-                          size="$6"
-                          icon={<Icon name="trash" />}
-                        ></StyledButton>
-                      </YStack>
-                    )}
-                    onSwipeableOpen={(direction, swipeable) => {
-                      if (direction === "left") {
-                        return;
-                      }
-                      // open modal to confirm delete
-                      Alert.alert("Delete Collection?", undefined, [
-                        {
-                          text: "Cancel",
-                          onPress: () => {
-                            swipeable.close();
-                          },
-                          style: "cancel",
-                        },
-                        {
-                          text: "Delete",
-                          onPress: () => {
-                            deleteCollection(collection.id);
-                          },
-                          style: "destructive",
-                        },
-                      ]);
-                    }}
-                  >
-                    <Select.Item
-                      index={idx + 1}
-                      key={collection.id}
-                      value={collection.id}
-                      backgroundColor={
-                        selectedCollection === collection.id
-                          ? "$green4"
-                          : undefined
-                      }
-                    >
-                      <CollectionSummary
-                        collection={collection}
-                        viewProps={{
-                          borderWidth: 0,
-                          paddingHorizontal: 0,
-                          paddingVertical: 0,
-                          backgroundColor: "inherit",
-                        }}
-                      />
-                      <Select.ItemText display="none">
-                        {collection.title}
-                      </Select.ItemText>
-                    </Select.Item>
-                  </Swipeable>
-                ))
-              )}
+              {renderCollections()}
             </Select.Group>
           </Sheet.ScrollView>
         </Select.Viewport>

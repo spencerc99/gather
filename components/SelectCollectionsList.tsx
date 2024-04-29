@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { memo, useCallback, useContext, useMemo, useState } from "react";
 import { FlatList, Pressable } from "react-native";
 import {
@@ -8,11 +7,9 @@ import {
   Stack,
   XStack,
   YStack,
-  useDebounceValue,
 } from "tamagui";
 import { Collection } from "../utils/dataTypes";
-import { DatabaseContext } from "../utils/db";
-import { filterItemsBySearchValue } from "../utils/search";
+import { DatabaseContext, useCollections } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
 import { Icon, LinkButton, SearchBarInput, StyledButton } from "./Themed";
@@ -57,7 +54,7 @@ export function SelectCollectionsList({
   setSearchValue?: (newSearch: string) => void;
   extraSearchContent?: React.ReactNode;
 }) {
-  const { getCollections, createCollection } = useContext(DatabaseContext);
+  const { createCollection } = useContext(DatabaseContext);
   const [internalSearchValue, internalSetSearchValue] = useState("");
   const { currentUser } = useContext(UserContext);
   const [loading, setLoading] = useState(false);
@@ -81,18 +78,11 @@ export function SelectCollectionsList({
   //     getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
   //   });
   // const collections = data?.pages.flatMap((p) => p.collections);
-  const { data: collections } = useQuery({
-    queryKey: ["collections"],
-    queryFn: async () => {
-      return await getCollections({ page: null });
-    },
-  });
 
   const searchValue = useMemo(
     () => (propSetSearchValue && propSearch ? propSearch : internalSearchValue),
     [propSearch, internalSearchValue]
   );
-  const debouncedSearch = useDebounceValue(searchValue, 300);
   const setSearchValue = useCallback(
     (newSearch: string) => {
       if (propSetSearchValue) {
@@ -104,32 +94,7 @@ export function SelectCollectionsList({
     [propSetSearchValue, internalSetSearchValue]
   );
 
-  // TODO: page this and add search
-  // function fetchMoreCollections() {
-  //   if (!hasNextPage) {
-  //     return;
-  //   }
-  //   fetchNextPage();
-  // }
-
-  // sort by lastConnectedAt descending
-  // const sortedCollections = useMemo(
-  //   () =>
-  //     [...(collections || [])].sort(
-  //       (a, b) =>
-  //         (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
-  //         (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
-  //     ),
-  //   [collections]
-  // );
-  const filteredCollections = useMemo(
-    () =>
-      filterItemsBySearchValue(collections || [], debouncedSearch, [
-        "title",
-        "description",
-      ]),
-    [collections, debouncedSearch]
-  );
+  const { collections, isLoading } = useCollections(searchValue);
 
   const toggleCollection = useCallback(
     (collection: Collection) => {
@@ -178,7 +143,7 @@ export function SelectCollectionsList({
   );
 
   function renderCollections() {
-    if (collections === null) {
+    if (isLoading) {
       return <Spinner color="$orange9" size="small" />;
     }
     return (
@@ -186,15 +151,11 @@ export function SelectCollectionsList({
         scrollEnabled={false}
         horizontal={Boolean(horizontal)}
         keyboardShouldPersistTaps={"handled"}
-        data={filteredCollections}
+        data={collections}
         contentContainerStyle={{
           gap: horizontal ? 8 : 4,
         }}
         renderItem={renderCollection}
-        // onEndReachedThreshold={0.2}
-        // onEndReached={() => {
-        //   debouncedFetchMoreCollections();
-        // }}
       />
     );
   }

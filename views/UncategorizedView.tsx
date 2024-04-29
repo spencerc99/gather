@@ -1,26 +1,11 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
   DatabaseContext,
-  mapBlockContentToPath,
-  mapSnakeCaseToCamelCaseProperties,
   useTotalBlockCount,
   useUncategorizedBlocks,
 } from "../utils/db";
 import { Block } from "../utils/dataTypes";
-import {
-  Icon,
-  StyledButton,
-  StyledParagraph,
-  StyledText,
-  StyledView,
-} from "../components/Themed";
+import { Icon, StyledButton, StyledText } from "../components/Themed";
 import {
   Dimensions,
   Keyboard,
@@ -29,7 +14,6 @@ import {
 } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
 import { Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
-import { convertDbTimestampToDate } from "../utils/date";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectCollectionsList } from "../components/SelectCollectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

@@ -3,7 +3,6 @@ import NetInfo from "@react-native-community/netinfo";
 import * as SecureStore from "expo-secure-store";
 import {
   InfiniteData,
-  UseInfiniteQueryResult,
   useMutation,
   useQuery,
   useQueryClient,
@@ -15,10 +14,11 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
-import { useDebounce } from "tamagui";
+import { useDebounce, useDebounceValue } from "tamagui";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {
   ArenaChannelInfo,
@@ -64,6 +64,7 @@ import { convertDbTimestampToDate } from "./date";
 import { Indices, Migrations } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { UserContext } from "./user";
+import { filterItemsBySearchValue } from "./search";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -1965,4 +1966,32 @@ export function useUncategorizedBlocks() {
       return newEvents;
     },
   });
+}
+
+export function useCollections(searchValue?: string) {
+  const { getCollections } = useContext(DatabaseContext);
+  const debouncedSearch = useDebounceValue(searchValue, 300);
+
+  const { data: collections, isLoading } = useQuery({
+    queryKey: ["collections"],
+    queryFn: async () => {
+      return await getCollections({ page: null });
+    },
+  });
+
+  const filteredCollections = useMemo(
+    () =>
+      !debouncedSearch
+        ? collections
+        : filterItemsBySearchValue(collections || [], debouncedSearch, [
+            "title",
+            "description",
+          ]),
+    [collections, debouncedSearch]
+  );
+
+  return {
+    collections: filteredCollections,
+    isLoading,
+  };
 }
