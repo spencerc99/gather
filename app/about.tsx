@@ -70,7 +70,7 @@ export function AboutSection({
   return (
     <>
       <XStack>
-        <H2 flexWrap="wrap">Hi, I'm Spencer</H2>
+        <H2>Hi, I'm Spencer</H2>
         <Image
           source={require("../assets/images/spencer-happy-taiwan.png")}
           style={{
@@ -87,7 +87,8 @@ export function AboutSection({
           <StyledText link>Gather</StyledText>
         </ExternalLink>{" "}
         because I wanted a fast, simple way to archive & curate multimedia
-        collections. After several months of engineering (with help from friends{" "}
+        collections. After several months of engineering (with help from friends
+        at{" "}
         <ExternalLink href="https://canvas.xyz">
           <StyledText link>canvas.xyz</StyledText>
         </ExternalLink>{" "}
@@ -95,16 +96,16 @@ export function AboutSection({
         <ExternalLink href="https://are.na">
           <StyledText link>are.na</StyledText>
         </ExternalLink>
-        ), it has become a personal expression of how I want to interact with
-        the data I collect.
+        ), it has become an expression of how I wish I could interact with the
+        data I collect.
       </StyledText>
       <StyledText>
-        I want my work to be as accessible as possible, AND making{" "}
+        I want my work to be as accessible as possible, AND making this{" "}
         <ExternalLink href="https://spencerchang.substack.com/p/ti-10-make-small-web-tools">
           <StyledText link>handmade software</StyledText>
         </ExternalLink>{" "}
-        like this is how I make my living as an indie engineer-artist. Thanks
-        you for anything you can offer to support my work!
+        is how I make my living as an indie engineer-artist. I really appreciate
+        anything you can offer to support me 🧡
       </StyledText>
       <YStack marginTop="$2">
         <SlidingScalePayment

@@ -95,9 +95,9 @@ export default function ProfileScreen() {
     AppIcons[0].source;
 
   return (
-    <SafeAreaView>
-      <ScrollView padding="10%">
-        <YStack gap="$2">
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView>
+        <YStack gap="$2" padding="10%">
           {currentUser && (
             <YStack space="$2" padding="$4" alignItems="center" paddingTop={0}>
               <Avatar size="$6" circular>
@@ -154,14 +154,14 @@ export default function ProfileScreen() {
           {/* thanks to https://github.com/outsung/expo-dynamic-app-icon/tree/main/example */}
           <AppIconSelect appIcon={appIcon} onSelectIcon={onSelectIcon} />
           <StyledButton
-            icon={<Icon name="gift" />}
+            icon={<Icon name="mail" />}
             onPress={() => {
               Linking.openURL(FeedbackLink).catch((error) => {
                 console.log(error);
               });
             }}
           >
-            Send me Feedback
+            Send Feedback
           </StyledButton>
           <StyledButton
             icon={<Icon name="gift" />}
@@ -172,8 +172,9 @@ export default function ProfileScreen() {
                 console.log(error);
               });
             }}
+            backgroundColor="$orange8"
           >
-            Support my work
+            Support Development
           </StyledButton>
           {/* <LinkButton>Share</LinkButton> */}
           {/* <LinkButton>Tip</LinkButton> */}
@@ -245,8 +246,7 @@ function AppIconSelect({
       <StyledText metadata>
         I took all these photos between 2020-2023. They capture a snapshot of
         moments of life that I want to hold onto in some way. They remind me
-        what it feels like to pay attention to the motion of the world. If you
-        have similar photos you'd like to share, I'd love to see them.
+        what it feels like to pay attention to the motion of the world.
       </StyledText>
     </YStack>
   );

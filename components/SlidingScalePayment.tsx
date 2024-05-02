@@ -8,13 +8,13 @@ export const SlidingPrice = [1, 3, 6, 9, 21, 33, 60];
 export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
 
 const PriceMessages = [
-  "No worries. I appreciate you paying what you can to support my work 🧡",
-  "No worries. I appreciate you paying what you can to support my work 🧡",
-  "Thank you for making this possible 🧡",
-  "Thank you for making this possible 🧡",
-  "Thank you so much for generous support 🧡",
-  "Thank you so much for generous support 🧡",
-  "Wow! Thank you so much for giving me the space to do this work. I'd love to send you a handwritten letter to show my gratitude 🧡",
+  "No worries. I appreciate you paying what you can to support my work",
+  "No worries. I appreciate you paying what you can to support my work",
+  "Thank you for making this possible",
+  "Thank you for making this possible",
+  "Thank you so much for your generosity!",
+  "Thank you so much for your generosity!",
+  "Wow! Thank you so much for giving me the space to do this work. I'd love to send you a handwritten letter to show my gratitude",
 ];
 
 const PaymentLinks = [
@@ -57,7 +57,7 @@ function Flower({ style }: { style: XStackProps }) {
   }, [animatedWidth, animatedHeight]);
 
   return (
-    <XStack {...style}>
+    <XStack {...style} pointerEvents="none">
       <AnimatedImage
         source={randomFlower}
         style={{
@@ -108,11 +108,13 @@ export function SlidingScalePayment({
     });
   }, [numFlowers]);
   return (
-    <YStack gap="$5">
+    <YStack gap="$2">
       <StyledText metadata bold>
         Choose an amount that works for you
       </StyledText>
+      <H3 marginHorizontal="auto">${moneyValue}</H3>
       <Slider
+        marginVertical="$3"
         min={1}
         max={SlidingPrice.length}
         step={1}
@@ -155,8 +157,7 @@ export function SlidingScalePayment({
         </XStack>
       </Slider>
       <YStack alignItems="center" position="relative" gap="$2">
-        <H3>${moneyValue}</H3>
-        <YStack gap="$2" position="relative">
+        <YStack position="relative" marginTop="$6">
           <StyledText>{PriceMessages[value[0] - 1]}</StyledText>
           {value[0] >= StartingSlidingScaleValue ? flowers : null}
         </YStack>

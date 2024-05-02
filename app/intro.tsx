@@ -138,6 +138,16 @@ export default function IntroScreen() {
         return (
           // TODO: add animated.view to slide in?
           <>
+            <XStack justifyContent="center">
+              <Image
+                source={require("../assets/images/icon.png")}
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 16,
+                }}
+              />
+            </XStack>
             <H2>Welcome to Gather</H2>
             <StyledText marginBottom="$1">
               Your messy space for gathering inspiration, encounters, and
@@ -226,8 +236,9 @@ export default function IntroScreen() {
               onSlideEnd={onSlideEnd}
             />
 
-            <YStack gap="$3" marginTop="auto">
+            <YStack gap="$2" marginTop="$5">
               <NextStepButton
+                marginTop={0}
                 text={
                   <StyledText>
                     Contribute <StyledText bold>${moneyValue}</StyledText>
@@ -394,10 +405,9 @@ export default function IntroScreen() {
               paddingBottom="20%"
               gap="$3"
             >
-              <XStack flexGrow={0} justifyContent="center">
+              <XStack flexGrow={0}>
                 {step > 0 && (
                   <StyledButton
-                    position="absolute"
                     theme="grey"
                     size="$small"
                     left={0}
@@ -415,14 +425,6 @@ export default function IntroScreen() {
                     Back
                   </StyledButton>
                 )}
-                <Image
-                  source={require("../assets/images/icon.png")}
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 16,
-                  }}
-                />
               </XStack>
               <YStack gap="$3" flexGrow={1}>
                 {renderStep()}
