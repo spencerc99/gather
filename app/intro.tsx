@@ -256,14 +256,14 @@ export default function IntroScreen() {
                 onPress={() => {
                   Alert.alert(
                     "pretty please?",
-                    "This work, like all handmade software work, only happens because of people like you contributing a few dollars. Together, we can make it possible to create software with data that you own that isn't subject to ads or adverse incentives.",
+                    "This work, like all handmade software, only happens because of people like you contributing a few dollars. Together, we can make it possible to create software with data that's entirely yours and not subject to ads or adverse incentives.",
                     [
                       {
                         text: "Sorry I really can't",
                         onPress: () => {
                           Alert.alert(
                             "It's okay",
-                            "I hope you enjoy the app and if you find a lot of use, that you'll find a way to contribute later.",
+                            "I hope you enjoy the app regardless and that you'll find a way to contribute later if you find it useful!",
                             []
                           );
                           nextStep();
