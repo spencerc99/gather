@@ -1,27 +1,18 @@
 import { memo, useCallback, useContext, useMemo, useState } from "react";
-import { DatabaseContext } from "../utils/db";
-import { Collection } from "../utils/dataTypes";
+import { FlatList, Pressable } from "react-native";
 import {
   ScrollView,
   SizableText,
   Spinner,
   Stack,
-  View,
   XStack,
   YStack,
-  useDebounceValue,
 } from "tamagui";
-import {
-  Icon,
-  LinkButton,
-  SearchBarInput,
-  StyledButton,
-  StyledParagraph,
-} from "./Themed";
-import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
-import { FlatList, Pressable } from "react-native";
+import { Collection } from "../utils/dataTypes";
+import { DatabaseContext, useCollections } from "../utils/db";
 import { UserContext } from "../utils/user";
-import { filterItemsBySearchValue } from "../utils/search";
+import { CollectionSummary, CollectionThumbnail } from "./CollectionSummary";
+import { Icon, LinkButton, SearchBarInput, StyledButton } from "./Themed";
 
 const SelectCollectionView = memo(
   ({
@@ -63,17 +54,35 @@ export function SelectCollectionsList({
   setSearchValue?: (newSearch: string) => void;
   extraSearchContent?: React.ReactNode;
 }) {
-  const { collections, createCollection } = useContext(DatabaseContext);
+  const { createCollection } = useContext(DatabaseContext);
   const [internalSearchValue, internalSetSearchValue] = useState("");
   const { currentUser } = useContext(UserContext);
   const [loading, setLoading] = useState(false);
   const createdCollections = useMemo(() => new Set<string>(), []);
+  // const debouncedFetchMoreCollections = useDebounce(fetchMoreCollections, 300);
+
+  // const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
+  //   useInfiniteQuery({
+  //     queryKey: ["collections"],
+  //     queryFn: async ({ pageParam, queryKey }) => {
+  //       const collections = await getCollections({ page: pageParam });
+
+  //       return {
+  //         collections,
+  //         nextId: pageParam + 1,
+  //         previousId: pageParam === 0 ? undefined : pageParam - 1,
+  //       };
+  //     },
+  //     initialPageParam: 0,
+  //     getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
+  //     getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
+  //   });
+  // const collections = data?.pages.flatMap((p) => p.collections);
 
   const searchValue = useMemo(
     () => (propSetSearchValue && propSearch ? propSearch : internalSearchValue),
     [propSearch, internalSearchValue]
   );
-  const debouncedSearch = useDebounceValue(searchValue, 300);
   const setSearchValue = useCallback(
     (newSearch: string) => {
       if (propSetSearchValue) {
@@ -85,24 +94,7 @@ export function SelectCollectionsList({
     [propSetSearchValue, internalSetSearchValue]
   );
 
-  // sort by lastConnectedAt descending
-  const sortedCollections = useMemo(
-    () =>
-      [...collections].sort(
-        (a, b) =>
-          (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
-          (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
-      ),
-    [collections]
-  );
-  const filteredCollections = useMemo(
-    () =>
-      filterItemsBySearchValue(sortedCollections, debouncedSearch, [
-        "title",
-        "description",
-      ]),
-    [sortedCollections, debouncedSearch]
-  );
+  const { collections, isLoading } = useCollections(searchValue);
 
   const toggleCollection = useCallback(
     (collection: Collection) => {
@@ -151,12 +143,15 @@ export function SelectCollectionsList({
   );
 
   function renderCollections() {
+    if (isLoading) {
+      return <Spinner color="$orange9" size="small" />;
+    }
     return (
       <FlatList
         scrollEnabled={false}
         horizontal={Boolean(horizontal)}
         keyboardShouldPersistTaps={"handled"}
-        data={filteredCollections}
+        data={collections}
         contentContainerStyle={{
           gap: horizontal ? 8 : 4,
         }}
@@ -186,7 +181,7 @@ export function SelectCollectionsList({
                 e.stopPropagation();
               }}
             >
-              {!searchValue && collections.length === 0 && (
+              {!searchValue && collections?.length === 0 && (
                 <YStack height={140} width={110} justifyContent="center">
                   <LinkButton
                     href="/modal"

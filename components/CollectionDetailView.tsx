@@ -99,11 +99,14 @@ export function CollectionDetailView({
             remoteCreatedAt: info.connected_at,
           }))
         ),
-        updateCollection(id, {
-          remoteSourceType: RemoteSourceType.Arena,
-          remoteSourceInfo: {
-            arenaId: newChannel.id.toString(),
-            arenaClass: "Collection",
+        updateCollection({
+          collectionId: id,
+          editInfo: {
+            remoteSourceType: RemoteSourceType.Arena,
+            remoteSourceInfo: {
+              arenaId: newChannel.id.toString(),
+              arenaClass: "Collection",
+            },
           },
         }),
       ]);

@@ -1,10 +1,10 @@
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { CollectionDetailView } from "../../../components/CollectionDetailView";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useContext, useEffect, useState } from "react";
-import { DatabaseContext } from "../../../utils/db";
 import { Spinner } from "tamagui";
-import { Collection } from "../../../utils/dataTypes";
 import { HeaderIcon } from "../../(tabs)/_layout";
+import { CollectionDetailView } from "../../../components/CollectionDetailView";
+import { Collection } from "../../../utils/dataTypes";
+import { DatabaseContext } from "../../../utils/db";
 
 export function CollectionDetailsHeaderLink({ id }: { id: string }) {
   return (
@@ -39,13 +39,14 @@ export function CollectionGearHeaderLink({
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();
   const [collection, setCollection] = useState<Collection | null>(null);
-  const { getCollection, collections } = useContext(DatabaseContext);
+  const { getCollection } = useContext(DatabaseContext);
 
+  // TODO: useQuery
   useEffect(() => {
     getCollection(id.toString()).then((collection) =>
       setCollection(collection)
     );
-  }, [id, collections]);
+  }, [id]);
 
   if (!collection) {
     return <Spinner size="large" color="$orange4" />;

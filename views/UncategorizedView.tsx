@@ -1,24 +1,11 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
   DatabaseContext,
-  mapBlockContentToPath,
-  mapSnakeCaseToCamelCaseProperties,
+  useTotalBlockCount,
+  useUncategorizedBlocks,
 } from "../utils/db";
 import { Block } from "../utils/dataTypes";
-import {
-  Icon,
-  StyledButton,
-  StyledParagraph,
-  StyledText,
-  StyledView,
-} from "../components/Themed";
+import { Icon, StyledButton, StyledText } from "../components/Themed";
 import {
   Dimensions,
   Keyboard,
@@ -27,64 +14,14 @@ import {
 } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
 import { Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
-import { convertDbTimestampToDate } from "../utils/date";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectCollectionsList } from "../components/SelectCollectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
 
 export function UncategorizedView() {
-  const { db, blocks, addConnections, getConnectionsForBlock, deleteBlock } =
-    useContext(DatabaseContext);
-  const [events, setEvents] = useState<Block[] | null>(null);
-
-  const initData = useCallback(() => {
-    void fetchEvents();
-  }, []);
-
-  // TODO: do some time delay?
-  useFocusEffect(initData);
-
-  async function fetchEvents() {
-    const [events] = await db.execAsync(
-      [
-        {
-          sql: `
-        SELECT * FROM (
-        SELECT  blocks.id,
-                blocks.content,
-                blocks.title,
-                blocks.type,
-                blocks.source,
-                blocks.created_timestamp,
-                COUNT(connections.collection_id) AS num_connections
-        FROM blocks
-        LEFT JOIN connections ON connections.block_id = blocks.id
-        GROUP BY 1,2,3,4,5,6) AS c
-        WHERE c.num_connections = 0
-        ORDER BY c.created_timestamp DESC;`,
-          // TODO: add this after migrating table
-          // WHERE user_id = ?
-          args: [],
-        },
-      ],
-      true
-    );
-
-    if ("error" in events) {
-      throw events.error;
-    }
-
-    const newEvents = events.rows.map((event) => {
-      const mapped = mapSnakeCaseToCamelCaseProperties(event);
-      return {
-        ...mapped,
-        content: mapBlockContentToPath(mapped.content, mapped.type),
-        createdAt: convertDbTimestampToDate(mapped.createdTimestamp),
-      } as Block;
-    });
-    setEvents(newEvents);
-  }
+  const { addConnections, deleteBlock } = useContext(DatabaseContext);
+  const { data: totalBlocks } = useTotalBlockCount();
+  const { data: events } = useUncategorizedBlocks();
 
   const renderBlock = useCallback((block: Block) => {
     return (
@@ -104,18 +41,18 @@ export function UncategorizedView() {
   }, []);
 
   const onClickConnect = useCallback(
-    (itemId: string, selectedCollections: string[]) => {
+    async (itemId: string, selectedCollections: string[]) => {
       if (!events) {
         return;
       } else if (events.length === 1) {
         // addConnections(events[currentIndex!].id, selectedCollections);
         // setSelectedCollections([]);
         // setEvents([]);
-        void addConnections(itemId, selectedCollections);
-        setEvents([]);
+        await addConnections(itemId, selectedCollections);
+        // setEvents([]);
       } else {
-        void addConnections(itemId, selectedCollections);
-        setEvents(events.filter((block) => block.id !== itemId));
+        await addConnections(itemId, selectedCollections);
+        // setEvents(events.filter((block) => block.id !== itemId));
         // carouselRef.current?.next();
       }
       Keyboard.dismiss();
@@ -131,12 +68,11 @@ export function UncategorizedView() {
   const [searchValue, setSearchValue] = useState("");
 
   const handleDeleteBlock = useCallback(
-    (blockId: string) => {
+    async (blockId: string) => {
       if (!events) {
         return;
       }
-      void deleteBlock(blockId);
-      setEvents(events.filter((block) => block.id !== blockId));
+      await deleteBlock(blockId);
     },
     [events]
   );
@@ -175,7 +111,8 @@ export function UncategorizedView() {
           width="100%"
           marginTop="$1"
         >
-          {index + 1} / {events.length} unsorted, {blocks.length} total
+          {index + 1} / {events.length} unsorted,{" "}
+          {totalBlocks === null ? "..." : totalBlocks} total
         </StyledText>
         <YStack
           paddingVertical="$2"
@@ -241,7 +178,7 @@ export function UncategorizedView() {
       space="$3"
     >
       <StyledText position="absolute" top="$1" textAlign="center" width="100%">
-        {blocks.length} total blocks
+        {totalBlocks} total blocks
       </StyledText>
       <StyledText textAlign="center" fontSize="$7">
         No uncategorized items!

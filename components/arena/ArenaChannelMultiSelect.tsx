@@ -1,19 +1,18 @@
+import { memo, useCallback, useContext, useMemo, useState } from "react";
+import { FlatList } from "react-native";
 import {
-  useContext,
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  memo,
-} from "react";
-import { useDebounceValue, XStack, ScrollView, Stack, Sheet } from "tamagui";
-import { ArenaChannelInfo, getUserChannels } from "../../utils/arena";
-import { RemoteSourceType } from "../../utils/dataTypes";
+  Sheet,
+  Spinner,
+  Stack,
+  XStack,
+  YStack,
+  useDebounceValue,
+} from "tamagui";
+import { ArenaChannelInfo } from "../../utils/arena";
 import { DatabaseContext } from "../../utils/db";
-import { filterItemsBySearchValue } from "../../utils/search";
-import { Icon, SearchBarInput, StyledButton, StyledText } from "../Themed";
+import { useArenaUserChannels } from "../../utils/hooks/useArenaUserChannels";
+import { SearchBarInput, StyledButton } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
-import { FlatList, InteractionManager } from "react-native";
 
 const ChannelView = memo(
   ({
@@ -48,36 +47,10 @@ export function ArenaChannelMultiSelect({
   selectedChannels: ArenaChannelInfo[];
   setSelectedChannels: (selectedChannels: ArenaChannelInfo[]) => void;
 }) {
-  const { arenaAccessToken, collections } = useContext(DatabaseContext);
-  const [channels, setChannels] = useState<ArenaChannelInfo[] | null>(null);
+  const { arenaAccessToken } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (arenaAccessToken) {
-      InteractionManager.runAfterInteractions(async () => {
-        await getUserChannels(arenaAccessToken).then((channels) => {
-          setChannels(channels);
-        });
-      });
-    } else {
-      setChannels([]);
-    }
-  }, [arenaAccessToken]);
-  const remoteCollectionIds = useMemo(
-    () =>
-      new Set(
-        collections
-          .filter(
-            (c) =>
-              c.remoteSourceType === RemoteSourceType.Arena &&
-              c.remoteSourceInfo?.arenaId
-          )
-          .map((c) => c.remoteSourceInfo?.arenaId)
-      ),
-    [collections]
-  );
 
   const toggleChannel = useCallback(
     (channel: ArenaChannelInfo, isSelected: boolean) => {
@@ -94,41 +67,43 @@ export function ArenaChannelMultiSelect({
     [selectedChannels, setSelectedChannels]
   );
 
-  const nonDisabledChannels = useMemo(
-    () =>
-      channels?.filter((c) => {
-        return !remoteCollectionIds.has(c.id.toString());
-      }),
-    [channels, collections]
-  );
-  const filteredChannels = useMemo(
-    () =>
-      debouncedSearch === ""
-        ? nonDisabledChannels
-        : filterItemsBySearchValue(channels || [], debouncedSearch, ["title"]),
-    [channels, debouncedSearch, nonDisabledChannels]
-  );
-
   const selectedChannelIds = useMemo(
     () => selectedChannels.map((c) => c.id.toString()),
     [selectedChannels]
   );
 
+  const { channels, isLoading, isFetchingNextPage, fetchMore } =
+    useArenaUserChannels(debouncedSearch);
+
+  const annotatedChannels = useMemo(
+    () =>
+      (channels || []).map((channel) => ({
+        ...channel,
+        isSelected: selectedChannelIds.includes(channel.id.toString()),
+      })),
+    [channels]
+  );
+
   const renderChannel = useCallback(
-    ({ item, index: idx }: { item: ArenaChannelInfo; index: number }) => {
+    ({
+      item,
+      index: idx,
+    }: {
+      item: ArenaChannelInfo & { isDisabled: boolean; isSelected: boolean };
+      index: number;
+    }) => {
       const channel = item;
-      const isDisabled = remoteCollectionIds.has(channel.id.toString());
-      const isSelected = selectedChannelIds.includes(channel.id.toString());
       return (
         <ChannelView
+          key={channel.id.toString()}
           channel={channel}
           toggleChannel={toggleChannel}
-          isDisabled={isDisabled}
-          isSelected={isSelected}
+          isDisabled={channel.isDisabled}
+          isSelected={channel.isSelected}
         />
       );
     },
-    [selectedChannelIds, selectedChannels, remoteCollectionIds]
+    [selectedChannelIds, selectedChannels]
   );
 
   if (!arenaAccessToken) {
@@ -139,7 +114,7 @@ export function ArenaChannelMultiSelect({
     <Stack>
       <XStack justifyContent="center" width="100%" alignItems="center" gap="$2">
         <StyledButton flexGrow={1} onPress={() => setOpen(true)} theme="grey">
-          {!channels
+          {isLoading
             ? "Loading from are.na..."
             : selectedChannels.length > 0
             ? "Configure channels"
@@ -195,7 +170,9 @@ export function ArenaChannelMultiSelect({
               cancel
             </StyledButton>
           </XStack>
-          <Sheet.ScrollView>
+          {isLoading ? (
+            <Spinner size="small" color="$orange9" />
+          ) : (
             <FlatList
               contentContainerStyle={{
                 // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
@@ -205,10 +182,29 @@ export function ArenaChannelMultiSelect({
                 e.preventDefault();
                 e.stopPropagation();
               }}
-              data={filteredChannels}
+              data={annotatedChannels}
               renderItem={renderChannel}
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <YStack
+                    justifyContent="center"
+                    alignSelf="center"
+                    alignItems="center"
+                    width="100%"
+                  >
+                    <Spinner size="small" color="$orange9" />
+                  </YStack>
+                ) : null
+              }
+              onEndReachedThreshold={0.3}
+              onEndReached={() => {
+                if (!open) {
+                  return;
+                }
+                fetchMore();
+              }}
             />
-          </Sheet.ScrollView>
+          )}
         </Sheet.Frame>
       </Sheet>
     </Stack>

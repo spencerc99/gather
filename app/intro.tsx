@@ -40,7 +40,7 @@ export default function IntroScreen() {
   const width = Dimensions.get("window").width;
   const { email: savedEmail, setupUser } = useContext(UserContext);
   const [email, setEmail] = useState("");
-  const { arenaAccessToken, fetchCollections, tryImportArenaChannel } =
+  const { arenaAccessToken, tryImportArenaChannel } =
     useContext(DatabaseContext);
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
     []
@@ -61,9 +61,7 @@ export default function IntroScreen() {
         selectedChannels.map(
           async (channel) => await tryImportArenaChannel(channel.id.toString())
         )
-      ).then(() => {
-        return fetchCollections();
-      });
+      );
     } catch (error) {
       console.error(error);
       // throw error;

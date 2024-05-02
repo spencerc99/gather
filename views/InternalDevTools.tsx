@@ -21,8 +21,6 @@ export function InternalDevTools({
 }) {
   const {
     db,
-    fetchBlocks,
-    fetchCollections,
     trySyncPendingArenaBlocks,
     trySyncNewArenaBlocks,
     getPendingArenaBlocks,
@@ -90,12 +88,6 @@ export function InternalDevTools({
             }}
           >
             <StyledParagraph>Sync from Arena</StyledParagraph>
-          </StyledButton>
-          <StyledButton disabled={isLoading} onPress={fetchCollections}>
-            Refresh Collections
-          </StyledButton>
-          <StyledButton disabled={isLoading} onPress={fetchBlocks}>
-            Refresh Blocks
           </StyledButton>
           <XStack>
             <StyledLabel bold>Token</StyledLabel>

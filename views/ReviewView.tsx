@@ -1,7 +1,11 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { DatabaseContext } from "../utils/db";
-import { Block } from "../utils/dataTypes";
-import { BlockReviewSummary, BlockSummary } from "../components/BlockSummary";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useContext, useMemo, useRef, useState } from "react";
+import { FlatList, Keyboard } from "react-native";
+import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import {
   Adapt,
   Select,
@@ -9,22 +13,20 @@ import {
   Spinner,
   XStack,
   YStack,
+  useDebounce,
   useWindowDimensions,
 } from "tamagui";
-import { FlatList } from "react-native";
+import { BlockReviewSummary, BlockSummary } from "../components/BlockSummary";
+import { CollectionSelect } from "../components/CollectionSelect";
 import {
   Icon,
   IconType,
   StyledButton,
   StyledLabel,
 } from "../components/Themed";
-import { CollectionSelect } from "../components/CollectionSelect";
-import { Keyboard } from "react-native";
-import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
-import { shuffleArray } from "../utils";
 import { afterAnimations } from "../utils/afterAnimations";
-
-const RenderChunkSize = 25;
+import { Block, SortType } from "../utils/dataTypes";
+import { DatabaseContext } from "../utils/db";
 
 enum ViewType {
   Carousel = "carousel",
@@ -33,43 +35,95 @@ enum ViewType {
 
 export function ReviewView() {
   const {
-    blocks,
+    getBlocks,
     getCollectionItems,
     selectedReviewCollection,
     setSelectedReviewCollection,
   } = useContext(DatabaseContext);
 
-  const [outputBlocks, setOutputBlocks] = useState<Block[] | null>(null);
   const [view, setView] = useState<ViewType>(ViewType.Carousel);
+  const [sortType, setSortType] = useState<SortType>(SortType.Random);
   function toggleView() {
     setView((prev) =>
       prev === ViewType.Carousel ? ViewType.Feed : ViewType.Carousel
     );
   }
+  const queryKey = ["blocks", selectedReviewCollection, { sortType }] as const;
 
-  useEffect(() => {
-    void fetchBlocks();
-  }, [selectedReviewCollection, blocks]);
+  const generateSeed = () =>
+    1 + Math.floor(Math.random() * Number.MAX_SAFE_INTEGER - 1);
+  const { data: tempBlocks, isLoading } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const [_, collectionId] = queryKey;
 
-  async function fetchBlocks() {
-    if (!selectedReviewCollection) {
-      setOutputBlocks(blocks);
-      return;
-    }
-    // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
-    // this is tricky becuase we need `remoteConnectedAt` for the particular collectionId involved... I suppose we could just fetch all of those too in the big block fetch.
-    // TODO: can also push the sort to the DB
-    const collectionBlocks = await getCollectionItems(selectedReviewCollection);
-    setOutputBlocks(collectionBlocks);
-  }
+      const blocks = !collectionId
+        ? await getBlocks({ page: null, sortType, seed })
+        : await getCollectionItems(collectionId, {
+            page: null,
+            sortType,
+            seed,
+          });
 
+      return blocks;
+    },
+  });
+  const [seed, setSeed] = useState(generateSeed());
+  const outputBlocks = useMemo(
+    () =>
+      isLoading
+        ? []
+        : (tempBlocks || []).sort(
+            (a, b) =>
+              Math.sin(Number(a.id) + seed) - Math.sin(Number(b.id) + seed)
+          ),
+    [tempBlocks, seed]
+  );
   function randomizeBlocks() {
-    if (!outputBlocks) {
-      return;
-    }
-    const randomized = shuffleArray(outputBlocks);
-    setOutputBlocks(randomized);
+    setSeed(generateSeed());
   }
+
+  // TODO: use this when native sqlite random sort works
+  // const [seed, setSeed] = useState(generateSeed());
+  // const queryClient = useQueryClient();
+  // const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
+  //   useInfiniteQuery({
+  //     queryKey,
+  //     queryFn: async ({ pageParam, queryKey }) => {
+  //       const [_, collectionId] = queryKey;
+
+  //       const blocks = !collectionId
+  //         ? await getBlocks({ page: pageParam, sortType, seed })
+  //         : await getCollectionItems(collectionId, {
+  //             page: pageParam,
+  //             sortType,
+  //             seed,
+  //           });
+
+  //       return {
+  //         blocks,
+  //         nextId: pageParam + 1,
+  //         previousId: pageParam === 0 ? undefined : pageParam - 1,
+  //       };
+  //     },
+  //     initialPageParam: 0,
+  //     getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
+  //     getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
+  //   });
+  // const outputBlocks = data?.pages.flatMap((p) => p.blocks);
+  // function randomizeBlocks() {
+  //   setSeed(generateSeed());
+  //   queryClient.invalidateQueries({
+  //     queryKey: ["blocks", selectedReviewCollection, { sortType }],
+  //   });
+  // }
+  // function fetchMoreBlocks() {
+  //   if (!hasNextPage) {
+  //     return;
+  //   }
+  //   fetchNextPage();
+  // }
+
   return (
     <YStack gap="$2" flex={1}>
       <XStack
@@ -132,7 +186,12 @@ export function ReviewView() {
           </XStack>
         </XStack>
       </XStack>
-      {afterAnimations(ReviewItems)({ view, outputBlocks })}
+      {afterAnimations(ReviewItems)({
+        view,
+        outputBlocks,
+        fetchMoreBlocks: () => {},
+        isFetchingNextPage: false,
+      })}
     </YStack>
   );
 }
@@ -140,9 +199,13 @@ export function ReviewView() {
 function ReviewItems({
   view,
   outputBlocks,
+  fetchMoreBlocks,
+  isFetchingNextPage,
 }: {
   view: ViewType;
   outputBlocks: Block[] | null;
+  fetchMoreBlocks: () => void;
+  isFetchingNextPage: boolean;
 }) {
   if (!outputBlocks)
     return (
@@ -153,11 +216,16 @@ function ReviewItems({
 
   switch (view) {
     case ViewType.Carousel:
+      // TODO: handle fetching more blocks when using infiniteQuery
       return <CarouselView outputBlocks={outputBlocks} />;
     case ViewType.Feed:
       return (
         <YStack marginTop="$10" flex={1}>
-          <FeedView blocks={outputBlocks} />
+          <FeedView
+            blocks={outputBlocks}
+            fetchMoreBlocks={fetchMoreBlocks}
+            isFetchingNextPage={isFetchingNextPage}
+          />
         </YStack>
       );
   }
@@ -220,7 +288,17 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
   );
 }
 
-export function FeedView({ blocks }: { blocks: Block[] }) {
+export function FeedView({
+  blocks,
+  fetchMoreBlocks,
+  isFetchingNextPage,
+}: {
+  blocks: Block[];
+  fetchMoreBlocks: () => void;
+  isFetchingNextPage: boolean;
+}) {
+  const debouncedFetchMoreBlocks = useDebounce(fetchMoreBlocks, 300);
+
   function renderBlock(block: Block) {
     return (
       <BlockSummary
@@ -239,30 +317,13 @@ export function FeedView({ blocks }: { blocks: Block[] }) {
     );
   }
 
-  //   const outputBlocks = useMemo(
-  //     () =>
-  //       [...blocks].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-  //     [blocks]
-  //   );
-
-  const [pages, setPages] = useState(1);
-
-  const blocksToRender = useMemo(
-    () => blocks.slice(0, pages * RenderChunkSize),
-    [blocks, pages]
-  );
-
-  function fetchMoreBlocks() {
-    setPages(pages + 1);
-  }
-
   // TODO: use tabs to render blocks + collections
   return (
     <YStack gap="$4" paddingHorizontal="$2" flex={1}>
       <FlatList
         numColumns={2}
         renderItem={({ item }) => renderBlock(item)}
-        data={blocksToRender}
+        data={blocks}
         contentContainerStyle={{
           display: "flex",
           alignItems: "center",
@@ -270,7 +331,19 @@ export function FeedView({ blocks }: { blocks: Block[] }) {
           paddingBottom: 36,
         }}
         onEndReachedThreshold={0.3}
-        onEndReached={fetchMoreBlocks}
+        onEndReached={debouncedFetchMoreBlocks}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <YStack
+              justifyContent="center"
+              alignSelf="center"
+              alignItems="center"
+              width="100%"
+            >
+              <Spinner size="small" color="$orange9" />
+            </YStack>
+          ) : null
+        }
       ></FlatList>
     </YStack>
   );

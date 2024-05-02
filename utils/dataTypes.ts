@@ -120,3 +120,8 @@ export interface ArenaImportInfo {
   title: string;
   size: number;
 }
+
+export enum SortType {
+  Random = "random",
+  Created = "created",
+}

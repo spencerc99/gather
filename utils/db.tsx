@@ -1,6 +1,12 @@
 import { InteractionManager, Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import * as SecureStore from "expo-secure-store";
+import {
+  InfiniteData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import {
@@ -12,25 +18,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { BlockType, FileBlockTypes } from "./mimeTypes";
+import { useDebounce, useDebounceValue } from "tamagui";
 import { ShareIntent } from "../hooks/useShareIntent";
-import {
-  ArenaImportInfo,
-  BlockEditInfo,
-  BlockWithCollectionInfo,
-  Collection,
-  CollectionBlock,
-  CollectionEditInfo,
-  CollectionInsertInfo,
-  Connection,
-  ConnectionInsertInfo,
-  InsertBlockConnection,
-  RemoteSourceInfo,
-  RemoteSourceType,
-} from "./dataTypes";
-import { UserContext } from "./user";
-import { convertDbTimestampToDate } from "./date";
-import { PHOTOS_FOLDER, intializeFilesystemFolder } from "./blobs";
 import {
   ArenaChannelInfo,
   ArenaTokenStorageKey,
@@ -43,12 +32,6 @@ import {
   getChannelInfoFromUrl,
   removeBlockFromChannel,
 } from "./arena";
-import { Block } from "./dataTypes";
-import {
-  BlockInsertInfo,
-  BlocksInsertInfo,
-  DatabaseBlockInsert,
-} from "./dataTypes";
 import {
   CollectionToReviewKey,
   getLastSyncedInfoForChannel,
@@ -57,8 +40,32 @@ import {
   updateLastSyncedRemoteInfo,
   useStickyValue,
 } from "./asyncStorage";
+import { PHOTOS_FOLDER, intializeFilesystemFolder } from "./blobs";
+import {
+  ArenaImportInfo,
+  Block,
+  BlockEditInfo,
+  BlockInsertInfo,
+  BlockWithCollectionInfo,
+  BlocksInsertInfo,
+  Collection,
+  CollectionBlock,
+  CollectionEditInfo,
+  CollectionInsertInfo,
+  Connection,
+  ConnectionInsertInfo,
+  DatabaseBlockInsert,
+  InsertBlockConnection,
+  RemoteSourceInfo,
+  RemoteSourceType,
+  SortType,
+} from "./dataTypes";
+import { convertDbTimestampToDate } from "./date";
 import { Indices, Migrations } from "./db/migrations";
-import { useDebounce } from "tamagui";
+import { BlockType, FileBlockTypes } from "./mimeTypes";
+import { UserContext } from "./user";
+import { filterItemsBySearchValue } from "./search";
+import { ensure } from "./react";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -147,27 +154,41 @@ function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
   return chunks;
 }
 
+const BlockSelectLimit = 15;
+const CollectionSelectLimit = 15;
+
+interface GetBlocksOptions {
+  page?: number | null;
+  whereClause?: string;
+  havingClause?: string;
+  sortType?: SortType;
+  seed?: number;
+}
+type GetCollectionsOptions = GetBlocksOptions;
+
 interface DatabaseContextProps {
-  blocks: Block[];
-  localBlocks: Block[] | null;
-  createBlock: (block: BlockInsertInfo) => Promise<string>;
+  getBlocks: (opts?: GetBlocksOptions) => Promise<Block[]>;
+  // localBlocks: Block[] | null;
   createBlocks: (blocks: BlocksInsertInfo) => Promise<string[]>;
   getBlock: (blockId: string) => Promise<Block>;
-  updateBlock: (
-    blockId: string,
-    editInfo: BlockEditInfo
-  ) => Promise<Block | undefined>;
+  updateBlock: (opts: {
+    blockId: string;
+    editInfo: BlockEditInfo;
+  }) => Promise<Block | undefined>;
   deleteBlock: (id: string) => void;
-
   getConnectionsForBlock: (blockId: string) => Promise<Connection[]>;
 
-  collections: Collection[];
+  getCollections: (opts?: GetCollectionsOptions) => Promise<Collection[]>;
+  getArenaCollectionIds: () => Promise<Set<string>>;
   createCollection: (collection: CollectionInsertInfo) => Promise<string>;
-  updateCollection: (
+  updateCollection: (opts: {
+    collectionId: string;
+    editInfo: CollectionEditInfo;
+  }) => Promise<void>;
+  getCollectionItems: (
     collectionId: string,
-    editInfo: CollectionEditInfo
-  ) => Promise<void>;
-  getCollectionItems: (collectionId: string) => Promise<CollectionBlock[]>;
+    options?: GetBlocksOptions
+  ) => Promise<CollectionBlock[]>;
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => Promise<void>;
@@ -192,8 +213,6 @@ interface DatabaseContextProps {
   // internal
   db: SQLite.SQLiteDatabase;
   initDatabases: () => Promise<void>;
-  fetchBlocks: () => Promise<void>;
-  fetchCollections: () => Promise<void>;
   trySyncPendingArenaBlocks: () => void;
   trySyncNewArenaBlocks: () => void;
   getPendingArenaBlocks: () => any;
@@ -202,11 +221,6 @@ interface DatabaseContextProps {
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
-  blocks: null,
-  localBlocks: null,
-  createBlock: async () => {
-    throw new Error("not yet loaded");
-  },
   createBlocks: async () => {
     throw new Error("not yet loaded");
   },
@@ -220,7 +234,6 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
 
   getConnectionsForBlock: async () => [],
 
-  collections: [],
   createCollection: async () => {
     throw new Error("not yet loaded");
   },
@@ -248,13 +261,20 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
 
   db,
   initDatabases: async () => {},
-  fetchBlocks: async () => {},
-  fetchCollections: async () => {},
   trySyncPendingArenaBlocks: () => {},
   trySyncNewArenaBlocks: () => {},
   getPendingArenaBlocks: () => {},
   selectedReviewCollection: null,
   setSelectedReviewCollection: () => {},
+  getBlocks: async (opts) => {
+    return [];
+  },
+  getCollections: async (opts) => {
+    return [];
+  },
+  getArenaCollectionIds: () => {
+    throw new Error("Function not implemented.");
+  },
 });
 
 function camelCaseToSnakeCase(str: string) {
@@ -329,8 +349,6 @@ function handleSqlErrors(
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const { currentUser } = useContext(UserContext);
 
-  const [blocks, setBlocks] = useState<Block[] | null>(null);
-  const [collections, setCollections] = useState<Collection[]>([]);
   const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(true);
   const [selectedReviewCollection, setSelectedReviewCollection] =
@@ -397,6 +415,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
   }, [arenaAccessToken, currentUser]);
 
+  const queryClient = useQueryClient();
+
   async function initDatabases() {
     await db.transactionAsync(async (tx) => {
       // Set up tables
@@ -430,7 +450,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
               created_by TEXT NOT NULL,
               remote_source_type varchar(128),
-              remote_source_info blob 
+              remote_source_info blob ,
+              arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'))
           );`
           ),
         ]);
@@ -470,8 +491,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         console.error(err);
       }
     }, false);
-    await fetchBlocks();
-    await fetchCollections();
   }
 
   async function insertBlocks(blocksToInsert: DatabaseBlockInsert[]) {
@@ -534,15 +553,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
   }
 
-  const createBlocks = async ({
+  const createBlocksBase = async ({
     blocksToInsert,
     collectionId,
   }: BlocksInsertInfo): Promise<string[]> => {
     // TODO: change to use insertBlocks
     const blockIds = await Promise.all(
-      blocksToInsert.map(async (block) => createBlock(block, true))
+      blocksToInsert.map(async (block) => createBlock(block))
     );
-    await fetchBlocks();
 
     if (collectionId) {
       const blockConnections = blockIds.map((blockId, idx) => ({
@@ -552,15 +570,82 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         // the same info
         remoteCreatedAt: blocksToInsert[idx].remoteConnectedAt,
       }));
-      await addConnectionsToCollection(collectionId, blockConnections);
+      await addConnectionsToCollection({ collectionId, blockConnections });
     }
     return blockIds;
   };
 
-  const createBlock = async (
-    { collectionsToConnect: connections, ...block }: BlockInsertInfo,
-    ignoreFetch?: boolean
-  ): Promise<string> => {
+  const createBlocksMutation = useMutation({
+    mutationFn: createBlocksBase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+    },
+    onMutate: async ({ blocksToInsert, collectionId }) => {
+      // Cancel any outgoing refetches
+      // (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({
+        queryKey: ["blocks", { collectionId }],
+      });
+
+      // Snapshot the previous value
+      const previousBlocks = queryClient.getQueryData([
+        "blocks",
+        { collectionId },
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<InfiniteData<Block[]>>(
+        ["blocks", { collectionId }],
+        (old) => {
+          const optimisticBlocks = blocksToInsert.map((block) => ({
+            id: "...",
+            ...block,
+            collectionIds: collectionId ? [collectionId] : [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            numConnections: collectionId ? 1 : 0,
+            remoteConnectedAt: block.remoteConnectedAt
+              ? new Date(block.remoteConnectedAt)
+              : undefined,
+          }));
+          if (!old) {
+            return optimisticBlocks;
+          }
+          if ("pages" in old) {
+            // format {"pageParams": [0], "pages": [{"blocks": [Array], "nextId": 1, "previousId": undefined}]}
+            return {
+              ...old,
+              pages: old.pages.map((page, idx) =>
+                idx > 0
+                  ? page
+                  : {
+                      blocks: [...optimisticBlocks, page.blocks],
+                      ...page,
+                    }
+              ),
+            };
+          }
+
+          return [...(old || []), ...optimisticBlocks];
+        }
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousBlocks };
+    },
+    onError: (_err, { collectionId }, context) => {
+      queryClient.setQueryData(
+        ["blocks", { collectionId }],
+        context?.previousBlocks
+      );
+    },
+  });
+  const createBlocks = createBlocksMutation.mutateAsync;
+
+  const createBlock = async ({
+    collectionsToConnect: connections,
+    ...block
+  }: BlockInsertInfo): Promise<string> => {
     const [result] = await db.execAsync(
       [
         {
@@ -636,17 +721,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       await addConnections(String(insertId), connections);
     }
 
-    // TODO: change this to just fetch the new row info
-    if (!ignoreFetch) {
-      setBlocks([
-        ...blocks,
-        {
-          ...mapDbBlockToBlock(result.rows[0]),
-          numConnections: connections?.length || 0,
-        },
-      ]);
-    }
-
     return insertId!.toString();
   };
 
@@ -662,10 +736,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     handleSqlErrors(result);
     const blocks = result.rows.map(mapDbBlockToBlock);
-    return await deleteBlocks(blocks, ignoreRemote);
+    return await deleteBlocks({ blocks, ignoreRemote });
   };
 
-  const deleteBlocks = async (blocks: Block[], ignoreRemote?: boolean) => {
+  const deleteBlocksBase = async ({
+    blocks,
+    ignoreRemote,
+  }: {
+    blocks: Block[];
+    ignoreRemote?: boolean;
+  }) => {
     const blockIds = blocks.map((block) => block.id);
     await db.transactionAsync(async (tx) => {
       await tx.executeSqlAsync(
@@ -693,9 +773,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         inParam(`DELETE FROM connections where block_id IN (?#);`, blockIds)
       );
     });
-    // TODO: fetchCollections only because we rely on items count for each collection and its cached
-    await Promise.all([fetchBlocks(), fetchCollections()]);
   };
+  const deleteBlocksMutation = useMutation({
+    mutationFn: deleteBlocksBase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+    },
+  });
+  const deleteBlocks = deleteBlocksMutation.mutateAsync;
 
   // TODO: this should really just be a separate thing that sweeps up any things to delete
   const handleDeleteBlocksRemote = async (blocks: Block[]) => {
@@ -717,7 +803,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           for (const connection of connectionsForBlock) {
             const { remoteSourceInfo } = connection;
 
-            // TODO: this doens't work if you are offline...
+            // TODO: this doesn't work if you are offline...
             await removeBlockFromChannel({
               blockId: arenaBlockId,
               channelId: remoteSourceInfo!.arenaId,
@@ -732,7 +818,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     await deleteBlocksById([id], ignoreRemote);
   };
 
-  const deleteCollection = async (id: string) => {
+  const deleteCollectionBase = async (id: string) => {
     await db.transactionAsync(async (tx) => {
       await tx.executeSqlAsync(
         `
@@ -745,8 +831,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         [id]
       );
     });
-    setCollections(collections.filter((collection) => collection.id !== id));
   };
+  const deleteCollectionMutation = useMutation({
+    mutationFn: deleteCollectionBase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+    },
+  });
+  const deleteCollection = deleteCollectionMutation.mutateAsync;
 
   const fullDeleteCollection = async (id: string) => {
     const collection = await getCollection(id);
@@ -757,11 +849,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       whereClause: `num_connections = 1`,
     });
 
-    await deleteBlocks(blocks, true);
+    await deleteBlocks({ blocks, ignoreRemote: true });
     await deleteCollection(id);
   };
 
-  const createCollection = async (collection: CollectionInsertInfo) => {
+  const createCollectionBase = async (collection: CollectionInsertInfo) => {
     const [result] = await db.execAsync(
       [
         {
@@ -797,10 +889,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     handleSqlErrors(result);
 
-    fetchCollections();
-
     return result.insertId!.toString();
   };
+
+  const createCollectionMutation = useMutation({
+    mutationFn: createCollectionBase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+    },
+  });
+  const createCollection = createCollectionMutation.mutateAsync;
+
   const SelectBlockSql = `WITH block_connections AS (
             SELECT    connections.block_id,
                       MIN(connections.remote_created_at) AS remote_connected_at,
@@ -814,29 +913,74 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                     COALESCE(block_connections.num_connections, 0) as num_connections,
                     block_connections.remote_connected_at as remote_connected_at
           FROM      blocks
-          LEFT JOIN block_connections ON block_connections.block_id = blocks.id
-          ORDER BY  MIN(block_connections.remote_connected_at, blocks.created_timestamp) DESC;`;
+          LEFT JOIN block_connections ON block_connections.block_id = blocks.id`; // coalesce to get around it being null..
+  const SelectBlocksSortTypeToClause = (
+    sortType: SortType,
+    remoteConnectedAt: string,
+    { seed }: { seed?: number } = {}
+  ) => {
+    ensure(
+      sortType !== SortType.Random || seed !== undefined,
+      "Random sort requires a seed"
+    );
+    switch (sortType) {
+      case SortType.Created:
+        return `ORDER BY  MIN(COALESCE(${remoteConnectedAt}, blocks.created_timestamp), blocks.created_timestamp) DESC`;
+      case SortType.Random:
+        // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
+        // return `ORDER BY  SIN(blocks.id + ${seed})`;
+        return ``;
+    }
+  };
+  const SelectBlocksSql = ({
+    page = 0,
+    // TODO:
+    whereClause,
+    sortType = SortType.Created,
+    seed,
+  }: GetBlocksOptions = {}) =>
+    `${SelectBlockSql}
+    ${SelectBlocksSortTypeToClause(
+      sortType,
+      "block_connections.remote_connected_at",
+      { seed }
+    )}
+    ${
+      page === null
+        ? ""
+        : `LIMIT ${BlockSelectLimit} OFFSET ${page * BlockSelectLimit}`
+    };`;
 
-  async function fetchBlocks() {
+  async function getBlocks({
+    page = 0,
+    whereClause,
+    sortType = SortType.Created,
+    seed,
+  }: GetBlocksOptions = {}): Promise<Block[]> {
     const [result] = await db.execAsync(
       [
         {
-          sql: `${SelectBlockSql};`,
+          sql: `${SelectBlocksSql({ page, sortType, seed, whereClause })};`,
           args: [],
         },
       ],
       true
     );
     handleSqlErrors(result);
-    setBlocks(result.rows.map((block) => mapDbBlockToBlock(block)));
+    return result.rows.map((block) => mapDbBlockToBlock(block));
   }
-  const SelectCollectionInfoSql = `WITH block_connections AS (
+
+  const SelectCollectionInfoSql = (
+    whereClause?: string
+  ) => `WITH block_connections AS (
               SELECT      id, 
                           content, 
                           collection_id, 
                           connections.created_timestamp as created_timestamp from blocks 
               LEFT JOIN   connections ON connections.block_id = blocks.id
-              WHERE       blocks.type IN ('${BlockType.Image}', '${BlockType.Link}')
+              WHERE       blocks.type IN ('${BlockType.Image}', '${
+    BlockType.Link
+  }')
           ),
           annotated_collections AS (SELECT DISTINCT
               collections.id,
@@ -868,14 +1012,58 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               COUNT(connections.block_id) as num_blocks
           FROM      annotated_collections
           LEFT JOIN connections ON annotated_collections.id = connections.collection_id
+          ${whereClause ? `WHERE ${whereClause}` : ""}
           GROUP BY 1,2,3,4,5,6,7`;
 
-  async function fetchCollections() {
+  const SelectCollectionsSortTypeToClause = (
+    sortType: SortType,
+    { seed }: { seed?: number } = {}
+  ) => {
+    ensure(
+      sortType !== SortType.Random || seed !== undefined,
+      "Random sort requires a seed"
+    );
+    switch (sortType) {
+      case SortType.Created:
+        return "ORDER BY  MAX(COALESCE(MAX(connections.created_timestamp), annotated_collections.updated_timestamp), annotated_collections.updated_timestamp) DESC";
+      case SortType.Random:
+        // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
+        // return `ORDER BY  SIN(annotated_collections.id + ${seed})`;
+        return ``;
+    }
+  };
+  const SelectCollectionsSql = ({
+    page = 0,
+    whereClause,
+    sortType = SortType.Created,
+    seed,
+  }: GetCollectionsOptions = {}) => `
+          ${SelectCollectionInfoSql(whereClause)}
+          ${SelectCollectionsSortTypeToClause(sortType, { seed })}
+          ${
+            page === null
+              ? ""
+              : `LIMIT ${CollectionSelectLimit} OFFSET ${
+                  page * CollectionSelectLimit
+                }`
+          };`;
+
+  async function getCollections({
+    page,
+    whereClause,
+    sortType,
+    seed,
+  }: GetCollectionsOptions = {}): Promise<Collection[]> {
     try {
       const [result] = await db.execAsync(
         [
           {
-            sql: `${SelectCollectionInfoSql};`,
+            sql: `${SelectCollectionsSql({
+              page,
+              whereClause,
+              sortType,
+              seed,
+            })};`,
             args: [],
           },
         ],
@@ -883,14 +1071,40 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       );
       handleSqlErrors(result);
 
-      setCollections([
-        ...result.rows.map((collection) => {
-          return mapDbCollectionToCollection(collection);
-        }),
-      ]);
+      return result.rows.map((collection) => {
+        return mapDbCollectionToCollection(collection);
+      });
     } catch (err) {
       throw err;
     }
+  }
+
+  // TODO: genericize
+  async function getArenaCollectionIds(
+    remoteSourceType?: RemoteSourceType
+  ): Promise<Set<string>> {
+    const [result] = await db.execAsync(
+      [
+        !remoteSourceType
+          ? {
+              sql: `SELECT arena_id 
+                    FROM collections 
+                    WHERE collections.remote_source_type IS NOT NULL AND collections.arena_id IS NOT NULL;`,
+              args: [remoteSourceType],
+            }
+          : {
+              sql: `SELECT arena_id
+                    FROM collections
+                    WHERE collections.remote_source_type = ? AND collections.arena_id IS NOT NULL;`,
+              args: [remoteSourceType],
+            },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return new Set(
+      result.rows.map((collection) => collection["arena_id"].toString())
+    );
   }
 
   async function fetchBlock(blockId: string): Promise<Block> {
@@ -899,7 +1113,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         {
           sql: `${SelectBlockSql}
           WHERE     blocks.id = ?;`,
-          args: [blockId],
+          args: [blockId.toString()],
         },
       ],
       true
@@ -917,7 +1131,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const [result] = await db.execAsync(
       [
         {
-          sql: `${SelectCollectionInfoSql}
+          sql: `SELECT * FROM ( ${SelectCollectionInfoSql()} ) AS collections
           WHERE     collections.id = ?;`,
           args: [collectionId],
         },
@@ -934,29 +1148,20 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   async function getCollection(collectionId: string) {
-    let maybeCollection = collections.find(
-      (collection) => collection.id.toString() === collectionId.toString()
-    );
-    if (!maybeCollection) {
-      maybeCollection = await fetchCollection(collectionId);
-    }
-    return maybeCollection;
+    return await fetchCollection(collectionId);
   }
 
   async function getBlock(blockId: string) {
-    let maybeBlock = blocks.find(
-      (block) => block.id.toString() === blockId.toString()
-    );
-    if (!maybeBlock) {
-      maybeBlock = await fetchBlock(blockId);
-    }
-    return maybeBlock;
+    return await fetchBlock(blockId);
   }
 
-  async function updateBlock(
-    blockId: string,
-    editInfo: BlockEditInfo
-  ): Promise<Block | undefined> {
+  async function updateBlockBase({
+    blockId,
+    editInfo,
+  }: {
+    blockId: string;
+    editInfo: BlockEditInfo;
+  }): Promise<Block | undefined> {
     // TODO: needs to sync to are.na, maybe a modifiedTimestamp and syncedTimestamp
     if (Object.keys(editInfo).length === 0) {
       return;
@@ -990,25 +1195,33 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     handleSqlErrors(result);
 
-    setBlocks([
-      ...blocks.map((b) =>
-        b.id !== blockId ? b : { ...b, ...mapDbBlockToBlock(result.rows[0]) }
-      ),
-    ]);
-
-    return {
-      ...blocks.find((b) => b.id === blockId),
-      ...mapDbBlockToBlock(result.rows[0]),
-    };
+    const newBlock = await getBlock(blockId);
+    return newBlock;
   }
+
+  const updateBlockMutation = useMutation({
+    mutationFn: updateBlockBase,
+    onSuccess: (_data, { blockId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["blocks", { blockId }],
+      });
+    },
+  });
+  const updateBlock = updateBlockMutation.mutateAsync;
 
   async function getCollectionItems(
     collectionId: string,
-    { whereClause }: { whereClause?: string; havingClause?: string } = {}
+    {
+      whereClause,
+      page = 0,
+      sortType = SortType.Created,
+      seed,
+    }: GetBlocksOptions = {}
   ): Promise<CollectionBlock[]> {
     const [result] = await db.execAsync(
       [
         {
+          // TODO: collapse this with the SelectBlocks, just with additional select and add whereClause as param
           sql: `
             WITH block_connections AS (
               SELECT    block_id,
@@ -1027,7 +1240,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             WHERE       connections.collection_id = ?${
               whereClause ? ` AND ${whereClause}` : ""
             }
-            ORDER BY MIN(connections.remote_created_at, blocks.created_timestamp) DESC;`,
+            ${SelectBlocksSortTypeToClause(
+              sortType,
+              "connections.remote_created_at",
+              {
+                seed,
+              }
+            )}
+            ${
+              page === null
+                ? ""
+                : `LIMIT ${BlockSelectLimit} OFFSET ${page * BlockSelectLimit}`
+            };`,
           args: [collectionId],
         },
       ],
@@ -1038,10 +1262,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return result.rows.map((block) => mapDbBlockToBlock(block));
   }
 
-  async function updateCollection(
-    collectionId: string,
-    editInfo: CollectionEditInfo
-  ): Promise<void> {
+  async function updateCollectionBase({
+    collectionId,
+    editInfo,
+  }: {
+    collectionId: string;
+    editInfo: CollectionEditInfo;
+  }): Promise<void> {
     if (Object.keys(editInfo).length === 0) {
       return;
     }
@@ -1073,48 +1300,33 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
 
     handleSqlErrors(result);
-
-    setCollections(
-      collections.map((c) =>
-        c.id !== collectionId
-          ? c
-          : { ...c, ...mapDbCollectionToCollection(result.rows[0]) }
-      )
-    );
+    // return mapDbCollectionToCollection(result.rows[0]);
   }
+
+  const updateCollectionMutation = useMutation({
+    mutationFn: updateCollectionBase,
+    onSuccess: (_data, { collectionId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["collections", { collectionId }],
+      });
+    },
+  });
+  const updateCollection = updateCollectionMutation.mutateAsync;
 
   // NOTE: this deliberately does not update remote sources because that is always handled
   // in the create block calls preceding this.
-  async function addConnectionsToCollection(
-    collectionId: string,
-    blockConnections: InsertBlockConnection[]
-  ) {
-    const result = await db.execAsync(
-      blockConnections.map(({ blockId, remoteCreatedAt }) => ({
-        sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
-              VALUES (?, ?, ?, ?)
-              ON CONFLICT(block_id, collection_id) DO NOTHING;`,
-        args: [blockId, collectionId, currentUser!.id, remoteCreatedAt || null],
-      })),
-      false
+  async function addConnectionsToCollection({
+    collectionId,
+    blockConnections,
+  }: {
+    collectionId: string;
+    blockConnections: InsertBlockConnection[];
+  }) {
+    await upsertConnections(
+      blockConnections.map((c) => ({ ...c, collectionId }))
     );
 
-    handleSqlErrors(result);
-
-    // setCollections(
-    //   collections.map((c) => {
-    //     if (collectionId === c.id) {
-    //       return {
-    //         ...c,
-    //         lastConnectedAt: new Date(),
-    //       };
-    //     }
-    //     return c;
-    //   })
-    // );
-    void fetchCollections();
-
-    const collectionAddedTo = collections.find((c) => c.id === collectionId);
+    const collectionAddedTo = await getCollection(collectionId);
     if (
       !collectionAddedTo?.remoteSourceType ||
       !collectionAddedTo?.remoteSourceInfo
@@ -1432,7 +1644,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           console.log(
             `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`
           );
-          await updateCollection(collectionId, { title: channelInfo.title });
+          await updateCollection({
+            collectionId,
+            editInfo: { title: channelInfo.title },
+          });
         }
 
         const lastContents = await getChannelContents(channelId, {
@@ -1458,7 +1673,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               lastContents[lastContents.length - 1].connected_at,
             lastSyncedBlockId: lastContents[lastContents.length - 1].id,
           });
-          fetchBlocks();
         }
         break;
       default:
@@ -1485,12 +1699,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }))
     );
     InteractionManager.runAfterInteractions(async () => {
-      fetchCollections();
       await debouncedTriggerBlockSync();
     });
   }
 
-  async function upsertConnections(connections: ConnectionInsertInfo[]) {
+  async function upsertConnectionsBase(connections: ConnectionInsertInfo[]) {
     const result = await db.execAsync(
       connections.map(({ collectionId, blockId, remoteCreatedAt }) => ({
         sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
@@ -1502,10 +1715,54 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     handleSqlErrors(result);
   }
+  const upsertConnectionsMutation = useMutation({
+    mutationFn: upsertConnectionsBase,
+    onSuccess: (_data, connections) => {
+      const collectionIds = connections.map((c) => c.collectionId);
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      for (const collectionId of collectionIds) {
+        queryClient.invalidateQueries({
+          queryKey: ["blocks", { collectionId }],
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["connections"] });
+      queryClient.invalidateQueries({
+        queryKey: ["blocks", { type: "uncategorized" }],
+      });
+    },
+    onMutate: async (connections) => {
+      // Cancel any outgoing refetches
+      // (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({
+        queryKey: ["blocks", { type: "uncategorized" }],
+      });
+
+      // Snapshot the previous value
+      const previousUncategorizedBlocks = queryClient.getQueryData([
+        "blocks",
+        { type: "uncategorized" },
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<Block[]>(
+        ["blocks", { type: "uncategorized" }],
+        (old) =>
+          old?.filter((b) => !connections.map((c) => c.blockId).includes(b.id))
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousUncategorizedBlocks };
+    },
+    onError: (_err, _data, context) => {
+      queryClient.setQueryData(
+        ["blocks", { type: "uncategorized" }],
+        context?.previousUncategorizedBlocks
+      );
+    },
+  });
+  const upsertConnections = upsertConnectionsMutation.mutateAsync;
 
   async function replaceConnections(blockId: string, collectionIds: string[]) {
-    await addConnections(blockId, collectionIds);
-
     const [selectResult] = await db.execAsync(
       [
         {
@@ -1521,26 +1778,30 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     handleSqlErrors(selectResult);
 
     const removedCollectionIds = selectResult.rows.map((r) => r.collection_id);
-    const remoteCollectionsToRemoveConnection = collections.filter(
-      (c) =>
-        removedCollectionIds.includes(c.id) &&
-        c.remoteSourceType &&
-        c.remoteSourceInfo
-    );
+    const remoteCollectionsToRemoveConnection = await getCollections({
+      page: null,
+      whereClause: inParam(
+        `annotated_collections.id IN (?#) AND annotated_collections.remote_source_type IS NOT NULL AND annotated_collections.remote_source_info IS NOT NULL`,
+        removedCollectionIds
+      ),
+    });
 
-    const result = await db.execAsync(
-      [
-        {
-          sql: inParam(
-            `DELETE FROM connections WHERE block_id = ? AND collection_id NOT IN (?#);`,
-            collectionIds
-          ),
-          args: [blockId],
-        },
-      ],
-      false
-    );
-    handleSqlErrors(result);
+    await db.transactionAsync(async (tx) => {
+      const result = await db.execAsync(
+        [
+          {
+            sql: inParam(
+              `DELETE FROM connections WHERE block_id = ? AND collection_id NOT IN (?#);`,
+              collectionIds
+            ),
+            args: [blockId],
+          },
+        ],
+        false
+      );
+      handleSqlErrors(result);
+      await addConnections(blockId, collectionIds);
+    });
 
     // TODO: this is still kinda jank, need to do the same thing as with deleting a block.
     if (arenaAccessToken) {
@@ -1552,9 +1813,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         });
       }
     }
-
-    fetchCollections();
-    fetchBlocks();
   }
 
   async function getConnectionsForBlock(
@@ -1649,30 +1907,28 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   return (
     <DatabaseContext.Provider
       value={{
-        createBlock,
         createBlocks,
-        blocks,
-        localBlocks: useMemo(() => {
-          // only ignore those imported (not directly texted in app)
-          // this works because adding to arena is done post connection when not importing
-          return !blocks
-            ? null
-            : blocks.filter(
-                (b) =>
-                  !b.remoteConnectedAt ||
-                  b.remoteConnectedAt.getTime() > b.createdAt.getTime()
-              );
-        }, [blocks]),
+        // localBlocks: useMemo(() => {
+        //   // only ignore those imported (not directly texted in app)
+        //   // this works because adding to arena is done post connection when not importing
+        //   return !blocks
+        //     ? null
+        //     : blocks.filter(
+        //         (b) =>
+        //           !b.remoteConnectedAt ||
+        //           b.remoteConnectedAt.getTime() > b.createdAt.getTime()
+        //       );
+        // }, [blocks]),
         getBlock,
         updateBlock,
         deleteBlock,
         setShareIntent,
         shareIntent,
         getConnectionsForBlock,
-        collections,
         createCollection,
         updateCollection,
         getCollection,
+        getArenaCollectionIds,
         addConnections,
         replaceConnections,
         upsertConnections,
@@ -1685,11 +1941,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         tryImportArenaChannel,
         selectedReviewCollection,
         setSelectedReviewCollection,
+        getBlocks,
+        getCollections,
         // internal
         db,
         initDatabases,
-        fetchBlocks,
-        fetchCollections,
         trySyncPendingArenaBlocks,
         getPendingArenaBlocks: getPendingArenaConnections,
         trySyncNewArenaBlocks,
@@ -1698,4 +1954,110 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       {children}
     </DatabaseContext.Provider>
   );
+}
+
+export function useBlockConnections(blockId: string) {
+  const { getConnectionsForBlock } = useContext(DatabaseContext);
+  return useQuery({
+    queryKey: ["connections", { blockId }],
+    queryFn: async () => {
+      return await getConnectionsForBlock(blockId);
+    },
+  });
+}
+
+export function useTotalBlockCount() {
+  const { db } = useContext(DatabaseContext);
+
+  async function getBlockCount(): Promise<number> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `SELECT COUNT(*) as count FROM blocks;`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows[0].count;
+  }
+  return useQuery({
+    queryKey: ["blocks", "count"],
+    queryFn: getBlockCount,
+  });
+}
+
+export function useUncategorizedBlocks() {
+  const { db } = useContext(DatabaseContext);
+
+  return useQuery({
+    queryKey: ["blocks", { type: "uncategorized" }],
+    queryFn: async () => {
+      const [events] = await db.execAsync(
+        [
+          {
+            sql: `
+        SELECT * FROM (
+        SELECT  blocks.id,
+                blocks.content,
+                blocks.title,
+                blocks.type,
+                blocks.source,
+                blocks.created_timestamp,
+                COUNT(connections.collection_id) AS num_connections
+        FROM blocks
+        LEFT JOIN connections ON connections.block_id = blocks.id
+        GROUP BY 1,2,3,4,5,6) AS c
+        WHERE c.num_connections = 0
+        ORDER BY c.created_timestamp DESC;`,
+            // TODO: add this after migrating table
+            // WHERE user_id = ?
+            args: [],
+          },
+        ],
+        true
+      );
+
+      handleSqlErrors(events);
+
+      const newEvents = events.rows.map((event) => {
+        const mapped = mapSnakeCaseToCamelCaseProperties(event);
+        return {
+          ...mapped,
+          content: mapBlockContentToPath(mapped.content, mapped.type),
+          createdAt: convertDbTimestampToDate(mapped.createdTimestamp),
+        } as Block;
+      });
+      return newEvents;
+    },
+  });
+}
+
+export function useCollections(searchValue?: string) {
+  const { getCollections } = useContext(DatabaseContext);
+  const debouncedSearch = useDebounceValue(searchValue, 300);
+
+  const { data: collections, isLoading } = useQuery({
+    queryKey: ["collections"],
+    queryFn: async () => {
+      return await getCollections({ page: null });
+    },
+  });
+
+  const filteredCollections = useMemo(
+    () =>
+      !debouncedSearch
+        ? collections
+        : filterItemsBySearchValue(collections || [], debouncedSearch, [
+            "title",
+            "description",
+          ]),
+    [collections, debouncedSearch]
+  );
+
+  return {
+    collections: filteredCollections,
+    isLoading,
+  };
 }

@@ -1,25 +1,26 @@
-import {
-  KeyboardAvoidingView,
-  SafeAreaView,
-  ScrollView,
-  Platform,
-  Dimensions,
-} from "react-native";
-import { StyledButton, StyledTextArea, Icon, IconType } from "./Themed";
-import { XStack, YStack } from "tamagui";
-import { useContext, useEffect, useMemo, useState } from "react";
-import * as ImagePicker from "expo-image-picker";
-import { DatabaseContext } from "../utils/db";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
-import { MediaView } from "./MediaView";
+import * as ImagePicker from "expo-image-picker";
+import { useContext, useEffect, useMemo, useState } from "react";
+import {
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { XStack, YStack } from "tamagui";
+import { getFsPathForMediaResult } from "../utils/blobs";
+import { DatabaseContext } from "../utils/db";
+import { BlockType } from "../utils/mimeTypes";
+import { extractDataFromUrl, isUrl } from "../utils/url";
 import { UserContext } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
-import { getFsPathForMediaResult } from "../utils/blobs";
-import { extractDataFromUrl, isUrl } from "../utils/url";
-import { BlockType } from "../utils/mimeTypes";
 import { FeedView } from "./FeedView";
+import { MediaView } from "./MediaView";
+import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -52,7 +53,8 @@ export function TextForageView({
 }) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
-  const { createBlocks, shareIntent } = useContext(DatabaseContext);
+  const { createBlocks, shareIntent, getBlocks, getCollectionItems } =
+    useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
   const textPlaceholder = useMemo(
@@ -60,6 +62,34 @@ export function TextForageView({
     []
   );
   const insets = useSafeAreaInsets();
+  const queryKey = ["blocks", { collectionId }] as const;
+
+  // TODO: toast the error
+  const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey,
+      queryFn: async ({ pageParam: page, queryKey }) => {
+        const [_, { collectionId }] = queryKey;
+
+        const blocks = !collectionId
+          ? await getBlocks({ page })
+          : await getCollectionItems(collectionId, {
+              page: page,
+            });
+
+        return {
+          blocks,
+          nextId: page + 1,
+          previousId: page === 0 ? undefined : page - 1,
+        };
+      },
+      initialPageParam: 0,
+      // TODO:
+      getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
+      getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
+    });
+
+  const blocks = data?.pages.flatMap((p) => p.blocks);
 
   useEffect(() => {
     if (shareIntent !== null) {
@@ -75,6 +105,13 @@ export function TextForageView({
       }
     }
   }, [shareIntent]);
+
+  function fetchMoreBlocks() {
+    if (!hasNextPage) {
+      return;
+    }
+    fetchNextPage();
+  }
 
   if (!currentUser) {
     return null;
@@ -240,7 +277,12 @@ export function TextForageView({
         // TODO: make this smaller when there is a collectionId (because tabs don't show)
         keyboardVerticalOffset={insets.top + 44}
       >
-        <BlockTexts collectionId={collectionId} />
+        <BlockTexts
+          collectionId={collectionId}
+          blocks={blocks}
+          fetchMoreBlocks={fetchMoreBlocks}
+          isFetchingNextPage={isFetchingNextPage}
+        />
         <YStack
           height="auto"
           borderTopEndRadius={4}

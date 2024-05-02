@@ -1,5 +1,5 @@
-import { Block, LastSyncedInfo } from "./dataTypes";
 import * as FileSystem from "expo-file-system";
+import { Block, LastSyncedInfo } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
 
 export const ArenaClientId = "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE";
@@ -214,6 +214,7 @@ export async function getChannelContents(
   let newItemsFound = lastSyncedInfo ? false : true;
   // TODO: fix as with below
   // const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
+  // TODO: this needs an API that only gets blocks AFTER given date.
   const baseUrl = `${ArenaChannelsApi}/${channelId}`;
   let numItemsFetched = 0;
   try {
@@ -568,41 +569,41 @@ async function getUserInfo(accessToken: string): Promise<RawArenaUser> {
   }).then((r) => r.json());
 }
 
+interface UserChannelResponse {
+  channels: ArenaChannelInfo[];
+  nextPage?: number;
+}
+
 export async function getUserChannels(
-  accessToken: string
-): Promise<ArenaChannelInfo[]> {
-  // TODO: this doens't handle pagination, need for it to stream search results
-  // maybe save the last result in state and then try to update
-  const NumFetches = 1;
+  accessToken: string,
+  { page = 1, per = 30 }: { page?: number; per?: number } = {}
+): Promise<UserChannelResponse> {
   const userInfo = await getUserInfo(accessToken);
   const baseUrl = withQueryParams(
     `https://api.are.na/v2/users/${userInfo.id}/channels`,
     {
-      per: 30,
+      per,
+      page,
     }
   );
-  let fetchedItems: ArenaChannelInfo[] = [];
-  let numFetches = 0;
   try {
-    let nextUrl: string | undefined = baseUrl;
-    while (nextUrl && numFetches < NumFetches) {
-      const resp = await fetch(nextUrl, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const respBody = await resp.json();
-      // TODO: resolve mismatch in length here
-      let contents: ArenaChannelInfo[] = respBody.channels;
-      fetchedItems.push(...contents);
-      nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
-      numFetches++;
-    }
+    const resp = await fetch(baseUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const respBody = await resp.json();
+    return {
+      channels: respBody.channels,
+      nextPage:
+        respBody.current_page < respBody.total_pages
+          ? respBody.current_page + 1
+          : undefined,
+    };
   } catch (e) {
     console.error(e);
     throw e;
   }
-  return fetchedItems;
 }
 
 // TODO: this doesn't set the remote_created_at on connection

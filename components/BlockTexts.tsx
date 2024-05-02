@@ -9,7 +9,7 @@ import {
 } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block, Collection, CollectionBlock } from "../utils/dataTypes";
-import { Image, Spinner, XStack, YStack, useTheme } from "tamagui";
+import { Image, Spinner, XStack, YStack, useDebounce, useTheme } from "tamagui";
 import {
   Icon,
   IconType,
@@ -128,12 +128,18 @@ function getEarlierDate(a: null | Date, b: Date) {
   return a.getTime() < b.getTime() ? a : b;
 }
 
-export function BlockTexts({ collectionId }: { collectionId?: string }) {
-  const {
-    blocks: allBlocks,
-    getCollectionItems,
-    collections,
-  } = useContext(DatabaseContext);
+export function BlockTexts({
+  blocks,
+  collectionId,
+  fetchMoreBlocks,
+  isFetchingNextPage,
+}: {
+  blocks: CollectionBlock[] | null;
+  collectionId?: string;
+  fetchMoreBlocks: () => void;
+  isFetchingNextPage: boolean;
+}) {
+  const { getCollection } = useContext(DatabaseContext);
   const [collection, setCollection] = useState<undefined | Collection>(
     undefined
   );
@@ -141,52 +147,29 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
 
+  const debouncedFetchMoreBlocks = useDebounce(fetchMoreBlocks, 300);
   const width = Dimensions.get("window").width;
-  const [blocks, setBlocks] = useState<CollectionBlock[] | null>(null);
   const scrollRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    void fetchBlocks();
-  }, [collectionId, allBlocks]);
-  useEffect(() => {
-    setCollection(collections.find((c) => c.id === collectionId));
+    if (collectionId) {
+      getCollection(collectionId).then(setCollection);
+    }
   }, [collectionId]);
 
-  async function fetchBlocks() {
-    if (!collectionId) {
-      setBlocks(allBlocks);
-      return;
-    }
-    // TODO: can avoid query here if you add collectionIds to blocks so you can just filter that they contain the collectionId
-    // this is tricky becuase we need `remoteConnectedAt` for the particular collectionId involved... I suppose we could just fetch all of those too in the big block fetch.
-    // TODO: can also push the sort to the DB
-    const collectionBlocks = await getCollectionItems(collectionId);
-    setBlocks(collectionBlocks);
-  }
-
-  const sortedBlocks = useMemo(
-    () =>
-      // NOTE: this is sorted descending because we use "inverted" prop on FlatList
-      // so it is the reverse of what it should be
-      [...(blocks || [])].sort(
-        (a, b) =>
-          // Uses earlier date to match with whether it came from are.na or from Gather first..
-          getEarlierDate(b.remoteConnectedAt, b.createdAt).getTime() -
-          getEarlierDate(a.remoteConnectedAt, a.createdAt).getTime()
-      ),
-    [blocks]
-  );
-
-  const [pages, setPages] = useState(1);
-
-  const blocksToRender = useMemo(
-    () => sortedBlocks.slice(0, pages * RenderChunkSize),
-    [sortedBlocks, pages]
-  );
-
-  function fetchMoreBlocks() {
-    setPages(pages + 1);
-  }
+  // const sortedBlocks = useMemo(
+  //   () =>
+  //     // NOTE: this is sorted descending because we use "inverted" prop on FlatList
+  //     // so it is the reverse of what it should be
+  //     [...(blocks || [])].sort(
+  //       (a, b) =>
+  //         // Uses earlier date to match with whether it came from are.na or from Gather first..
+  //         getEarlierDate(b.remoteConnectedAt, b.createdAt).getTime() -
+  //         getEarlierDate(a.remoteConnectedAt, a.createdAt).getTime()
+  //     ),
+  //   [blocks]
+  // );
+  const sortedBlocks = blocks;
 
   const isRemoteCollection = collection?.remoteSourceType !== undefined;
 
@@ -198,7 +181,7 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
   );
 
   // TODO: paginate blocks by chunking
-  return blocks === null ? (
+  return !blocks ? (
     <YStack justifyContent="center" alignItems="center" flexGrow={1}>
       <Spinner size="large" color="$orange9" />
     </YStack>
@@ -274,12 +257,12 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
     <>
       <FlatList
         renderItem={renderBlock}
-        data={blocksToRender}
+        data={sortedBlocks}
         scrollEventThrottle={150}
         ref={scrollRef}
         scrollsToTop={false}
         onEndReachedThreshold={0.3}
-        onEndReached={fetchMoreBlocks}
+        onEndReached={debouncedFetchMoreBlocks}
         onScroll={(e) => {
           if (isScrolling) {
             return;
@@ -290,6 +273,18 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
             setShowBackToBottomIndicator(false);
           }
         }}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <YStack
+              justifyContent="center"
+              alignSelf="center"
+              alignItems="center"
+              width="100%"
+            >
+              <Spinner size="small" color="$orange9" />
+            </YStack>
+          ) : null
+        }
         inverted
         contentContainerStyle={{
           flexGrow: 1,
@@ -301,13 +296,15 @@ export function BlockTexts({ collectionId }: { collectionId?: string }) {
           alignItems: "flex-end",
         }}
       ></FlatList>
+      {/* TODO: this shows weird if the text field is growing */}
       {showBackToBottomIndicator && (
         <Animated.View
           entering={FadeIn}
           exiting={FadeOut}
           position="absolute"
-          bottom={90}
+          bottom={85}
           left={10}
+          zIndex={10}
         >
           <StyledButton
             height="$3"
