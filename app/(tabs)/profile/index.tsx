@@ -1,19 +1,11 @@
 import dayjs from "dayjs";
 import * as Application from "expo-application";
-import { getAppIcon, setAppIcon } from "expo-dynamic-app-icon";
 import { useContext, useState } from "react";
 import { Image, Linking, SafeAreaView } from "react-native";
-import {
-  Avatar,
-  H3,
-  ScrollView,
-  Spinner,
-  Stack,
-  XStack,
-  YStack,
-} from "tamagui";
+import { Avatar, H3, ScrollView, Spinner, YStack } from "tamagui";
 import {
   Icon,
+  LinkButton,
   StyledButton,
   StyledParagraph,
   StyledText,
@@ -26,31 +18,14 @@ import { DatabaseContext } from "../../../utils/db";
 import { UserContext } from "../../../utils/user";
 import { ArenaLogin } from "../../../views/ArenaLogin";
 import { InternalDevTools } from "../../../views/InternalDevTools";
+import { getAppIconSource } from "../../icons";
+import { useFocusEffect } from "expo-router";
 
 const Subject = `[Gather] feedback`;
 const Body = `I wish|like|want|dislike...`;
 const FeedbackLink = `mailto:spencerc99@gmail.com?subject=${encodeURIComponent(
   Subject
 )}&body=${encodeURIComponent(Body)}`;
-
-const AppIcons = [
-  {
-    iconName: "moon",
-    source: require(`../../../assets/images/icon.png`),
-  },
-  {
-    iconName: "clouds",
-    source: require(`../../../assets/images/icon-clouds.png`),
-  },
-  {
-    iconName: "water",
-    source: require(`../../../assets/images/icon-water.png`),
-  },
-  {
-    iconName: "hand",
-    source: require(`../../../assets/images/icon-hand.png`),
-  },
-];
 
 export default function ProfileScreen() {
   const { tryImportArenaChannel } = useContext(DatabaseContext);
@@ -83,16 +58,14 @@ export default function ProfileScreen() {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [appIcon, setIcon] = useState<string>(getAppIcon());
+  const [appIconSource, setAppIconSource] = useState(null);
+  useFocusEffect(() => {
+    setAppIconSource(getAppIconSource());
 
-  function onSelectIcon(iconName: string) {
-    const iconType = iconName;
-    setAppIcon(iconType);
-    setIcon(iconType);
-  }
-  const appIconSource =
-    AppIcons.find((icon) => icon.iconName === appIcon)?.source ||
-    AppIcons[0].source;
+    return () => {
+      setAppIconSource(null);
+    };
+  });
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -151,9 +124,26 @@ export default function ProfileScreen() {
           )}
 
           <H3>Gather</H3>
-          {/* thanks to https://github.com/outsung/expo-dynamic-app-icon/tree/main/example */}
-          <AppIconSelect appIcon={appIcon} onSelectIcon={onSelectIcon} />
+          <LinkButton
+            flex={1}
+            width="100%"
+            href="/icons"
+            justifyContent="flex-start"
+            icon={
+              <Image
+                source={appIconSource}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
+                }}
+              />
+            }
+          >
+            App Icons
+          </LinkButton>
           <StyledButton
+            justifyContent="flex-start"
             icon={<Icon name="mail" />}
             onPress={() => {
               Linking.openURL(FeedbackLink).catch((error) => {
@@ -173,25 +163,25 @@ export default function ProfileScreen() {
               });
             }}
             backgroundColor="$orange8"
+            justifyContent="flex-start"
           >
             Support Development
           </StyledButton>
           {/* <LinkButton>Share</LinkButton> */}
-          {/* <LinkButton>Tip</LinkButton> */}
           {/* <StyledButton>
         What's new
       </StyledButton> */}
 
           <StyledParagraph>
-            Thank you for giving your space and time to try this app.
+            Thank you for giving your space and time to this app.
           </StyledParagraph>
           <YStack alignItems="center">
             <Image
               source={appIconSource}
               style={{
-                width: 64,
-                height: 64,
-                borderRadius: 16,
+                width: 48,
+                height: 48,
+                borderRadius: 12,
               }}
             />
             <StyledText>
@@ -203,51 +193,5 @@ export default function ProfileScreen() {
         </YStack>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function AppIconSelect({
-  appIcon,
-  onSelectIcon,
-}: {
-  appIcon: string;
-  onSelectIcon: (iconName: string) => void;
-}) {
-  return (
-    <YStack gap="$2">
-      <StyledText fontStyle="italic">Choose Your Icon</StyledText>
-      <XStack gap="$2" justifyContent="center">
-        {AppIcons.map(({ iconName, source }) => {
-          const selected =
-            appIcon === iconName ||
-            (appIcon === "DEFAULT" && iconName === "moon");
-
-          return (
-            <Stack
-              key={iconName}
-              onPress={() => onSelectIcon(iconName)}
-              borderWidth={2}
-              borderColor={selected ? "$green10" : "transparent"}
-              borderRadius={18}
-            >
-              <Image
-                source={source}
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 16,
-                }}
-              />
-            </Stack>
-          );
-        })}
-      </XStack>
-      {/* TODO: add open channel for adding to it? */}
-      <StyledText metadata>
-        I took all these photos between 2020-2023. They capture a snapshot of
-        moments of life that I want to hold onto in some way. They remind me
-        what it feels like to pay attention to the motion of the world.
-      </StyledText>
-    </YStack>
   );
 }

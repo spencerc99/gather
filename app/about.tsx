@@ -96,8 +96,8 @@ export function AboutSection({
         <ExternalLink href="https://are.na">
           <StyledText link>are.na</StyledText>
         </ExternalLink>
-        ), it has become an expression of how I wish I could interact with the
-        data I collect.
+        ), it has become a personal expression of how I wish to interact with
+        the data I collect.
       </StyledText>
       <StyledText>
         I want my work to be as accessible as possible, AND making this{" "}

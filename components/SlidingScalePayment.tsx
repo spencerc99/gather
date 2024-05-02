@@ -108,11 +108,10 @@ export function SlidingScalePayment({
     });
   }, [numFlowers]);
   return (
-    <YStack gap="$2">
+    <YStack gap="$3">
       <StyledText metadata bold>
         Choose an amount that works for you
       </StyledText>
-      <H3 marginHorizontal="auto">${moneyValue}</H3>
       <Slider
         marginVertical="$3"
         min={1}
@@ -157,7 +156,8 @@ export function SlidingScalePayment({
         </XStack>
       </Slider>
       <YStack alignItems="center" position="relative" gap="$2">
-        <YStack position="relative" marginTop="$6">
+        <H3>${moneyValue}</H3>
+        <YStack position="relative" marginTop="$2">
           <StyledText>{PriceMessages[value[0] - 1]}</StyledText>
           {value[0] >= StartingSlidingScaleValue ? flowers : null}
         </YStack>

@@ -123,6 +123,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="icons"
+        options={{
+          presentation: "card",
+          title: "App Icons",
+        }}
+      />
+      <Stack.Screen
         name="collection/[id]/index"
         options={{
           presentation: "card",

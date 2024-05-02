@@ -34,7 +34,7 @@ import {
 import { ArenaChannelMultiSelect } from "../components/arena/ArenaChannelMultiSelect";
 import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
 import { ArenaChannelInfo } from "../utils/arena";
-import { setBoolean } from "../utils/asyncStorage";
+import { setBoolean, useStickyValue } from "../utils/asyncStorage";
 import { DatabaseContext } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { ArenaLogin } from "../views/ArenaLogin";
@@ -55,7 +55,7 @@ export default function IntroScreen() {
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
     []
   );
-  const [checked, setChecked] = useState<boolean>(false);
+  const [checked, setChecked] = useStickyValue("subscribeEmail", false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
   const onSlideStart = () => setScrollEnabled(false);
@@ -76,7 +76,7 @@ export default function IntroScreen() {
     }
 
     try {
-      // TODO:
+      // TODO: add email subscription
     } catch (err) {
       console.error(err);
     }
@@ -236,9 +236,8 @@ export default function IntroScreen() {
               onSlideEnd={onSlideEnd}
             />
 
-            <YStack gap="$2" marginTop="$5">
+            <YStack gap="$2" marginTop="auto">
               <NextStepButton
-                marginTop={0}
                 text={
                   <StyledText>
                     Contribute <StyledText bold>${moneyValue}</StyledText>
