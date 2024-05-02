@@ -65,6 +65,7 @@ import { Indices, Migrations } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { UserContext } from "./user";
 import { filterItemsBySearchValue } from "./search";
+import { ensure } from "./react";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -156,11 +157,17 @@ function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
 const BlockSelectLimit = 15;
 const CollectionSelectLimit = 15;
 
+interface GetBlocksOptions {
+  page?: number | null;
+  whereClause?: string;
+  havingClause?: string;
+  sortType?: SortType;
+  seed?: number;
+}
+type GetCollectionsOptions = GetBlocksOptions;
+
 interface DatabaseContextProps {
-  getBlocks: (opts?: {
-    page?: number | null;
-    sortType?: SortType;
-  }) => Promise<Block[]>;
+  getBlocks: (opts?: GetBlocksOptions) => Promise<Block[]>;
   // localBlocks: Block[] | null;
   createBlocks: (blocks: BlocksInsertInfo) => Promise<string[]>;
   getBlock: (blockId: string) => Promise<Block>;
@@ -171,10 +178,7 @@ interface DatabaseContextProps {
   deleteBlock: (id: string) => void;
   getConnectionsForBlock: (blockId: string) => Promise<Connection[]>;
 
-  getCollections: (opts?: {
-    page?: number | null;
-    sortType?: SortType;
-  }) => Promise<Collection[]>;
+  getCollections: (opts?: GetCollectionsOptions) => Promise<Collection[]>;
   getArenaCollectionIds: () => Promise<Set<string>>;
   createCollection: (collection: CollectionInsertInfo) => Promise<string>;
   updateCollection: (opts: {
@@ -183,7 +187,7 @@ interface DatabaseContextProps {
   }) => Promise<void>;
   getCollectionItems: (
     collectionId: string,
-    options?: { whereClause?: string; havingClause?: string; page?: number }
+    options?: GetBlocksOptions
   ) => Promise<CollectionBlock[]>;
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
   getCollection: (collectionId: string) => Promise<Collection>;
@@ -799,7 +803,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           for (const connection of connectionsForBlock) {
             const { remoteSourceInfo } = connection;
 
-            // TODO: this doens't work if you are offline...
+            // TODO: this doesn't work if you are offline...
             await removeBlockFromChannel({
               blockId: arenaBlockId,
               channelId: remoteSourceInfo!.arenaId,
@@ -910,26 +914,53 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                     block_connections.remote_connected_at as remote_connected_at
           FROM      blocks
           LEFT JOIN block_connections ON block_connections.block_id = blocks.id`; // coalesce to get around it being null..
-  const SelectBlocksSql = (page: number | null = 0) =>
+  const SelectBlocksSortTypeToClause = (
+    sortType: SortType,
+    remoteConnectedAt: string,
+    { seed }: { seed?: number } = {}
+  ) => {
+    ensure(
+      sortType !== SortType.Random || seed !== undefined,
+      "Random sort requires a seed"
+    );
+    switch (sortType) {
+      case SortType.Created:
+        return `ORDER BY  MIN(COALESCE(${remoteConnectedAt}, blocks.created_timestamp), blocks.created_timestamp) DESC`;
+      case SortType.Random:
+        // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
+        // return `ORDER BY  SIN(blocks.id + ${seed})`;
+        return ``;
+    }
+  };
+  const SelectBlocksSql = ({
+    page = 0,
+    // TODO:
+    whereClause,
+    sortType = SortType.Created,
+    seed,
+  }: GetBlocksOptions = {}) =>
     `${SelectBlockSql}
-    ORDER BY  MIN(COALESCE(block_connections.remote_connected_at, blocks.created_timestamp), blocks.created_timestamp) DESC
+    ${SelectBlocksSortTypeToClause(
+      sortType,
+      "block_connections.remote_connected_at",
+      { seed }
+    )}
     ${
       page === null
         ? ""
         : `LIMIT ${BlockSelectLimit} OFFSET ${page * BlockSelectLimit}`
     };`;
 
-  // TODO: add random sort using https://stackoverflow.com/a/75089040
   async function getBlocks({
-    page,
-  }: {
-    page?: number | null;
-    sort?: SortType;
-  } = {}): Promise<Block[]> {
+    page = 0,
+    whereClause,
+    sortType = SortType.Created,
+    seed,
+  }: GetBlocksOptions = {}): Promise<Block[]> {
     const [result] = await db.execAsync(
       [
         {
-          sql: `${SelectBlocksSql(page)};`,
+          sql: `${SelectBlocksSql({ page, sortType, seed, whereClause })};`,
           args: [],
         },
       ],
@@ -984,12 +1015,31 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ${whereClause ? `WHERE ${whereClause}` : ""}
           GROUP BY 1,2,3,4,5,6,7`;
 
+  const SelectCollectionsSortTypeToClause = (
+    sortType: SortType,
+    { seed }: { seed?: number } = {}
+  ) => {
+    ensure(
+      sortType !== SortType.Random || seed !== undefined,
+      "Random sort requires a seed"
+    );
+    switch (sortType) {
+      case SortType.Created:
+        return "ORDER BY  MAX(COALESCE(MAX(connections.created_timestamp), annotated_collections.updated_timestamp), annotated_collections.updated_timestamp) DESC";
+      case SortType.Random:
+        // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
+        // return `ORDER BY  SIN(annotated_collections.id + ${seed})`;
+        return ``;
+    }
+  };
   const SelectCollectionsSql = ({
     page = 0,
     whereClause,
-  }: { page?: number | null; whereClause?: string } = {}) => `
+    sortType = SortType.Created,
+    seed,
+  }: GetCollectionsOptions = {}) => `
           ${SelectCollectionInfoSql(whereClause)}
-          ORDER BY  MAX(COALESCE(MAX(connections.created_timestamp), annotated_collections.updated_timestamp), annotated_collections.updated_timestamp) DESC
+          ${SelectCollectionsSortTypeToClause(sortType, { seed })}
           ${
             page === null
               ? ""
@@ -1001,15 +1051,19 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   async function getCollections({
     page,
     whereClause,
-  }: {
-    page?: number | null;
-    whereClause?: string;
-  } = {}): Promise<Collection[]> {
+    sortType,
+    seed,
+  }: GetCollectionsOptions = {}): Promise<Collection[]> {
     try {
       const [result] = await db.execAsync(
         [
           {
-            sql: `${SelectCollectionsSql({ page, whereClause })};`,
+            sql: `${SelectCollectionsSql({
+              page,
+              whereClause,
+              sortType,
+              seed,
+            })};`,
             args: [],
           },
         ],
@@ -1160,7 +1214,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     {
       whereClause,
       page = 0,
-    }: { whereClause?: string; havingClause?: string; page?: number } = {}
+      sortType = SortType.Created,
+      seed,
+    }: GetBlocksOptions = {}
   ): Promise<CollectionBlock[]> {
     const [result] = await db.execAsync(
       [
@@ -1184,8 +1240,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             WHERE       connections.collection_id = ?${
               whereClause ? ` AND ${whereClause}` : ""
             }
-            ORDER BY MIN(COALESCE(connections.remote_created_at, blocks.created_timestamp), blocks.created_timestamp) DESC
-            LIMIT ${BlockSelectLimit} OFFSET ${page * BlockSelectLimit};`,
+            ${SelectBlocksSortTypeToClause(
+              sortType,
+              "connections.remote_created_at",
+              {
+                seed,
+              }
+            )}
+            ${
+              page === null
+                ? ""
+                : `LIMIT ${BlockSelectLimit} OFFSET ${page * BlockSelectLimit}`
+            };`,
           args: [collectionId],
         },
       ],

@@ -1,5 +1,9 @@
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { useContext, useRef, useState } from "react";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useContext, useMemo, useRef, useState } from "react";
 import { FlatList, Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import {
@@ -46,43 +50,79 @@ export function ReviewView() {
   }
   const queryKey = ["blocks", selectedReviewCollection, { sortType }] as const;
 
-  const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
-    useInfiniteQuery({
-      queryKey,
-      queryFn: async ({ pageParam, queryKey }) => {
-        const [_, collectionId] = queryKey;
+  const generateSeed = () =>
+    1 + Math.floor(Math.random() * Number.MAX_SAFE_INTEGER - 1);
+  const { data: tempBlocks, isLoading } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const [_, collectionId] = queryKey;
 
-        const blocks = !collectionId
-          ? await getBlocks({ page: pageParam, sortType })
-          : await getCollectionItems(collectionId, {
-              page: pageParam,
-            });
+      const blocks = !collectionId
+        ? await getBlocks({ page: null, sortType, seed })
+        : await getCollectionItems(collectionId, {
+            page: null,
+            sortType,
+            seed,
+          });
 
-        return {
-          blocks,
-          nextId: pageParam + 1,
-          previousId: pageParam === 0 ? undefined : pageParam - 1,
-        };
-      },
-      initialPageParam: 0,
-      getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
-      getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
-    });
-  const outputBlocks = data?.pages.flatMap((p) => p.blocks);
-
-  const queryClient = useQueryClient();
+      return blocks;
+    },
+  });
+  const [seed, setSeed] = useState(generateSeed());
+  const outputBlocks = useMemo(
+    () =>
+      isLoading
+        ? []
+        : (tempBlocks || []).sort(
+            (a, b) =>
+              Math.sin(Number(a.id) + seed) - Math.sin(Number(b.id) + seed)
+          ),
+    [tempBlocks, seed]
+  );
   function randomizeBlocks() {
-    queryClient.invalidateQueries({
-      queryKey: ["blocks", selectedReviewCollection, { sortType }],
-    });
+    setSeed(generateSeed());
   }
 
-  function fetchMoreBlocks() {
-    if (!hasNextPage) {
-      return;
-    }
-    fetchNextPage();
-  }
+  // TODO: use this when native sqlite random sort works
+  // const [seed, setSeed] = useState(generateSeed());
+  // const queryClient = useQueryClient();
+  // const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
+  //   useInfiniteQuery({
+  //     queryKey,
+  //     queryFn: async ({ pageParam, queryKey }) => {
+  //       const [_, collectionId] = queryKey;
+
+  //       const blocks = !collectionId
+  //         ? await getBlocks({ page: pageParam, sortType, seed })
+  //         : await getCollectionItems(collectionId, {
+  //             page: pageParam,
+  //             sortType,
+  //             seed,
+  //           });
+
+  //       return {
+  //         blocks,
+  //         nextId: pageParam + 1,
+  //         previousId: pageParam === 0 ? undefined : pageParam - 1,
+  //       };
+  //     },
+  //     initialPageParam: 0,
+  //     getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
+  //     getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
+  //   });
+  // const outputBlocks = data?.pages.flatMap((p) => p.blocks);
+  // function randomizeBlocks() {
+  //   setSeed(generateSeed());
+  //   queryClient.invalidateQueries({
+  //     queryKey: ["blocks", selectedReviewCollection, { sortType }],
+  //   });
+  // }
+  // function fetchMoreBlocks() {
+  //   if (!hasNextPage) {
+  //     return;
+  //   }
+  //   fetchNextPage();
+  // }
 
   return (
     <YStack gap="$2" flex={1}>
@@ -149,8 +189,8 @@ export function ReviewView() {
       {afterAnimations(ReviewItems)({
         view,
         outputBlocks,
-        fetchMoreBlocks,
-        isFetchingNextPage,
+        fetchMoreBlocks: () => {},
+        isFetchingNextPage: false,
       })}
     </YStack>
   );
@@ -176,6 +216,7 @@ function ReviewItems({
 
   switch (view) {
     case ViewType.Carousel:
+      // TODO: handle fetching more blocks when using infiniteQuery
       return <CarouselView outputBlocks={outputBlocks} />;
     case ViewType.Feed:
       return (
