@@ -119,15 +119,6 @@ const BlockView = memo(
   )
 );
 
-const RenderChunkSize = 15;
-
-function getEarlierDate(a: null | Date, b: Date) {
-  if (!a) {
-    return b;
-  }
-  return a.getTime() < b.getTime() ? a : b;
-}
-
 export function BlockTexts({
   blocks,
   collectionId,
@@ -169,7 +160,6 @@ export function BlockTexts({
   //     ),
   //   [blocks]
   // );
-  const sortedBlocks = blocks;
 
   const isRemoteCollection = collection?.remoteSourceType !== undefined;
 
@@ -257,7 +247,7 @@ export function BlockTexts({
     <>
       <FlatList
         renderItem={renderBlock}
-        data={sortedBlocks}
+        data={blocks}
         scrollEventThrottle={150}
         ref={scrollRef}
         scrollsToTop={false}

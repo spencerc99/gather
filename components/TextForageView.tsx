@@ -279,7 +279,7 @@ export function TextForageView({
       >
         <BlockTexts
           collectionId={collectionId}
-          blocks={blocks}
+          blocks={blocks ? blocks : null}
           fetchMoreBlocks={fetchMoreBlocks}
           isFetchingNextPage={isFetchingNextPage}
         />

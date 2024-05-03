@@ -439,10 +439,10 @@ async function getBodyForBlock(block: Block): Promise<any> {
           Authorization: `Client-ID 0d8e6e0a1331d71`,
         },
       });
-      const imgurResp = await resp.json();
       if (!resp.ok) {
-        throw new Error(JSON.stringify(imgurResp));
+        throw new Error(JSON.stringify(resp));
       }
+      const imgurResp = await resp.json();
       return {
         source: imgurResp.data.link,
       };

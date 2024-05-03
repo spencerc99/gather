@@ -55,6 +55,7 @@ export function useArenaUserChannels(searchValue: string) {
     }));
 
   // TODO: SEARCH
+  // https://api.are.na/v2/search/user/15?filter%5Btype%5D=channels
   const filteredChannels = useMemo(() => {
     const nonDisabledChannels = annotatedChannels?.filter((c) => !c.isDisabled);
     return debouncedSearch === ""

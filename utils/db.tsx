@@ -353,6 +353,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const [isConnected, setIsConnected] = useState<boolean>(true);
   const [selectedReviewCollection, setSelectedReviewCollection] =
     useStickyValue<string | null>(CollectionToReviewKey, null);
+  const queuedBlocksToSync = useRef<Set<string>>(new Set<string>());
 
   // Ref to keep track of whether the sync is already running
   const isSyncingRef = useRef(false);
@@ -1434,43 +1435,49 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
 
-    const result = await getPendingArenaConnections();
-
-    if (!result.rows.length) {
-      return;
-    }
-
-    // @ts-ignore
-    const connectionsToSync: BlockWithCollectionInfo[] = result.rows.map(
-      (block) => {
-        const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
-        const mappedBlock = mapDbBlockToBlock(block);
-        return {
-          ...blockMappedToCamelCase,
-          ...mappedBlock,
-          collectionRemoteSourceType:
-            blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
-          collectionRemoteSourceInfo:
-            blockMappedToCamelCase.collectionRemoteSourceInfo
-              ? (JSON.parse(
-                  blockMappedToCamelCase.collectionRemoteSourceInfo
-                ) as RemoteSourceInfo)
-              : null,
-          collectionId: block.collection_id,
-        };
-      }
-    );
-
-    console.log(
-      `Syncing ${connectionsToSync.length} pending connections to arena`
-    );
-
     InteractionManager.runAfterInteractions(async () => {
+      const result = await getPendingArenaConnections();
+
+      if (!result.rows.length) {
+        return;
+      }
+
+      // @ts-ignore
+      const connectionsToSync: BlockWithCollectionInfo[] = result.rows
+        .map((block) => {
+          const blockMappedToCamelCase =
+            mapSnakeCaseToCamelCaseProperties(block);
+          const mappedBlock = mapDbBlockToBlock(block);
+          return {
+            ...blockMappedToCamelCase,
+            ...mappedBlock,
+            collectionRemoteSourceType:
+              blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
+            collectionRemoteSourceInfo:
+              blockMappedToCamelCase.collectionRemoteSourceInfo
+                ? (JSON.parse(
+                    blockMappedToCamelCase.collectionRemoteSourceInfo
+                  ) as RemoteSourceInfo)
+                : null,
+            collectionId: block.collection_id,
+          };
+        })
+        .filter((b) => !queuedBlocksToSync.current.has(b.id));
+
+      connectionsToSync.forEach((c) => queuedBlocksToSync.current.add(c.id));
+
       const blockCollectionIdToRemoteConnectedAt: Record<
         string,
         string | undefined
       > = {};
+
+      console.log(
+        `Syncing ${connectionsToSync.length} pending connections to arena`,
+        connectionsToSync
+      );
+
       for (const connToSync of connectionsToSync) {
+        console.log("syncing", connToSync);
         const newRemoteItem = await syncBlockToArena(
           connToSync.collectionRemoteSourceInfo!.arenaId!,
           connToSync
@@ -1489,6 +1496,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ]
       );
       if (succesfullySyncedConnections.length === 0) {
+        connectionsToSync.forEach((c) =>
+          queuedBlocksToSync.current.delete(c.id)
+        );
         return;
       }
 
@@ -1502,6 +1512,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             ],
         }))
       );
+      connectionsToSync.forEach((c) => queuedBlocksToSync.current.delete(c.id));
 
       console.log(
         `Successfully synced ${connectionsToSync
