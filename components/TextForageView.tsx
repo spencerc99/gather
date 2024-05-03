@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { XStack, YStack } from "tamagui";
+import { Theme, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { DatabaseContext } from "../utils/db";
 import { BlockType } from "../utils/mimeTypes";
@@ -349,16 +349,41 @@ export function TextForageView({
             alignItems="center"
             justifyContent="center"
             padding="$2"
-            gap="$2"
+            gap="$"
+            position="relative"
           >
             <StyledButton
               icon={<Icon size={24} name="images" />}
               onPress={pickImage}
               paddingHorizontal="$2"
               theme="grey"
+              chromeless
               alignSelf="flex-end"
             />
+            <YStack position="absolute" zIndex={1} right="$1.5" bottom="$2">
+              <StyledButton
+                onPress={async () => {
+                  void onSaveResult();
+                }}
+                chromeless
+                marginHorizontal="$2"
+                paddingVertical={0}
+                paddingHorizontal={0}
+                disabled={!textValue && !medias.length}
+                alignSelf="flex-end"
+                theme="green"
+                icon={
+                  <Icon
+                    name="arrow-forward-circle-sharp"
+                    size={28}
+                    color="$green10"
+                    type={IconType.Ionicons}
+                  />
+                }
+              ></StyledButton>
+            </YStack>
             <StyledTextArea
+              paddingRight="$6"
               placeholder={textPlaceholder}
               minHeight={undefined}
               flex={1}
@@ -370,23 +395,6 @@ export function TextForageView({
               value={textValue}
               enablesReturnKeyAutomatically
             />
-            <StyledButton
-              onPress={async () => {
-                void onSaveResult();
-              }}
-              chromeless
-              paddingHorizontal="$2"
-              disabled={!textValue && !medias.length}
-              alignSelf="flex-end"
-              icon={
-                <Icon
-                  name="arrow-forward-circle-sharp"
-                  size={28}
-                  color="$green10"
-                  type={IconType.Ionicons}
-                />
-              }
-            ></StyledButton>
           </XStack>
         </YStack>
       </KeyboardAvoidingView>
