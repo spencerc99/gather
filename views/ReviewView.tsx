@@ -308,6 +308,9 @@ export function FeedView({
           width: 170,
           height: 170,
         }}
+        blockStyle={{
+          resizeMode: "contain",
+        }}
         style={{
           width: 170,
           height: "100%",
