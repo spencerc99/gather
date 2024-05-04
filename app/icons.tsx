@@ -1,9 +1,8 @@
 import { getAppIcon, setAppIcon } from "expo-dynamic-app-icon";
 import { useState } from "react";
-import { H4, ScrollView, Stack, XStack, YStack } from "tamagui";
+import { H4, Stack, XStack, YStack } from "tamagui";
 import { Image } from "react-native";
 import { StyledText } from "../components/Themed";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 
 export const AppIcons = [

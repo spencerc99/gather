@@ -3,6 +3,7 @@ import { Image } from "react-native";
 import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
 import { H3, Slider, XStack, XStackProps, YStack } from "tamagui";
 import { StyledText } from "./Themed";
+import { ContributionsKey, getItem, setItem } from "../utils/asyncStorage";
 
 export const SlidingPrice = [1, 3, 6, 9, 21, 33, 60];
 export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
@@ -32,6 +33,24 @@ export function getSlidingPriceMoneyValue(value: number) {
 }
 export function getSlidingPricePaymentLink(value: number) {
   return PaymentLinks[value - 1];
+}
+
+export interface Contribution {
+  price: number;
+  date: Date;
+}
+
+export function recordContribution(price: number) {
+  const contribution: Contribution = {
+    price,
+    date: new Date(),
+  };
+  const currentContributions = getItem(ContributionsKey);
+  const newContributions = currentContributions
+    ? [...currentContributions, contribution]
+    : [contribution];
+
+  setItem(ContributionsKey, newContributions);
 }
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);

@@ -22,6 +22,7 @@ import {
   StartingSlidingScaleValue,
   getSlidingPriceMoneyValue,
   getSlidingPricePaymentLink,
+  recordContribution,
 } from "../components/SlidingScalePayment";
 import {
   ArenaLogo,
@@ -245,6 +246,7 @@ export default function IntroScreen() {
                 }
                 onPress={async () => {
                   await WebBrowser.openBrowserAsync(paymentLink);
+                  recordContribution(moneyValue);
                 }}
                 marginBottom={0}
               />

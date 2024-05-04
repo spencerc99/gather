@@ -9,8 +9,13 @@ import {
   StartingSlidingScaleValue,
   getSlidingPriceMoneyValue,
   getSlidingPricePaymentLink,
+  recordContribution,
 } from "../components/SlidingScalePayment";
 import { StyledButton, StyledText } from "../components/Themed";
+import { useFixExpoRouter3NavigationTitle } from "../utils/router";
+import { ContributionsList } from "../components/ContributionsList";
+import { ContributionsKey } from "../utils/asyncStorage";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function About() {
   const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
@@ -19,6 +24,9 @@ export default function About() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
   const paymentLink = getSlidingPricePaymentLink(value[0]);
+  useFixExpoRouter3NavigationTitle();
+  const queryClient = useQueryClient();
+
   return (
     <SafeAreaView
       style={{
@@ -34,7 +42,10 @@ export default function About() {
         <YStack
           minHeight="100%"
           backgroundColor="#FFDBB2"
+          paddingTop="5%"
+          paddingBottom="5%"
           paddingHorizontal="10%"
+          gap="$3"
         >
           <AboutSection
             value={value}
@@ -42,14 +53,19 @@ export default function About() {
             onSlideStart={onSlideStart}
             onSlideEnd={onSlideEnd}
           />
-          <StyledButton
-            backgroundColor="$blue8"
-            onPress={async () => {
-              await WebBrowser.openBrowserAsync(paymentLink);
-            }}
-          >
-            Contribute <StyledText bold>${moneyValue}</StyledText>
-          </StyledButton>
+          <YStack marginTop="auto">
+            <StyledButton
+              marginTop="$7"
+              backgroundColor="$blue8"
+              onPress={async () => {
+                await WebBrowser.openBrowserAsync(paymentLink);
+                recordContribution(moneyValue);
+                queryClient.invalidateQueries({ queryKey: [ContributionsKey] });
+              }}
+            >
+              Contribute <StyledText bold>${moneyValue}</StyledText>
+            </StyledButton>
+          </YStack>
         </YStack>
       </KeyboardAwareScrollView>
     </SafeAreaView>
@@ -107,7 +123,9 @@ export function AboutSection({
         is how I make my living as an indie engineer-artist. I really appreciate
         anything you can offer to support me 🧡
       </StyledText>
+      <ContributionsList />
       <YStack marginTop="$2">
+        {/* TODO: include previous payments */}
         <SlidingScalePayment
           val={value}
           setVal={setValue}

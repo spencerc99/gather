@@ -31,6 +31,9 @@ export default function ProfileScreen() {
   const { tryImportArenaChannel } = useContext(DatabaseContext);
 
   const { currentUser } = useContext(UserContext);
+  const today = dayjs();
+  const started = currentUser?.createdAt ? dayjs(currentUser.createdAt) : today;
+  const daysUsedApp = today.diff(started, "day");
 
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
     []
@@ -88,7 +91,8 @@ export default function ProfileScreen() {
               <StyledText title>{currentUser.id}</StyledText>
               <YStack alignItems="center" space="$1">
                 <StyledText metadata>
-                  joined on {dayjs(currentUser.createdAt).format("MM/DD/YYYY")}
+                  joined on {dayjs(currentUser.createdAt).format("MM/DD/YYYY")},
+                  used for {daysUsedApp} days.
                 </StyledText>
               </YStack>
             </YStack>
@@ -127,6 +131,17 @@ export default function ProfileScreen() {
           <LinkButton
             flex={1}
             width="100%"
+            href="/about"
+            icon={<Icon name="egg" />}
+            theme="orange"
+            backgroundColor="$orange6"
+            justifyContent="flex-start"
+          >
+            Origins
+          </LinkButton>
+          <LinkButton
+            flex={1}
+            width="100%"
             href="/icons"
             justifyContent="flex-start"
             icon={
@@ -140,7 +155,7 @@ export default function ProfileScreen() {
               />
             }
           >
-            App Icons
+            App icons
           </LinkButton>
           <StyledButton
             justifyContent="flex-start"
@@ -151,22 +166,9 @@ export default function ProfileScreen() {
               });
             }}
           >
-            Send Feedback
+            Send feedback
           </StyledButton>
-          <StyledButton
-            icon={<Icon name="gift" />}
-            onPress={() => {
-              Linking.openURL(
-                "https://buy.stripe.com/8wMg1p8gjf2g2m4bIN"
-              ).catch((error) => {
-                console.log(error);
-              });
-            }}
-            backgroundColor="$orange8"
-            justifyContent="flex-start"
-          >
-            Support Development
-          </StyledButton>
+
           {/* <LinkButton>Share</LinkButton> */}
           {/* <StyledButton>
         What's new

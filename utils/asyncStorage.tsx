@@ -7,6 +7,7 @@ interface LastSyncedRemoteInfo {
   lastSyncedAt: string | null;
 }
 export const CollectionToReviewKey = "collectionToReview";
+export const ContributionsKey = "contributions";
 
 export function getLastSyncedInfoForChannel(
   channelId: string
