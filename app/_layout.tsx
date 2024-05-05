@@ -128,13 +128,6 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
-        name="collection/[id]/settings"
-        options={{
-          presentation: "modal",
-          title: "Collection Settings",
-        }}
-      />
-      <Stack.Screen
         name="block/[id]/index"
         options={{
           presentation: "card",

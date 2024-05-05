@@ -1203,10 +1203,32 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const updateBlockMutation = useMutation({
     mutationFn: updateBlockBase,
     onSuccess: (_data, { blockId }) => {
+      // TODO: can probably make this more efficient.. but for now it needs to refresh.
       queryClient.invalidateQueries({
-        queryKey: ["blocks", { blockId }],
+        queryKey: ["blocks"],
       });
     },
+    // onMutate: async ({ blockId, editInfo }) => {
+    //   // Cancel any outgoing refetches
+    //   // (so they don't overwrite our optimistic update)
+    //   await queryClient.cancelQueries({
+    //     queryKey: ["blocks"],
+    //   });
+
+    //   // Snapshot the previous value
+    //   const previousBlocks = queryClient.getQueryData(["blocks"]);
+
+    //   // Optimistically update to the new value
+    //   queryClient.setQueryData<Block[]>(["blocks"], (old) =>
+    //     old?.map((b) => (b.id === blockId ? { ...b, ...editInfo } : b))
+    //   );
+
+    //   // Return a context object with the snapshotted value
+    //   return { previousBlocks };
+    // },
+    // onError: (_err, _data, context) => {
+    //   queryClient.setQueryData(["blocks"], context?.previousBlocks);
+    // },
   });
   const updateBlock = updateBlockMutation.mutateAsync;
 
@@ -2071,4 +2093,25 @@ export function useCollections(searchValue?: string) {
     collections: filteredCollections,
     isLoading,
   };
+}
+
+export function useCollection(collectionId: string) {
+  const { getCollection } = useContext(DatabaseContext);
+
+  return useQuery({
+    queryKey: ["collections", { collectionId }],
+    queryFn: async () => {
+      return await getCollection(collectionId);
+    },
+  });
+}
+export function useBlock(blockId: string) {
+  const { getBlock } = useContext(DatabaseContext);
+
+  return useQuery({
+    queryKey: ["blocks", { blockId }],
+    queryFn: async () => {
+      return await getBlock(blockId);
+    },
+  });
 }

@@ -4,7 +4,7 @@ import { Spinner } from "tamagui";
 import { HeaderIcon } from "../../(tabs)/_layout";
 import { CollectionDetailView } from "../../../components/CollectionDetailView";
 import { Collection } from "../../../utils/dataTypes";
-import { DatabaseContext } from "../../../utils/db";
+import { DatabaseContext, useCollection } from "../../../utils/db";
 
 export function CollectionDetailsHeaderLink({ id }: { id: string }) {
   return (
@@ -38,17 +38,10 @@ export function CollectionGearHeaderLink({
 
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();
-  const [collection, setCollection] = useState<Collection | null>(null);
-  const { getCollection } = useContext(DatabaseContext);
 
-  // TODO: useQuery
-  useEffect(() => {
-    getCollection(id.toString()).then((collection) =>
-      setCollection(collection)
-    );
-  }, [id]);
+  const { data: collection, isFetching } = useCollection(id.toString());
 
-  if (!collection) {
+  if (!collection || isFetching) {
     return <Spinner size="large" color="$orange4" />;
   }
 
@@ -57,14 +50,6 @@ export default function CollectionDetailScreen() {
       <Stack.Screen
         options={{
           title: "",
-          // headerRight: (props) => {
-          //   return (
-          //     <CollectionGearHeaderLink
-          //       id={collection.id}
-          //       tintColor={props.tintColor}
-          //     />
-          //   );
-          // },
         }}
       />
       <CollectionDetailView collection={collection} />
