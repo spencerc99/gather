@@ -10,6 +10,7 @@ import { BlockSummary } from "./BlockSummary";
 import { ConnectionSummary } from "./ConnectionSummary";
 import { ExternalLink } from "./ExternalLink";
 import {
+  ArenaLogo,
   EditableTextOnClick,
   Icon,
   IconType,
@@ -137,6 +138,22 @@ export function BlockDetailView({
               );
             }}
           />
+          {remoteSourceInfo && (
+            <XStack alignItems="center">
+              <ArenaLogo />
+              <StyledText metadata>
+                {" "}
+                Block{" "}
+                <ExternalLink
+                  href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
+                >
+                  <StyledParagraph link>
+                    {remoteSourceInfo.arenaId}
+                  </StyledParagraph>
+                </ExternalLink>
+              </StyledText>
+            </XStack>
+          )}
           <StyledView gap="$1">
             {/* <StyledParagraph metadata>By: {createdBy}</StyledParagraph> */}
             {source && (
