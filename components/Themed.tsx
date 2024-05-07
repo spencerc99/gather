@@ -266,9 +266,7 @@ export function EditableTextOnClick({
             theme="green"
             height="$2"
             icon={<Icon name="checkmark" />}
-            disabled={
-              editableContent === text || editableContent === "" || disabled
-            }
+            disabled={editableContent === text || disabled}
           />
         </XStack>
       )}
