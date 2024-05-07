@@ -21,22 +21,25 @@ import { BlockTexts } from "./BlockTexts";
 import { FeedView } from "./FeedView";
 import { MediaView } from "./MediaView";
 import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
+import { useFocusEffect } from "expo-router";
 
 const Placeholders = [
   "Who do you love and why?",
   "What was the last link you sent?",
-  "What texture did you last pick up in your camera roll?",
   "What was the last interesting thing you overhead?",
   "What do you want to remember?",
-  "What caught your eye about the world today?",
+  "What caught your eye in the world today?",
   "What are you grateful for?",
   "What do you appreciate about a friend?",
   "What was your last photo of the sky?",
-  "How do you describe yourself?",
+  "What words capture how you're feeling today?",
   "What made you love life today?",
   "What was the last song you found that slaps?",
   "Describe the last person you saw.",
   "What words do you want to live by?.",
+  "Who do you want to thank?",
+  "What's on repeat in your head?",
+  "What's resonating for you?",
 ];
 
 interface PickedMedia {
@@ -57,12 +60,17 @@ export function TextForageView({
     useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
-  const textPlaceholder = useMemo(
-    () => Placeholders[Math.floor(Math.random() * Placeholders.length)],
-    []
+  const [textPlaceholder, setTextPlaceholder] = useState(
+    Placeholders[Math.floor(Math.random() * Placeholders.length)]
   );
   const insets = useSafeAreaInsets();
   const queryKey = ["blocks", { collectionId }] as const;
+
+  useFocusEffect(() => {
+    setTextPlaceholder(
+      Placeholders[Math.floor(Math.random() * Placeholders.length)]
+    );
+  });
 
   // TODO: toast the error
   const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
