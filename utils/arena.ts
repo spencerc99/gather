@@ -502,10 +502,16 @@ export async function addBlockToChannel({
     response = await resp.json();
     const { title, description } = block;
     if (title || (description && resp.ok)) {
-      const url = withQueryParams(`${ArenaApiUrl}/blocks/${response.id}`, {
+      const body = {
         title,
         description,
+      };
+      // ignore undefined values
+      Object.keys(body).forEach((key) => {
+        // @ts-ignore
+        if (!body[key]) body[key] = "";
       });
+      const url = withQueryParams(`${ArenaApiUrl}/blocks/${response.id}`, body);
       const updateMetadata = await fetch(url, {
         method: "PUT",
         headers: {

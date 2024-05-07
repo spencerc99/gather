@@ -89,7 +89,8 @@ export function CollectionDetailView({
       const { newChannel, addedInfo, numItemsFailed } = await createChannel({
         accessToken: arenaAccessToken,
         title,
-        itemsToAdd: collectionItems,
+        // Reverse order so they get added in right order, since fetched in descending
+        itemsToAdd: collectionItems.reverse(),
       });
       await Promise.all([
         upsertConnections(

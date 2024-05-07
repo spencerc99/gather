@@ -104,15 +104,20 @@ function mapDbBlockToBlock(block: any): Block {
     // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
     id: block.id.toString(),
     content: mapBlockContentToPath(block.content, block.type),
+    // TODO: probably just make these null too
+    description: block.description === null ? undefined : block.description,
+    title: block.title === null ? undefined : block.title,
+    source: block.source === null ? undefined : block.source,
     createdAt: convertDbTimestampToDate(block.created_timestamp),
     updatedAt: convertDbTimestampToDate(block.updated_timestamp),
     remoteConnectedAt: block.remote_connected_at
       ? new Date(block.remote_connected_at)
       : undefined,
-    remoteSourceType: block.remote_source_type as RemoteSourceType,
+    remoteSourceType:
+      (block.remote_source_type as RemoteSourceType) || undefined,
     remoteSourceInfo: block.remote_source_info
       ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
-      : null,
+      : undefined,
     collectionIds: block.collection_ids
       ? JSON.parse(block.collection_ids).map((c) => c.toString())
       : [],
