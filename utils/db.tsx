@@ -1590,6 +1590,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         ],
         false
       );
+      queryClient.invalidateQueries({
+        queryKey: ["blocks", { blockId: block.id }],
+      });
       return rawArenaItem;
     } catch (err) {
       console.error(err);

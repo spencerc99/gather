@@ -1,5 +1,5 @@
 import { Link, Stack, useRouter } from "expo-router";
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Pressable } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
@@ -20,13 +20,7 @@ import {
   StyledView,
 } from "./Themed";
 
-export function BlockDetailView({
-  block,
-  setBlock,
-}: {
-  block: Block;
-  setBlock: (newBlock: Block) => void;
-}) {
+export function BlockDetailView({ block }: { block: Block }) {
   const {
     id,
     title,
@@ -47,16 +41,17 @@ export function BlockDetailView({
   const { data: connections, isLoading: loadingData } = useBlockConnections(
     id.toString()
   );
+  const hasRemoteConnection = useMemo(
+    () => connections?.some((c) => c.remoteSourceType !== undefined),
+    [connections]
+  );
 
   useFixExpoRouter3NavigationTitle();
 
   async function update(updateFn: () => ReturnType<typeof updateBlock>) {
     setIsLoading(true);
     try {
-      const newBlock = await updateFn();
-      if (newBlock) {
-        setBlock(newBlock);
-      }
+      await updateFn();
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +133,8 @@ export function BlockDetailView({
               );
             }}
           />
-          {remoteSourceInfo && (
+          {/* TODO: genericize when opening up remote sources */}
+          {remoteSourceInfo ? (
             <XStack alignItems="center">
               <ArenaLogo />
               <StyledText metadata>
@@ -153,7 +149,13 @@ export function BlockDetailView({
                 </ExternalLink>
               </StyledText>
             </XStack>
-          )}
+          ) : hasRemoteConnection ? (
+            <XStack alignItems="center">
+              <StyledText metadata>Waiting to sync to </StyledText>
+              <ArenaLogo />
+              <StyledText metadata> ...</StyledText>
+            </XStack>
+          ) : null}
           <StyledView gap="$1">
             {/* <StyledParagraph metadata>By: {createdBy}</StyledParagraph> */}
             {source && (
