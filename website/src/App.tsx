@@ -16,9 +16,10 @@ function App() {
         <div className="carousel">
           {/* TODO: add hero demo */}
           <ImageZoom src="/splash.png" />
-          <ImageZoom src="/texts-screen.png" />
-          <ImageZoom src="/organize-screen.png" />
-          <ImageZoom src="/review-screen.png" />
+          <ImageZoom src="/gather-app-texts.png" />
+          <ImageZoom src="/gather-app-collection-select.png" />
+          <ImageZoom src="/gather-app-organize.png" />
+          <ImageZoom src="/gather-app-review.png" />
         </div>
 
         <div className="cta">
