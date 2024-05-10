@@ -96,6 +96,33 @@ export function SelectCollectionsList({
 
   const { collections, isLoading } = useCollections(searchValue);
 
+  const sortedCollections = useMemo(() => {
+    // sort selected collections to top
+    if (!collections) {
+      return;
+    }
+
+    if (searchValue) {
+      return collections;
+    }
+
+    return collections.sort((a, b) => {
+      if (
+        selectedCollections.includes(a.id) &&
+        !selectedCollections.includes(b.id)
+      ) {
+        return -1;
+      }
+      if (
+        selectedCollections.includes(b.id) &&
+        !selectedCollections.includes(a.id)
+      ) {
+        return 1;
+      }
+      return 0;
+    });
+  }, [collections, selectedCollections]);
+
   const toggleCollection = useCallback(
     (collection: Collection) => {
       if (selectedCollections.includes(collection.id)) {
@@ -151,7 +178,7 @@ export function SelectCollectionsList({
         scrollEnabled={false}
         horizontal={Boolean(horizontal)}
         keyboardShouldPersistTaps={"handled"}
-        data={collections}
+        data={sortedCollections}
         contentContainerStyle={{
           gap: horizontal ? 8 : 4,
         }}

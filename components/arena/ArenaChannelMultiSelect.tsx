@@ -75,14 +75,25 @@ export function ArenaChannelMultiSelect({
   const { channels, isLoading, isFetchingNextPage, fetchMore } =
     useArenaUserChannels(debouncedSearch);
 
-  const annotatedChannels = useMemo(
-    () =>
-      (channels || []).map((channel) => ({
-        ...channel,
-        isSelected: selectedChannelIds.includes(channel.id.toString()),
-      })),
-    [channels]
-  );
+  const sortedAndAnnotatedChannels = useMemo(() => {
+    const mapped = (channels || []).map((channel) => ({
+      ...channel,
+      isSelected: selectedChannelIds.includes(channel.id.toString()),
+    }));
+    if (!searchValue) {
+      mapped.sort((a, b) => {
+        // sort selected channels to top
+        if (a.isSelected && !b.isSelected) {
+          return -1;
+        }
+        if (!a.isSelected && b.isSelected) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+    return mapped;
+  }, [channels]);
 
   const renderChannel = useCallback(
     ({
@@ -182,7 +193,7 @@ export function ArenaChannelMultiSelect({
                 e.preventDefault();
                 e.stopPropagation();
               }}
-              data={annotatedChannels}
+              data={sortedAndAnnotatedChannels}
               renderItem={renderChannel}
               ListFooterComponent={
                 isFetchingNextPage ? (
