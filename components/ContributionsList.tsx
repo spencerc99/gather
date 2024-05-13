@@ -21,7 +21,7 @@ export function ContributionsList() {
   const daysUsedApp = today.diff(started, "day");
 
   return contributions ? (
-    <YStack gap="$2">
+    <>
       <StyledText>
         Thank you so much for your contribution to the development and
         maintenance of this app! You've been using Gather for {daysUsedApp}{" "}
@@ -35,6 +35,6 @@ export function ContributionsList() {
           </StyledText>
         ))}
       </YStack>
-    </YStack>
+    </>
   ) : null;
 }

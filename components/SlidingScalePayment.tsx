@@ -106,7 +106,8 @@ export function SlidingScalePayment({
   const setValue = setVal ?? setValueInternal;
 
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
-  const numFlowers = Math.min(Math.max(2, Math.floor(moneyValue / 5)), 10);
+  const starting = value[0] - 2;
+  const numFlowers = starting > 0 ? Math.pow(2, starting) - starting + 1 : 0;
   const flowers = useMemo(() => {
     return Array.from({ length: numFlowers }, (_, index) => {
       const topOrBottom = Math.random() > 0.5 ? "top" : "bottom";
@@ -178,7 +179,7 @@ export function SlidingScalePayment({
         <H3>${moneyValue}</H3>
         <YStack position="relative" marginTop="$2">
           <StyledText>{PriceMessages[value[0] - 1]}</StyledText>
-          {value[0] >= StartingSlidingScaleValue ? flowers : null}
+          {flowers}
         </YStack>
       </YStack>
     </YStack>

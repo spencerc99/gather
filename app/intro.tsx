@@ -49,7 +49,7 @@ export default function IntroScreen() {
   const [step, setStep] = useState<number>(0);
   const router = useRouter();
   const width = Dimensions.get("window").width;
-  const { email: savedEmail, setupUser } = useContext(UserContext);
+  const { email: savedEmail, setupUser, currentUser } = useContext(UserContext);
   const [email, setEmail] = useState("");
   const { arenaAccessToken, tryImportArenaChannel } =
     useContext(DatabaseContext);
@@ -222,6 +222,9 @@ export default function IntroScreen() {
               text="Next"
               disabled={!email || !EmailRegex.test(email)}
               onPress={async () => {
+                if (currentUser) {
+                  return;
+                }
                 await setupUser({ email });
               }}
             />

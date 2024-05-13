@@ -103,7 +103,7 @@ export function AboutSection({
           <StyledText link>Gather</StyledText>
         </ExternalLink>{" "}
         because I wanted a fast, simple way to archive & curate multimedia
-        collections. After several months of engineering (with help from friends
+        collections. After learning to make a mobile app (with help from friends
         at{" "}
         <ExternalLink href="https://canvas.xyz">
           <StyledText link>canvas.xyz</StyledText>
@@ -112,20 +112,20 @@ export function AboutSection({
         <ExternalLink href="https://are.na">
           <StyledText link>are.na</StyledText>
         </ExternalLink>
-        ), it has become a personal expression of how I wish to interact with
-        the data I collect.
+        ), it has become an expression of how I wish to interact with my data.
       </StyledText>
       <StyledText>
         I want my work to be as accessible as possible, AND making this{" "}
         <ExternalLink href="https://spencerchang.substack.com/p/ti-10-make-small-web-tools">
           <StyledText link>handmade software</StyledText>
         </ExternalLink>{" "}
-        is how I make my living as an indie engineer-artist. I really appreciate
-        anything you can offer to support me 🧡
+        is how I <StyledText bold>make my living</StyledText> as an indie
+        engineer-artist. I really appreciate anything you can offer to support
+        me in exchange for <StyledText bold>lifetime access</StyledText> to this
+        app 🧡
       </StyledText>
       <ContributionsList />
       <YStack marginTop="$2">
-        {/* TODO: include previous payments */}
         <SlidingScalePayment
           val={value}
           setVal={setValue}
