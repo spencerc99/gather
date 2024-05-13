@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Image, SafeAreaView } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { H2, XStack, YStack } from "tamagui";
-import { ExternalLink } from "../components/ExternalLink";
 import {
   SlidingScalePayment,
   StartingSlidingScaleValue,
@@ -11,7 +10,11 @@ import {
   getSlidingPricePaymentLink,
   recordContribution,
 } from "../components/SlidingScalePayment";
-import { StyledButton, StyledText } from "../components/Themed";
+import {
+  ExternalLinkText,
+  StyledButton,
+  StyledText,
+} from "../components/Themed";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { ContributionsList } from "../components/ContributionsList";
 import { ContributionsKey } from "../utils/asyncStorage";
@@ -99,26 +102,23 @@ export function AboutSection({
       </XStack>
       <StyledText>
         I started making{" "}
-        <ExternalLink href="https://gather.directory">
-          <StyledText link>Gather</StyledText>
-        </ExternalLink>{" "}
+        <ExternalLinkText href="https://gather.directory">
+          Gather
+        </ExternalLinkText>{" "}
         because I wanted a fast, simple way to archive & curate multimedia
         collections. After learning to make a mobile app (with help from friends
         at{" "}
-        <ExternalLink href="https://canvas.xyz">
-          <StyledText link>canvas.xyz</StyledText>
-        </ExternalLink>{" "}
-        &{" "}
-        <ExternalLink href="https://are.na">
-          <StyledText link>are.na</StyledText>
-        </ExternalLink>
+        <ExternalLinkText href="https://canvas.xyz">
+          canvas.xyz
+        </ExternalLinkText>{" "}
+        & <ExternalLinkText href="https://are.na">are.na</ExternalLinkText>
         ), it has become an expression of how I wish to interact with my data.
       </StyledText>
       <StyledText>
         I want my work to be as accessible as possible, AND making this{" "}
-        <ExternalLink href="https://spencerchang.substack.com/p/ti-10-make-small-web-tools">
-          <StyledText link>handmade software</StyledText>
-        </ExternalLink>{" "}
+        <ExternalLinkText href="https://spencerchang.substack.com/p/ti-10-make-small-web-tools">
+          handmade software
+        </ExternalLinkText>{" "}
         is how I <StyledText bold>make my living</StyledText> as an indie
         engineer-artist. I really appreciate anything you can offer to support
         me in exchange for <StyledText bold>lifetime access</StyledText> to this

@@ -26,6 +26,7 @@ import {
 } from "../components/SlidingScalePayment";
 import {
   ArenaLogo,
+  ExternalLinkText,
   Icon,
   IconType,
   StyledButton,
@@ -360,14 +361,35 @@ export default function IntroScreen() {
             </StyledText>
             <YStack space="$1">
               <StyledText fontSize="$4">
-                - things you want to remember
+                -{" "}
+                <ExternalLinkText href="https://www.are.na/spencer-chang/i-want-to-remember-this-fih_jry0poi">
+                  things you want to remember
+                </ExternalLinkText>
               </StyledText>
-              <StyledText fontSize="$4">- people watching log</StyledText>
-              <StyledText fontSize="$4">- times you said wow</StyledText>
+              <StyledText fontSize="$4">- times you love life</StyledText>
+              <StyledText fontSize="$4">
+                - descriptions of people you watch
+              </StyledText>
+              <StyledText fontSize="$4">
+                - times{" "}
+                <ExternalLinkText href="https://www.are.na/channel/wow-geoi3s6ev74">
+                  you said wow
+                </ExternalLinkText>
+              </StyledText>
               <StyledText fontSize="$4">- orange things</StyledText>
-              <StyledText fontSize="$4">- kindness journal</StyledText>
+              <StyledText fontSize="$4">
+                - nice things people say about you
+              </StyledText>
+              <StyledText fontSize="$4">
+                - nice things you say about other people
+              </StyledText>
               <StyledText fontSize="$4">- songs that slap</StyledText>
-              <StyledText fontSize="$4">- outfits of the day</StyledText>
+              <StyledText fontSize="$4">
+                -{" "}
+                <ExternalLinkText href="https://www.spencerchang.me/fits">
+                  outfits of the day
+                </ExternalLinkText>
+              </StyledText>
               <StyledText fontSize="$4">- morning mood log</StyledText>
             </YStack>
             <NextStepButton text="Start gathering" />

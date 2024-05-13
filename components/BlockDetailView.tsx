@@ -8,10 +8,10 @@ import { DatabaseContext, useBlockConnections } from "../utils/db";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { BlockSummary } from "./BlockSummary";
 import { ConnectionSummary } from "./ConnectionSummary";
-import { ExternalLink } from "./ExternalLink";
 import {
   ArenaLogo,
   EditableTextOnClick,
+  ExternalLinkText,
   Icon,
   IconType,
   StyledButton,
@@ -161,9 +161,7 @@ export function BlockDetailView({ block }: { block: Block }) {
             {source && (
               <StyledText metadata>
                 From:{" "}
-                <ExternalLink href={source}>
-                  <StyledParagraph link>{source}</StyledParagraph>
-                </ExternalLink>
+                <ExternalLinkText href={source}>{source}</ExternalLinkText>
               </StyledText>
             )}
             <StyledParagraph metadata>

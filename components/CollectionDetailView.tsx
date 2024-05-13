@@ -1,9 +1,14 @@
-import { YStack, Spinner, XStack, ScrollView } from "tamagui";
+import { YStack, Spinner, ScrollView } from "tamagui";
 import { Collection, RemoteSourceType } from "../utils/dataTypes";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
-import { ArenaLogo, StyledButton, StyledParagraph, StyledText } from "./Themed";
-import { ExternalLink } from "./ExternalLink";
+import {
+  ArenaLogo,
+  ExternalLinkText,
+  StyledButton,
+  StyledParagraph,
+  StyledText,
+} from "./Themed";
 import { Stack, useRouter } from "expo-router";
 import { createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
@@ -175,11 +180,11 @@ export function CollectionDetailView({
                 <>
                   <StyledParagraph metadata>
                     Syncing to/from{" "}
-                    <ExternalLink
+                    <ExternalLinkText
                       href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
                     >
-                      <StyledParagraph link>{remoteSourceType}</StyledParagraph>
-                    </ExternalLink>
+                      {remoteSourceType}
+                    </ExternalLinkText>
                   </StyledParagraph>
                   {/* TODO: add a dev button to reset channel to start */}
                   <StyledButton

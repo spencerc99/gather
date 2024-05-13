@@ -91,8 +91,8 @@ export default function ProfileScreen() {
               <StyledText title>{currentUser.id}</StyledText>
               <YStack alignItems="center" space="$1">
                 <StyledText metadata>
-                  joined on {dayjs(currentUser.createdAt).format("MM/DD/YYYY")},
-                  used for {daysUsedApp} days.
+                  joined on {dayjs(currentUser.createdAt).format("MM/DD/YY")},{" "}
+                  {daysUsedApp} days ago
                 </StyledText>
               </YStack>
             </YStack>
