@@ -81,8 +81,13 @@ footer {
   display: flex;
   margin-top: 0.25em;
   color: gray;
+  gap: 0.5em;
   div {
     display: flex;
     flex-direction: column;
+  }
+  img {
+    width: 48px;
+    height: 48px;
   }
 }

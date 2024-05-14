@@ -174,6 +174,11 @@ function App() {
               <img src="https://canvas.xyz/logo.svg" />
             </div>
           </a>
+          <a href="https://are.na" target="_blank">
+            <div>
+              <img src="https://are.na/favicon.svg" />
+            </div>
+          </a>
         </div>
       </footer>
     </>
