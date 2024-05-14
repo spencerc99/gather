@@ -31,6 +31,7 @@ import { InteractionManager, Keyboard, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
 import { ensure } from "../utils/react";
+import { ExternalLink } from "./ExternalLink";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
@@ -638,5 +639,19 @@ export function ArenaLogo({
       width={size}
       height={size}
     />
+  );
+}
+
+export function ExternalLinkText({
+  href,
+  children,
+  ...rest
+}: GetProps<typeof StyledText> & { href: string }) {
+  return (
+    <ExternalLink href={href}>
+      <StyledText link {...rest}>
+        {children}
+      </StyledText>
+    </ExternalLink>
   );
 }

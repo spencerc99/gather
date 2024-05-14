@@ -119,6 +119,28 @@ function RootLayoutNav() {
         options={{
           presentation: "card",
           title: "",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="icons"
+        options={{
+          presentation: "modal",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="support"
+        options={{
+          presentation: "modal",
+          title: "Support",
+        }}
+      />
+      <Stack.Screen
+        name="about"
+        options={{
+          presentation: "card",
+          title: "",
         }}
       />
       <Stack.Screen

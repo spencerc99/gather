@@ -12,7 +12,7 @@ import { Platform, Image, Linking } from "react-native";
 
 export default function Feedback() {
   return (
-    <ScrollView padding="10%" space="$4">
+    <ScrollView space="$4">
       {/* Use a light status bar on iOS to account for the black space above the modal */}
       <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
     </ScrollView>
