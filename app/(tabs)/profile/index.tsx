@@ -157,10 +157,20 @@ export default function ProfileScreen() {
           >
             App icons
           </LinkButton>
+          <LinkButton
+            justifyContent="flex-start"
+            icon={<Icon name="gift" />}
+            flex={1}
+            width="100%"
+            href="/support"
+          >
+            Support development
+          </LinkButton>
           <StyledButton
             justifyContent="flex-start"
             icon={<Icon name="mail" />}
             onPress={() => {
+              // TODO: handle if mail not installed.. should probably just be a coda form
               Linking.openURL(FeedbackLink).catch((error) => {
                 console.log(error);
               });

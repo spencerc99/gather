@@ -125,8 +125,15 @@ function RootLayoutNav() {
       <Stack.Screen
         name="icons"
         options={{
-          presentation: "card",
-          title: "App Icons",
+          presentation: "modal",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="support"
+        options={{
+          presentation: "modal",
+          title: "Support",
         }}
       />
       <Stack.Screen
