@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import * as Application from "expo-application";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Image, Linking, SafeAreaView } from "react-native";
 import { Avatar, H3, ScrollView, Spinner, YStack } from "tamagui";
 import {
@@ -20,6 +20,10 @@ import { ArenaLogin } from "../../../views/ArenaLogin";
 import { InternalDevTools } from "../../../views/InternalDevTools";
 import { getAppIconSource } from "../../icons";
 import { useFocusEffect } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { Contribution, Flower } from "../../../components/SlidingScalePayment";
+import { ContributionsKey, getItem } from "../../../utils/asyncStorage";
+import { useIsFocused } from "@react-navigation/native";
 
 const Subject = `[Gather] feedback`;
 const Body = `I wish|like|want|dislike...`;
@@ -60,6 +64,12 @@ export default function ProfileScreen() {
   }
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { data: contributions } = useQuery<Contribution[]>({
+    queryKey: [ContributionsKey],
+    queryFn: () => {
+      return getItem<Contribution[]>(ContributionsKey) || [];
+    },
+  });
 
   const [appIconSource, setAppIconSource] = useState(null);
   useFocusEffect(() => {
@@ -70,10 +80,34 @@ export default function ProfileScreen() {
     };
   });
 
+  const isFocused = useIsFocused();
+  const numFlowers = contributions?.length || 0;
+  const flowers = useMemo(
+    () =>
+      Array.from({ length: numFlowers }, (_, index) => {
+        const topOrBottom = Math.random() > 0.5 ? "top" : "bottom";
+        const leftOrRight = Math.random() > 0.5 ? "left" : "right";
+        return (
+          <Flower
+            key={`${index}`}
+            style={{
+              position: "absolute",
+              zIndex: -1,
+              [topOrBottom]: Math.random() * 10,
+              [leftOrRight]: `${Math.random() * 40}%`,
+              transform: [{ rotate: `${Math.random() * 90 - 45}deg` }],
+              opacity: 0.9,
+            }}
+          />
+        );
+      }),
+    [numFlowers]
+  );
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView>
-        <YStack gap="$2" padding="10%">
+        <YStack gap="$2" padding="10%" position="relative">
           {currentUser && (
             <YStack space="$2" padding="$4" alignItems="center" paddingTop={0}>
               <Avatar size="$6" circular>
@@ -95,6 +129,7 @@ export default function ProfileScreen() {
                   {daysUsedApp} days ago
                 </StyledText>
               </YStack>
+              {flowers}
             </YStack>
           )}
           <H3>Are.na</H3>

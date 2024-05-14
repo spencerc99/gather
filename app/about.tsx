@@ -66,7 +66,9 @@ export default function About() {
                 queryClient.invalidateQueries({ queryKey: [ContributionsKey] });
               }}
             >
-              Contribute <StyledText bold>${moneyValue}</StyledText>
+              <StyledText>
+                Contribute <StyledText bold>${moneyValue}</StyledText>
+              </StyledText>
             </StyledButton>
           </YStack>
         </YStack>

@@ -62,7 +62,7 @@ const FlowerOptions = [
   require("../assets/images/flower-pink.png"),
 ];
 
-function Flower({ style }: { style: XStackProps }) {
+export function Flower({ style }: { style: XStackProps }) {
   const randomFlower = useMemo(
     () => FlowerOptions[Math.floor(Math.random() * FlowerOptions.length)],
     []

@@ -44,9 +44,8 @@ export default function Support() {
         </StyledText>
         <ContributionsList />
         <SlidingScalePayment val={value} setVal={setValue} />
-        <YStack marginTop="auto">
+        <YStack marginTop="$10">
           <StyledButton
-            marginTop="$7"
             backgroundColor="$blue8"
             onPress={async () => {
               await WebBrowser.openBrowserAsync(paymentLink);
@@ -56,7 +55,9 @@ export default function Support() {
               });
             }}
           >
-            Contribute <StyledText bold>${moneyValue}</StyledText>
+            <StyledText>
+              Contribute <StyledText bold>${moneyValue}</StyledText>
+            </StyledText>
           </StyledButton>
         </YStack>
       </YStack>
