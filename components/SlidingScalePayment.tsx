@@ -11,11 +11,11 @@ export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
 const PriceMessages = [
   "No worries. I appreciate you paying what you can to support my work",
   "No worries. I appreciate you paying what you can to support my work",
-  "Thank you for making this possible",
-  "Thank you for making this possible",
-  "Thank you so much for your generosity!",
-  "Thank you so much for your generosity!",
-  "Wow! Thank you so much for giving me the space to do this work. I'd love to send you a handwritten letter to show my gratitude",
+  "Thank you for making this work possible!",
+  "Thank you for making this work possible!",
+  "Thank you so much for your generosity!!",
+  "Thank you so much for your generosity!!",
+  "Wow! Thank you so much for giving me the space to do this work. You have my endless gratitude.",
 ];
 
 const PaymentLinks = [

@@ -153,7 +153,7 @@ export default function IntroScreen() {
             <H2>Welcome to Gather</H2>
             <StyledText marginBottom="$1">
               Your messy space for gathering inspiration, encounters, and
-              moments (no Internet required!)
+              moments
             </StyledText>
             <YStack alignItems="center" marginBottom="$3">
               <Carousel
@@ -216,8 +216,12 @@ export default function IntroScreen() {
               <StyledText metadata>Send me updates</StyledText>
             </XStack>
             <StyledText metadata>
-              Your email is only recorded to send you updates if you check the
-              box.
+              Your email is only recorded if you check the box to send you
+              updates.
+            </StyledText>
+            <StyledText metadata>
+              This app has no tracking or ads. All your data stays on your
+              device and is only synced to external sources with your choice.
             </StyledText>
             <NextStepButton
               text="Next"
@@ -239,6 +243,7 @@ export default function IntroScreen() {
               setValue={setValue}
               onSlideStart={onSlideStart}
               onSlideEnd={onSlideEnd}
+              shortened
             />
 
             <YStack gap="$2" marginTop="auto">
@@ -360,6 +365,7 @@ export default function IntroScreen() {
               angles, or perspectives you want to continue revisiting.
             </StyledText>
             <YStack space="$1">
+              {/* TODO: change these to collapsible lists and show the examples of things, maybe just take 3 or so for each */}
               <StyledText fontSize="$4">
                 -{" "}
                 <ExternalLinkText href="https://www.are.na/spencer-chang/i-want-to-remember-this-fih_jry0poi">

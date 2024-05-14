@@ -80,11 +80,13 @@ export function AboutSection({
   setValue,
   onSlideStart,
   onSlideEnd,
+  shortened,
 }: {
   value: number[];
   setValue: (value: number[]) => void;
   onSlideStart: () => void;
   onSlideEnd: () => void;
+  shortened?: boolean;
 }) {
   return (
     <>
@@ -106,25 +108,33 @@ export function AboutSection({
           Gather
         </ExternalLinkText>{" "}
         because I wanted a fast, simple way to archive & curate multimedia
-        collections. After learning to make a mobile app (with help from friends
-        at{" "}
-        <ExternalLinkText href="https://canvas.xyz">
-          canvas.xyz
-        </ExternalLinkText>{" "}
-        & <ExternalLinkText href="https://are.na">are.na</ExternalLinkText>
-        ), it has become an expression of how I wish to interact with my data.
+        collections. After learning to make a mobile app
+        {!shortened && (
+          <StyledText>
+            {" "}
+            (with help from friends at{" "}
+            <ExternalLinkText href="https://canvas.xyz">
+              canvas.xyz
+            </ExternalLinkText>{" "}
+            & <ExternalLinkText href="https://are.na">are.na</ExternalLinkText>)
+          </StyledText>
+        )}
+        , it has become an expression of how I wish to interact with my data.
       </StyledText>
       <StyledText>
-        I want my work to be as accessible as possible, AND making this{" "}
+        Making{" "}
         <ExternalLinkText href="https://spencerchang.substack.com/p/ti-10-make-small-web-tools">
           handmade software
         </ExternalLinkText>{" "}
         is how I <StyledText bold>make my living</StyledText> as an indie
-        engineer-artist. I really appreciate anything you can offer to support
-        me in exchange for <StyledText bold>lifetime access</StyledText> to this
-        app 🧡
+        engineer-artist, but I'm offering sliding scale payment to make my work
+        accessible. Your contribution enables{" "}
+        <StyledText bold>lifetime access</StyledText> and continued development.
       </StyledText>
-      <ContributionsList />
+      <StyledText>
+        I appreciate your support and hope you enjoy Gather 🧡
+      </StyledText>
+      {!shortened && <ContributionsList />}
       <YStack marginTop="$2">
         <SlidingScalePayment
           val={value}
