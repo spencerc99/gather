@@ -14,6 +14,7 @@ import {
   useState,
 } from "react";
 import {
+  EditableTextOnClick,
   Icon,
   IconComponent,
   IconType,
@@ -148,6 +149,7 @@ export function BlockSummary({
   style,
   blockStyle,
   containerProps,
+  editable,
 }: {
   block: Block;
   hideMetadata?: boolean;
@@ -156,10 +158,12 @@ export function BlockSummary({
   style?: object;
   blockStyle?: object;
   containerProps?: GetProps<typeof YStack>;
+  editable?: boolean;
 }) {
   const { id, title, createdAt } = block;
   const { updateBlock } = useContext(DatabaseContext);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   async function commitEdit(newContent: string | null) {
     try {
@@ -171,6 +175,15 @@ export function BlockSummary({
       // TODO: toast with error;
     } finally {
       setIsEditing(false);
+    }
+  }
+
+  async function update(updateFn: () => ReturnType<typeof updateBlock>) {
+    setIsLoading(true);
+    try {
+      await updateFn();
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -228,6 +241,27 @@ export function BlockSummary({
 
   const renderedSummary = (
     <YStack gap="$2" alignItems="center" key={id} {...containerProps}>
+      {editable && (
+        <EditableTextOnClick
+          inputProps={{
+            title: true,
+            enterKeyHint: "done",
+            ellipse: true,
+          }}
+          text={title}
+          defaultText="Add a title..."
+          disabled={isLoading}
+          onEdit={async (newTitle) => {
+            await update(
+              async () =>
+                await updateBlock({
+                  blockId: id,
+                  editInfo: { title: newTitle },
+                })
+            );
+          }}
+        />
+      )}
       {hideHoldMenu ? (
         renderedBlockContent
       ) : (

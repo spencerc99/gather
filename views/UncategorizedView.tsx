@@ -13,7 +13,7 @@ import {
   Platform,
 } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
-import { Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
+import { SizableText, Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectCollectionsList } from "../components/SelectCollectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,6 +28,7 @@ export function UncategorizedView() {
       <BlockSummary
         block={block}
         key={block.id}
+        editable={true}
         style={{
           width: "100%",
           height: "100%",
@@ -35,6 +36,7 @@ export function UncategorizedView() {
         containerProps={{
           width: "90%",
           aspectRatio: 1,
+          marginBottom: "$8",
         }}
       />
     );
@@ -99,7 +101,7 @@ export function UncategorizedView() {
           right={6}
           zIndex={5}
           size="$small"
-          icon={<Icon name="trash" size="$2" />}
+          icon={<Icon name="trash" />}
           theme="red"
           onPress={() => {
             handleDeleteBlock(item.id);
@@ -121,7 +123,7 @@ export function UncategorizedView() {
           // TODO: make this work, doesn't rn because ther's no listener to re-render when keyboard appears
           // maxHeight={Keyboard.isVisible() ? "40%" : undefined}
           alignItems="center"
-          space="$2"
+          gap="$2"
           justifyContent="center"
           flexGrow={1}
         >
@@ -129,11 +131,13 @@ export function UncategorizedView() {
           <XStack
             position="absolute"
             bottom={6}
-            space="$2"
+            gap="$2"
+            alignItems="center"
             opacity={selectedCollections.length > 0 ? 1 : 0}
           >
             <StyledButton
               elevate
+              size="$medium"
               onPress={() => {
                 onClickConnect(item.id, selectedCollections);
                 setSearchValue("");
@@ -141,24 +145,23 @@ export function UncategorizedView() {
               }}
               borderRadius={20}
               iconAfter={
-                <StyledText>
+                <SizableText>
                   ({selectedCollections.length.toString()})
-                </StyledText>
+                </SizableText>
               }
             >
-              {/* {events.length > 1 ? "Swipe to connect" : "Connect"} */}
               Connect
             </StyledButton>
             <StyledButton
               elevate
               theme="red"
               circular
+              size="$small"
               onPress={() => {
                 setSelectedCollections([]);
               }}
-            >
-              X
-            </StyledButton>
+              icon={<Icon name="close" />}
+            ></StyledButton>
           </XStack>
         </YStack>
       </>

@@ -88,9 +88,17 @@ const PressableButton = styled(DefaultButton, {
   // taken from https://github.com/tamagui/tamagui/issues/1156
   variants: {
     size: {
+      $medium: {
+        height: "$3",
+      },
       $small: {
         height: "$2.5",
         paddingHorizontal: "$2.5",
+      },
+      $tiny: {
+        padding: "$1",
+        height: "$1.5",
+        width: "$1.5",
       },
     },
     disabled: {
@@ -229,7 +237,7 @@ export function EditableTextOnClick({
   const InputComponent = multiline ? StyledTextArea : StyledInput;
 
   return (
-    <YStack gap="$2">
+    <XStack gap="$2">
       <InputComponent
         ref={inputRef}
         value={editableContent}
@@ -248,30 +256,38 @@ export function EditableTextOnClick({
             }
           : {})}
         selectTextOnFocus
+        ellipse
+        paddingRight="$9"
       />
       {editing && (
-        <XStack gap="$2">
+        <XStack gap="$1" position="absolute" right="$1" bottom="$2.5">
           <StyledButton
             onPress={() => {
               commitEdit(null);
             }}
+            circular
             theme="red"
-            // size={}
-            height="$2"
+            size="$tiny"
+            // height="$1.5"
+            // width="$1.5"
+            // padding="$1"
             icon={<Icon name="close" />}
           />
           <StyledButton
             onPress={() => {
               commitEdit(editableContent);
             }}
+            circular
             theme="green"
-            height="$2"
+            // height="$1.5"
+            // width="$1.5"
+            size="$tiny"
             icon={<Icon name="checkmark" />}
             disabled={editableContent === text || disabled}
           />
         </XStack>
       )}
-    </YStack>
+    </XStack>
   );
   // : (
   //   <StyledParagraph {...paragraphProps} onPress={() => setEditing(true)}>
@@ -301,7 +317,7 @@ export const StyledTextArea = styled(DefaultTextArea, {
   width: "100%",
   multiline: true,
   // TODO: once figure out how to fix the number of default lines reove this
-  minHeight: 150,
+  minHeight: 100,
 });
 
 export enum IconType {
