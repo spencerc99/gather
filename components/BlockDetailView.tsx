@@ -19,6 +19,7 @@ import {
   StyledText,
   StyledView,
 } from "./Themed";
+import { ExternalLink } from "./ExternalLink";
 
 export function BlockDetailView({ block }: { block: Block }) {
   const {
