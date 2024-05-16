@@ -26,6 +26,7 @@ export interface ConnectionInsertInfo {
   blockId: string;
   collectionId: string;
   remoteCreatedAt?: string;
+  createdBy: string;
 }
 
 export interface Connection {
@@ -44,6 +45,7 @@ export interface Connection {
 export interface InsertBlockConnection {
   blockId: string;
   remoteCreatedAt?: string;
+  createdBy?: string;
 }
 
 export enum RemoteSourceType {

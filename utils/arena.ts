@@ -102,6 +102,8 @@ export interface RawArenaItem {
   base_class: "Block" | "Channel";
   class: ArenaClass;
   connected_at: string;
+  connected_by_user_id: string;
+  connected_by_username: string;
   embed: {
     url: null;
     type: string;
@@ -122,6 +124,40 @@ export interface RawArenaItem {
     extension: string;
     url: string;
   };
+  user: RawArenaUser;
+}
+
+export interface RawArenaUser {
+  created_at: string;
+  slug: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  avatar: string;
+  avatar_image: AvatarImage;
+  channel_count: number;
+  following_count: number;
+  profile_id: number;
+  follower_count: number;
+  initials: string;
+  can_index: boolean;
+  is_premium: boolean;
+  is_lifetime_premium: boolean;
+  is_supporter: boolean;
+  is_exceeding_connections_limit: boolean;
+  is_confirmed: boolean;
+  is_pending_reconfirmation: boolean;
+  is_pending_confirmation: boolean;
+  badge: string;
+  id: number;
+  base_class: string;
+  class: string;
+}
+
+export interface AvatarImage {
+  thumb: string;
+  display: string;
 }
 
 export function withQueryParams(url: string, params: { [key: string]: any }) {

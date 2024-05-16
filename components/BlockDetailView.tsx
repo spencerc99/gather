@@ -132,6 +132,12 @@ export function BlockDetailView({ block }: { block: Block }) {
               );
             }}
           />
+          {createdBy && (
+            <StyledText metadata>
+              Created by:{" "}
+              <StyledParagraph metadata>{createdBy}</StyledParagraph>
+            </StyledText>
+          )}
           {/* TODO: genericize when opening up remote sources */}
           {remoteSourceInfo ? (
             <XStack alignItems="center">

@@ -61,9 +61,9 @@ import {
   SortType,
 } from "./dataTypes";
 import { convertDbTimestampToDate } from "./date";
-import { Indices, Migrations } from "./db/migrations";
+import { Indices, Migrations, migrateCreatedBy } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
-import { UserContext } from "./user";
+import { UserContext, getCreatedByForRemote } from "./user";
 import { filterItemsBySearchValue } from "./search";
 import { ensure } from "./react";
 
@@ -488,6 +488,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             throw err;
           }
         }
+
+        // migrateCreatedBy(tx, currentUser);
 
         // Create indices
         for (const index of Indices) {
@@ -1641,7 +1643,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       type: arenaClassToBlockType(block),
       contentType: arenaClassToMimeType(block),
       source: block.source?.url,
-      createdBy: currentUser!.id,
+      createdBy: getCreatedByForRemote(
+        RemoteSourceType.Arena,
+        block.user.id.toString()
+      ),
       remoteSourceType: RemoteSourceType.Arena,
       remoteSourceInfo: {
         arenaId: block.id,
@@ -1732,11 +1737,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return syncNewRemoteItemsForCollection(collection);
   }
 
-  async function addConnections(blockId: string, collectionIds: string[]) {
+  async function addConnections(
+    blockId: string,
+    collectionIds: string[],
+    createdBy: string
+  ) {
     await upsertConnections(
       collectionIds.map((collectionId) => ({
         collectionId,
         blockId,
+        createdBy,
       }))
     );
     InteractionManager.runAfterInteractions(async () => {
