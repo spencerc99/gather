@@ -112,7 +112,7 @@ export function CollectionThumbnail({
       space="$2"
       borderRadius={8}
       backgroundColor={theme.background.get()}
-      width={100}
+      width={102}
       // TODO: literally have no idea why this is needed. Otherwise it grows BEYOND ITS CONTAINER to become like 400px. what the fuck
       // i hate react native so much.
       height={145}
@@ -129,10 +129,8 @@ export function CollectionThumbnail({
           resizeMode: "cover",
           borderRadius: "$2",
           // account for the border lmfao this is insane code.
-          maxWidth: 100,
-          maxHeight: 100,
-          width: 100,
-          height: 100,
+          width: 98,
+          height: 98,
         }}
       />
       <SizableText numberOfLines={2} paddingHorizontal="$1.5" size="$3">

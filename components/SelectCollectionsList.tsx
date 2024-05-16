@@ -231,6 +231,7 @@ export function SelectCollectionsList({
               {searchValue && !createdCollections.has(searchValue) && (
                 // Matches the height of CollectionThumbnail lol
                 <YStack height={140} width={100} justifyContent="center">
+                  <YStack flex={1} backgroundColor="$gray7"></YStack>
                   <StyledButton
                     onPress={async () => {
                       try {
