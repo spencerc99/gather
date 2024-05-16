@@ -582,16 +582,24 @@ interface UserChannelResponse {
 
 export async function getUserChannels(
   accessToken: string,
-  { page = 1, per = 30 }: { page?: number; per?: number } = {}
+  {
+    page = 1,
+    per = 30,
+    search,
+  }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
   const userInfo = await getUserInfo(accessToken);
-  const baseUrl = withQueryParams(
-    `https://api.are.na/v2/users/${userInfo.id}/channels`,
-    {
-      per,
-      page,
-    }
-  );
+  const baseUrl = search
+    ? withQueryParams(`https://api.are.na/v2/search/user/${userInfo.id}`, {
+        "filter[type]": "channels",
+        q: search,
+        page,
+        per,
+      })
+    : withQueryParams(`https://api.are.na/v2/users/${userInfo.id}/channels`, {
+        per,
+        page,
+      });
   try {
     const resp = await fetch(baseUrl, {
       headers: {

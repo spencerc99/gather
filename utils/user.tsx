@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import { getItem, setItem } from "./asyncStorage";
 
+// TODO: add uuid based on device? https://docs.expo.dev/versions/latest/sdk/application/?redirected#applicationgetandroidid or just uuid.. and back it up to native cloud service
 interface UserInsertInfo {
   email: string;
 }

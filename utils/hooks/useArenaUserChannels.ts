@@ -3,7 +3,6 @@ import { useContext, useMemo } from "react";
 import { useDebounce, useDebounceValue } from "tamagui";
 import { getUserChannels } from "../arena";
 import { DatabaseContext } from "../db";
-import { filterItemsBySearchValue } from "../search";
 
 export function useArenaUserChannels(searchValue: string) {
   const { arenaAccessToken, getArenaCollectionIds } =
@@ -17,7 +16,7 @@ export function useArenaUserChannels(searchValue: string) {
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useInfiniteQuery({
-      queryKey: ["channels"],
+      queryKey: ["channels", { search: debouncedSearch }],
       initialPageParam: 1,
       queryFn: async ({ pageParam }) => {
         if (!arenaAccessToken) {
@@ -30,6 +29,7 @@ export function useArenaUserChannels(searchValue: string) {
 
         const resp = await getUserChannels(arenaAccessToken, {
           page: pageParam,
+          search: debouncedSearch,
         });
         return {
           ...resp,
@@ -54,15 +54,9 @@ export function useArenaUserChannels(searchValue: string) {
       isDisabled: Boolean(remoteCollectionIds?.has(c.id.toString())),
     }));
 
-  // TODO: SEARCH
-  // https://api.are.na/v2/search/user/15?filter%5Btype%5D=channels
   const filteredChannels = useMemo(() => {
     const nonDisabledChannels = annotatedChannels?.filter((c) => !c.isDisabled);
-    return debouncedSearch === ""
-      ? nonDisabledChannels
-      : filterItemsBySearchValue(annotatedChannels || [], debouncedSearch, [
-          "title",
-        ]);
+    return debouncedSearch === "" ? nonDisabledChannels : annotatedChannels;
   }, [annotatedChannels, debouncedSearch, remoteCollectionIds]);
 
   return {
