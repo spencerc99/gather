@@ -36,7 +36,7 @@ const Placeholders = [
   "What made you love life today?",
   "What was the last song you found that slaps?",
   "Describe the last person you saw.",
-  "What words do you want to live by?.",
+  "What words do you want to live by?",
   "Who do you want to thank?",
   "What's on repeat in your head?",
   "What's resonating for you?",
@@ -67,9 +67,10 @@ export function TextForageView({
   const queryKey = ["blocks", { collectionId }] as const;
 
   useFocusEffect(() => {
-    setTextPlaceholder(
-      Placeholders[Math.floor(Math.random() * Placeholders.length)]
-    );
+    return () =>
+      setTextPlaceholder(
+        Placeholders[Math.floor(Math.random() * Placeholders.length)]
+      );
   });
 
   // TODO: toast the error
