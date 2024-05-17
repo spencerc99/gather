@@ -26,13 +26,11 @@ export function BlockDetailView({ block }: { block: Block }) {
     id,
     title,
     description,
-    content,
     source,
     createdAt,
     createdBy,
     updatedAt,
     remoteSourceInfo,
-    remoteSourceType,
   } = block;
 
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +41,7 @@ export function BlockDetailView({ block }: { block: Block }) {
     id.toString()
   );
   const hasRemoteConnection = useMemo(
-    () => connections?.some((c) => c.remoteSourceType !== undefined),
+    () => connections?.some((c) => Boolean(c.remoteSourceType)),
     [connections]
   );
 
