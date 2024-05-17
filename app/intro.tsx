@@ -78,7 +78,13 @@ export default function IntroScreen() {
     }
 
     try {
-      // TODO: add email subscription
+      await fetch("https://coda.io/form/wglAPFKR8v/submit", {
+        method: "POST",
+        body: JSON.stringify({ row: { email } }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
     } catch (err) {
       console.error(err);
     }

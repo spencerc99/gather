@@ -1,7 +1,7 @@
 import { getAppIcon, setAppIcon } from "expo-dynamic-app-icon";
 import { useState } from "react";
-import { H4, Stack, XStack, YStack } from "tamagui";
-import { Image } from "react-native";
+import { H3, H4, Stack, XStack, YStack } from "tamagui";
+import { Image, SafeAreaView } from "react-native";
 import { StyledText } from "../components/Themed";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 
@@ -41,10 +41,14 @@ export default function Icons() {
 
   useFixExpoRouter3NavigationTitle();
 
-  /* thanks to https://github.com/outsung/expo-dynamic-app-icon/tree/main/example */
-  return <AppIconSelect appIcon={appIcon} onSelectIcon={onSelectIcon} />;
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <AppIconSelect appIcon={appIcon} onSelectIcon={onSelectIcon} />
+    </SafeAreaView>
+  );
 }
 
+/* thanks to https://github.com/outsung/expo-dynamic-app-icon/tree/main/example */
 function AppIconSelect({
   appIcon,
   onSelectIcon,
@@ -53,8 +57,8 @@ function AppIconSelect({
   onSelectIcon: (iconName: string) => void;
 }) {
   return (
-    <YStack gap="$4" padding="10%" paddingTop="5%">
-      <H4>Choose Your Icon</H4>
+    <YStack gap="$4" padding="10%">
+      <H3>Choose Your Icon</H3>
       <XStack gap="$2" justifyContent="center">
         {AppIcons.map(({ iconName, source }) => {
           const selected =

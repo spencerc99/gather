@@ -25,12 +25,6 @@ import { Contribution, Flower } from "../../../components/SlidingScalePayment";
 import { ContributionsKey, getItem } from "../../../utils/asyncStorage";
 import { useIsFocused } from "@react-navigation/native";
 
-const Subject = `[Gather] feedback`;
-const Body = `I wish|like|want|dislike...`;
-const FeedbackLink = `mailto:spencerc99@gmail.com?subject=${encodeURIComponent(
-  Subject
-)}&body=${encodeURIComponent(Body)}`;
-
 export default function ProfileScreen() {
   const { tryImportArenaChannel } = useContext(DatabaseContext);
 
@@ -201,18 +195,13 @@ export default function ProfileScreen() {
           >
             Support development
           </LinkButton>
-          <StyledButton
+          <LinkButton
+            href="/feedback"
             justifyContent="flex-start"
             icon={<Icon name="mail" />}
-            onPress={() => {
-              // TODO: handle if mail not installed.. should probably just be a coda form
-              Linking.openURL(FeedbackLink).catch((error) => {
-                console.log(error);
-              });
-            }}
           >
-            Send feedback
-          </StyledButton>
+            Give feedback
+          </LinkButton>
 
           {/* <LinkButton>Share</LinkButton> */}
           {/* <StyledButton>

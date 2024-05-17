@@ -133,7 +133,14 @@ function RootLayoutNav() {
         name="support"
         options={{
           presentation: "modal",
-          title: "Support",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="feedback"
+        options={{
+          presentation: "modal",
+          headerShown: false,
         }}
       />
       <Stack.Screen
