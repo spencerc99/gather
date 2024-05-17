@@ -17,6 +17,7 @@ import {
   Label,
   Spinner,
   Input,
+  H3,
 } from "tamagui";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome, FontAwesome6, Ionicons } from "@expo/vector-icons";
@@ -477,10 +478,8 @@ export function ButtonWithConfirm({
               <AlertDialog.Cancel asChild>
                 <StyledButton>{cancelText}</StyledButton>
               </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <StyledButton onPress={onPress} theme="active">
-                  {confirmText}
-                </StyledButton>
+              <AlertDialog.Action asChild onPress={onPress}>
+                <StyledButton theme="active">{confirmText}</StyledButton>
               </AlertDialog.Action>
             </XStack>
           </YStack>
@@ -663,5 +662,25 @@ export function ExternalLinkText({
         {children}
       </StyledText>
     </ExternalLink>
+  );
+}
+
+export function Collapsible({ title, content }) {
+  const [showContent, setShowContent] = useState(false);
+  return (
+    <YStack>
+      <H3>
+        {title}
+        <StyledButton
+          onPress={() => setShowContent(!showContent)}
+          circular
+          size="$5"
+          theme="white"
+          backgroundColor="$gray6"
+          icon={<Icon name={showContent ? "chevron-up" : "chevron-down"} />}
+        ></StyledButton>
+      </H3>
+      {showContent && <YStack gap="$2">{content}</YStack>}
+    </YStack>
   );
 }

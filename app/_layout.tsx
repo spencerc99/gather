@@ -137,6 +137,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="dev"
+        options={{
+          presentation: "card",
+          title: "",
+        }}
+      />
+      <Stack.Screen
         name="feedback"
         options={{
           presentation: "modal",

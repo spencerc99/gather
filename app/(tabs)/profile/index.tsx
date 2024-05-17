@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import * as Application from "expo-application";
-import { useContext, useEffect, useMemo, useState } from "react";
-import { Image, Linking, SafeAreaView } from "react-native";
+import { useContext, useMemo, useState } from "react";
+import { Image, SafeAreaView } from "react-native";
 import { Avatar, H3, ScrollView, Spinner, YStack } from "tamagui";
 import {
   Icon,
@@ -17,7 +17,6 @@ import { ArenaChannelInfo } from "../../../utils/arena";
 import { DatabaseContext } from "../../../utils/db";
 import { UserContext } from "../../../utils/user";
 import { ArenaLogin } from "../../../views/ArenaLogin";
-import { InternalDevTools } from "../../../views/InternalDevTools";
 import { getAppIconSource } from "../../icons";
 import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -225,7 +224,16 @@ export default function ProfileScreen() {
               {Application.nativeBuildVersion})
             </StyledText>
           </YStack>
-          <InternalDevTools isLoading={isLoading} setIsLoading={setIsLoading} />
+          <LinkButton
+            marginTop="$8"
+            alignSelf="center"
+            href="/dev"
+            size="$medium"
+            theme="gray"
+            icon={<Icon name="code" />}
+          >
+            Internal Developer Tools
+          </LinkButton>
         </YStack>
       </ScrollView>
     </SafeAreaView>
