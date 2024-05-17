@@ -32,7 +32,7 @@ import {
   GestureDetector,
   TapGestureHandler,
 } from "react-native-gesture-handler";
-import { useAnimatedGestureHandler } from "react-native-reanimated";
+import { runOnJS } from "react-native-reanimated";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
@@ -240,8 +240,10 @@ export function EditableTextOnClick({
   const onDoubleTap = Gesture.Tap()
     .numberOfTaps(2)
     .onStart(() => {
+      "worklet";
       console.log("hello?");
-      setEditing(true);
+      runOnJS(setEditing)(true);
+      inputRef.current?.focus();
     });
 
   return (
@@ -255,6 +257,11 @@ export function EditableTextOnClick({
           onChangeText={setEditableContent}
           {...inputProps}
           autogrow
+          onPressIn={() => {
+            if (!editing) {
+              return null;
+            }
+          }}
           onSubmitEditing={() => commitEdit(editableContent)}
           // onPressIn={() => setEditing(true)}
           {...(!editing
@@ -699,4 +706,7 @@ export function Collapsible({ title, content }) {
       {showContent && <YStack gap="$2">{content}</YStack>}
     </YStack>
   );
+}
+function runOnJs(arg0: () => void) {
+  throw new Error("Function not implemented.");
 }
