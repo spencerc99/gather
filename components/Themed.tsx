@@ -27,6 +27,12 @@ import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
 import { ensure } from "../utils/react";
 import { ExternalLink } from "./ExternalLink";
+import {
+  Gesture,
+  GestureDetector,
+  TapGestureHandler,
+} from "react-native-gesture-handler";
+import { useAnimatedGestureHandler } from "react-native-reanimated";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
@@ -231,58 +237,68 @@ export function EditableTextOnClick({
 
   const InputComponent = multiline ? StyledTextArea : StyledInput;
 
+  const onDoubleTap = Gesture.Tap()
+    .numberOfTaps(2)
+    .onStart(() => {
+      console.log("hello?");
+      setEditing(true);
+    });
+
   return (
-    <XStack gap="$2">
-      <InputComponent
-        ref={inputRef}
-        value={editableContent}
-        placeholder={defaultText}
-        onChangeText={setEditableContent}
-        {...inputProps}
-        autogrow
-        onSubmitEditing={() => commitEdit(editableContent)}
-        onPressIn={() => setEditing(true)}
-        {...(!editing
-          ? {
-              borderWidth: 0,
-              backgroundColor: "transparent",
-              minHeight: "auto",
-              padding: 0,
-            }
-          : {})}
-        selectTextOnFocus
-        ellipse
-        paddingRight="$9"
-      />
-      {editing && (
-        <XStack gap="$1" position="absolute" right="$1" bottom="$2.5">
-          <StyledButton
-            onPress={() => {
-              commitEdit(null);
-            }}
-            circular
-            theme="red"
-            size="$tiny"
-            // height="$1.5"
-            // width="$1.5"
-            // padding="$1"
-            icon={<Icon name="close" />}
-          />
-          <StyledButton
-            onPress={() => {
-              commitEdit(editableContent);
-            }}
-            circular
-            theme="green"
-            // height="$1.5"
-            // width="$1.5"
-            size="$tiny"
-            icon={<Icon name="checkmark" />}
-            disabled={editableContent === text || disabled}
-          />
-        </XStack>
-      )}
-    </XStack>
+    <GestureDetector gesture={onDoubleTap}>
+      <XStack gap="$2">
+        <InputComponent
+          ref={inputRef}
+          value={editableContent}
+          placeholder={defaultText}
+          editable={editing}
+          onChangeText={setEditableContent}
+          {...inputProps}
+          autogrow
+          onSubmitEditing={() => commitEdit(editableContent)}
+          // onPressIn={() => setEditing(true)}
+          {...(!editing
+            ? {
+                borderWidth: 0,
+                backgroundColor: "transparent",
+                minHeight: "auto",
+                padding: 0,
+              }
+            : {})}
+          selectTextOnFocus
+          ellipse
+          paddingRight="$9"
+        />
+        {editing && (
+          <XStack gap="$1" position="absolute" right="$1" bottom="$2.5">
+            <StyledButton
+              onPress={() => {
+                commitEdit(null);
+              }}
+              circular
+              theme="red"
+              size="$tiny"
+              // height="$1.5"
+              // width="$1.5"
+              // padding="$1"
+              icon={<Icon name="close" />}
+            />
+            <StyledButton
+              onPress={() => {
+                commitEdit(editableContent);
+              }}
+              circular
+              theme="green"
+              // height="$1.5"
+              // width="$1.5"
+              size="$tiny"
+              icon={<Icon name="checkmark" />}
+              disabled={editableContent === text || disabled}
+            />
+          </XStack>
+        )}
+      </XStack>
+    </GestureDetector>
   );
   // : (
   //   <StyledParagraph {...paragraphProps} onPress={() => setEditing(true)}>
