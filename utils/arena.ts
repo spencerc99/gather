@@ -2,9 +2,8 @@ import * as FileSystem from "expo-file-system";
 import { Block, LastSyncedInfo } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
 
-export const ArenaClientId = "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE";
-// TODO: move these before open sourcing repo
-export const ArenaClientSecret = "jSpLG7pclKUxa_QcIfg6iv057TMK2Wz-Ma4f99ly9F0";
+export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID;
+export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET;
 export const ArenaTokenStorageKey = "arena-token";
 
 enum ArenaVisibility {

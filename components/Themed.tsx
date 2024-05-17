@@ -13,21 +13,15 @@ import {
   AlertDialog,
   XStack,
   ImageProps,
-  Adapt,
-  Sheet,
   Image,
   Label,
-  StackProps,
   Spinner,
-  ParagraphProps,
-  InputProps,
   Input,
 } from "tamagui";
-import { Image as ExpoImage } from "expo-image";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { InteractionManager, Keyboard, useColorScheme } from "react-native";
+import { Keyboard, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
 import { ensure } from "../utils/react";

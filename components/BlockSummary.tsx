@@ -2,17 +2,9 @@ import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import * as WebBrowser from "expo-web-browser";
 import { BlockType } from "../utils/mimeTypes";
-import { Platform, Pressable, StyleSheet } from "react-native";
+import { Pressable } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
-import {
-  Fragment,
-  PropsWithChildren,
-  memo,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { Fragment, useContext, useEffect, useMemo, useState } from "react";
 import {
   EditableTextOnClick,
   Icon,
@@ -23,14 +15,7 @@ import {
   StyledView,
 } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import {
-  GetProps,
-  TextProps,
-  XStack,
-  YStack,
-  YStackProps,
-  useTheme,
-} from "tamagui";
+import { GetProps, TextProps, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { Link, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
