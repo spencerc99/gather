@@ -31,8 +31,9 @@ import {
   Gesture,
   GestureDetector,
   TapGestureHandler,
+  TouchableWithoutFeedback,
 } from "react-native-gesture-handler";
-import { runOnJS } from "react-native-reanimated";
+import { runOnJS, useAnimatedRef } from "react-native-reanimated";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
     LinkProps<any>,
@@ -222,7 +223,9 @@ export function EditableTextOnClick({
   const setEditing = setIsEditing ?? setEditingInternal;
 
   const [editableContent, setEditableContent] = useState(text);
-  const inputRef = useRef<Input>(null);
+  const InputComponent = multiline ? StyledTextArea : StyledInput;
+
+  const inputRef = useAnimatedRef<Input>();
 
   function commitEdit(newContent?: string | null) {
     setEditing(false);
@@ -235,16 +238,16 @@ export function EditableTextOnClick({
     onEdit(newContent);
   }
 
-  const InputComponent = multiline ? StyledTextArea : StyledInput;
-
   const onDoubleTap = Gesture.Tap()
-    .numberOfTaps(2)
+    .numberOfTaps(!text ? 1 : 2)
     .onStart(() => {
       "worklet";
-      console.log("hello?");
       runOnJS(setEditing)(true);
-      inputRef.current?.focus();
     });
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
 
   return (
     <GestureDetector gesture={onDoubleTap}>
@@ -253,17 +256,11 @@ export function EditableTextOnClick({
           ref={inputRef}
           value={editableContent}
           placeholder={defaultText}
-          editable={editing}
           onChangeText={setEditableContent}
+          pointerEvents={editing ? "auto" : "none"}
           {...inputProps}
           autogrow
-          onPressIn={() => {
-            if (!editing) {
-              return null;
-            }
-          }}
           onSubmitEditing={() => commitEdit(editableContent)}
-          // onPressIn={() => setEditing(true)}
           {...(!editing
             ? {
                 borderWidth: 0,
@@ -272,15 +269,16 @@ export function EditableTextOnClick({
                 padding: 0,
               }
             : {})}
-          selectTextOnFocus
           ellipse
           paddingRight="$9"
         />
         {editing && (
           <XStack gap="$1" position="absolute" right="$1" bottom="$2.5">
             <StyledButton
-              onPress={() => {
+              onPress={(e) => {
                 commitEdit(null);
+                e.stopPropagation();
+                e.preventDefault();
               }}
               circular
               theme="red"
@@ -293,6 +291,7 @@ export function EditableTextOnClick({
             <StyledButton
               onPress={() => {
                 commitEdit(editableContent);
+                e.stopPropagation();
               }}
               circular
               theme="green"
