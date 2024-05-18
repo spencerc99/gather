@@ -8,7 +8,7 @@ import {
   ButtonWithConfirm,
 } from "../components/Themed";
 import { setBoolean, removeItem, LastSyncedAtKey } from "../utils/asyncStorage";
-import { UserInfoId } from "../utils/user";
+import { UserContext, UserInfoId } from "../utils/user";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { storage } from "../utils/mmkv";
@@ -27,6 +27,7 @@ export function InternalDevTools({
     getPendingArenaBlocks,
     arenaAccessToken,
   } = useContext(DatabaseContext);
+  const { currentUser } = useContext(UserContext);
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
 
   useEffect(() => {
@@ -46,6 +47,9 @@ export function InternalDevTools({
           These are available for testing and debugging purposes. If you run
           into any issues, please contact Spencer first, and he might direct you
           to these buttons if there are issues :)
+        </StyledText>
+        <StyledText>
+          <StyledText bold>User ID</StyledText>: {currentUser.id}
         </StyledText>
         <StyledButton
           disabled={isLoading}
