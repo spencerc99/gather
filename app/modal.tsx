@@ -29,6 +29,7 @@ export default function ModalScreen() {
   );
 }
 
+// TODO: rename file to createCollection
 function CreateCollectionModal() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
