@@ -21,18 +21,13 @@ import {
 } from "tamagui";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome, FontAwesome6, Ionicons } from "@expo/vector-icons";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Keyboard, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
 import { ensure } from "../utils/react";
 import { ExternalLink } from "./ExternalLink";
-import {
-  Gesture,
-  GestureDetector,
-  TapGestureHandler,
-  TouchableWithoutFeedback,
-} from "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS, useAnimatedRef } from "react-native-reanimated";
 
 export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
@@ -242,6 +237,10 @@ export function EditableTextOnClick({
     .numberOfTaps(!text ? 1 : 2)
     .onStart(() => {
       "worklet";
+      if (editing) {
+        return;
+      }
+
       runOnJS(setEditing)(true);
     });
 
@@ -283,9 +282,6 @@ export function EditableTextOnClick({
               circular
               theme="red"
               size="$tiny"
-              // height="$1.5"
-              // width="$1.5"
-              // padding="$1"
               icon={<Icon name="close" />}
             />
             <StyledButton
@@ -295,8 +291,6 @@ export function EditableTextOnClick({
               }}
               circular
               theme="green"
-              // height="$1.5"
-              // width="$1.5"
               size="$tiny"
               icon={<Icon name="checkmark" />}
               disabled={editableContent === text || disabled}
@@ -306,11 +300,6 @@ export function EditableTextOnClick({
       </XStack>
     </GestureDetector>
   );
-  // : (
-  //   <StyledParagraph {...paragraphProps} onPress={() => setEditing(true)}>
-  //     {text || defaultText}
-  //   </StyledParagraph>
-  // );
 }
 
 export const StyledInput = styled(DefaultInput, {
@@ -705,7 +694,4 @@ export function Collapsible({ title, content }) {
       {showContent && <YStack gap="$2">{content}</YStack>}
     </YStack>
   );
-}
-function runOnJs(arg0: () => void) {
-  throw new Error("Function not implemented.");
 }
