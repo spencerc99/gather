@@ -112,10 +112,10 @@ export default function ProfileScreen() {
             }
           /> */}
                 <Avatar.Fallback
-                  backgroundColor={stringToColor(currentUser?.id)}
+                  backgroundColor={stringToColor(currentUser?.email)}
                 />
               </Avatar>
-              <StyledText title>{currentUser.id}</StyledText>
+              <StyledText title>{currentUser.email}</StyledText>
               <YStack alignItems="center" space="$1">
                 <StyledText metadata>
                   joined on {dayjs(currentUser.createdAt).format("MM/DD/YY")},{" "}
