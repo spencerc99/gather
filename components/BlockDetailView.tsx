@@ -64,6 +64,7 @@ export function BlockDetailView({ block }: { block: Block }) {
     () => connections?.some((c) => Boolean(c.remoteSourceType)),
     [connections]
   );
+  // TODO: change this to fetch from arena to get slug and then get url..
   const createdByDisplay = getDisplayForCreatedBy(createdBy);
 
   useFixExpoRouter3NavigationTitle();

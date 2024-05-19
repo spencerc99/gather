@@ -49,7 +49,12 @@ export function InternalDevTools({
           to these buttons if there are issues :)
         </StyledText>
         <StyledText>
-          <StyledText bold>User ID</StyledText>: {currentUser.id}
+          <StyledText bold>User ID</StyledText>:{" "}
+          <StyledParagraph>{currentUser?.id}</StyledParagraph>
+        </StyledText>
+        <StyledText>
+          <StyledText bold>Token:</StyledText>{" "}
+          <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
         </StyledText>
         <StyledButton
           disabled={isLoading}
@@ -79,10 +84,7 @@ export function InternalDevTools({
         >
           <StyledParagraph>Sync from Arena</StyledParagraph>
         </StyledButton>
-        <XStack>
-          <StyledLabel bold>Token</StyledLabel>
-          <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
-        </XStack>
+
         <StyledButton
           onPress={() => {
             storage.delete(LastSyncedAtKey);

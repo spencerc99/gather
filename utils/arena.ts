@@ -104,6 +104,7 @@ export interface RawArenaChannelItem {
   connected_at: string;
   connected_by_user_id: string;
   connected_by_username: string;
+  connected_by_user_slug: string;
   embed: {
     url: null;
     type: string;

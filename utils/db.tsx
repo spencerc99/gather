@@ -733,7 +733,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
 
     if (connections?.length) {
-      await addConnections(String(insertId), connections);
+      await addConnections(String(insertId), connections, block.createdBy);
     }
 
     return insertId!.toString();
@@ -1651,10 +1651,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       type: arenaClassToBlockType(block),
       contentType: arenaClassToMimeType(block),
       source: block.source?.url,
-      createdBy: getCreatedByForRemote(
-        RemoteSourceType.Arena,
-        block.user.id.toString()
-      ),
+      createdBy: getCreatedByForRemote(RemoteSourceType.Arena, block.user.slug),
       remoteSourceType: RemoteSourceType.Arena,
       remoteSourceInfo: {
         arenaId: block.id,
@@ -1663,7 +1660,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       remoteConnectedAt: block.connected_at,
       connectedBy: getCreatedByForRemote(
         RemoteSourceType.Arena,
-        block.connected_by_user_id
+        block.connected_by_user_slug
       ),
     }));
   }
@@ -1947,10 +1944,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (!collectionId) {
       collectionId = await createCollection({
         title,
-        createdBy: getCreatedByForRemote(
-          RemoteSourceType.Arena,
-          user.id.toString()
-        ),
+        createdBy: getCreatedByForRemote(RemoteSourceType.Arena, user.slug),
         remoteSourceType: RemoteSourceType.Arena,
         remoteSourceInfo: {
           arenaId: channelId,
