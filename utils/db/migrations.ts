@@ -1,7 +1,6 @@
-import { SQLTransactionAsync } from "expo-sqlite";
+import { SQLiteDatabase } from "expo-sqlite";
 import { storage } from "../mmkv";
-import { UserContext, UserInfo } from "../user";
-import { useContext } from "react";
+import { UserInfo } from "../user";
 
 export const Migrations = [
   // Added 2023-12-18
@@ -20,7 +19,7 @@ export const hasMigratedCreatedBy = storage.getBoolean("hasMigratedCreatedBy");
 
 // TODO: Remove `hasMigratedCreatedBy` after a while (when everyone has migrated)
 export async function migrateCreatedBy(
-  tx: SQLTransactionAsync,
+  db: SQLiteDatabase,
   currentUser: UserInfo
 ): Promise<void> {
   if (hasMigratedCreatedBy) {
@@ -33,24 +32,29 @@ export async function migrateCreatedBy(
     return;
   }
 
-  tx.executeSqlAsync(
-    `UPDATE blocks
-      SET created_by = ?`,
-    [currentUser.id]
-  );
-  tx.executeSqlAsync(
-    `UPDATE collections
-      SET created_by = ?`,
-    [currentUser.id]
-  );
-  // TODO: need to go through each and fetch from arena
-  // tx.executeSqlAsync(
-  //   `UPDATE connections
-  //     SET created_by = ?`,
-  //   [currentUser.id]
-  // );
+  console.log("starting createdBy migration");
 
-  storage.set("hasMigratedCreatedBy", true);
+  await db.transactionAsync(async (tx) => {
+    console.log("updating collections");
+    tx.executeSqlAsync(
+      `UPDATE collections
+        SET created_by = ?`,
+      [currentUser.id]
+    );
+    tx.executeSqlAsync(
+      `UPDATE blocks
+        SET created_by = ?`,
+      [currentUser.id]
+    );
+    console.log("updating connections");
+    tx.executeSqlAsync(
+      `UPDATE connections
+        SET created_by = ?`,
+      [currentUser.id]
+    );
+    storage.set("hasMigratedCreatedBy", true);
+  });
+
   const end = global.performance.now();
-  console.log(`Migrated from AsyncStorage -> MMKV in ${end - start}ms!`);
+  console.log(`Migrated createdBy in ${end - start}ms!`);
 }
