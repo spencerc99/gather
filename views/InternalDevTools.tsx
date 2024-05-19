@@ -13,13 +13,7 @@ import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { storage } from "../utils/mmkv";
 
-export function InternalDevTools({
-  isLoading,
-  setIsLoading,
-}: {
-  isLoading: boolean;
-  setIsLoading: (isLoading: boolean) => void;
-}) {
+export function InternalDevTools({}: {}) {
   const {
     db,
     trySyncPendingArenaBlocks,
@@ -27,6 +21,7 @@ export function InternalDevTools({
     getPendingArenaBlocks,
     arenaAccessToken,
   } = useContext(DatabaseContext);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { currentUser } = useContext(UserContext);
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
 
@@ -58,6 +53,7 @@ export function InternalDevTools({
         </StyledText>
         <StyledButton
           disabled={isLoading}
+          icon={isLoading ? <Spinner size="small" /> : null}
           onPress={async () => {
             setIsLoading(true);
             try {
@@ -73,6 +69,7 @@ export function InternalDevTools({
         </StyledButton>
         <StyledButton
           disabled={isLoading}
+          icon={isLoading ? <Spinner size="small" /> : null}
           onPress={async () => {
             setIsLoading(true);
             try {
@@ -89,6 +86,8 @@ export function InternalDevTools({
           onPress={() => {
             storage.delete(LastSyncedAtKey);
           }}
+          disabled={isLoading}
+          icon={isLoading ? <Spinner size="small" /> : null}
         >
           Reset Arena Sync Timeline
         </StyledButton>
@@ -96,6 +95,8 @@ export function InternalDevTools({
           onPress={() => {
             setBoolean("seenIntro", false);
           }}
+          disabled={isLoading}
+          icon={isLoading ? <Spinner size="small" /> : null}
         >
           Reset intro seen
         </StyledButton>
@@ -103,6 +104,8 @@ export function InternalDevTools({
           onPress={() => {
             removeItem(UserInfoId);
           }}
+          disabled={isLoading}
+          icon={isLoading ? <Spinner size="small" /> : null}
         >
           Clear user
         </StyledButton>

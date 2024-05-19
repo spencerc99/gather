@@ -30,11 +30,15 @@ function getDisplayForCreatedBy(createdBy: string) {
   }
   switch (source) {
     case RemoteSourceType.Arena:
-      // TODO: this url needs to be fixed
       return (
-        <ExternalLinkText href={`https://are.na/${userId}`}>
-          {userId}
-        </ExternalLinkText>
+        <>
+          <StyledText>
+            <ExternalLinkText href={`https://are.na/${userId}`}>
+              {userId}
+            </ExternalLinkText>{" "}
+          </StyledText>
+          <ArenaLogo />
+        </>
       );
     default:
       return ensureUnreachable(source);
@@ -155,17 +159,15 @@ export function BlockDetailView({ block }: { block: Block }) {
             }}
           />
           {createdBy && createdByDisplay !== "you" && (
-            <StyledText metadata>
-              Created by{" "}
-              <StyledParagraph metadata>{createdByDisplay}</StyledParagraph>
-            </StyledText>
+            <XStack alignItems="center">
+              <StyledText metadata>Created by </StyledText>
+              {createdByDisplay}
+            </XStack>
           )}
           {/* TODO: genericize when opening up remote sources */}
           {remoteSourceInfo ? (
             <XStack alignItems="center">
-              <ArenaLogo />
               <StyledText metadata>
-                {" "}
                 Block{" "}
                 <ExternalLink
                   href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
@@ -173,8 +175,9 @@ export function BlockDetailView({ block }: { block: Block }) {
                   <StyledParagraph link>
                     {remoteSourceInfo.arenaId}
                   </StyledParagraph>
-                </ExternalLink>
+                </ExternalLink>{" "}
               </StyledText>
+              <ArenaLogo />
             </XStack>
           ) : hasRemoteConnection ? (
             <XStack alignItems="center">
