@@ -3,7 +3,7 @@ import { useContext, useMemo, useState } from "react";
 import { Pressable } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
-import { Block } from "../utils/dataTypes";
+import { Block, RemoteSourceType } from "../utils/dataTypes";
 import { DatabaseContext, useBlockConnections } from "../utils/db";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { BlockSummary } from "./BlockSummary";
@@ -20,6 +20,26 @@ import {
   StyledView,
 } from "./Themed";
 import { ExternalLink } from "./ExternalLink";
+import { extractCreatorFromCreatedBy } from "../utils/user";
+import { ensureUnreachable } from "../utils/react";
+
+function getDisplayForCreatedBy(createdBy: string) {
+  const { userId, source } = extractCreatorFromCreatedBy(createdBy);
+  if (!source) {
+    return "you";
+  }
+  switch (source) {
+    case RemoteSourceType.Arena:
+      // TODO: this url needs to be fixed
+      return (
+        <ExternalLinkText href={`https://are.na/${userId}`}>
+          {userId}
+        </ExternalLinkText>
+      );
+    default:
+      return ensureUnreachable(source);
+  }
+}
 
 export function BlockDetailView({ block }: { block: Block }) {
   const {
@@ -44,6 +64,7 @@ export function BlockDetailView({ block }: { block: Block }) {
     () => connections?.some((c) => Boolean(c.remoteSourceType)),
     [connections]
   );
+  const createdByDisplay = getDisplayForCreatedBy(createdBy);
 
   useFixExpoRouter3NavigationTitle();
 
@@ -132,10 +153,10 @@ export function BlockDetailView({ block }: { block: Block }) {
               );
             }}
           />
-          {createdBy && (
+          {createdBy && createdByDisplay !== "you" && (
             <StyledText metadata>
-              Created by:{" "}
-              <StyledParagraph metadata>{createdBy}</StyledParagraph>
+              Created by{" "}
+              <StyledParagraph metadata>{createdByDisplay}</StyledParagraph>
             </StyledText>
           )}
           {/* TODO: genericize when opening up remote sources */}

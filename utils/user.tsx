@@ -25,6 +25,11 @@ interface UserContextProps {
   setupUser: (user: UserInsertInfo) => Promise<void>;
 }
 
+interface CreatedBy {
+  source?: RemoteSourceType;
+  userId: string;
+}
+
 export const UserContext = createContext<UserContextProps>({
   currentUser: null,
   email: "",
@@ -36,6 +41,19 @@ export const UserInfoId = "user";
 
 export function getCreatedByForRemote(source: RemoteSourceType, id: string) {
   return `${source}:::${id}`;
+}
+
+export function extractCreatorFromCreatedBy(createdBy: string): CreatedBy {
+  const split = createdBy.split(":::");
+  if (split.length === 1) {
+    // local block
+    return { userId: createdBy };
+  }
+  const [source, userId] = split;
+  if (source === RemoteSourceType.Arena) {
+    return { source: RemoteSourceType.Arena, userId };
+  }
+  throw new Error(`Unknown createdBy source: ${source}`);
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
