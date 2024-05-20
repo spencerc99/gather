@@ -3,7 +3,7 @@ import { useContext, useMemo, useState } from "react";
 import { Pressable } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
-import { Block } from "../utils/dataTypes";
+import { Block, RemoteSourceType } from "../utils/dataTypes";
 import { DatabaseContext, useBlockConnections } from "../utils/db";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { BlockSummary } from "./BlockSummary";
@@ -20,6 +20,30 @@ import {
   StyledView,
 } from "./Themed";
 import { ExternalLink } from "./ExternalLink";
+import { extractCreatorFromCreatedBy } from "../utils/user";
+import { ensureUnreachable } from "../utils/react";
+
+function getDisplayForCreatedBy(createdBy: string) {
+  const { userId, source } = extractCreatorFromCreatedBy(createdBy);
+  if (!source) {
+    return "you";
+  }
+  switch (source) {
+    case RemoteSourceType.Arena:
+      return (
+        <>
+          <StyledText>
+            <ExternalLinkText href={`https://are.na/${userId}`}>
+              {userId}
+            </ExternalLinkText>{" "}
+          </StyledText>
+          <ArenaLogo />
+        </>
+      );
+    default:
+      return ensureUnreachable(source);
+  }
+}
 
 export function BlockDetailView({ block }: { block: Block }) {
   const {
@@ -44,6 +68,8 @@ export function BlockDetailView({ block }: { block: Block }) {
     () => connections?.some((c) => Boolean(c.remoteSourceType)),
     [connections]
   );
+  // TODO: change this to fetch from arena to get slug and then get url..
+  const createdByDisplay = getDisplayForCreatedBy(createdBy);
 
   useFixExpoRouter3NavigationTitle();
 
@@ -132,12 +158,16 @@ export function BlockDetailView({ block }: { block: Block }) {
               );
             }}
           />
+          {createdBy && createdByDisplay !== "you" && (
+            <XStack alignItems="center">
+              <StyledText metadata>Created by </StyledText>
+              {createdByDisplay}
+            </XStack>
+          )}
           {/* TODO: genericize when opening up remote sources */}
           {remoteSourceInfo ? (
             <XStack alignItems="center">
-              <ArenaLogo />
               <StyledText metadata>
-                {" "}
                 Block{" "}
                 <ExternalLink
                   href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
@@ -145,8 +175,9 @@ export function BlockDetailView({ block }: { block: Block }) {
                   <StyledParagraph link>
                     {remoteSourceInfo.arenaId}
                   </StyledParagraph>
-                </ExternalLink>
+                </ExternalLink>{" "}
               </StyledText>
+              <ArenaLogo />
             </XStack>
           ) : hasRemoteConnection ? (
             <XStack alignItems="center">

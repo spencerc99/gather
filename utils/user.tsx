@@ -1,5 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import { getItem, setItem } from "./asyncStorage";
+import { RemoteSourceType } from "./dataTypes";
+import { randomUUID } from "expo-crypto";
 
 // TODO: add uuid based on device? https://docs.expo.dev/versions/latest/sdk/application/?redirected#applicationgetandroidid or just uuid.. and back it up to native cloud service
 interface UserInsertInfo {
@@ -7,20 +9,25 @@ interface UserInsertInfo {
 }
 
 interface UserDbInfo extends UserInsertInfo {
-  // id: string;
+  id: string;
   createdAt: string;
 }
 
-interface UserInfo extends UserInsertInfo {
+export interface UserInfo extends UserInsertInfo {
+  id: string;
   createdAt: Date;
 }
 
 interface UserContextProps {
-  // TODO: change this when you actually add id
-  currentUser: (UserInfo & { id: string }) | null;
+  currentUser: UserInfo | null;
   email: string;
   updateEmail: (email: string) => Promise<void>;
   setupUser: (user: UserInsertInfo) => Promise<void>;
+}
+
+interface CreatedBy {
+  source?: RemoteSourceType;
+  userId: string;
 }
 
 export const UserContext = createContext<UserContextProps>({
@@ -32,14 +39,37 @@ export const UserContext = createContext<UserContextProps>({
 
 export const UserInfoId = "user";
 
+export function getCreatedByForRemote(source: RemoteSourceType, id: string) {
+  return `${source}:::${id}`;
+}
+
+export function extractCreatorFromCreatedBy(createdBy: string): CreatedBy {
+  const split = createdBy.split(":::");
+  if (split.length === 1) {
+    // local block
+    return { userId: createdBy };
+  }
+  const [source, userId] = split;
+  if (source === RemoteSourceType.Arena) {
+    return { source: RemoteSourceType.Arena, userId };
+  }
+  throw new Error(`Unknown createdBy source: ${source}`);
+}
+
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
 
   useEffect(() => {
-    const user = getItem<UserDbInfo>(UserInfoId);
+    let user = getItem<UserDbInfo>(UserInfoId);
     if (!user) {
       return;
     }
+    // TODO: REMOVE AFTER EVERYONE MIGRATED
+    if (!user.id) {
+      user = { ...user, id: randomUUID() };
+      setItem(UserInfoId, user);
+    }
+
     const deserializedUser: UserInfo = {
       ...user,
       createdAt: new Date(user.createdAt),
@@ -65,7 +95,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function setupUser(user: UserInsertInfo) {
-    const newUser = { ...user, createdAt: new Date() } as UserInfo;
+    const newUser = {
+      ...user,
+      createdAt: new Date(),
+      id: randomUUID(),
+    } as UserInfo;
     setItem(UserInfoId, serializeUser(newUser));
     setUser(newUser);
   }
@@ -75,7 +109,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   return (
     <UserContext.Provider
       value={{
-        currentUser: !user ? null : { ...user, id: email },
+        currentUser: !user ? null : { ...user },
         email: email,
         updateEmail,
         setupUser,
