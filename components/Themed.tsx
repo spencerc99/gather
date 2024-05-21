@@ -260,6 +260,8 @@ export function EditableTextOnClick({
           {...inputProps}
           autogrow
           onSubmitEditing={() => commitEdit(editableContent)}
+          paddingRight="$9"
+          ellipse
           {...(!editing
             ? {
                 borderWidth: 0,
@@ -268,16 +270,12 @@ export function EditableTextOnClick({
                 padding: 0,
               }
             : {})}
-          ellipse
-          paddingRight="$9"
         />
         {editing && (
           <XStack gap="$1" position="absolute" right="$1" bottom="$2.5">
             <StyledButton
               onPress={(e) => {
                 commitEdit(null);
-                e.stopPropagation();
-                e.preventDefault();
               }}
               circular
               theme="red"
