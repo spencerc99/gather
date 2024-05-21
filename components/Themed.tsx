@@ -675,7 +675,13 @@ export function ExternalLinkText({
   );
 }
 
-export function Collapsible({ title, content }) {
+export function Collapsible({
+  title,
+  content,
+}: {
+  title: string;
+  content: React.ReactNode;
+}) {
   const [showContent, setShowContent] = useState(false);
   return (
     <YStack>

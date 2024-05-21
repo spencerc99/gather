@@ -173,14 +173,16 @@ export default function ProfileScreen() {
             href="/icons"
             justifyContent="flex-start"
             icon={
-              <Image
-                source={appIconSource}
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: 4,
-                }}
-              />
+              appIconSource ? (
+                <Image
+                  source={appIconSource}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 4,
+                  }}
+                />
+              ) : null
             }
           >
             App icons

@@ -12,6 +12,7 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
+import { getCreatedByForRemote } from "../utils/user";
 
 export function CollectionDetailView({
   collection,
@@ -103,6 +104,10 @@ export function CollectionDetailView({
             blockId: info.id,
             collectionId: id,
             remoteCreatedAt: info.connected_at,
+            createdBy: getCreatedByForRemote(
+              RemoteSourceType.Arena,
+              info.creator_slug
+            ),
           }))
         ),
         updateCollection({

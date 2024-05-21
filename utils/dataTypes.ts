@@ -66,7 +66,8 @@ export interface ArenaChannelBlockInfo {
 interface RemoteSourceInfoMap {
   [RemoteSourceType.Arena]: ArenaChannelCollectionInfo | ArenaChannelBlockInfo;
 }
-export interface Block extends Omit<BlockInsertInfo, "collectionsToConnect"> {
+export interface Block
+  extends Omit<BlockInsertInfo, "collectionsToConnect" | "remoteConnectedAt"> {
   id: string;
   createdAt: Date;
   updatedAt: Date;

@@ -1,6 +1,7 @@
 // TODO: define background task for syncing remote data
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
+// @ts-ignore
 import { ArenaSyncManagerSingleton } from "./arena";
 
 const BACKGROUND_FETCH_TASK = "update-remote-items";

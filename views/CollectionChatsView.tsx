@@ -1,30 +1,20 @@
-import { useContext, useMemo, useState } from "react";
-import { DatabaseContext } from "../utils/db";
-import { SearchBarInput, StyledButton, StyledView } from "../components/Themed";
-import { ScrollView, SizableText, XStack, YStack } from "tamagui";
+// TODO: unused
+import { useContext, useState } from "react";
+import { DatabaseContext, useCollections } from "../utils/db";
+import { SearchBarInput, StyledButton } from "../components/Themed";
+import { ScrollView, SizableText, YStack } from "tamagui";
 import { CollectionSummary } from "../components/CollectionSummary";
 import { Link, useRouter } from "expo-router";
 import { Pressable } from "react-native";
 import { CreateCollectionButton } from "../components/CreateCollectionButton";
-import { filterItemsBySearchValue } from "../utils/search";
 import { UserContext } from "../utils/user";
 
 export function CollectionChatsView() {
-  const { collections, createCollection } = useContext(DatabaseContext);
+  const { createCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
   const { currentUser } = useContext(UserContext);
   const router = useRouter();
-
-  // sort by lastConnectedAt descending
-  const sortedCollections = useMemo(
-    () =>
-      [...collections].sort(
-        (a, b) =>
-          (b.lastConnectedAt?.getTime() || b.updatedAt.getTime()) -
-          (a.lastConnectedAt?.getTime() || a.updatedAt.getTime())
-      ),
-    [collections]
-  );
+  const { collections, isLoading } = useCollections(searchValue);
 
   return (
     <YStack width="100%" height="100%">
@@ -49,6 +39,7 @@ export function CollectionChatsView() {
                 createdBy: currentUser!.id,
               });
               setSearchValue("");
+              // @ts-ignore
               router.push({
                 pathname: "/collection/[id]/chat",
                 params: { id: newCollectionId },
@@ -72,11 +63,9 @@ export function CollectionChatsView() {
           </StyledButton>
         )}
         {/* TODO: add some thing about last message */}
-        {filterItemsBySearchValue(sortedCollections, searchValue, [
-          "title",
-          "description",
-        ]).map((collection, idx) => (
+        {collections?.map((collection, idx) => (
           <Link
+            // @ts-ignore
             href={{
               pathname: "/collection/[id]/chat",
               params: { id: collection.id },

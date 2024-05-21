@@ -178,7 +178,7 @@ export function BlockTexts({
   ) : blocks.length === 0 && !collectionId ? (
     <ScrollView
       style={{
-        overflowY: "visible",
+        overflow: "visible",
       }}
     >
       <YStack
@@ -291,10 +291,12 @@ export function BlockTexts({
         <Animated.View
           entering={FadeIn}
           exiting={FadeOut}
-          position="absolute"
-          bottom={85}
-          left={10}
-          zIndex={10}
+          style={{
+            position: "absolute",
+            bottom: 85,
+            left: 10,
+            zIndex: 10,
+          }}
         >
           <StyledButton
             height="$3"

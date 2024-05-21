@@ -13,6 +13,8 @@ export function RemoteSourceLabel({
   if (!remoteSourceType) return null;
 
   function renderRemoteSourceLabel() {
+    if (!remoteSourceType) return null;
+
     switch (remoteSourceType) {
       case RemoteSourceType.Arena:
         return <ArenaLogo />;

@@ -4,6 +4,10 @@ function dateFromUTC(dateAsString: string) {
   );
   var parts = dateAsString.match(pattern);
 
+  if (!parts) {
+    throw new Error("invalid date");
+  }
+
   return new Date(
     Date.UTC(
       parseInt(parts[1]),

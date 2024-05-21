@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   Dimensions,
   KeyboardAvoidingView,
@@ -11,14 +11,13 @@ import {
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Theme, XStack, YStack } from "tamagui";
+import { XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { DatabaseContext } from "../utils/db";
 import { BlockType } from "../utils/mimeTypes";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { UserContext } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
-import { FeedView } from "./FeedView";
 import { MediaView } from "./MediaView";
 import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
 import { useFocusEffect } from "expo-router";
@@ -263,10 +262,7 @@ export function TextForageView({
     ]);
   }
 
-  return isSearching ? (
-    // TODO: integrate the search directly into the chat box
-    <FeedView />
-  ) : (
+  return isSearching ? null : ( // TODO: integrate the search directly into the chat box
     <SafeAreaView
       style={{
         flex: 1,
@@ -288,6 +284,7 @@ export function TextForageView({
       >
         <BlockTexts
           collectionId={collectionId}
+          // TODO: types
           blocks={blocks ? blocks : null}
           fetchMoreBlocks={fetchMoreBlocks}
           isFetchingNextPage={isFetchingNextPage}
@@ -312,6 +309,7 @@ export function TextForageView({
                         style={{
                           aspectRatio: 1,
                           resizeMode: "cover",
+                          // @ts-ignore
                           borderRadius: "$2",
                         }}
                       />

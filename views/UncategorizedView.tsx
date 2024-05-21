@@ -19,9 +19,11 @@ import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectCollectionsList } from "../components/SelectCollectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { UserContext } from "../utils/user";
 
 export function UncategorizedView() {
   const { addConnections, deleteBlock } = useContext(DatabaseContext);
+  const { currentUser } = useContext(UserContext);
   const { data: totalBlocks } = useTotalBlockCount();
   const { data: events } = useUncategorizedBlocks();
 
@@ -48,16 +50,8 @@ export function UncategorizedView() {
     async (itemId: string, selectedCollections: string[]) => {
       if (!events) {
         return;
-      } else if (events.length === 1) {
-        // addConnections(events[currentIndex!].id, selectedCollections);
-        // setSelectedCollections([]);
-        // setEvents([]);
-        await addConnections(itemId, selectedCollections);
-        // setEvents([]);
       } else {
-        await addConnections(itemId, selectedCollections);
-        // setEvents(events.filter((block) => block.id !== itemId));
-        // carouselRef.current?.next();
+        await addConnections(itemId, selectedCollections, currentUser!.id);
       }
       Keyboard.dismiss();
     },
@@ -211,7 +205,7 @@ export function UncategorizedView() {
                   stiffness: 250,
                 },
               }}
-              // this is for scrolling really fast
+              // @ts-ignore this is for scrolling really fast
               minScrollDistancePerSwipe={0.01}
               scrollAnimationDuration={50}
               width={width}

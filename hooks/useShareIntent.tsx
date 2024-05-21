@@ -38,6 +38,7 @@ export default function useShareIntent() {
       return;
     }
     ReceiveSharingIntent?.getReceivedFiles(
+      // @ts-ignore
       (data) => {
         const intent = data[0];
         if (intent.weblink || intent.text) {
@@ -53,9 +54,11 @@ export default function useShareIntent() {
           console.warn("useShareIntent[mount] share type not handled", data);
         }
       },
+      // @ts-ignore
       (err) => {
         console.error("useShareIntent[mount] error", err);
       },
+      // @ts-ignore
       Constants.expoConfig.scheme
     );
     return () => {

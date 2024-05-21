@@ -23,6 +23,7 @@ import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
 import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
 import { jsxJoin } from "../utils/react";
+import { StyleProps } from "react-native-reanimated";
 
 function useBlockMenuItems(
   block: Block,
@@ -187,6 +188,7 @@ export function BlockSummary({
       }}
       mediaStyle={{
         aspectRatio: 1,
+        // @ts-ignore
         borderRadius: "$2",
         ...blockStyle,
       }}
@@ -303,7 +305,7 @@ export function BlockTextSummary({
   shouldLink?: boolean;
   hideMetadata?: boolean;
   style?: object;
-  blockStyle?: object;
+  blockStyle?: StyleProps;
   isRemoteCollection?: boolean;
   containerProps?: GetProps<typeof YStack>;
 }) {
@@ -347,6 +349,7 @@ export function BlockTextSummary({
         mediaStyle={{
           width: widthProperty,
           maxWidth: widthProperty,
+          // @ts-ignore
           borderRadius: "$2",
           ...blockStyle,
         }}
@@ -469,7 +472,7 @@ export function BlockReviewSummary({
   shouldLink?: boolean;
   hideMetadata?: boolean;
   style?: object;
-  blockStyle?: object;
+  blockStyle?: StyleProps;
   isRemoteCollection?: boolean;
   containerProps?: GetProps<typeof YStack>;
 }) {
@@ -494,6 +497,7 @@ export function BlockReviewSummary({
         containerStyle={style}
         mediaStyle={{
           width: widthProperty,
+          // @ts-ignore
           borderRadius: "$2",
           ...blockStyle,
         }}

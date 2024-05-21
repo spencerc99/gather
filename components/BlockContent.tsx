@@ -1,4 +1,5 @@
 import {
+  GetProps,
   Paragraph,
   ParagraphProps,
   ScrollView,
@@ -13,6 +14,7 @@ import { BlockType } from "../utils/mimeTypes";
 import { MediaView } from "./MediaView";
 import { Icon, StyledButton, StyledTextArea } from "./Themed";
 import { useState } from "react";
+import { StyleProps } from "react-native-reanimated";
 
 export function BlockContent({
   type,
@@ -29,7 +31,7 @@ export function BlockContent({
   isEditing?: boolean;
   commitEdit?: (newContent: string | null) => Promise<void>;
   containerStyle?: object;
-  mediaStyle?: object;
+  mediaStyle?: StyleProps;
   textContainerProps?: YStackProps;
   textProps?: ParagraphProps;
 }) {

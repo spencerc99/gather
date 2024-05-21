@@ -221,7 +221,7 @@ export function SelectArenaChannel({
         />
       </Select.Trigger>
 
-      <Adapt when="sm" platform="touch">
+      <Adapt platform="touch">
         <Sheet
           modal={modal}
           animationConfig={{
@@ -249,8 +249,8 @@ export function SelectArenaChannel({
           // to do animations:
           animation="quick"
           animateOnly={["transform", "opacity"]}
-          enterStyle={{ o: 0, y: -10 }}
-          exitStyle={{ o: 0, y: 10 }}
+          enterStyle={{ y: -10 }}
+          exitStyle={{ y: 10 }}
           minWidth={200}
         >
           <YStack margin="$2">

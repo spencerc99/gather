@@ -16,6 +16,7 @@ import { storage } from "../utils/mmkv";
 export function InternalDevTools({}: {}) {
   const {
     db,
+    initDatabases,
     trySyncPendingArenaBlocks,
     trySyncNewArenaBlocks,
     getPendingArenaBlocks,
@@ -29,7 +30,7 @@ export function InternalDevTools({}: {}) {
     if (!__DEV__) {
       return;
     }
-    getPendingArenaBlocks().then((result) =>
+    getPendingArenaBlocks().then((result: any) =>
       setPendingArenaBlocks(result.rows)
     );
   }, []);

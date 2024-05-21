@@ -186,6 +186,7 @@ export function ReviewView() {
           </XStack>
         </XStack>
       </XStack>
+      {/* @ts-ignore */}
       {afterAnimations(ReviewItems)({
         view,
         outputBlocks,
@@ -252,6 +253,7 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
         height={height}
         data={outputBlocks}
         windowSize={5}
+        // @ts-ignore this is for scrolling really fast
         minScrollDistancePerSwipe={0.01}
         renderItem={({ item, index }) => (
           <YStack
@@ -358,7 +360,7 @@ function SortSelect() {
       <Select.Trigger maxWidth="$6" padding="$1" justifyContent="center">
         <Select.Value placeholder="Sort..." />
       </Select.Trigger>
-      <Adapt when="sm" platform="touch">
+      <Adapt platform="touch">
         {/* or <Select.Sheet> */}
 
         <Sheet dismissOnOverlayPress>

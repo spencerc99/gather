@@ -168,7 +168,7 @@ export function CollectionSelect({
         )}
       </Select.Trigger>
 
-      <Adapt when="sm" platform="touch">
+      <Adapt platform="touch">
         <Sheet
           modal
           animationConfig={{

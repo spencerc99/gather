@@ -3,6 +3,8 @@ import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
 import { Pressable, Image } from "react-native";
 import { Audio, ResizeMode, Video } from "expo-av";
 import { useState, useEffect, PropsWithChildren } from "react";
+import { GetProps } from "tamagui";
+import { StyleProps } from "react-native-reanimated";
 
 export function MediaView({
   media,
@@ -14,7 +16,7 @@ export function MediaView({
   media: string;
   blockType: BlockType;
   alt?: string;
-  style?: object;
+  style?: StyleProps;
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -71,6 +73,7 @@ export function MediaView({
         return (
           <AspectRatioImage
             uri={media}
+            // TODO: types
             otherProps={{
               ...style,
             }}

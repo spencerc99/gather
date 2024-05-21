@@ -119,7 +119,9 @@ export function mapDbBlockToBlock(block: any): Block {
       ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
       : undefined,
     collectionIds: block.collection_ids
-      ? JSON.parse(block.collection_ids).map((c) => c.toString())
+      ? JSON.parse(block.collection_ids).map((c: number | string) =>
+          c.toString()
+        )
       : [],
   } as Block;
 }
@@ -307,6 +309,7 @@ export function mapSnakeCaseToCamelCaseProperties<
     // @ts-ignore
     newObj[newKey] = obj[key];
   }
+  // @ts-ignore
   return newObj;
 }
 
@@ -611,6 +614,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       // Optimistically update to the new value
       queryClient.setQueryData<InfiniteData<Block[]>>(
         ["blocks", { collectionId }],
+        // @ts-ignore
         (old) => {
           const optimisticBlocks = blocksToInsert.map((block) => ({
             id: "...",
@@ -634,6 +638,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 idx > 0
                   ? page
                   : {
+                      // @ts-ignore
                       blocks: [...optimisticBlocks, page.blocks],
                       ...page,
                     }
@@ -1296,6 +1301,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     handleSqlErrors(result);
 
+    // TODO: types
     return result.rows.map((block) => mapDbBlockToBlock(block));
   }
 
@@ -1632,6 +1638,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     handleSqlErrors(result);
 
+    // @ts-ignore
     return result.rows.map((block) => mapDbBlockToBlock(block))[0];
   }
 

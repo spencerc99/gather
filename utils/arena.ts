@@ -2,8 +2,8 @@ import * as FileSystem from "expo-file-system";
 import { Block, LastSyncedInfo } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
 
-export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID;
-export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET;
+export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
+export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
 export const ArenaTokenStorageKey = "arena-token";
 
 enum ArenaVisibility {
@@ -698,7 +698,7 @@ export async function createChannel({
   itemsToAdd?: Block[];
 }): Promise<{
   newChannel: ArenaChannelInfo;
-  addedInfo: { id: string; connected_at: string }[];
+  addedInfo: { id: string; connected_at: string; creator_slug: string }[];
   numItemsFailed: number;
 }> {
   const url = `${ArenaApiUrl}/channels`;
@@ -733,6 +733,7 @@ export async function createChannel({
         addedInfo.push({
           id: block.id,
           connected_at: item.connected_at,
+          creator_slug: item.user.slug,
         });
       } catch (e) {
         console.error(e);
