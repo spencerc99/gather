@@ -10,7 +10,7 @@ import {
   StyledText,
 } from "./Themed";
 import { Stack, useRouter } from "expo-router";
-import { createChannel } from "../utils/arena";
+import { addBlockToChannel, createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { getCreatedByForRemote } from "../utils/user";
 import { ErrorsContext } from "../utils/errors";
@@ -83,6 +83,42 @@ export function CollectionDetailView({
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function resyncBlocks() {
+    if (!arenaAccessToken) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const collectionItems = await getCollectionItems(id, {
+        page: null,
+      });
+      const ascending = collectionItems.reverse();
+      console.log(`resyncing ${ascending.length} blocks to ${title}`);
+      for (const block of ascending) {
+        try {
+          if (!block.remoteSourceInfo?.arenaId || !remoteSourceInfo?.arenaId) {
+            console.log(
+              `[WARNING]: missing arenaId for block or collection,  ${block.remoteSourceInfo?.arenaId} ${remoteSourceInfo?.arenaId}`
+            );
+          }
+          console.log(
+            `adding block ${block.remoteSourceInfo?.arenaId} to channel ${remoteSourceInfo?.arenaId}`
+          );
+          await addBlockToChannel({
+            arenaToken: arenaAccessToken,
+            channelId: remoteSourceInfo?.arenaId!,
+            block,
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      console.log("DONE!");
+    } catch (err) {}
+    setIsLoading(false);
   }
 
   async function onClickLinkToArena() {
@@ -248,6 +284,22 @@ export function CollectionDetailView({
                   <StyledText metadata>
                     contained blocks are blocks that are only in this channel.
                     use this when you want to "undo" an import.
+                  </StyledText>
+                </YStack>
+              )}
+              {remoteSourceType && (
+                <YStack>
+                  <StyledButton
+                    onPress={() => resyncBlocks()}
+                    disabled={isLoading}
+                    icon={isLoading ? <Spinner size="small" /> : null}
+                  >
+                    Resync blocks
+                  </StyledButton>
+                  <StyledText metadata>
+                    Try to resync all blocks up to the sync source. Use this if
+                    for whatever reason you have lost blocks in the remote
+                    source and want to push up any missing content.
                   </StyledText>
                 </YStack>
               )}

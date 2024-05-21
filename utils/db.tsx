@@ -10,6 +10,7 @@ import {
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { ErrorsContext } from "./errors";
+import { getBlock as getArenaBlock, recordPendingBlockUpdate } from "./arena";
 import {
   PropsWithChildren,
   createContext,
@@ -31,7 +32,10 @@ import {
   getChannelContents,
   getChannelInfo,
   getChannelInfoFromUrl,
+  getPendingBlockUpdates,
   removeBlockFromChannel,
+  removePendingBlockUpdate,
+  updateArenaBlock,
 } from "./arena";
 import {
   CollectionToReviewKey,
@@ -391,7 +395,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     if (triggerQueueRef.current.length === 0 && !isSyncingRef.current) {
       // If the queue is empty, start the sync process
-      triggerQueueRef.current.push(syncFunction);
       syncFunction();
     } else {
       // If the queue is not empty, add the sync function to the queue
@@ -455,6 +458,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               remote_source_info blob,
               created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
               updated_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              deletion_timestamp timestamp,
               created_by TEXT NOT NULL,
               arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'))
           );`
@@ -768,29 +772,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const blockIds = blocks.map((block) => block.id);
     await db.transactionAsync(async (tx) => {
       await tx.executeSqlAsync(
-        inParam(`DELETE FROM blocks WHERE id IN (?#);`, blockIds)
-      );
-
-      void Promise.all(
-        blocks
-          .filter(
-            (block) =>
-              FileBlockTypes.includes(block.type) &&
-              block.content.startsWith(PHOTOS_FOLDER)
-          )
-          .map(async (block) =>
-            FileSystem.deleteAsync(FileSystem.documentDirectory + block.content)
-          )
+        inParam(
+          `UPDATE blocks SET deletion_timestamp = current_timestamp WHERE id IN (?#);`,
+          blockIds
+        )
       );
 
       if (!ignoreRemote) {
-        // TODO: void this. Requires setting deletion timestamp and then deferring on deleting until remote is confirmed gone.
-        await handleDeleteBlocksRemote(blocks);
+        void handleDeleteBlocksRemote(blocks);
       }
-
-      await tx.executeSqlAsync(
-        inParam(`DELETE FROM connections where block_id IN (?#);`, blockIds)
-      );
     });
   };
   const deleteBlocksMutation = useMutation({
@@ -802,11 +792,22 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   });
   const deleteBlocks = deleteBlocksMutation.mutateAsync;
 
-  // TODO: this should really just be a separate thing that sweeps up any things to delete
   const handleDeleteBlocksRemote = async (blocks: Block[]) => {
+    if (!isConnected) {
+      return;
+    }
+
+    const localBlocks = blocks.filter(
+      (block) => block.remoteSourceType === undefined
+    );
+
+    await deleteBlocksInternal(localBlocks);
+
     const remoteBlocks = blocks.filter(
       (block) => block.remoteSourceType !== undefined
     );
+
+    const successfulDeletes = [];
 
     for (const block of remoteBlocks) {
       const connectionsForBlock = await getConnectionsForBlock(block.id, {
@@ -822,15 +823,51 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           for (const connection of connectionsForBlock) {
             const { remoteSourceInfo } = connection;
 
-            // TODO: this doesn't work if you are offline...
-            await removeBlockFromChannel({
-              blockId: arenaBlockId,
-              channelId: remoteSourceInfo!.arenaId,
-              arenaToken: arenaAccessToken,
-            });
+            console.log(
+              `removing block ${arenaBlockId} from channel ${
+                remoteSourceInfo!.arenaId
+              }`
+            );
+            try {
+              await removeBlockFromChannel({
+                blockId: arenaBlockId,
+                channelId: remoteSourceInfo!.arenaId,
+                arenaToken: arenaAccessToken,
+              });
+              successfulDeletes.push(block);
+            } catch (err) {
+              console.error(err);
+            }
           }
       }
+
+      await deleteBlocksInternal(successfulDeletes);
     }
+  };
+
+  const deleteBlocksInternal = async (blocks: Block[]) => {
+    const blockIds = blocks.map((block) => block.id);
+    await db.transactionAsync(async (tx) => {
+      await tx.executeSqlAsync(
+        inParam(`DELETE FROM blocks WHERE id IN (?#);`, blockIds)
+      );
+
+      void Promise.all(
+        blocks
+          .filter(
+            (block) =>
+              FileBlockTypes.includes(block.type) &&
+              block.content.startsWith(PHOTOS_FOLDER)
+          )
+          .map(async (block) =>
+            FileSystem.deleteAsync(FileSystem.documentDirectory + block.content)
+          )
+      );
+
+      await tx.executeSqlAsync(
+        inParam(`DELETE FROM connections where block_id IN (?#);`, blockIds)
+      );
+    });
   };
 
   const deleteBlock = async (id: string, ignoreRemote?: boolean) => {
@@ -957,6 +994,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     seed,
   }: GetBlocksOptions = {}) =>
     `${SelectBlockSql}
+    WHERE deletion_timestamp IS NULL${whereClause ? ` AND ${whereClause}` : ""}
     ${SelectBlocksSortTypeToClause(
       sortType,
       "block_connections.remote_connected_at",
@@ -997,7 +1035,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               LEFT JOIN   connections ON connections.block_id = blocks.id AND blocks.content != ''
               WHERE       blocks.type IN ('${BlockType.Image}', '${
     BlockType.Link
-  }')
+  }') AND blocks.deletion_timestamp IS NULL
           ),
           annotated_collections AS (SELECT DISTINCT
               collections.id,
@@ -1129,7 +1167,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       [
         {
           sql: `${SelectBlockSql}
-          WHERE     blocks.id = ?;`,
+          WHERE     blocks.id = ? AND blocks.deletion_timestamp IS NULL;`,
           args: [blockId.toString()],
         },
       ],
@@ -1172,14 +1210,76 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return await fetchBlock(blockId);
   }
 
+  async function handleBlockRemoteUpdate(block: Block) {
+    const blockUpdates = getPendingBlockUpdates();
+    const { arenaId: arenaBlockId } = block.remoteSourceInfo!;
+    const updates = blockUpdates[block.id];
+    let arenaBlock;
+    try {
+      arenaBlock = await getArenaBlock(arenaBlockId, arenaAccessToken);
+    } catch (err) {
+      console.error(err);
+      // TODO: only skip if 404
+      removePendingBlockUpdate(block.id);
+    }
+
+    if (arenaBlock) {
+      try {
+        const updated_at = new Date(arenaBlock.updated_at);
+        // if updated timestamp > remoteupdated timestamp, then record it
+        const remoteUpdates = [];
+        const localUpdates = [];
+        // ONLY TITLE AND DESCRIPTION ELIGIBLE
+        const EligibleKeys = ["title", "description"];
+        for (const key of EligibleKeys) {
+          if (key in updates) {
+            const updatedTime = updates[key];
+            if (updatedTime > updated_at.getTime()) {
+              remoteUpdates.push([key, block[key]]);
+            }
+          }
+
+          if (
+            arenaBlock[key] !== block[key] &&
+            updated_at.getTime() > block.updatedAt.getTime()
+          ) {
+            localUpdates.push([key, arenaBlock[key]]);
+          }
+        }
+
+        if (remoteUpdates.length > 0) {
+          console.log("UPDATING REMOTE", remoteUpdates);
+          await updateArenaBlock({
+            blockId: arenaBlockId,
+            arenaToken: arenaAccessToken,
+            ...Object.fromEntries(remoteUpdates),
+          });
+        }
+
+        if (localUpdates.length > 0) {
+          console.log("UPDATING LOCAL", localUpdates);
+          await updateBlock({
+            blockId: block.id,
+            editInfo: Object.fromEntries(localUpdates),
+            ignoreRemoteUpdate: true,
+          });
+        }
+        removePendingBlockUpdate(block.id);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+
   async function updateBlockBase({
     blockId,
     editInfo,
+    ignoreRemoteUpdate,
   }: {
     blockId: string;
     editInfo: BlockEditInfo;
+    ignoreRemoteUpdate?: boolean;
   }): Promise<Block | undefined> {
-    // TODO: needs to sync to are.na, maybe a modifiedTimestamp and syncedTimestamp
     if (Object.keys(editInfo).length === 0) {
       return;
     }
@@ -1213,6 +1313,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     handleSqlErrors(result);
 
     const newBlock = await getBlock(blockId);
+    if (!ignoreRemoteUpdate) {
+      recordPendingBlockUpdate(blockId, Object.keys(editInfo));
+      void handleBlockRemoteUpdate(newBlock);
+    }
     return newBlock;
   }
 
@@ -1276,7 +1380,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             FROM        blocks
             INNER JOIN  connections ON blocks.id = connections.block_id
             LEFT JOIN   block_connections ON blocks.id = block_connections.block_id
-            WHERE       connections.collection_id = ?${
+            WHERE       deletion_timestamp IS NULL AND connections.collection_id = ?${
               whereClause ? ` AND ${whereClause}` : ""
             }
             ${SelectBlocksSortTypeToClause(
@@ -1401,6 +1505,45 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     handleSqlErrors(result);
     return result as SQLite.ResultSet;
+  }
+  async function getPendingArenaBlocksToUpdate(): Promise<Block[]> {
+    const blocksToUpdate = getPendingBlockUpdates();
+    const [result] = await db.execAsync(
+      [
+        {
+          // TODO: this query should be just arena when supporting other providers
+          sql: inParam(
+            `SELECT  blocks.id, blocks.title, blocks.description, blocks.remote_source_type, blocks.remote_source_info, blocks.updated_timestamp
+            FROM        blocks
+            WHERE       blocks.id IN (?#) AND
+                        blocks.deletion_timestamp IS NULL;`,
+            Object.keys(blocksToUpdate)
+          ),
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows.map(mapDbBlockToBlock);
+  }
+  async function getPendingArenaBlocksToDelete(): Promise<Block[]> {
+    const [result] = await db.execAsync(
+      [
+        {
+          // TODO: this query should be just arena when supporting other providers
+          sql: `SELECT  blocks.*
+            FROM        blocks
+            WHERE       blocks.remote_source_type IS NOT NULL AND
+                        blocks.remote_source_info IS NOT NULL AND
+                        blocks.deletion_timestamp IS NOT NULL;`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows.map(mapDbBlockToBlock);
   }
   async function getArenaCollections(): Promise<SQLite.ResultSet> {
     const [result] = await db.execAsync(
@@ -1565,6 +1708,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           .map((c) => `${c.id}-${c.collectionId}`)} to arena`
       );
     });
+    InteractionManager.runAfterInteractions(async () => {
+      const blocksToUpdate = await getPendingArenaBlocksToUpdate();
+      console.log("[Arena Sync] Block Updates:", blocksToUpdate.length);
+      for (const block of blocksToUpdate) {
+        handleBlockRemoteUpdate(block);
+      }
+    });
+    InteractionManager.runAfterInteractions(async () => {
+      const blocksToDelete = await getPendingArenaBlocksToDelete();
+      console.log("[Arena Sync] Block Deletes:", blocksToDelete.length);
+      handleDeleteBlocksRemote(blocksToDelete);
+    });
   }
 
   async function syncBlockToArena(
@@ -1625,7 +1780,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             LEFT JOIN   collections ON connections.collection_id = collections.id
             WHERE       collections.remote_source_type IS NOT NULL AND
                         collections.remote_source_info IS NOT NULL AND
-                        connections.remote_created_at IS NOT NULL
+                        connections.remote_created_at IS NOT NULL AND
+                        blocks.deletion_timestamp IS NULL
             ORDER BY    blocks.created_timestamp DESC
             LIMIT       1`,
           args: [collectionId],
@@ -2039,7 +2195,7 @@ export function useTotalBlockCount() {
     const [result] = await db.execAsync(
       [
         {
-          sql: `SELECT COUNT(*) as count FROM blocks;`,
+          sql: `SELECT COUNT(*) as count FROM blocks WHERE blocks.deletion_timestamp IS NULL;`,
           args: [],
         },
       ],
@@ -2074,6 +2230,7 @@ export function useUncategorizedBlocks() {
                 COUNT(connections.collection_id) AS num_connections
         FROM blocks
         LEFT JOIN connections ON connections.block_id = blocks.id
+        WHERE blocks.deletion_timestamp IS NULL
         GROUP BY 1,2,3,4,5,6) AS c
         WHERE c.num_connections = 0
         ORDER BY c.created_timestamp DESC;`,

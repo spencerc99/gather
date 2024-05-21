@@ -10,6 +10,8 @@ export const Migrations = [
   `ALTER TABLE collections ADD COLUMN arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'));`,
   // Added 2024-06-03
   `ALTER TABLE blocks ADD COLUMN local_asset_id VARCHAR(128);`,
+  // Added 2024-05-18
+  `ALTER TABLE blocks ADD COLUMN deletion_timestamp timestamp;`,
 ];
 
 export const Indices = [
