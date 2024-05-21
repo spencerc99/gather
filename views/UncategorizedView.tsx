@@ -190,7 +190,11 @@ export function UncategorizedView() {
         flex: 1,
       }}
     >
-      <KeyboardAwareScrollView style={{ flex: 1 }} extraScrollHeight={80}>
+      <KeyboardAwareScrollView
+        style={{ flex: 1 }}
+        extraScrollHeight={80}
+        keyboardOpeningTime={0}
+      >
         <Stack minHeight="100%">
           <XStack flex={1} flexGrow={1}>
             {/* TODO: fix showing title properly */}
@@ -205,9 +209,9 @@ export function UncategorizedView() {
                   stiffness: 250,
                 },
               }}
-              // @ts-ignore this is for scrolling really fast
-              minScrollDistancePerSwipe={0.01}
-              scrollAnimationDuration={50}
+              snapEnabled
+              minScrollDistancePerSwipe={5}
+              scrollAnimationDuration={20}
               width={width}
               data={events}
               windowSize={5}

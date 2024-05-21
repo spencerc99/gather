@@ -253,8 +253,9 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
         height={height}
         data={outputBlocks}
         windowSize={5}
-        // @ts-ignore this is for scrolling really fast
-        minScrollDistancePerSwipe={0.01}
+        minScrollDistancePerSwipe={5}
+        scrollAnimationDuration={20}
+        snapEnabled
         renderItem={({ item, index }) => (
           <YStack
             alignItems="center"
