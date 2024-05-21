@@ -11,12 +11,14 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
 } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
 import { SizableText, Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectCollectionsList } from "../components/SelectCollectionsList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export function UncategorizedView() {
   const { addConnections, deleteBlock } = useContext(DatabaseContext);
@@ -113,7 +115,7 @@ export function UncategorizedView() {
           width="100%"
           marginTop="$1"
         >
-          {index + 1} / {events.length} unsorted,{" "}
+          {index + 1} / {events.length} unconnected,{" "}
           {totalBlocks === null ? "..." : totalBlocks} total
         </StyledText>
         <YStack
@@ -126,6 +128,7 @@ export function UncategorizedView() {
           gap="$2"
           justifyContent="center"
           flexGrow={1}
+          flex={1}
         >
           {renderBlock(item)}
           <XStack
@@ -188,46 +191,46 @@ export function UncategorizedView() {
       </StyledText>
     </YStack>
   ) : (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      // behavior={Platform.OS === "ios" ? "position" : "height"}
-      // TODO: try switching back to padding when fixing the keyboard-dynamic height thing below
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      contentContainerStyle={{
-        flexDirection: "column",
+    <SafeAreaView
+      style={{
+        flex: 1,
       }}
     >
-      <XStack flex={1}>
-        <Carousel
-          ref={carouselRef}
-          loop={false}
-          withAnimation={{
-            type: "spring",
-            config: {
-              damping: 40,
-              mass: 1.2,
-              stiffness: 250,
-            },
-          }}
-          // this is for scrolling really fast
-          // pagingEnabled={false}
-          minScrollDistancePerSwipe={0.01}
-          scrollAnimationDuration={50}
-          width={width}
-          data={events}
-          windowSize={5}
-          renderItem={({ item, index }) => CarouselItem({ item, index })}
-        />
-      </XStack>
-      <Stack paddingHorizontal="$1">
-        <SelectCollectionsList
-          searchValue={searchValue}
-          setSearchValue={setSearchValue}
-          selectedCollections={selectedCollections}
-          setSelectedCollections={setSelectedCollections}
-          horizontal
-        />
-      </Stack>
-    </KeyboardAvoidingView>
+      <KeyboardAwareScrollView style={{ flex: 1 }} extraScrollHeight={80}>
+        <Stack minHeight="100%">
+          <XStack flex={1} flexGrow={1}>
+            {/* TODO: fix showing title properly */}
+            <Carousel
+              ref={carouselRef}
+              loop={false}
+              withAnimation={{
+                type: "spring",
+                config: {
+                  damping: 40,
+                  mass: 1.2,
+                  stiffness: 250,
+                },
+              }}
+              // this is for scrolling really fast
+              minScrollDistancePerSwipe={0.01}
+              scrollAnimationDuration={50}
+              width={width}
+              data={events}
+              windowSize={5}
+              renderItem={({ item, index }) => CarouselItem({ item, index })}
+            />
+          </XStack>
+          <Stack paddingHorizontal="$1">
+            <SelectCollectionsList
+              searchValue={searchValue}
+              setSearchValue={setSearchValue}
+              selectedCollections={selectedCollections}
+              setSelectedCollections={setSelectedCollections}
+              horizontal
+            />
+          </Stack>
+        </Stack>
+      </KeyboardAwareScrollView>
+    </SafeAreaView>
   );
 }
