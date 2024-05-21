@@ -287,7 +287,6 @@ export function EditableTextOnClick({
             <StyledButton
               onPress={() => {
                 commitEdit(editableContent);
-                e.stopPropagation();
               }}
               circular
               theme="green"
