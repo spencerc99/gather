@@ -23,9 +23,11 @@ export async function intializeFilesystemFolder() {
 
 export async function getFsPathForMediaResult(
   localUri: string,
-  extension: string
+  extension: string,
+  assetId?: string | null
 ): Promise<string> {
-  const newUri = `${PHOTOS_FOLDER}/${uuidv4()}.${extension}`;
+  // TODO: transform assetID into file-system safe ID
+  const newUri = `${PHOTOS_FOLDER}/${assetId || uuidv4()}.${extension}`;
   const async = await FileSystem.copyAsync({
     from: localUri,
     to: FileSystem.documentDirectory + newUri,
