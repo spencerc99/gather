@@ -253,8 +253,6 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
         height={height}
         data={outputBlocks}
         windowSize={5}
-        minScrollDistancePerSwipe={5}
-        scrollAnimationDuration={20}
         snapEnabled
         renderItem={({ item, index }) => (
           <YStack

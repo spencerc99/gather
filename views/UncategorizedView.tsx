@@ -210,8 +210,6 @@ export function UncategorizedView() {
                 },
               }}
               snapEnabled
-              minScrollDistancePerSwipe={5}
-              scrollAnimationDuration={20}
               width={width}
               data={events}
               windowSize={5}
