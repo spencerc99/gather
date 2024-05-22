@@ -251,28 +251,46 @@ export function EditableTextOnClick({
   return (
     <GestureDetector gesture={onDoubleTap}>
       <XStack gap="$2">
-        <InputComponent
-          ref={inputRef}
-          value={editableContent}
-          placeholder={defaultText}
-          onChangeText={setEditableContent}
-          pointerEvents={editing ? "auto" : "none"}
-          {...inputProps}
-          autogrow
-          onSubmitEditing={() => commitEdit(editableContent)}
-          paddingRight="$9"
-          ellipse
-          {...(!editing
-            ? {
-                borderWidth: 0,
-                backgroundColor: "transparent",
-                minHeight: "auto",
-                padding: 0,
-              }
-            : {})}
-        />
+        {editing ? (
+          <InputComponent
+            ref={inputRef}
+            value={editableContent}
+            placeholder={defaultText}
+            onChangeText={setEditableContent}
+            pointerEvents={editing ? "auto" : "none"}
+            {...inputProps}
+            autogrow
+            onSubmitEditing={() => commitEdit(editableContent)}
+            paddingRight="$9"
+            ellipse
+            // TODO: padding is weird here. It doesn't animate properly when it goes from full to 0 when there is no text, so we have to manually specify a smaller padding here..
+            {...{
+              borderWidth: "$.5",
+              paddingLeft: "$1",
+              paddingTop: "$1",
+            }}
+          />
+        ) : (
+          <InputComponent
+            ref={inputRef}
+            value={editableContent}
+            placeholder={defaultText}
+            onChangeText={setEditableContent}
+            pointerEvents="none"
+            {...inputProps}
+            padding={0}
+            autogrow
+            onSubmitEditing={() => commitEdit(editableContent)}
+            ellipse
+            {...{
+              borderWidth: 0,
+              backgroundColor: "transparent",
+              minHeight: "auto",
+            }}
+          />
+        )}
         {editing && (
-          <XStack gap="$1" position="absolute" right="$1" bottom="$2.5">
+          <XStack gap="$1" position="absolute" right="$1" bottom="$2">
             <StyledButton
               onPress={(e) => {
                 commitEdit(null);

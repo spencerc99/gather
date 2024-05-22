@@ -93,6 +93,7 @@ export function BlockDetailView({ block }: { block: Block }) {
         enableOnAndroid
         keyboardShouldPersistTaps="handled"
         scrollToOverflowEnabled
+        extraScrollHeight={40}
       >
         <Stack.Screen
           options={{
