@@ -912,7 +912,7 @@ interface UpdatedBlocks {
   [blockId: string]: FieldUpdate;
 }
 
-export function getPendingBlockUpdates() {
+export function getPendingBlockUpdates(): UpdatedBlocks {
   const updatedBlocks = getItem<UpdatedBlocks>(ArenaUpdatedBlocksKey);
   return updatedBlocks || {};
 }

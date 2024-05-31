@@ -1230,11 +1230,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         const remoteUpdates = [];
         const localUpdates = [];
         // ONLY TITLE AND DESCRIPTION ELIGIBLE
-        const EligibleKeys = ["title", "description"];
+        const EligibleKeys = ["title", "description"] as const;
         for (const key of EligibleKeys) {
           if (key in updates) {
             const updatedTime = updates[key];
-            if (updatedTime > updated_at.getTime()) {
+            if (updatedTime && updatedTime > updated_at.getTime()) {
               remoteUpdates.push([key, block[key]]);
             }
           }
@@ -1314,7 +1314,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     const newBlock = await getBlock(blockId);
     if (!ignoreRemoteUpdate) {
-      recordPendingBlockUpdate(blockId, Object.keys(editInfo));
+      recordPendingBlockUpdate(
+        blockId,
+        Object.keys(editInfo) as (keyof Block)[]
+      );
       void handleBlockRemoteUpdate(newBlock);
     }
     return newBlock;
