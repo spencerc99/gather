@@ -8,17 +8,20 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5em;
-  margin-top: 5em;
+  gap: 1em;
+  margin-top: 2em;
   margin-left: auto;
   margin-right: auto;
   padding: 0 2em;
 }
 
 .logo {
-  width: 120px;
-  height: 120px;
+  width: 64px;
+  height: 64px;
   border-radius: 16px;
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'  width='32' height='38' viewport='0 0 100 100' style='fill:black;font-size:19px;'><text y='50%'>🎲</text></svg>")
+      16 0,
+    auto; /*!emojicursor.app*/
 }
 
 .description {
@@ -32,7 +35,9 @@ main {
 .cta {
   font-size: 1.5em;
   background: #fed15d;
-  padding: 1em 1.5em;
+  padding: 2em 2em;
+  width: 100%;
+  max-width: 800px;
   border-radius: 16px;
   box-shadow: 0px 0px 8px 4px #fed15d;
 }
@@ -42,6 +47,7 @@ main {
   max-width: 1200px;
   overflow-x: auto;
   gap: 1em;
+  margin: 2em 0;
   img {
     max-height: 500px;
     border-radius: 8px;
@@ -59,7 +65,6 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5em;
 
   a {
     text-decoration: none;
@@ -87,7 +92,7 @@ footer {
     flex-direction: column;
   }
   img {
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    height: 32px;
   }
 }

@@ -1,11 +1,55 @@
+import { useState } from "react";
 import "./App.scss";
 import { ImageZoom } from "./components/ImageZoom";
 
+const Icons = [
+  "gather-app-icon-moon.png",
+  "gather-app-icon-hand.png",
+  "gather-app-icon-clouds.png",
+  "gather-app-icon-water.png",
+];
+
 function App() {
+  const [iconSrc, setIconSrc] = useState(Icons[0]);
+  const rerollIcon = () => {
+    let currentIndex = Icons.indexOf(iconSrc);
+    const maxIndex = Icons.length - 1;
+    const interval = setInterval(() => {
+      if (currentIndex < maxIndex) {
+        currentIndex++;
+      } else {
+        currentIndex = 0;
+      }
+      setIconSrc(Icons[currentIndex]);
+    }, 100);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      // Optionally, you can set the icon to a random one at the end
+      setIconSrc(Icons[Math.floor(Math.random() * Icons.length)]);
+    }, 1000); // Adjust time for longer rolling
+  };
+
   return (
     <>
       <main>
-        <img src="/icon.png" className="logo" />
+        <h1
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: ".8rem",
+            fontSize: "72px",
+          }}
+        >
+          <img
+            src={iconSrc}
+            className="logo"
+            onClick={() => {
+              rerollIcon();
+            }}
+          />{" "}
+          Gather
+        </h1>
 
         <div className="description">
           <h3>
@@ -22,16 +66,30 @@ function App() {
           <ImageZoom src="/gather-app-review.png" />
         </div>
 
-        <div className="cta">
+        <div
+          className="cta"
+          style={{
+            textAlign: "center",
+          }}
+        >
           <p>
-            Testflight opening soon. Register your interest by messaging{" "}
-            <a href="mailto:spencerc99@gmail.com">Spencer</a>
+            Testflight opening soon.
+            <br />
+            <a href="https://coda.io/form/Untitled-Form_dwglAPFKR8v">
+              Sign your email up
+            </a>{" "}
+            for updates.
           </p>
         </div>
         <div className="description">
           {/* TODO: make these all telescopic that swap between and have a button that allows you to randomize */}
           <p>
-            <strong>Gather is...</strong>
+            <strong>
+              <a href="https://www.are.na/spencer-chang/gather-rdwff2kongm">
+                Gather is
+              </a>
+              ...
+            </strong>
           </p>
           <ul>
             <li>
@@ -157,7 +215,12 @@ function App() {
         </div>
       </main>
       <footer>
-        <p>
+        <p
+          style={{
+            color: "gray",
+            margin: 0,
+          }}
+        >
           created by <a href="https://spencerchang.me">spencer chang</a>
         </p>
 
@@ -176,7 +239,7 @@ function App() {
           </a>
           <a href="https://are.na" target="_blank">
             <div>
-              <img src="https://are.na/favicon.svg" />
+              <img src="/arena.png" />
             </div>
           </a>
         </div>
