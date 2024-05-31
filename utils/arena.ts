@@ -1,6 +1,7 @@
 import * as FileSystem from "expo-file-system";
 import { Block, LastSyncedInfo } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
+import { logError } from "./errors";
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
@@ -332,7 +333,7 @@ export async function getChannelContents(
       nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
     }
   } catch (e) {
-    console.error(e);
+    logError(e);
     throw e;
   }
   console.log(
@@ -357,7 +358,7 @@ export async function getChannelInfo(
     const { contents, ...rest } = respBody;
     channelInfo = rest as ArenaChannelInfo;
   } catch (e) {
-    console.error(e);
+    logError(e);
     throw e;
   }
   return channelInfo as ArenaChannelInfo;
@@ -399,7 +400,7 @@ export async function getChannelInfoFromUrl(
       nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
     }
   } catch (e) {
-    console.error(e);
+    logError(e);
     throw e;
   }
   return { ...channelInfo, contents: fetchedItems } as ArenaChannelInfo;
@@ -584,15 +585,20 @@ export async function addBlockToChannel({
         },
       });
       if (!updateMetadata.ok) {
-        console.error(
-          `failed to update block metadata in arena ${updateMetadata.status}`,
-          updateMetadata
+        logError(
+          `failed to update block metadata in arena ${
+            updateMetadata.status
+          }: ${JSON.stringify(updateMetadata)}`
         );
       }
     }
   }
   if (!resp.ok) {
-    console.error(`failed to add block to arena channel ${resp.status}`, resp);
+    logError(
+      `failed to add block to arena channel ${resp.status}: ${JSON.stringify(
+        resp
+      )}`
+    );
     throw new Error(JSON.stringify(response));
   }
 
@@ -619,9 +625,10 @@ export async function removeBlockFromChannel({
   });
   const response = await resp.text();
   if (!resp.ok) {
-    console.error(
-      `failed to remove block from arena channel ${resp.status}`,
-      JSON.stringify(response)
+    logError(
+      `failed to remove block from arena channel ${
+        resp.status
+      }: ${JSON.stringify(response)}`
     );
     // TODO: this handles case if block is already deleted, change after migration
     if (resp.status === 401) {
@@ -679,7 +686,7 @@ export async function getUserChannels(
           : undefined,
     };
   } catch (e) {
-    console.error(e);
+    logError(e);
     throw e;
   }
 }
@@ -715,7 +722,7 @@ export async function createChannel({
   });
   const maybeChannel: ArenaChannelInfo = await resp.json();
   if (!resp.ok) {
-    console.error(`failed to create channel ${resp.status}`, maybeChannel);
+    logError(`failed to create channel ${resp.status}: ${maybeChannel}`);
     throw new Error(JSON.stringify(maybeChannel));
   }
 
@@ -736,7 +743,7 @@ export async function createChannel({
           creator_slug: item.user.slug,
         });
       } catch (e) {
-        console.error(e);
+        logError(e);
         numItemsFailed++;
       }
     }
@@ -761,7 +768,9 @@ export async function getBlock(
   });
   const json = await resp.json();
   if (!resp.ok) {
-    console.error(`failed to get block channels ${resp.status}`, json);
+    logError(
+      `failed to get block channels ${resp.status}: ${JSON.stringify(json)}`
+    );
     throw new Error(JSON.stringify(json));
   }
   return json;

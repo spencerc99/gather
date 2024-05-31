@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
+import { ErrorsContext } from "./errors";
 import {
   PropsWithChildren,
   createContext,
@@ -369,7 +370,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   // Ref to keep track of whether the sync is already running
   const isSyncingRef = useRef(false);
-
+  const { logError } = useContext(ErrorsContext);
   // Queue to store the triggers
   const triggerQueueRef = useRef<(() => void)[]>([]);
 
@@ -505,7 +506,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           await tx.executeSqlAsync(index);
         }
       } catch (err) {
-        console.error(err);
+        logError(err);
       }
     }, false);
   }
@@ -1436,7 +1437,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         await trySyncNewArenaBlocks();
       }
     } catch (err) {
-      console.error(err);
+      logError(err);
     }
   }
 
@@ -1611,7 +1612,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       });
       return rawArenaItem;
     } catch (err) {
-      console.error(err);
+      logError(err);
     }
   }
 

@@ -48,7 +48,7 @@ export function ChatDetailView({
           //           color={
           //             isSearching
           //               ? Colors[colorScheme ?? "light"].tint
-          //               : theme.color.get()
+          //               : theme.color?.get()
           //           }
           //           style={{ opacity: pressed ? 0.5 : 1 }}
           //           active={isSearching}

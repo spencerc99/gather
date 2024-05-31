@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Contribution, Flower } from "../../../components/SlidingScalePayment";
 import { ContributionsKey, getItem } from "../../../utils/asyncStorage";
 import { useIsFocused } from "@react-navigation/native";
+import { ErrorsContext } from "../../../utils/errors";
 
 export default function ProfileScreen() {
   const { tryImportArenaChannel } = useContext(DatabaseContext);
@@ -31,6 +32,7 @@ export default function ProfileScreen() {
   const today = dayjs();
   const started = currentUser?.createdAt ? dayjs(currentUser.createdAt) : today;
   const daysUsedApp = today.diff(started, "day");
+  const { logError } = useContext(ErrorsContext);
 
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
     []
@@ -49,7 +51,7 @@ export default function ProfileScreen() {
         setSelectedChannels([]);
       });
     } catch (error) {
-      console.error(error);
+      logError(error);
       // throw error;
     } finally {
       setIsLoading(false);

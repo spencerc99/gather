@@ -21,6 +21,7 @@ import { BlockTexts } from "./BlockTexts";
 import { MediaView } from "./MediaView";
 import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
 import { useFocusEffect, useNavigation } from "expo-router";
+import { ErrorsContext } from "../utils/errors";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -64,6 +65,7 @@ export function TextForageView({
   );
   const insets = useSafeAreaInsets();
   const queryKey = ["blocks", { collectionId }] as const;
+  const { logError } = useContext(ErrorsContext);
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
@@ -218,7 +220,7 @@ export function TextForageView({
         collectionId,
       });
     } catch (err) {
-      console.error(err);
+      logError(err);
     }
   }
 
@@ -239,7 +241,7 @@ export function TextForageView({
       setRecording(recording);
       console.log("Recording started");
     } catch (err) {
-      console.error("Failed to start recording", err);
+      logError("Failed to start recording");
     }
   }
 

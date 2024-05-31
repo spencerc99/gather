@@ -21,8 +21,8 @@ export function ConnectionSummary({ connection }: { connection: Connection }) {
       width="100%"
       paddingHorizontal="$3"
       borderRadius={16}
-      borderColor={theme.color.get()}
-      backgroundColor={theme.background.get()}
+      borderColor={theme.color?.get()}
+      backgroundColor={theme.background?.get()}
     >
       <XStack>
         <StyledParagraph

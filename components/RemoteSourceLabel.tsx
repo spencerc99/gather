@@ -28,7 +28,7 @@ export function RemoteSourceLabel({
       borderWidth={0.5}
       paddingHorizontal="$1"
       borderRadius="$3"
-      borderColor={theme.color.get()}
+      borderColor={theme.color?.get()}
     >
       {renderRemoteSourceLabel()}
     </XStack>

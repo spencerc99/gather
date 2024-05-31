@@ -24,6 +24,7 @@ import * as Clipboard from "expo-clipboard";
 import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
 import { jsxJoin } from "../utils/react";
 import { StyleProps } from "react-native-reanimated";
+import { ErrorsContext } from "../utils/errors";
 
 function useBlockMenuItems(
   block: Block,
@@ -150,6 +151,7 @@ export function BlockSummary({
   const { updateBlock } = useContext(DatabaseContext);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { logError } = useContext(ErrorsContext);
 
   async function commitEdit(newContent: string | null) {
     try {
@@ -157,7 +159,7 @@ export function BlockSummary({
         await updateBlock({ blockId: id, editInfo: { content: newContent } });
       }
     } catch (err) {
-      console.error(err);
+      logError(err);
       // TODO: toast with error;
     } finally {
       setIsEditing(false);
@@ -315,6 +317,8 @@ export function BlockTextSummary({
   const [isEditing, setIsEditing] = useState(false);
   const widthProperty = blockStyle?.width || 250;
 
+  const { logError } = useContext(ErrorsContext);
+
   const showBackground =
     [BlockType.Text, BlockType.Link].includes(type) ||
     ([BlockType.Image].includes(type) && Boolean(title));
@@ -325,7 +329,7 @@ export function BlockTextSummary({
         await updateBlock({ blockId: id, editInfo: { content: newContent } });
       }
     } catch (err) {
-      console.error(err);
+      logError(err);
       // TODO: toast with error;
     } finally {
       setIsEditing(false);
@@ -356,7 +360,7 @@ export function BlockTextSummary({
         textContainerProps={{
           // borderWidth: 1,
           borderRadius: "$2",
-          borderColor: theme.color.get(),
+          borderColor: theme.color?.get(),
           space: "$2",
           padding: "$3",
           width: "100%",
@@ -504,7 +508,7 @@ export function BlockReviewSummary({
         textContainerProps={{
           // borderWidth: 1,
           borderRadius: "$2",
-          borderColor: theme.color.get(),
+          borderColor: theme.color?.get(),
           space: "$2",
           padding: "$3",
           width: "100%",

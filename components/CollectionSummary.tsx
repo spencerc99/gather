@@ -36,8 +36,8 @@ export function CollectionSummary({
       width="100%"
       paddingHorizontal="$3"
       borderRadius={16}
-      borderColor={theme.color.get()}
-      backgroundColor={theme.background.get()}
+      borderColor={theme.color?.get()}
+      backgroundColor={theme.background?.get()}
       space="$3"
       {...viewProps}
     >
@@ -111,7 +111,7 @@ export function CollectionThumbnail({
     <YStack
       space="$2"
       borderRadius={8}
-      backgroundColor={theme.background.get()}
+      backgroundColor={theme.background?.get()}
       width={102}
       // TODO: literally have no idea why this is needed. Otherwise it grows BEYOND ITS CONTAINER to become like 400px. what the fuck
       // i hate react native so much.

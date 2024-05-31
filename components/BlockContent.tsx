@@ -57,8 +57,8 @@ export function BlockContent({
         </ScrollView>
       );
       containerProps = {
-        borderColor: theme.color.get(),
-        backgroundColor: theme.background.get(),
+        borderColor: theme.color?.get(),
+        backgroundColor: theme.background?.get(),
         borderWidth: 0.25,
         borderRadius: "$2",
         padding: 12,

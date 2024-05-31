@@ -1,7 +1,8 @@
 // Copied from https://github.com/achorein/expo-share-intent-demo/blob/main/hooks/useShareIntent.js
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import Constants from "expo-constants";
+import { ErrorsContext } from "../utils/errors";
 
 import ReceiveSharingIntent from "react-native-receive-sharing-intent";
 
@@ -16,6 +17,7 @@ export function isShareIntentUrl(pathname: string) {
 export default function useShareIntent() {
   const appState = useRef(AppState.currentState);
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
+  const { logError } = useContext(ErrorsContext);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -56,7 +58,7 @@ export default function useShareIntent() {
       },
       // @ts-ignore
       (err) => {
-        console.error("useShareIntent[mount] error", err);
+        logError(err);
       },
       // @ts-ignore
       Constants.expoConfig.scheme

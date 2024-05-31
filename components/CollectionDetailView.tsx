@@ -13,6 +13,7 @@ import { Stack, useRouter } from "expo-router";
 import { createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { getCreatedByForRemote } from "../utils/user";
+import { ErrorsContext } from "../utils/errors";
 
 export function CollectionDetailView({
   collection,
@@ -41,6 +42,7 @@ export function CollectionDetailView({
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { logError } = useContext(ErrorsContext);
 
   async function onClickSyncNewItems() {
     setIsLoading(true);
@@ -131,7 +133,7 @@ export function CollectionDetailView({
         }}`
       );
     } catch (err) {
-      console.error(err);
+      logError(err);
       alert(
         "Failed to link to Are.na. Please try again on a stable connection."
       );

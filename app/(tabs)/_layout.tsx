@@ -97,7 +97,7 @@ export function MainHeaderIcons() {
             <FontAwesome
               name="bug"
               size={25}
-              color={theme.color.get()}
+              color={theme.color?.get()}
               style={{ opacity: pressed ? 0.5 : 1 }}
             />
           )}
@@ -124,7 +124,7 @@ export function HeaderIcon({
             <FontAwesome
               name={icon}
               size={25}
-              color={theme.color.get()}
+              color={theme.color?.get()}
               style={{ opacity: pressed ? 0.5 : 1 }}
             />
           )}

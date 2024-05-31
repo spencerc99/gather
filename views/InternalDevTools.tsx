@@ -6,6 +6,7 @@ import {
   StyledParagraph,
   StyledLabel,
   ButtonWithConfirm,
+  LinkButton,
 } from "../components/Themed";
 import { setBoolean, removeItem, LastSyncedAtKey } from "../utils/asyncStorage";
 import { UserContext, UserInfoId } from "../utils/user";
@@ -52,6 +53,9 @@ export function InternalDevTools({}: {}) {
           <StyledText bold>Token:</StyledText>{" "}
           <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
         </StyledText>
+        <LinkButton theme="red" href="/errors">
+          View Error Log
+        </LinkButton>
         <StyledButton
           disabled={isLoading}
           icon={isLoading ? <Spinner size="small" /> : null}

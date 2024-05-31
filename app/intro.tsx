@@ -41,6 +41,7 @@ import { DatabaseContext } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { ArenaLogin } from "../views/ArenaLogin";
 import { AboutSection } from "./about";
+import { ErrorsContext } from "../utils/errors";
 
 const NumSteps = 4;
 // source https://uibakery.io/regex-library/email
@@ -49,6 +50,7 @@ const EmailRegex = /^\S+@\S+\.\S+$/;
 export default function IntroScreen() {
   const [step, setStep] = useState<number>(0);
   const router = useRouter();
+  const { logError } = useContext(ErrorsContext);
   const width = Dimensions.get("window").width;
   const { email: savedEmail, setupUser, currentUser } = useContext(UserContext);
   const [email, setEmail] = useState("");
@@ -86,7 +88,7 @@ export default function IntroScreen() {
         },
       });
     } catch (err) {
-      console.error(err);
+      logError(err);
     }
   }
 
@@ -100,7 +102,7 @@ export default function IntroScreen() {
         )
       );
     } catch (error) {
-      console.error(error);
+      logError(error);
       // throw error;
     } finally {
       setIsLoading(false);

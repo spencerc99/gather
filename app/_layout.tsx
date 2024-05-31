@@ -18,6 +18,7 @@ import useShareIntent from "../hooks/useShareIntent";
 import { config } from "../tamagui.config";
 import { DatabaseContext, DatabaseProvider } from "../utils/db";
 import { UserProvider } from "../utils/user";
+import { ErrorsProvider } from "../utils/errors";
 
 const client = new QueryClient();
 
@@ -66,29 +67,31 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <TamaguiProvider config={config}>
-        <Theme name={colorScheme === "dark" ? "dark" : "light"}>
-          <QueryClientProvider client={client}>
-            <HoldMenuProvider
-              theme={colorScheme || undefined}
-              safeAreaInsets={insets}
-              // @ts-ignore
-              onOpen={() => {
-                if (Keyboard.isVisible()) {
-                  Keyboard.dismiss();
-                }
-              }}
-            >
-              <UserProvider>
-                <DatabaseProvider>
-                  <RootLayoutNav />
-                  <StatusBar style="auto" />
-                </DatabaseProvider>
-              </UserProvider>
-            </HoldMenuProvider>
-          </QueryClientProvider>
-        </Theme>
-      </TamaguiProvider>
+      <ErrorsProvider>
+        <TamaguiProvider config={config}>
+          <Theme name={colorScheme === "dark" ? "dark" : "light"}>
+            <QueryClientProvider client={client}>
+              <HoldMenuProvider
+                theme={colorScheme || undefined}
+                safeAreaInsets={insets}
+                // @ts-ignore
+                onOpen={() => {
+                  if (Keyboard.isVisible()) {
+                    Keyboard.dismiss();
+                  }
+                }}
+              >
+                <UserProvider>
+                  <DatabaseProvider>
+                    <RootLayoutNav />
+                    <StatusBar style="auto" />
+                  </DatabaseProvider>
+                </UserProvider>
+              </HoldMenuProvider>
+            </QueryClientProvider>
+          </Theme>
+        </TamaguiProvider>
+      </ErrorsProvider>
     </ThemeProvider>
   );
 }
@@ -138,6 +141,13 @@ function RootLayoutNav() {
       />
       <Stack.Screen
         name="dev"
+        options={{
+          presentation: "card",
+          title: "",
+        }}
+      />
+      <Stack.Screen
+        name="errors"
         options={{
           presentation: "card",
           title: "",

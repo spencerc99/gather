@@ -2,9 +2,10 @@ import { BlockType } from "../utils/mimeTypes";
 import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
 import { Pressable, Image } from "react-native";
 import { Audio, ResizeMode, Video } from "expo-av";
-import { useState, useEffect, PropsWithChildren } from "react";
+import { useState, useEffect, PropsWithChildren, useContext } from "react";
 import { GetProps } from "tamagui";
 import { StyleProps } from "react-native-reanimated";
+import { ErrorsContext } from "../utils/errors";
 
 export function MediaView({
   media,
@@ -20,6 +21,7 @@ export function MediaView({
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
+  const { logError } = useContext(ErrorsContext);
 
   async function playSound() {
     console.log("play");
@@ -108,7 +110,7 @@ export function MediaView({
           </Pressable>
         );
       default:
-        console.error(`Unexpected BlockType ${blockType} found!`);
+        logError(`Unexpected BlockType ${blockType} found!`);
         return <StyledText>Unhandled blocktype {blockType}</StyledText>;
     }
   }

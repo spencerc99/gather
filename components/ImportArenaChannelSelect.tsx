@@ -4,6 +4,7 @@ import { DatabaseContext } from "../utils/db";
 import { SelectArenaChannel } from "../views/ArenaLogin";
 import { StyledButton } from "./Themed";
 import { Keyboard } from "react-native";
+import { ErrorsContext } from "../utils/errors";
 
 export function ImportArenaChannelSelect({
   isLoading,
@@ -25,6 +26,7 @@ export function ImportArenaChannelSelect({
     null
   );
   const [arenaChannel, setArenaChannel] = useState<string>("");
+  const { logError } = useContext(ErrorsContext);
 
   async function onImportChannel() {
     Keyboard.dismiss();
@@ -42,7 +44,7 @@ export function ImportArenaChannelSelect({
           `" with ${size} blocks from are.na.\n\nItems added to and removed from this collection will push to Are.na, and items added to the are.na channel will sync back here, but removals on are.na will not take effect on Gather.`
       );
     } catch (error) {
-      console.error(error);
+      logError(error);
       throw error;
     } finally {
       setIsLoading(false);
