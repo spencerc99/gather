@@ -997,7 +997,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                           content, 
                           collection_id, 
                           connections.created_timestamp as created_timestamp from blocks 
-              LEFT JOIN   connections ON connections.block_id = blocks.id
+              LEFT JOIN   connections ON connections.block_id = blocks.id AND blocks.content != ''
               WHERE       blocks.type IN ('${BlockType.Image}', '${
     BlockType.Link
   }')
