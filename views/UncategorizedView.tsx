@@ -197,10 +197,12 @@ export function UncategorizedView() {
       >
         <Stack minHeight="100%">
           <XStack flex={1} flexGrow={1}>
-            {/* TODO: fix showing title properly */}
             <Carousel
               ref={carouselRef}
               loop={false}
+              // TODO: this isn't actually available in this source in this version but seemingly does something? i literally have no idea why
+              // @ts-ignore
+              minScrollDistancePerSwipe={0.1}
               withAnimation={{
                 type: "spring",
                 config: {

@@ -49,6 +49,7 @@ export function ReviewView() {
     );
   }
   const queryKey = ["blocks", selectedReviewCollection, { sortType }] as const;
+  const carouselRef = useRef<ICarouselInstance>(null);
 
   const generateSeed = () =>
     1 + Math.floor(Math.random() * Number.MAX_SAFE_INTEGER - 1);
@@ -152,6 +153,7 @@ export function ReviewView() {
               <CollectionSelect
                 onTriggerSelect={() => {
                   Keyboard.dismiss();
+                  carouselRef.current?.scrollTo({ index: 0 });
                 }}
                 hideChevron
                 selectedCollection={selectedReviewCollection}
@@ -192,6 +194,7 @@ export function ReviewView() {
         outputBlocks,
         fetchMoreBlocks: () => {},
         isFetchingNextPage: false,
+        carouselRef,
       })}
     </YStack>
   );
@@ -202,11 +205,13 @@ function ReviewItems({
   outputBlocks,
   fetchMoreBlocks,
   isFetchingNextPage,
+  carouselRef,
 }: {
   view: ViewType;
   outputBlocks: Block[] | null;
   fetchMoreBlocks: () => void;
   isFetchingNextPage: boolean;
+  carouselRef: React.MutableRefObject<ICarouselInstance | null>;
 }) {
   if (!outputBlocks)
     return (
@@ -218,7 +223,9 @@ function ReviewItems({
   switch (view) {
     case ViewType.Carousel:
       // TODO: handle fetching more blocks when using infiniteQuery
-      return <CarouselView outputBlocks={outputBlocks} />;
+      return (
+        <CarouselView outputBlocks={outputBlocks} carouselRef={carouselRef} />
+      );
     case ViewType.Feed:
       return (
         <YStack marginTop="$10" flex={1}>
@@ -232,7 +239,13 @@ function ReviewItems({
   }
 }
 
-export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
+export function CarouselView({
+  outputBlocks,
+  carouselRef,
+}: {
+  outputBlocks: Block[];
+  carouselRef: React.MutableRefObject<ICarouselInstance | null>;
+}) {
   // Gestures
   // swipe down at very top to shuffle
   //   const nativeGesture = Gesture.Native();
@@ -242,7 +255,6 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
   //     nativeGesture
   //   );
   const height = useWindowDimensions().height;
-  const carouselRef = useRef<ICarouselInstance>(null);
 
   return (
     <YStack flex={1} paddingHorizontal="$4" width="100%">
@@ -252,6 +264,9 @@ export function CarouselView({ outputBlocks }: { outputBlocks: Block[] }) {
         vertical
         height={height}
         data={outputBlocks}
+        // TODO: this isn't actually available in this source in this version but seemingly does something? i literally have no idea why
+        // @ts-ignore
+        minScrollDistancePerSwipe={0.1}
         windowSize={5}
         snapEnabled
         renderItem={({ item, index }) => (

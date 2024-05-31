@@ -158,7 +158,10 @@ export function CollectionSelect({
   return (
     <Select
       // TODO: dumb because sometimes it is a number...
-      onValueChange={(val) => setSelectedCollection(val ? val.toString() : val)}
+      onValueChange={(val) => {
+        setSelectedCollection(val ? val.toString() : val);
+        onTriggerSelect?.();
+      }}
       // @ts-ignore
       value={
         selectedCollection ? selectedCollection.toString() : selectedCollection
@@ -171,13 +174,7 @@ export function CollectionSelect({
       }}
       {...selectProps}
     >
-      <Select.Trigger
-        elevation="$3"
-        {...triggerProps}
-        onPress={() => {
-          onTriggerSelect?.();
-        }}
-      >
+      <Select.Trigger elevation="$3" {...triggerProps}>
         <Select.Value placeholder={collectionPlaceholder} />{" "}
         {!hideChevron && (
           <Icon

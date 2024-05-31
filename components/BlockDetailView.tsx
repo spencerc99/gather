@@ -58,6 +58,14 @@ export function BlockDetailView({ block }: { block: Block }) {
   } = block;
 
   const [isLoading, setIsLoading] = useState(false);
+  const transformedSource = useMemo(() => {
+    // remove query params
+    if (!source) {
+      return source;
+    }
+    const url = new URL(source);
+    return url.origin + url.pathname;
+  }, [source]);
 
   const router = useRouter();
   const { updateBlock } = useContext(DatabaseContext);
@@ -192,7 +200,9 @@ export function BlockDetailView({ block }: { block: Block }) {
             {source && (
               <StyledText metadata>
                 From:{" "}
-                <ExternalLinkText href={source}>{source}</ExternalLinkText>
+                <ExternalLinkText href={source}>
+                  {transformedSource}
+                </ExternalLinkText>
               </StyledText>
             )}
             <StyledParagraph metadata>
