@@ -113,7 +113,7 @@ export function CollectionDetailView({
             block,
           });
         } catch (err) {
-          console.error(err);
+          logError(err);
         }
       }
       console.log("DONE!");

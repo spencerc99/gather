@@ -836,7 +836,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               });
               successfulDeletes.push(block);
             } catch (err) {
-              console.error(err);
+              logError(err);
             }
           }
       }
@@ -1218,7 +1218,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     try {
       arenaBlock = await getArenaBlock(arenaBlockId, arenaAccessToken);
     } catch (err) {
-      console.error(err);
+      logError(err);
       // TODO: only skip if 404
       removePendingBlockUpdate(block.id);
     }
@@ -1266,7 +1266,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         }
         removePendingBlockUpdate(block.id);
       } catch (err) {
-        console.error(err);
+        logError(err);
       }
     }
   }
