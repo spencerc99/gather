@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import {
   Dimensions,
   KeyboardAvoidingView,
@@ -20,7 +20,7 @@ import { UserContext } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
 import { MediaView } from "./MediaView";
 import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useNavigation } from "expo-router";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -65,12 +65,13 @@ export function TextForageView({
   const insets = useSafeAreaInsets();
   const queryKey = ["blocks", { collectionId }] as const;
 
-  useFocusEffect(() => {
-    return () =>
-      setTextPlaceholder(
-        Placeholders[Math.floor(Math.random() * Placeholders.length)]
-      );
-  });
+  const updatePlaceholder = useCallback(() => {
+    setTextPlaceholder(
+      Placeholders[Math.floor(Math.random() * Placeholders.length)]
+    );
+  }, []);
+
+  useFocusEffect(updatePlaceholder);
 
   // TODO: toast the error
   const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =

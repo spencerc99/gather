@@ -1,4 +1,4 @@
-import { useCallback, useContext, useState } from "react";
+import { memo, useCallback, useContext, useState } from "react";
 import { Alert, FlatList } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import {
@@ -11,6 +11,7 @@ import {
   Spinner,
   XStack,
   YStack,
+  setupNativeSheet,
 } from "tamagui";
 import { Collection } from "../utils/dataTypes";
 import { DatabaseContext, useCollections } from "../utils/db";
@@ -18,9 +19,83 @@ import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
 import { CreateCollectionButton } from "./CreateCollectionButton";
 import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
-// import { ModalView } from "react-native-ios-modal";
+import { ModalView } from "react-native-ios-modal";
 
-// setupNativeSheet("ios", ModalView);
+setupNativeSheet("ios", ModalView);
+
+const CollectionSelectView = memo(
+  ({
+    collection,
+    deleteCollection,
+    index,
+    selectedCollection,
+  }: {
+    collection: Collection;
+    deleteCollection: (collectionId: string) => void;
+    index: number;
+    selectedCollection: string | null;
+  }) => (
+    <Swipeable
+      key={collection.id}
+      containerStyle={{
+        overflow: "visible",
+      }}
+      friction={2}
+      renderRightActions={() => (
+        <YStack alignItems="center" padding="$2" justifyContent="center">
+          <StyledButton
+            circular
+            theme="red"
+            size="$6"
+            icon={<Icon name="trash" />}
+          ></StyledButton>
+        </YStack>
+      )}
+      onSwipeableOpen={(direction, swipeable) => {
+        if (direction === "left") {
+          return;
+        }
+        // open modal to confirm delete
+        Alert.alert("Delete Collection?", undefined, [
+          {
+            text: "Cancel",
+            onPress: () => {
+              swipeable.close();
+            },
+            style: "cancel",
+          },
+          {
+            text: "Delete",
+            onPress: () => {
+              deleteCollection(collection.id);
+            },
+            style: "destructive",
+          },
+        ]);
+      }}
+    >
+      <Select.Item
+        index={index + 1}
+        key={collection.id}
+        value={collection.id}
+        backgroundColor={
+          selectedCollection === collection.id ? "$green4" : undefined
+        }
+      >
+        <CollectionSummary
+          collection={collection}
+          viewProps={{
+            borderWidth: 0,
+            paddingHorizontal: 0,
+            paddingVertical: 0,
+            backgroundColor: "inherit",
+          }}
+        />
+        <Select.ItemText display="none">{collection.title}</Select.ItemText>
+      </Select.Item>
+    </Swipeable>
+  )
+);
 
 export function CollectionSelect({
   selectedCollection,
@@ -48,65 +123,12 @@ export function CollectionSelect({
   const renderCollection = useCallback(
     ({ item: collection, index }: { item: Collection; index: number }) => {
       return (
-        <Swipeable
-          key={collection.id}
-          containerStyle={{
-            overflow: "visible",
-          }}
-          friction={2}
-          renderRightActions={() => (
-            <YStack alignItems="center" padding="$2" justifyContent="center">
-              <StyledButton
-                circular
-                theme="red"
-                size="$6"
-                icon={<Icon name="trash" />}
-              ></StyledButton>
-            </YStack>
-          )}
-          onSwipeableOpen={(direction, swipeable) => {
-            if (direction === "left") {
-              return;
-            }
-            // open modal to confirm delete
-            Alert.alert("Delete Collection?", undefined, [
-              {
-                text: "Cancel",
-                onPress: () => {
-                  swipeable.close();
-                },
-                style: "cancel",
-              },
-              {
-                text: "Delete",
-                onPress: () => {
-                  deleteCollection(collection.id);
-                },
-                style: "destructive",
-              },
-            ]);
-          }}
-        >
-          <Select.Item
-            index={index + 1}
-            key={collection.id}
-            value={collection.id}
-            backgroundColor={
-              selectedCollection === collection.id ? "$green4" : undefined
-            }
-          >
-            <CollectionSummary
-              collection={collection}
-              viewProps={{
-                borderWidth: 0,
-                paddingHorizontal: 0,
-                paddingVertical: 0,
-                backgroundColor: "inherit",
-              }}
-            />
-            <Select.ItemText display="none">{collection.title}</Select.ItemText>
-          </Select.Item>
-        </Swipeable>
+        <CollectionSelectView
+          collection={collection}
+          deleteCollection={deleteCollection}
+          index={index}
+          selectedCollection={selectedCollection}
+        />
       );
     },
     [selectedCollection]
