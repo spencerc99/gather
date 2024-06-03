@@ -46,6 +46,7 @@ interface PickedMedia {
   uri: string;
   type: BlockType;
   contentType?: MimeType;
+  assetId?: string | null;
 }
 
 export function TextForageView({
@@ -110,6 +111,7 @@ export function TextForageView({
           {
             uri: shareIntent.uri,
             type: BlockType.Image,
+            assetId: null,
           },
         ]);
       } else {
@@ -141,6 +143,7 @@ export function TextForageView({
     });
 
     if (!result.canceled) {
+      // TODO: preserve assetID in URI
       setMedias([
         ...medias,
         ...result.assets.map((asset) => ({
@@ -148,6 +151,7 @@ export function TextForageView({
           // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
           type: asset.type === "image" ? BlockType.Image : BlockType.Video,
           contentType: asset.mimeType as MimeType,
+          assetId: asset.assetId,
         })),
       ]);
     }
@@ -175,17 +179,19 @@ export function TextForageView({
     try {
       if (savedMedias.length) {
         const mediaToInsert = await Promise.all(
-          savedMedias.map(async ({ uri, type, contentType }) => {
+          savedMedias.map(async ({ uri, type, assetId, contentType }) => {
             // TODO: this is only accounting for iphone.
             const fileUri = await getFsPathForMediaResult(
               uri,
-              type === BlockType.Image ? "jpg" : "mp4"
+              type === BlockType.Image ? "jpg" : "mp4",
+              assetId
             );
             return {
               createdBy: currentUser!.id,
               content: fileUri,
               type,
               // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+              localAssetId: assetId || undefined,
               contentType,
             };
           })

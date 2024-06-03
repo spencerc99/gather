@@ -23,9 +23,12 @@ export async function intializeFilesystemFolder() {
 
 export async function getFsPathForMediaResult(
   localUri: string,
-  extension: string
+  extension: string,
+  assetId?: string | null
 ): Promise<string> {
-  const newUri = `${PHOTOS_FOLDER}/${uuidv4()}.${extension}`;
+  const newUri = `${PHOTOS_FOLDER}/${
+    assetId ? encodeFileSystemPath(assetId) : uuidv4()
+  }.${extension}`;
   const async = await FileSystem.copyAsync({
     from: localUri,
     to: FileSystem.documentDirectory + newUri,
@@ -43,4 +46,12 @@ export async function getFsPathForRemoteImage(
     FileSystem.documentDirectory + newUri
   );
   return newUri;
+}
+
+export function encodeFileSystemPath(path: string) {
+  return encodeURIComponent(path);
+}
+
+export function decodeFileSystemPath(path: string) {
+  return decodeURIComponent(path);
 }

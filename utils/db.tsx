@@ -449,6 +449,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               description TEXT,
               type varchar(128) NOT NULL,
               content_type varchar(128),
+              local_asset_id varchar(128), 
               source TEXT,
               remote_source_type varchar(128),
               remote_source_info blob,
@@ -511,65 +512,64 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }, false);
   }
 
-  async function insertBlocks(blocksToInsert: DatabaseBlockInsert[]) {
-    await db.transactionAsync(async (tx) => {
-      const insertChunks = chunkArray(blocksToInsert, BlockInsertChunkSize);
-      for (const chunk of insertChunks) {
-        const result = await tx.executeSqlAsync(
-          `
-        INSERT INTO blocks (
-            title,
-            description,
-            content,
-            type,
-            content_type,
-            source,
-            remote_source_type,
-            created_by,
-            remote_source_info
-        ) VALUES ${chunk
-          .map(
-            (c) => `(
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?
-        )`
-          )
-          .join(",\n")}
-        RETURNING *;`,
-          // @ts-ignore
-          [
-            ...chunk.flatMap((block) => [
-              // @ts-ignore expo sqlite types are broken
-              block.title || null,
-              // @ts-ignore expo sqlite types are broken
-              block.description || null,
-              block.content,
-              block.type,
-              block.contentType,
-              // @ts-ignore expo sqlite types are broken
-              block.source || null,
-              // @ts-ignore expo sqlite types are broken
-              block.remoteSourceType || null,
-              block.createdBy,
-              // @ts-ignore expo sqlite types are broken
-              block.remoteSourceInfo
-                ? JSON.stringify(block.remoteSourceInfo)
-                : null,
-            ]),
-          ]
-        );
-        handleSqlErrors(result);
-        // TODO: figure out how to get the ids from all of the inserts.
-      }
-    });
-  }
+  // TODO:
+  // async function insertBlocks(blocksToInsert: DatabaseBlockInsert[]) {
+  //   await db.transactionAsync(async (tx) => {
+  //     const insertChunks = chunkArray(blocksToInsert, BlockInsertChunkSize);
+  //     for (const chunk of insertChunks) {
+  //       const result = await tx.executeSqlAsync(
+  //         `
+  //       INSERT INTO blocks (
+  //           title,
+  //           description,
+  //           content,
+  //           type,
+  //           content_type,
+  //           source,
+  //           remote_source_type,
+  //           created_by,
+  //           remote_source_info,
+  //           local_asset_id
+  //       ) VALUES ${chunk
+  //         .map(
+  //           (c) => `(
+  //           ?,
+  //           ?,
+  //           ?,
+  //           ?,
+  //           ?,
+  //           ?,
+  //           ?,
+  //           ?,
+  //           ?,
+  //           ?
+  //       )`
+  //         )
+  //         .join(",\n")}
+  //       RETURNING *;`,
+  //         // @ts-ignore
+  //         [
+  //           ...chunk.flatMap((block) => [
+  //             block.title || null,
+  //             block.description || null,
+  //             block.content,
+  //             block.type,
+  //             block.contentType,
+  //             block.source || null,
+  //             block.remoteSourceType || null,
+  //             block.createdBy,
+  //             block.remoteSourceInfo
+  //               ? JSON.stringify(block.remoteSourceInfo)
+  //               : null,
+  //             block.localAssetId,
+  //           ]),
+  //         ]
+  //       );
+  //       handleSqlErrors(result);
+  //       // TODO: figure out how to get the ids from all of the inserts.
+  //     }
+  //   });
+  // }
 
   const createBlocksBase = async ({
     blocksToInsert,
@@ -667,6 +667,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     collectionsToConnect: connections,
     ...block
   }: BlockInsertInfo): Promise<string> => {
+    console.log("inserting with asset id", block.localAssetId);
     const [result] = await db.execAsync(
       [
         {
@@ -680,8 +681,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 source,
                 remote_source_type,
                 created_by,
-                remote_source_info
+                remote_source_info,
+                local_asset_id
               ) VALUES (
+                  ?,
                   ?,
                   ?,
                   ?,
@@ -695,23 +698,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               ON CONFLICT(arena_id) DO NOTHING
               RETURNING *;`,
           args: [
-            // @ts-ignore expo sqlite types are broken
             block.title || null,
-            // @ts-ignore expo sqlite types are broken
             block.description || null,
             block.content,
             block.type,
             block.contentType,
-            // @ts-ignore expo sqlite types are broken
             block.source || null,
-            // @ts-ignore expo sqlite types are broken
             block.remoteSourceType || null,
             block.createdBy,
-            // @ts-ignore expo sqlite types are broken
             block.remoteSourceInfo
               ? JSON.stringify(block.remoteSourceInfo)
               : null,
-            block.remoteSourceInfo?.arenaId || null,
+            block.localAssetId || null,
           ],
         },
       ],
@@ -894,11 +892,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         );`,
           args: [
             collection.title,
-            // @ts-ignore expo sqlite types are broken
             collection.description || null,
             collection.createdBy,
             collection.remoteSourceType || null,
-            // @ts-ignore expo sqlite types are broken
             collection.remoteSourceInfo
               ? JSON.stringify(collection.remoteSourceInfo)
               : null,
