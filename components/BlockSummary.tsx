@@ -4,7 +4,14 @@ import * as WebBrowser from "expo-web-browser";
 import { BlockType } from "../utils/mimeTypes";
 import { Pressable } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
-import { Fragment, useContext, useEffect, useMemo, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   EditableTextOnClick,
   Icon,
@@ -17,7 +24,7 @@ import {
 import { BlockContent } from "./BlockContent";
 import { GetProps, TextProps, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
-import { Link, useRouter } from "expo-router";
+import { Link, router, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
@@ -34,11 +41,11 @@ function useBlockMenuItems(
 } {
   const { deleteBlock } = useContext(DatabaseContext);
   const router = useRouter();
-  const { id, source, content, type } = block;
+  const { id, source, content, type, title } = block;
 
   const blockMenuItems = useMemo(
     () => [
-      { text: "Actions", isTitle: true },
+      { text: title || `Block ${id}`, isTitle: true },
       ...(source
         ? [
             {
@@ -119,10 +126,12 @@ function useBlockMenuItems(
         icon: () => <Icon name={"trash"} />,
         isDestructive: true,
         // TODO: add confirmation dialog
-        onPress: () => deleteBlock(id),
+        onPress: () => {
+          deleteBlock(id);
+        },
       },
     ],
-    [id, source, content, deleteBlock]
+    [id, source, content, type, title, deleteBlock]
   );
 
   return { blockMenuItems };
@@ -313,7 +322,7 @@ export function BlockTextSummary({
 }) {
   const { id, type, source, title, description } = block;
   const theme = useTheme();
-  const { updateBlock } = useContext(DatabaseContext);
+  const { updateBlock, deleteBlock } = useContext(DatabaseContext);
   const [isEditing, setIsEditing] = useState(false);
   const widthProperty = blockStyle?.width || 250;
 
@@ -342,7 +351,7 @@ export function BlockTextSummary({
     },
   });
 
-  function renderContent() {
+  const renderContent = useCallback(() => {
     const content = (
       <BlockContent
         key={id}
@@ -412,41 +421,36 @@ export function BlockTextSummary({
       default:
         return content;
     }
-  }
+  }, [block]);
 
-  const renderedSummary = useMemo(
-    () => (
-      <YStack space="$1" {...containerProps}>
-        <HoldItem items={blockMenuItems} closeOnTap>
-          <StyledView
-            backgroundColor={showBackground ? "$gray6" : undefined}
-            borderRadius="$4"
-            height="auto"
-          >
-            {renderContent()}
-          </StyledView>
-        </HoldItem>
-        {!hideMetadata && (
-          <BlockMetadata
-            block={block}
-            textProps={{ textAlign: "right" }}
-            isRemoteCollection={isRemoteCollection}
-            dateKind="relative"
-          />
-        )}
-      </YStack>
-    ),
-    [
-      block,
-      hideMetadata,
-      isRemoteCollection,
-      showBackground,
-      blockMenuItems,
-      isEditing,
-      blockStyle,
-      containerProps,
-    ]
+  const renderedMetadata = useMemo(() => {
+    return (
+      !hideMetadata && (
+        <BlockMetadata
+          block={block}
+          textProps={{ textAlign: "right" }}
+          isRemoteCollection={isRemoteCollection}
+          dateKind="relative"
+        />
+      )
+    );
+  }, [hideMetadata, isRemoteCollection, block]);
+
+  const renderedSummary = (
+    <YStack space="$1" {...containerProps}>
+      <HoldItem items={blockMenuItems} closeOnTap>
+        <StyledView
+          backgroundColor={showBackground ? "$gray6" : undefined}
+          borderRadius="$4"
+          height="auto"
+        >
+          {renderContent()}
+        </StyledView>
+      </HoldItem>
+      {renderedMetadata}
+    </YStack>
   );
+
   return shouldLink && !isEditing ? (
     <Link
       href={{
