@@ -186,12 +186,12 @@ export function TextForageView({
               type === BlockType.Image ? "jpg" : "mp4",
               assetId
             );
-            // TODO: create generated column for assetId derived from fileUri
             return {
               createdBy: currentUser!.id,
               content: fileUri,
               type,
               // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+              localAssetId: assetId || undefined,
               contentType,
             };
           })

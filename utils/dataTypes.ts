@@ -94,6 +94,8 @@ export interface DatabaseBlockInsert {
   contentType?: MimeType;
   source?: string; // the URL where the object was captured from. If a photo with EXIF data, then the location metadata
 
+  localAssetId?: string;
+
   //   TODO: add type
   remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
   remoteSourceInfo?: ArenaChannelBlockInfo;
