@@ -2,6 +2,7 @@ import * as FileSystem from "expo-file-system";
 import { Block, LastSyncedInfo } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
 import { logError } from "./errors";
+import { withQueryParams } from "./url";
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
@@ -186,16 +187,6 @@ export interface Connection {
 export interface AvatarImage {
   thumb: string;
   display: string;
-}
-
-export function withQueryParams(url: string, params: { [key: string]: any }) {
-  return (
-    url +
-    "?" +
-    Object.entries(params)
-      .map(([key, paramValue]) => `${key}=${encodeURIComponent(paramValue)}`)
-      .join("&")
-  );
 }
 
 export function apiUrl(
@@ -456,6 +447,8 @@ export function arenaClassToBlockType(
   }
 }
 
+const ImgurApiKey = process.env.EXPO_PUBLIC_IMGUR_API_KEY!;
+
 export function arenaClassToMimeType({
   class: classVal,
   embed,
@@ -497,11 +490,12 @@ async function getBodyForBlock(block: Block): Promise<any> {
       } else {
         formData.append("video", base64);
       }
+      formData.append("title", block.title || "");
       const resp = await fetch("https://api.imgur.com/3/upload", {
         method: "POST",
         body: formData,
         headers: {
-          Authorization: `Client-ID 0d8e6e0a1331d71`,
+          Authorization: `Client-ID ${ImgurApiKey}`,
         },
       });
       if (!resp.ok) {
@@ -564,9 +558,17 @@ export async function addBlockToChannel({
         "Content-Type": "application/json",
       },
     });
+    if (!resp.ok) {
+      logError(
+        `failed to add block to arena channel ${resp.status}: ${JSON.stringify(
+          resp
+        )}`
+      );
+      throw new Error(JSON.stringify(resp));
+    }
     response = await resp.json();
     const { title, description } = block;
-    if (title || (description && resp.ok)) {
+    if (title || description) {
       const body = {
         title,
         description,

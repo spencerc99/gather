@@ -19,6 +19,16 @@ interface UrlMetadata {
   url: string;
 }
 
+export function withQueryParams(url: string, params: { [key: string]: any }) {
+  return (
+    url +
+    "?" +
+    Object.entries(params)
+      .map(([key, paramValue]) => `${key}=${encodeURIComponent(paramValue)}`)
+      .join("&")
+  );
+}
+
 export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
   if (!isUrl(url)) {
     throw new Error("invalid url received");

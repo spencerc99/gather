@@ -4,6 +4,8 @@ import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
 import { H3, Slider, XStack, XStackProps, YStack } from "tamagui";
 import { StyledText } from "./Themed";
 import { ContributionsKey, getItem, setItem } from "../utils/asyncStorage";
+import { UserInfo } from "../utils/user";
+import { withQueryParams } from "../utils/url";
 
 export const SlidingPrice = [1, 3, 6, 9, 21, 33, 60];
 export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
@@ -31,8 +33,11 @@ const PaymentLinks = [
 export function getSlidingPriceMoneyValue(value: number) {
   return SlidingPrice[value - 1];
 }
-export function getSlidingPricePaymentLink(value: number) {
-  return PaymentLinks[value - 1];
+export function getSlidingPricePaymentLink(value: number, user: UserInfo) {
+  return withQueryParams(PaymentLinks[value - 1], {
+    client_reference_id: user.id,
+    prefilled_email: user.email,
+  });
 }
 
 export interface Contribution {
