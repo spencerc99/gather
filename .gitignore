@@ -48,3 +48,6 @@ android
 builds/*.ipa
 
 .env
+
+# credentials
+./utils/credentials.ts

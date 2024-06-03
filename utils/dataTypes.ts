@@ -1,4 +1,5 @@
 import { BlockType, MimeType } from "./mimeTypes";
+import { ensureUnreachable } from "./react";
 
 export interface CollectionInsertInfo {
   title: string;
@@ -128,4 +129,22 @@ export interface ArenaImportInfo {
 export enum SortType {
   Random = "random",
   Created = "created",
+}
+
+export function deriveContentTypeFromBlockType(type: BlockType): MimeType {
+  switch (type) {
+    case BlockType.Text:
+    case BlockType.Link:
+      return MimeType[".txt"];
+    case BlockType.Image:
+      return MimeType[".jpg"];
+    case BlockType.Audio:
+      return MimeType[".wav"];
+    case BlockType.Video:
+      return MimeType[".mp4"];
+    case BlockType.Document:
+      throw new Error("Document type not supported yet");
+    default:
+      return ensureUnreachable(type);
+  }
 }

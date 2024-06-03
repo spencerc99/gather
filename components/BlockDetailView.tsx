@@ -55,6 +55,7 @@ export function BlockDetailView({ block }: { block: Block }) {
     createdBy,
     updatedAt,
     remoteSourceInfo,
+    contentType,
   } = block;
 
   const [isLoading, setIsLoading] = useState(false);
@@ -150,6 +151,11 @@ export function BlockDetailView({ block }: { block: Block }) {
             hideMetadata
           />
           {__DEV__ && <StyledParagraph metadata>ID: {id}</StyledParagraph>}
+          {__DEV__ && (
+            <StyledParagraph metadata>
+              CONTENT TYPE: {contentType}
+            </StyledParagraph>
+          )}
           {/* TODO: don't show hold item actions and render them inline instead */}
           <EditableTextOnClick
             inputProps={{ metadata: true }}
