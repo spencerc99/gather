@@ -1,11 +1,12 @@
-import * as FileSystem from "expo-file-system";
 import { Block, LastSyncedInfo } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
 import { logError } from "./errors";
 import { withQueryParams } from "./url";
+const XMLParser = require("react-xml-parser");
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
+export const ArenaGraphqlKey = process.env.EXPO_PUBLIC_ARENA_GRAPHQL_KEY!;
 export const ArenaTokenStorageKey = "arena-token";
 
 enum ArenaVisibility {
@@ -229,6 +230,7 @@ export function nextUrlFromArenaContentsResponse(
 }
 
 const ArenaApiUrl = "https://api.are.na/v2";
+const ArenaGraphqlApi = "https://api.are.na/graphql";
 const ArenaChannelsApi = "https://api.are.na/v2/channels";
 export const ArenaChannelRegex =
   /(?:https:\/\/)?(?:www\.)?are\.na\/[\w-]+\/([\w-]+)/;
@@ -447,8 +449,6 @@ export function arenaClassToBlockType(
   }
 }
 
-const ImgurApiKey = process.env.EXPO_PUBLIC_IMGUR_API_KEY!;
-
 export function arenaClassToMimeType({
   class: classVal,
   embed,
@@ -470,8 +470,126 @@ export function arenaClassToMimeType({
   }
 }
 
-async function getBodyForBlock(block: Block): Promise<any> {
-  const { type, content, source } = block;
+export const buildFormDataFromFile = ({
+  file,
+  policy,
+  contentType,
+}: {
+  // This is the format expected for "blob" idk lol
+  // for reference: https://github.com/benjreinhart/react-native-aws3
+  file: { uri: string; name: string; type?: string };
+  policy: S3UploadPolicy;
+  contentType?: string;
+}): FormData => {
+  const formData = new FormData();
+
+  if (contentType) {
+    formData.append("Content-Type", contentType);
+  }
+  formData.append("key", policy.key);
+  formData.append("AWSAccessKeyId", policy.AWSAccessKeyId);
+  formData.append("acl", policy.acl);
+  formData.append("success_action_status", policy.success_action_status);
+  formData.append("policy", policy.policy);
+  formData.append("signature", policy.signature);
+  // @ts-ignore
+  formData.append("file", file);
+
+  return formData;
+};
+
+export const parseLocationFromS3Response = (data: string) => {
+  const parser = new XMLParser();
+  const parsed = parser.parseFromString(data);
+  return parsed.getElementsByTagName("Location")[0].value;
+};
+
+export interface S3UploadPolicy {
+  key: string;
+  AWSAccessKeyId: string;
+  acl: string;
+  success_action_status: string;
+  policy: string;
+  signature: string;
+  bucket: string;
+}
+
+const uploadPolicyQuery = `
+  query UploadPolicy {
+    me {
+      __typename
+      id
+      ...AvatarUploader
+    }
+  }
+  fragment AvatarUploader on Me {
+    __typename
+    id
+    policy {
+      __typename
+      AWSAccessKeyId
+      acl
+      bucket
+      expires
+      key
+      policy
+      signature
+      success_action_status
+    }
+  }
+`;
+
+async function getUploadPolicy(accessToken: string): Promise<S3UploadPolicy> {
+  const resp = await fetch(ArenaGraphqlApi, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-APP-TOKEN": ArenaGraphqlKey,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      query: uploadPolicyQuery,
+    }),
+  });
+  const respBody = await resp.json();
+  return respBody.data.me.policy;
+}
+
+export async function uploadFile({
+  file,
+  policy,
+  contentType,
+  onDone = () => {},
+}: {
+  file: { uri: string; name: string; type?: string };
+  contentType?: string;
+  policy: S3UploadPolicy;
+  onDone?: (url: string) => any;
+}): Promise<string> {
+  const formData = buildFormDataFromFile({
+    file,
+    policy,
+    contentType,
+  });
+
+  return fetch(policy.bucket, {
+    method: "POST",
+    body: formData,
+  })
+    .then((resp) => resp.text())
+    .then((data) => {
+      return parseLocationFromS3Response(data);
+    })
+    .then((url) => {
+      return url;
+    });
+}
+
+async function getBodyForBlock(
+  block: Block,
+  accessToken: string
+): Promise<any> {
+  const { type, title, content, source, contentType } = block;
   switch (type) {
     case BlockType.Text:
       return {
@@ -479,31 +597,20 @@ async function getBodyForBlock(block: Block): Promise<any> {
       };
     case BlockType.Image:
     case BlockType.Video:
-      const base64 = await FileSystem.readAsStringAsync(content, {
-        encoding: "base64",
-      });
-      // upload to imgur
-      const formData = new FormData();
-      formData.append("type", "base64");
-      if (type === BlockType.Image) {
-        formData.append("image", base64);
-      } else {
-        formData.append("video", base64);
-      }
-      formData.append("title", block.title || "");
-      const resp = await fetch("https://api.imgur.com/3/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          Authorization: `Client-ID ${ImgurApiKey}`,
+      const uploadPolicy = await getUploadPolicy(accessToken);
+      const url = await uploadFile({
+        file: {
+          uri: content,
+          name: title || "",
+          type: contentType || "",
         },
+        policy: uploadPolicy,
+        contentType,
       });
-      if (!resp.ok) {
-        throw new Error(JSON.stringify(resp));
-      }
-      const imgurResp = await resp.json();
+      console.log("Uploaded file to arena", url);
+
       return {
-        source: imgurResp.data.link,
+        source: url,
       };
     case BlockType.Link:
       return { source: source! };
@@ -548,7 +655,7 @@ export async function addBlockToChannel({
     response = await resp.json();
   } else {
     const url = `${ArenaChannelsApi}/${channelId}/blocks`;
-    const body = await getBodyForBlock(block);
+    const body = await getBodyForBlock(block, arenaToken);
     console.log("adding block to channel", channelId, body, arenaToken, url);
     resp = await fetch(url, {
       method: "POST",

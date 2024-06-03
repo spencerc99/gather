@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { DatabaseContext } from "../utils/db";
-import { BlockType } from "../utils/mimeTypes";
+import { BlockType, MimeType } from "../utils/mimeTypes";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { UserContext } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
@@ -45,6 +45,7 @@ const Placeholders = [
 interface PickedMedia {
   uri: string;
   type: BlockType;
+  contentType?: MimeType;
 }
 
 export function TextForageView({
@@ -146,6 +147,7 @@ export function TextForageView({
           uri: asset.uri,
           // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
           type: asset.type === "image" ? BlockType.Image : BlockType.Video,
+          contentType: asset.mimeType as MimeType,
         })),
       ]);
     }
@@ -173,7 +175,7 @@ export function TextForageView({
     try {
       if (savedMedias.length) {
         const mediaToInsert = await Promise.all(
-          savedMedias.map(async ({ uri, type }) => {
+          savedMedias.map(async ({ uri, type, contentType }) => {
             // TODO: this is only accounting for iphone.
             const fileUri = await getFsPathForMediaResult(
               uri,
@@ -182,8 +184,9 @@ export function TextForageView({
             return {
               createdBy: currentUser!.id,
               content: fileUri,
-              // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
               type,
+              // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+              contentType,
             };
           })
         );
