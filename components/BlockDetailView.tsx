@@ -78,7 +78,6 @@ export function BlockDetailView({ block }: { block: Block }) {
     () => connections?.some((c) => Boolean(c.remoteSourceType)),
     [connections]
   );
-  // TODO: change this to fetch from arena to get slug and then get url..
   const createdByDisplay = getDisplayForCreatedBy(createdBy);
 
   useFixExpoRouter3NavigationTitle();
@@ -93,6 +92,7 @@ export function BlockDetailView({ block }: { block: Block }) {
   }
   const height = useWindowDimensions().height;
 
+  // TODO: proactively look for updates from arena (title, description) and call handleBlockRemoteUpdate
   return (
     <>
       <KeyboardAwareScrollView
@@ -136,6 +136,7 @@ export function BlockDetailView({ block }: { block: Block }) {
               );
             }}
           />
+          {/* TODO: on delete navigate back */}
           <BlockSummary
             block={block}
             blockStyle={{

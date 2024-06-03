@@ -3,6 +3,7 @@ import { BlockType, MimeType } from "./mimeTypes";
 import { logError } from "./errors";
 import { withQueryParams } from "./url";
 const XMLParser = require("react-xml-parser");
+import { ArenaUpdatedBlocksKey, getItem, setItem } from "./asyncStorage";
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
@@ -676,30 +677,12 @@ export async function addBlockToChannel({
     response = await resp.json();
     const { title, description } = block;
     if (title || description) {
-      const body = {
+      updateArenaBlock({
+        blockId: response.id,
+        arenaToken,
         title,
         description,
-      };
-      // ignore undefined values
-      Object.keys(body).forEach((key) => {
-        // @ts-ignore
-        if (!body[key]) body[key] = "";
       });
-      const url = withQueryParams(`${ArenaApiUrl}/blocks/${response.id}`, body);
-      const updateMetadata = await fetch(url, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${arenaToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (!updateMetadata.ok) {
-        logError(
-          `failed to update block metadata in arena ${
-            updateMetadata.status
-          }: ${JSON.stringify(updateMetadata)}`
-        );
-      }
     }
   }
   if (!resp.ok) {
@@ -712,6 +695,43 @@ export async function addBlockToChannel({
   }
 
   return response;
+}
+
+export async function updateArenaBlock({
+  blockId,
+  arenaToken,
+  title,
+  description,
+}: {
+  blockId: string;
+  arenaToken: string;
+  title?: string;
+  description?: string;
+}) {
+  const body = {
+    title,
+    description,
+  };
+  Object.keys(body).forEach((key) => {
+    // @ts-ignore
+    if (!body[key]) body[key] = "";
+  });
+  const url = withQueryParams(`${ArenaApiUrl}/blocks/${blockId}`, body);
+  const updateMetadata = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${arenaToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+  if (!updateMetadata.ok) {
+    logError(
+      `failed to update block metadata in arena ${
+        updateMetadata.status
+      }: ${JSON.stringify(updateMetadata)}`
+    );
+  }
+  return updateMetadata;
 }
 
 export async function removeBlockFromChannel({
@@ -869,7 +889,7 @@ export async function getBlock(
   blockId: string,
   arenaAccessToken?: string | null
 ): Promise<RawArenaBlock> {
-  const resp = await fetch(`${ArenaApiUrl}/blocks/${blockId}/channels`, {
+  const resp = await fetch(`${ArenaApiUrl}/blocks/${blockId}`, {
     headers: {
       Authorization: `Bearer ${arenaAccessToken}`,
       "Content-Type": "application/json",
@@ -883,4 +903,38 @@ export async function getBlock(
     throw new Error(JSON.stringify(json));
   }
   return json;
+}
+
+type FieldUpdate = {
+  [k in keyof Block]: number;
+};
+interface UpdatedBlocks {
+  [blockId: string]: FieldUpdate;
+}
+
+export function getPendingBlockUpdates(): UpdatedBlocks {
+  const updatedBlocks = getItem<UpdatedBlocks>(ArenaUpdatedBlocksKey);
+  return updatedBlocks || {};
+}
+
+export function recordPendingBlockUpdate(
+  blockId: string,
+  updatedFields: (keyof Block)[]
+) {
+  const now = Date.now();
+  const updatedBlocks = getPendingBlockUpdates();
+  const existing = updatedBlocks[blockId] || {};
+  setItem(ArenaUpdatedBlocksKey, {
+    ...updatedBlocks,
+    [blockId]: {
+      ...existing,
+      ...Object.fromEntries(updatedFields.map((key) => [key, now])),
+    },
+  });
+}
+
+export function removePendingBlockUpdate(blockId: string) {
+  const updatedBlocks = getPendingBlockUpdates();
+  delete updatedBlocks[blockId];
+  setItem(ArenaUpdatedBlocksKey, updatedBlocks);
 }
