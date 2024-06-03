@@ -60,7 +60,6 @@ function CreateCollectionModal() {
         }}
         disabled={!title}
         // style={{ marginLeft: "auto" }}
-        size="$4"
       >
         Create
       </StyledButton>
