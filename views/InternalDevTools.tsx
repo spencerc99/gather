@@ -52,12 +52,17 @@ export function InternalDevTools({}: {}) {
           into any issues, please contact Spencer first, and he might direct you
           to these buttons if there are issues :)
         </StyledText>
-        <XStack>
-          <StyledLabel>Enable Dev Mode</StyledLabel>
+        <XStack alignItems="center" gap="$2">
+          <StyledText bold>Dev Mode?</StyledText>
           <Checkbox
+            theme="green"
             checked={devModeEnabled}
             onCheckedChange={(checked) => setDevModeEnabled(Boolean(checked))}
-          ></Checkbox>
+          >
+            <Checkbox.Indicator>
+              <Icon name="checkmark" />
+            </Checkbox.Indicator>
+          </Checkbox>
         </XStack>
         <YStack>
           <StyledText bold>User ID</StyledText>

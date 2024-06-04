@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "54",
+      "buildNumber": "55",
       "bundleIdentifier": "net.tiny-inter.gather",
       "config": {
         "usesNonExemptEncryption": false
