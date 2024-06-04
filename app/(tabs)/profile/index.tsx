@@ -25,6 +25,8 @@ import { ContributionsKey, getItem } from "../../../utils/asyncStorage";
 import { useIsFocused } from "@react-navigation/native";
 import { ErrorsContext } from "../../../utils/errors";
 
+const DefaultAppSrc = require(`../../../assets/images/icon.png`);
+
 export default function ProfileScreen() {
   const { tryImportArenaChannel } = useContext(DatabaseContext);
 
@@ -66,7 +68,7 @@ export default function ProfileScreen() {
     },
   });
 
-  const [appIconSource, setAppIconSource] = useState(null);
+  const [appIconSource, setAppIconSource] = useState(DefaultAppSrc);
   useFocusEffect(() => {
     setAppIconSource(getAppIconSource());
 
@@ -75,7 +77,6 @@ export default function ProfileScreen() {
     };
   });
 
-  const isFocused = useIsFocused();
   const numFlowers = contributions?.length || 0;
   const flowers = useMemo(
     () =>

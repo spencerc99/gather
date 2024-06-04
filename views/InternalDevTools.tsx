@@ -45,14 +45,14 @@ export function InternalDevTools({}: {}) {
           into any issues, please contact Spencer first, and he might direct you
           to these buttons if there are issues :)
         </StyledText>
-        <StyledText>
+        <StyledParagraph>
           <StyledText bold>User ID</StyledText>:{" "}
           <StyledParagraph>{currentUser?.id}</StyledParagraph>
-        </StyledText>
-        <StyledText>
+        </StyledParagraph>
+        <StyledParagraph>
           <StyledText bold>Token:</StyledText>{" "}
           <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
-        </StyledText>
+        </StyledParagraph>
         <LinkButton theme="red" href="/errors">
           View Error Log
         </LinkButton>
