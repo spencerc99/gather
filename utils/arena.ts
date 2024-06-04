@@ -553,7 +553,7 @@ async function getUploadPolicy(accessToken: string): Promise<S3UploadPolicy> {
     }),
   });
   const respBody = await resp.json();
-  return respBody.data.me.policy;
+  return respBody?.data?.me?.policy;
 }
 
 export async function uploadFile({
@@ -599,6 +599,11 @@ async function getBodyForBlock(
     case BlockType.Image:
     case BlockType.Video:
       const uploadPolicy = await getUploadPolicy(accessToken);
+      if (!uploadPolicy) {
+        throw new Error(
+          "no upload policy found. failed to upload image to arena"
+        );
+      }
       const url = await uploadFile({
         file: {
           uri: content,

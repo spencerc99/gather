@@ -175,7 +175,7 @@ export function BlockTexts({
     <YStack justifyContent="center" alignItems="center" flexGrow={1}>
       <Spinner size="large" color="$orange9" />
     </YStack>
-  ) : blocks.length === 0 && !collectionId ? (
+  ) : blocks?.length === 0 && !collectionId ? (
     <ScrollView
       style={{
         overflow: "visible",
