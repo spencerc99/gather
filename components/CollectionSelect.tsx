@@ -41,38 +41,40 @@ const CollectionSelectView = memo(
         overflow: "visible",
       }}
       friction={2}
-      renderRightActions={() => (
-        <YStack alignItems="center" padding="$2" justifyContent="center">
+      renderRightActions={(_progress, _drag, swipeable) => (
+        <YStack
+          alignItems="center"
+          padding="$2"
+          paddingLeft={0}
+          justifyContent="center"
+        >
           <StyledButton
             circular
             theme="red"
             size="$6"
             icon={<Icon name="trash" />}
+            onPress={() => {
+              Alert.alert("Delete Collection?", undefined, [
+                {
+                  text: "Cancel",
+                  onPress: () => {
+                    swipeable.close();
+                  },
+                  style: "cancel",
+                },
+                {
+                  text: "Delete",
+                  onPress: () => {
+                    deleteCollection(collection.id);
+                    swipeable.close();
+                  },
+                  style: "destructive",
+                },
+              ]);
+            }}
           ></StyledButton>
         </YStack>
       )}
-      onSwipeableOpen={(direction, swipeable) => {
-        if (direction === "left") {
-          return;
-        }
-        // open modal to confirm delete
-        Alert.alert("Delete Collection?", undefined, [
-          {
-            text: "Cancel",
-            onPress: () => {
-              swipeable.close();
-            },
-            style: "cancel",
-          },
-          {
-            text: "Delete",
-            onPress: () => {
-              deleteCollection(collection.id);
-            },
-            style: "destructive",
-          },
-        ]);
-      }}
     >
       <Select.Item
         index={index + 1}
