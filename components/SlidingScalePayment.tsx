@@ -33,10 +33,13 @@ const PaymentLinks = [
 export function getSlidingPriceMoneyValue(value: number) {
   return SlidingPrice[value - 1];
 }
-export function getSlidingPricePaymentLink(value: number, user: UserInfo) {
+export function getSlidingPricePaymentLink(
+  value: number,
+  user?: UserInfo | null
+) {
   return withQueryParams(PaymentLinks[value - 1], {
-    client_reference_id: user.id,
-    prefilled_email: user.email,
+    client_reference_id: user?.id,
+    prefilled_email: user?.email,
   });
 }
 

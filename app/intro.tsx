@@ -66,7 +66,7 @@ export default function IntroScreen() {
   const onSlideEnd = () => setScrollEnabled(true);
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
-  const paymentLink = getSlidingPricePaymentLink(value[0]);
+  const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
 
   useEffect(() => {
     if (savedEmail) {

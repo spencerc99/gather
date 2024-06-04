@@ -1,5 +1,5 @@
 import * as WebBrowser from "expo-web-browser";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Image, SafeAreaView } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { H2, XStack, YStack } from "tamagui";
@@ -19,14 +19,16 @@ import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { ContributionsList } from "../components/ContributionsList";
 import { ContributionsKey } from "../utils/asyncStorage";
 import { useQueryClient } from "@tanstack/react-query";
+import { UserContext } from "../utils/user";
 
 export default function About() {
   const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
+  const { currentUser } = useContext(UserContext);
   const onSlideStart = () => setScrollEnabled(false);
   const onSlideEnd = () => setScrollEnabled(true);
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
-  const paymentLink = getSlidingPricePaymentLink(value[0]);
+  const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
   useFixExpoRouter3NavigationTitle();
   const queryClient = useQueryClient();
 

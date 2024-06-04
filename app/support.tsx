@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import * as WebBrowser from "expo-web-browser";
 import {
   SlidingScalePayment,
@@ -14,11 +14,13 @@ import { H3, YStack } from "tamagui";
 import { StyledButton, StyledText } from "../components/Themed";
 import { ContributionsKey } from "../utils/asyncStorage";
 import { ContributionsList } from "../components/ContributionsList";
+import { UserContext } from "../utils/user";
 
 export default function Support() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
+  const { currentUser } = useContext(UserContext);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
-  const paymentLink = getSlidingPricePaymentLink(value[0]);
+  const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
   useFixExpoRouter3NavigationTitle();
   const queryClient = useQueryClient();
 
