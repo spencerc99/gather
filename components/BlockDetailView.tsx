@@ -22,6 +22,7 @@ import {
 import { ExternalLink } from "./ExternalLink";
 import { extractCreatorFromCreatedBy } from "../utils/user";
 import { ensureUnreachable } from "../utils/react";
+import { useStickyValue } from "../utils/asyncStorage";
 
 function getDisplayForCreatedBy(createdBy: string) {
   const { userId, source } = extractCreatorFromCreatedBy(createdBy);
@@ -79,6 +80,7 @@ export function BlockDetailView({ block }: { block: Block }) {
     [connections]
   );
   const createdByDisplay = getDisplayForCreatedBy(createdBy);
+  const [devModeEnabled] = useStickyValue("devModeEnabled", false);
 
   useFixExpoRouter3NavigationTitle();
 
@@ -213,7 +215,7 @@ export function BlockDetailView({ block }: { block: Block }) {
             <StyledParagraph metadata>
               Updated: {updatedAt.toLocaleDateString()}
             </StyledParagraph>
-            {__DEV__ && (
+            {(__DEV__ || devModeEnabled) && (
               <>
                 <StyledParagraph metadata>ID: {id}</StyledParagraph>
                 {contentType && (

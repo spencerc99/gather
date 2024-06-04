@@ -14,6 +14,7 @@ import { addBlockToChannel, createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { getCreatedByForRemote } from "../utils/user";
 import { ErrorsContext } from "../utils/errors";
+import { useStickyValue } from "../utils/asyncStorage";
 
 export function CollectionDetailView({
   collection,
@@ -43,6 +44,7 @@ export function CollectionDetailView({
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { logError } = useContext(ErrorsContext);
+  const [devModeEnabled] = useStickyValue("devModeEnabled", false);
 
   async function onClickSyncNewItems() {
     setIsLoading(true);
@@ -192,7 +194,9 @@ export function CollectionDetailView({
             <StyledParagraph title marginBottom="$2">
               {title}
             </StyledParagraph>
-            {__DEV__ && <StyledParagraph metadata>ID: {id}</StyledParagraph>}
+            {(__DEV__ || devModeEnabled) && (
+              <StyledParagraph metadata>ID: {id}</StyledParagraph>
+            )}
             {description && (
               <StyledParagraph color="$gray9">{description}</StyledParagraph>
             )}

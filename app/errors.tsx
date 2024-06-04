@@ -3,7 +3,7 @@ import { InternalDevTools } from "../views/InternalDevTools";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { ScrollView, XStack, YStack } from "tamagui";
 import { getErrors } from "../utils/errors";
-import { StyledText } from "../components/Themed";
+import { StyledParagraph, StyledText } from "../components/Themed";
 
 export default function Dev() {
   useFixExpoRouter3NavigationTitle();
@@ -26,7 +26,7 @@ export default function Dev() {
                   <StyledText> - {error.pathname}</StyledText>
                 ) : null}
               </StyledText>
-              <StyledText color="$red10">{error.error}</StyledText>
+              <StyledParagraph color="$red10">{error.error}</StyledParagraph>
             </YStack>
           ))}
         </YStack>

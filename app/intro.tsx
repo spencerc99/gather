@@ -469,11 +469,6 @@ export default function IntroScreen() {
               <YStack gap="$3" flexGrow={1}>
                 {renderStep()}
               </YStack>
-              {/* {__DEV__ && (
-              <StyledButton onPress={() => router.replace("/home")}>
-                home
-              </StyledButton>
-            )} */}
             </YStack>
           </YStack>
         </KeyboardAwareScrollView>

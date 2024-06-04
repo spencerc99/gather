@@ -1,4 +1,4 @@
-import { YStack, H3, XStack, Spinner } from "tamagui";
+import { YStack, H3, XStack, Spinner, Checkbox } from "tamagui";
 import {
   StyledButton,
   Icon,
@@ -8,7 +8,12 @@ import {
   ButtonWithConfirm,
   LinkButton,
 } from "../components/Themed";
-import { setBoolean, removeItem, LastSyncedAtKey } from "../utils/asyncStorage";
+import {
+  setBoolean,
+  removeItem,
+  LastSyncedAtKey,
+  useStickyValue,
+} from "../utils/asyncStorage";
 import { UserContext, UserInfoId } from "../utils/user";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
@@ -27,6 +32,11 @@ export function InternalDevTools({}: {}) {
   const { currentUser } = useContext(UserContext);
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
 
+  const [devModeEnabled, setDevModeEnabled] = useStickyValue(
+    "devModeEnabled",
+    false
+  );
+
   useEffect(() => {
     getPendingArenaBlocks().then((result: any) =>
       setPendingArenaBlocks(result.rows)
@@ -42,6 +52,13 @@ export function InternalDevTools({}: {}) {
           into any issues, please contact Spencer first, and he might direct you
           to these buttons if there are issues :)
         </StyledText>
+        <XStack>
+          <StyledLabel>Enable Dev Mode</StyledLabel>
+          <Checkbox
+            checked={devModeEnabled}
+            onCheckedChange={(checked) => setDevModeEnabled(Boolean(checked))}
+          ></Checkbox>
+        </XStack>
         <YStack>
           <StyledText bold>User ID</StyledText>
           <StyledParagraph>{currentUser?.id}</StyledParagraph>
