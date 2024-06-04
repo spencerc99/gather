@@ -1651,64 +1651,33 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
       connectionsToSync.forEach((c) => queuedBlocksToSync.current.add(c.id));
 
-      const blockCollectionIdToRemoteConnectedAt: Record<
-        string,
-        string | undefined
-      > = {};
-
       console.log(
         `Syncing ${connectionsToSync.length} pending connections to arena`,
         connectionsToSync
       );
 
+      const succesfullySyncedConnections = [];
+
       for (const connToSync of connectionsToSync) {
         console.log("syncing", connToSync);
         const newRemoteItem = await syncBlockToArena(
           connToSync.collectionRemoteSourceInfo!.arenaId!,
-          connToSync
+          connToSync,
+          connToSync.collectionId
         );
         if (newRemoteItem) {
-          blockCollectionIdToRemoteConnectedAt[
-            `${connToSync.id}-${connToSync.collectionId}`
-          ] = newRemoteItem.connected_at;
+          succesfullySyncedConnections.push(connToSync);
         }
       }
 
-      const succesfullySyncedConnections = connectionsToSync.filter(
-        (conn) =>
-          blockCollectionIdToRemoteConnectedAt[
-            `${conn.id}-${conn.collectionId}`
-          ]
-      );
-      if (succesfullySyncedConnections.length === 0) {
-        connectionsToSync.forEach((c) =>
-          queuedBlocksToSync.current.delete(c.id)
-        );
-        return;
-      }
-
-      await upsertConnections(
-        succesfullySyncedConnections.map((conn) => ({
-          blockId: conn.id,
-          collectionId: conn.collectionId,
-          remoteCreatedAt:
-            blockCollectionIdToRemoteConnectedAt[
-              `${conn.id}-${conn.collectionId}`
-            ],
-          createdBy: conn.createdBy,
-        }))
-      );
       connectionsToSync.forEach((c) => queuedBlocksToSync.current.delete(c.id));
 
       console.log(
-        `Successfully synced ${connectionsToSync
-          .filter(
-            (conn) =>
-              blockCollectionIdToRemoteConnectedAt[
-                `${conn.id}-${conn.collectionId}`
-              ]
-          )
-          .map((c) => `${c.id}-${c.collectionId}`)} to arena`
+        `Successfully synced ${succesfullySyncedConnections.map(
+          (c) => `${c.id}-${c.collectionId}`
+        )} to arena. Failed to sync ${
+          succesfullySyncedConnections.length - connectionsToSync.length
+        }`
       );
     });
     InteractionManager.runAfterInteractions(async () => {
@@ -1727,7 +1696,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function syncBlockToArena(
     channelId: string,
-    block: Block
+    block: Block,
+    collectionId: string
   ): Promise<RawArenaChannelItem | undefined> {
     if (!arenaAccessToken) {
       return;
@@ -1741,7 +1711,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       });
       const { id: newBlockId, image } = rawArenaItem;
       const hasUpdatedImage =
-        block.type === BlockType.Link && image?.display.url;
+        block.type === BlockType.Link &&
+        image?.display.url &&
+        image.display.url !== block.content;
       await db.execAsync(
         [
           {
@@ -1764,6 +1736,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       queryClient.invalidateQueries({
         queryKey: ["blocks", { blockId: block.id }],
       });
+      await upsertConnections([
+        {
+          blockId: block.id,
+          collectionId: collectionId,
+          remoteCreatedAt: rawArenaItem.connected_at,
+          createdBy: block.createdBy,
+        },
+      ]);
       return rawArenaItem;
     } catch (err) {
       logError(err);

@@ -28,9 +28,6 @@ export function InternalDevTools({}: {}) {
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
 
   useEffect(() => {
-    if (!__DEV__) {
-      return;
-    }
     getPendingArenaBlocks().then((result: any) =>
       setPendingArenaBlocks(result.rows)
     );
@@ -45,14 +42,14 @@ export function InternalDevTools({}: {}) {
           into any issues, please contact Spencer first, and he might direct you
           to these buttons if there are issues :)
         </StyledText>
-        <StyledParagraph>
-          <StyledText bold>User ID</StyledText>:{" "}
+        <YStack>
+          <StyledText bold>User ID</StyledText>
           <StyledParagraph>{currentUser?.id}</StyledParagraph>
-        </StyledParagraph>
-        <StyledParagraph>
-          <StyledText bold>Token:</StyledText>{" "}
+        </YStack>
+        <YStack>
+          <StyledText bold>Token:</StyledText>
           <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
-        </StyledParagraph>
+        </YStack>
         <LinkButton theme="red" href="/errors">
           View Error Log
         </LinkButton>
