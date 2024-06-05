@@ -555,8 +555,8 @@ async function getUploadPolicy(accessToken: string): Promise<S3UploadPolicy> {
   const respBody = await resp.json();
   if (!respBody?.data?.me?.policy) {
     throw new Error(
-      `failed to upload image to arena. no upload policy found with token ${accessToken} and key ${ArenaGraphqlKey}: ${JSON.stringify(
-        resp
+      `failed to upload image to arena. no upload policy found: ${JSON.stringify(
+        respBody
       )}`
     );
   }
@@ -591,6 +591,10 @@ export async function uploadFile({
     })
     .then((url) => {
       return url;
+    })
+    .catch((e) => {
+      logError(e);
+      throw e;
     });
 }
 

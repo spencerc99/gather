@@ -1,7 +1,7 @@
 import { SafeAreaView } from "react-native";
 import { InternalDevTools } from "../views/InternalDevTools";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
-import { YStack } from "tamagui";
+import { ScrollView, YStack } from "tamagui";
 
 export default function Dev() {
   useFixExpoRouter3NavigationTitle();
@@ -12,9 +12,11 @@ export default function Dev() {
         flex: 1,
       }}
     >
-      <YStack paddingHorizontal="10%" paddingTop="10%">
-        <InternalDevTools />
-      </YStack>
+      <ScrollView>
+        <YStack paddingHorizontal="8%" paddingTop="5%">
+          <InternalDevTools />
+        </YStack>
+      </ScrollView>
     </SafeAreaView>
   );
 }

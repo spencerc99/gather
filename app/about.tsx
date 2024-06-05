@@ -2,7 +2,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useContext, useState } from "react";
 import { Image, SafeAreaView } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { H2, XStack, YStack } from "tamagui";
+import { H2, Theme, XStack, YStack } from "tamagui";
 import {
   SlidingScalePayment,
   StartingSlidingScaleValue,
@@ -33,49 +33,53 @@ export default function About() {
   const queryClient = useQueryClient();
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: "#FFDBB2",
-      }}
-    >
-      <KeyboardAwareScrollView
-        style={{ flex: 1 }}
-        extraScrollHeight={70}
-        scrollEnabled={scrollEnabled}
+    <Theme name="light">
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: "#FFDBB2",
+        }}
       >
-        <YStack
-          minHeight="100%"
-          backgroundColor="#FFDBB2"
-          paddingTop="5%"
-          paddingBottom="5%"
-          paddingHorizontal="10%"
-          gap="$3"
+        <KeyboardAwareScrollView
+          style={{ flex: 1 }}
+          extraScrollHeight={70}
+          scrollEnabled={scrollEnabled}
         >
-          <AboutSection
-            value={value}
-            setValue={setValue}
-            onSlideStart={onSlideStart}
-            onSlideEnd={onSlideEnd}
-          />
-          <YStack marginTop="auto">
-            <StyledButton
-              marginTop="$7"
-              backgroundColor="$blue8"
-              onPress={async () => {
-                await WebBrowser.openBrowserAsync(paymentLink);
-                recordContribution(moneyValue);
-                queryClient.invalidateQueries({ queryKey: [ContributionsKey] });
-              }}
-            >
-              <StyledText>
-                Contribute <StyledText bold>${moneyValue}</StyledText>
-              </StyledText>
-            </StyledButton>
+          <YStack
+            minHeight="100%"
+            backgroundColor="#FFDBB2"
+            paddingTop="5%"
+            paddingBottom="5%"
+            paddingHorizontal="10%"
+            gap="$3"
+          >
+            <AboutSection
+              value={value}
+              setValue={setValue}
+              onSlideStart={onSlideStart}
+              onSlideEnd={onSlideEnd}
+            />
+            <YStack marginTop="auto">
+              <StyledButton
+                marginTop="$7"
+                backgroundColor="$blue8"
+                onPress={async () => {
+                  await WebBrowser.openBrowserAsync(paymentLink);
+                  recordContribution(moneyValue);
+                  queryClient.invalidateQueries({
+                    queryKey: [ContributionsKey],
+                  });
+                }}
+              >
+                <StyledText>
+                  Contribute <StyledText bold>${moneyValue}</StyledText>
+                </StyledText>
+              </StyledButton>
+            </YStack>
           </YStack>
-        </YStack>
-      </KeyboardAwareScrollView>
-    </SafeAreaView>
+        </KeyboardAwareScrollView>
+      </SafeAreaView>
+    </Theme>
   );
 }
 

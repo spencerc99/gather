@@ -16,7 +16,7 @@ export default function Dev() {
       }}
     >
       <ScrollView>
-        <YStack paddingHorizontal="10%" paddingTop="10%" gap="$1.5">
+        <YStack paddingHorizontal="5%" paddingTop="5%" gap="$1.5">
           {errors?.map((error, idx) => (
             <YStack key={idx} gap="">
               <StyledText metadata>

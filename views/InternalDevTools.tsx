@@ -60,7 +60,6 @@ export function InternalDevTools({}: {}) {
         <XStack alignItems="center" gap="$2">
           <StyledText bold>Dev Mode?</StyledText>
           <Checkbox
-            theme="green"
             checked={devModeEnabled}
             onCheckedChange={(checked) => setDevModeEnabled(Boolean(checked))}
           >
