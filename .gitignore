@@ -51,3 +51,4 @@ builds/*.ipa
 
 # credentials
 ./utils/credentials.ts
+eas.json

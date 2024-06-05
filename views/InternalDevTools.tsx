@@ -18,6 +18,11 @@ import { UserContext, UserInfoId } from "../utils/user";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { storage } from "../utils/mmkv";
+import {
+  ArenaClientId,
+  ArenaClientSecret,
+  ArenaGraphqlKey,
+} from "../utils/arena";
 
 export function InternalDevTools({}: {}) {
   const {
@@ -72,6 +77,13 @@ export function InternalDevTools({}: {}) {
           <StyledText bold>Token:</StyledText>
           <StyledParagraph ellipse>{arenaAccessToken}</StyledParagraph>
         </YStack>
+        {__DEV__ && (
+          <YStack>
+            <StyledParagraph>{ArenaClientId}</StyledParagraph>
+            <StyledParagraph>{ArenaClientSecret}</StyledParagraph>
+            <StyledParagraph>{ArenaGraphqlKey}</StyledParagraph>
+          </YStack>
+        )}
         <LinkButton theme="red" href="/errors">
           View Error Log
         </LinkButton>

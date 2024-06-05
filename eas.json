@@ -10,7 +10,13 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_ARENA_CLIENT_ID": "tnJRHmJZWUxJ3EG6OAraA_LoSjdjq2oiF_TbZFrUTIE",
+        "EXPO_PUBLIC_ARENA_CLIENT_SECRET": "jSpLG7pclKUxa_QcIfg6iv057TMK2Wz-Ma4f99ly9F0",
+        "EXPO_PUBLIC_ARENA_GRAPHQL_KEY": "1b13363539694f303192"
+      }
+    }
   },
   "submit": {
     "production": {

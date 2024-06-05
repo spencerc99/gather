@@ -13,7 +13,7 @@
     "tsc": "tsc",
     "postinstall": "patch-package",
     "android": "expo run:android",
-    "build-ios": "EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./builds\" eas build -p ios --local --non-interactive",
+    "build-ios": "sh set-env.sh EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./builds\" eas build -p ios --local --non-interactive",
     "submit-ios": "eas submit -p ios --non-interactive --path=\"./builds/$(ls -1 builds | sort | tail -n 1)\"",
     "build-and-submit-ios": "npm run build-ios && npm run submit-ios"
   },
