@@ -1,13 +1,8 @@
 import { StatusBar } from "expo-status-bar";
 import { Link, router } from "expo-router";
 import { Platform, StyleSheet } from "react-native";
-import { H2, H3, View, YStack } from "tamagui";
-import {
-  StyledButton,
-  StyledText,
-  StyledTextArea,
-  StyledInput,
-} from "../components/Themed";
+import { H3, View, YStack } from "tamagui";
+import { StyledButton, StyledText, StyledInput } from "../components/Themed";
 import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { PortalProvider } from "tamagui";

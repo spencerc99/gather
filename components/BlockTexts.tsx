@@ -3,30 +3,17 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
 import { DatabaseContext } from "../utils/db";
 import { Block, Collection, CollectionBlock } from "../utils/dataTypes";
-import { Image, Spinner, XStack, YStack, useDebounce, useTheme } from "tamagui";
-import {
-  Icon,
-  IconType,
-  StyledButton,
-  StyledParagraph,
-  StyledText,
-} from "./Themed";
-import { BlockSummary, BlockTextSummary } from "./BlockSummary";
+import { Spinner, XStack, YStack, useDebounce } from "tamagui";
+import { Icon, IconType, StyledButton, StyledText } from "./Themed";
+import { BlockTextSummary } from "./BlockSummary";
 import { Swipeable } from "react-native-gesture-handler";
-import { router, useRouter } from "expo-router";
-import {
-  Dimensions,
-  FlatList,
-  Keyboard,
-  Pressable,
-  ScrollView,
-} from "react-native";
+import { router } from "expo-router";
+import { Dimensions, FlatList, Keyboard, ScrollView } from "react-native";
 import { BlockContent } from "./BlockContent";
 import { BlockType } from "../utils/mimeTypes";
 import Carousel from "react-native-reanimated-carousel";

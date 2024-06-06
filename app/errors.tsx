@@ -1,7 +1,6 @@
 import { SafeAreaView } from "react-native";
-import { InternalDevTools } from "../views/InternalDevTools";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
-import { ScrollView, XStack, YStack } from "tamagui";
+import { ScrollView, YStack } from "tamagui";
 import { getErrors } from "../utils/errors";
 import { StyledParagraph, StyledText } from "../components/Themed";
 

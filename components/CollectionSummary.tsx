@@ -1,15 +1,8 @@
 import { StyleSheet } from "react-native";
-import { Collection, RemoteSourceType } from "../utils/dataTypes";
-import {
-  ArenaLogo,
-  AspectRatioImage,
-  StyledLabel,
-  StyledParagraph,
-  StyledView,
-} from "./Themed";
+import { Collection } from "../utils/dataTypes";
+import { AspectRatioImage, StyledParagraph, StyledView } from "./Themed";
 import { GetProps, SizableText, XStack, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
-import { ensureUnreachable } from "../utils/react";
 import { RemoteSourceLabel } from "./RemoteSourceLabel";
 
 export function CollectionSummary({

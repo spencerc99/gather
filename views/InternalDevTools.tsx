@@ -4,8 +4,6 @@ import {
   Icon,
   StyledText,
   StyledParagraph,
-  StyledLabel,
-  ButtonWithConfirm,
   LinkButton,
 } from "../components/Themed";
 import {
