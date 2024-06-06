@@ -45,6 +45,7 @@ export function SelectCollectionsList({
   searchValue: propSearch,
   setSearchValue: propSetSearchValue,
   extraSearchContent,
+  onFocusInputChange,
 }: {
   selectedCollections: string[];
   setSelectedCollections: (selectedCollections: string[]) => void;
@@ -53,6 +54,7 @@ export function SelectCollectionsList({
   searchValue?: string;
   setSearchValue?: (newSearch: string) => void;
   extraSearchContent?: React.ReactNode;
+  onFocusInputChange?: (isFocused: boolean) => void;
 }) {
   const { createCollection } = useContext(DatabaseContext);
   const [internalSearchValue, internalSetSearchValue] = useState("");
@@ -316,6 +318,10 @@ export function SelectCollectionsList({
           searchValue={searchValue}
           setSearchValue={setSearchValue}
           placeholder="Search a collection..."
+          onFocus={() => onFocusInputChange?.(true)}
+          onBlur={() => {
+            onFocusInputChange?.(false);
+          }}
         />
         {extraSearchContent}
       </XStack>

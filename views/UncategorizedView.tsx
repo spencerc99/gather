@@ -6,26 +6,24 @@ import {
 } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import { Icon, StyledButton, StyledText } from "../components/Themed";
-import {
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-} from "react-native";
+import { Dimensions, Keyboard, SafeAreaView } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
-import { SizableText, Spinner, Stack, XStack, YStack, useTheme } from "tamagui";
+import { SizableText, Spinner, Stack, XStack, YStack } from "tamagui";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectCollectionsList } from "../components/SelectCollectionsList";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { UserContext } from "../utils/user";
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from "react-native-reanimated";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 export function UncategorizedView() {
   const { addConnections, deleteBlock } = useContext(DatabaseContext);
   const { currentUser } = useContext(UserContext);
   const { data: totalBlocks } = useTotalBlockCount();
   const { data: events } = useUncategorizedBlocks();
+  const bottomTabHeight = useBottomTabBarHeight();
 
   const renderBlock = useCallback((block: Block) => {
     return (
@@ -59,8 +57,6 @@ export function UncategorizedView() {
   );
 
   const width = Dimensions.get("window").width;
-  const insets = useSafeAreaInsets();
-  const theme = useTheme();
   const carouselRef = useRef<ICarouselInstance>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [searchValue, setSearchValue] = useState("");
@@ -165,6 +161,21 @@ export function UncategorizedView() {
     );
   }
 
+  const keyboard = useAnimatedKeyboard();
+  const [collectionsSelectInputFocused, setCollectionsSelectInputFocused] =
+    useState<boolean>(false);
+  const translateStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateY: collectionsSelectInputFocused
+            ? -(keyboard.height.value - bottomTabHeight)
+            : 0,
+        },
+      ],
+    };
+  }, [collectionsSelectInputFocused]);
+
   return !events ? (
     <YStack height="100%" justifyContent="center">
       <Spinner size="large" color="$orange9" />
@@ -190,11 +201,7 @@ export function UncategorizedView() {
         flex: 1,
       }}
     >
-      <KeyboardAwareScrollView
-        style={{ flex: 1 }}
-        extraScrollHeight={80}
-        keyboardOpeningTime={0}
-      >
+      <Animated.View style={{ ...translateStyle }}>
         <Stack minHeight="100%">
           <XStack flex={1} flexGrow={1}>
             <Carousel
@@ -225,10 +232,13 @@ export function UncategorizedView() {
               selectedCollections={selectedCollections}
               setSelectedCollections={setSelectedCollections}
               horizontal
+              onFocusInputChange={(isFocused) =>
+                setCollectionsSelectInputFocused(isFocused)
+              }
             />
           </Stack>
         </Stack>
-      </KeyboardAwareScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 }
