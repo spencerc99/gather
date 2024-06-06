@@ -202,6 +202,11 @@ interface DatabaseContextProps {
     options?: GetBlocksOptions
   ) => Promise<CollectionBlock[]>;
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
+  syncBlockToArena: (
+    channelId: string,
+    block: Block,
+    collectionId: string
+  ) => Promise<RawArenaChannelItem | undefined>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => Promise<void>;
   fullDeleteCollection: (id: string) => Promise<void>;
@@ -261,6 +266,9 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   fullDeleteCollection: async () => {},
   getCollectionItems: async () => [],
   syncNewRemoteItems: async () => {},
+  syncBlockToArena: async () => {
+    throw new Error("not yet loaded");
+  },
 
   addConnections: async () => {},
   upsertConnections: async () => {},
@@ -814,6 +822,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         filterRemoteOnly: true,
       });
 
+      if (!connectionsForBlock.length) {
+        successfulDeletes.push(block);
+        continue;
+      }
+
       switch (block.remoteSourceType) {
         case RemoteSourceType.Arena:
           if (!arenaAccessToken) {
@@ -840,9 +853,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             }
           }
       }
-
-      await deleteBlocksInternal(successfulDeletes);
     }
+    await deleteBlocksInternal(successfulDeletes);
   };
 
   const deleteBlocksInternal = async (blocks: Block[]) => {
@@ -870,6 +882,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
   };
 
+  // TODO: handle ignoreRemote here, probably need another column if want to support restoring recently deleted
   const deleteBlock = async (id: string, ignoreRemote?: boolean) => {
     await deleteBlocksById([id], ignoreRemote);
   };
@@ -905,7 +918,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       whereClause: `num_connections = 1`,
     });
 
-    await deleteBlocks({ blocks, ignoreRemote: true });
+    await deleteBlocksInternal(blocks);
     await deleteCollection(id);
   };
 
@@ -1212,9 +1225,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function handleBlockRemoteUpdate(block: Block) {
     const blockUpdates = getPendingBlockUpdates();
-    const { arenaId: arenaBlockId } = block.remoteSourceInfo!;
     const updates = blockUpdates[block.id];
     let arenaBlock;
+
+    if (!block.remoteSourceInfo) {
+      return;
+    }
+
+    const { arenaId: arenaBlockId } = block.remoteSourceInfo;
     try {
       arenaBlock = await getArenaBlock(arenaBlockId, arenaAccessToken);
     } catch (err) {
@@ -1240,6 +1258,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           }
 
           if (
+            arenaBlock[key] &&
             arenaBlock[key] !== block[key] &&
             updated_at.getTime() > block.updatedAt.getTime()
           ) {
@@ -1627,70 +1646,84 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         return;
       }
 
-      // @ts-ignore
-      const connectionsToSync: BlockWithCollectionInfo[] = result.rows
-        .map((block) => {
-          const blockMappedToCamelCase =
-            mapSnakeCaseToCamelCaseProperties(block);
-          const mappedBlock = mapDbBlockToBlock(block);
-          return {
-            ...blockMappedToCamelCase,
-            ...mappedBlock,
-            collectionRemoteSourceType:
-              blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
-            collectionRemoteSourceInfo:
-              blockMappedToCamelCase.collectionRemoteSourceInfo
-                ? (JSON.parse(
-                    blockMappedToCamelCase.collectionRemoteSourceInfo
-                  ) as RemoteSourceInfo)
-                : null,
-            collectionId: block.collection_id,
-          };
-        })
-        .filter((b) => !queuedBlocksToSync.current.has(b.id));
+      try {
+        // @ts-ignore
+        const connectionsToSync: BlockWithCollectionInfo[] = result.rows
+          .map((block) => {
+            const blockMappedToCamelCase =
+              mapSnakeCaseToCamelCaseProperties(block);
+            const mappedBlock = mapDbBlockToBlock(block);
+            return {
+              ...blockMappedToCamelCase,
+              ...mappedBlock,
+              collectionRemoteSourceType:
+                blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
+              collectionRemoteSourceInfo:
+                blockMappedToCamelCase.collectionRemoteSourceInfo
+                  ? (JSON.parse(
+                      blockMappedToCamelCase.collectionRemoteSourceInfo
+                    ) as RemoteSourceInfo)
+                  : null,
+              collectionId: block.collection_id,
+            };
+          })
+          .filter((b) => !queuedBlocksToSync.current.has(b.id));
 
-      connectionsToSync.forEach((c) => queuedBlocksToSync.current.add(c.id));
+        connectionsToSync.forEach((c) => queuedBlocksToSync.current.add(c.id));
 
-      console.log(
-        `Syncing ${connectionsToSync.length} pending connections to arena`,
-        connectionsToSync
-      );
-
-      const succesfullySyncedConnections = [];
-
-      for (const connToSync of connectionsToSync) {
-        console.log("syncing", connToSync);
-        const newRemoteItem = await syncBlockToArena(
-          connToSync.collectionRemoteSourceInfo!.arenaId!,
-          connToSync,
-          connToSync.collectionId
+        console.log(
+          `Syncing ${connectionsToSync.length} pending connections to arena`,
+          connectionsToSync
         );
-        if (newRemoteItem) {
-          succesfullySyncedConnections.push(connToSync);
+
+        const succesfullySyncedConnections = [];
+
+        for (const connToSync of connectionsToSync) {
+          console.log("syncing", connToSync);
+          const newRemoteItem = await syncBlockToArena(
+            connToSync.collectionRemoteSourceInfo!.arenaId!,
+            connToSync,
+            connToSync.collectionId
+          );
+          if (newRemoteItem) {
+            succesfullySyncedConnections.push(connToSync);
+          }
         }
+
+        connectionsToSync.forEach((c) =>
+          queuedBlocksToSync.current.delete(c.id)
+        );
+
+        console.log(
+          `Successfully synced ${succesfullySyncedConnections.map(
+            (c) => `${c.id}-${c.collectionId}`
+          )} to arena. Failed to sync ${
+            succesfullySyncedConnections.length - connectionsToSync.length
+          }`
+        );
+      } catch (err) {
+        logError(err);
       }
-
-      connectionsToSync.forEach((c) => queuedBlocksToSync.current.delete(c.id));
-
-      console.log(
-        `Successfully synced ${succesfullySyncedConnections.map(
-          (c) => `${c.id}-${c.collectionId}`
-        )} to arena. Failed to sync ${
-          succesfullySyncedConnections.length - connectionsToSync.length
-        }`
-      );
     });
     InteractionManager.runAfterInteractions(async () => {
       const blocksToUpdate = await getPendingArenaBlocksToUpdate();
       console.log("[Arena Sync] Block Updates:", blocksToUpdate.length);
       for (const block of blocksToUpdate) {
-        handleBlockRemoteUpdate(block);
+        try {
+          handleBlockRemoteUpdate(block);
+        } catch (err) {
+          logError(err);
+        }
       }
     });
     InteractionManager.runAfterInteractions(async () => {
       const blocksToDelete = await getPendingArenaBlocksToDelete();
       console.log("[Arena Sync] Block Deletes:", blocksToDelete.length);
-      handleDeleteBlocksRemote(blocksToDelete);
+      try {
+        handleDeleteBlocksRemote(blocksToDelete);
+      } catch (err) {
+        logError(err);
+      }
     });
   }
 
@@ -2141,6 +2174,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         fullDeleteCollection,
         getCollectionItems,
         syncNewRemoteItems,
+        syncBlockToArena,
         arenaAccessToken,
         updateArenaAccessToken,
         tryImportArenaChannel,

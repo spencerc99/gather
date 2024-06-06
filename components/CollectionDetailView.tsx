@@ -40,6 +40,7 @@ export function CollectionDetailView({
     getCollectionItems,
     updateCollection,
     upsertConnections,
+    syncBlockToArena,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -62,11 +63,7 @@ export function CollectionDetailView({
     try {
       await deleteCollection(id.toString());
       alert("Collection deleted!");
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace("/(tabs)/home");
-      }
+      router.replace("/(tabs)/home");
     } finally {
       setIsLoading(false);
     }
@@ -77,11 +74,7 @@ export function CollectionDetailView({
     try {
       await fullDeleteCollection(id.toString());
       alert("Collection and blocks only in this collection deleted!");
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace("/(tabs)/home");
-      }
+      router.replace("/(tabs)/home");
     } finally {
       setIsLoading(false);
     }
@@ -132,43 +125,42 @@ export function CollectionDetailView({
     try {
       const collectionItems = await getCollectionItems(id);
       // TODO: show progress bar status
-      const { newChannel, addedInfo, numItemsFailed } = await createChannel({
+      const { newChannel } = await createChannel({
         accessToken: arenaAccessToken,
         title,
-        // Reverse order so they get added in right order, since fetched in descending
-        itemsToAdd: collectionItems.reverse(),
       });
-      await Promise.all([
-        upsertConnections(
-          addedInfo.map((info) => ({
-            blockId: info.id,
-            collectionId: id,
-            remoteCreatedAt: info.connected_at,
-            createdBy: getCreatedByForRemote(
-              RemoteSourceType.Arena,
-              info.creator_slug
-            ),
-          }))
-        ),
-        updateCollection({
-          collectionId: id,
-          editInfo: {
-            remoteSourceType: RemoteSourceType.Arena,
-            remoteSourceInfo: {
-              arenaId: newChannel.id.toString(),
-              arenaClass: "Collection",
-            },
+      await updateCollection({
+        collectionId: id,
+        editInfo: {
+          remoteSourceType: RemoteSourceType.Arena,
+          remoteSourceInfo: {
+            arenaId: newChannel.id.toString(),
+            arenaClass: "Collection",
           },
-        }),
-      ]);
+        },
+      });
+
+      // Reverse order so they get added in right order, since fetched in descending
+      const reversedItems = collectionItems.reverse();
+      let numItemsFailed = 0;
+      const { id: channelId } = newChannel;
+      for (const block of reversedItems) {
+        try {
+          await syncBlockToArena(channelId.toString(), block, id);
+        } catch (e) {
+          logError(e);
+          numItemsFailed++;
+        }
+      }
+
       alert(
         `Created ${newChannel.title} on Are.na and added ${
-          addedInfo.length
+          reversedItems.length - numItemsFailed
         } items.${
           numItemsFailed > 0
             ? ` ${numItemsFailed} items failed to add. We will try to sync the failed ones again later.`
             : ""
-        }}`
+        }`
       );
     } catch (err) {
       logError(err);

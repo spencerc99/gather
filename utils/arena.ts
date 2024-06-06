@@ -838,16 +838,12 @@ export async function createChannel({
   title,
   // TODO: make this a default setting in settings
   visibility = ArenaVisibility.Private,
-  itemsToAdd,
 }: {
   accessToken: string;
   title: string;
   visibility?: ArenaVisibility;
-  itemsToAdd?: Block[];
 }): Promise<{
   newChannel: ArenaChannelInfo;
-  addedInfo: { id: string; connected_at: string; creator_slug: string }[];
-  numItemsFailed: number;
 }> {
   const url = `${ArenaApiUrl}/channels`;
   const resp = await fetch(url, {
@@ -867,33 +863,8 @@ export async function createChannel({
     throw new Error(JSON.stringify(maybeChannel));
   }
 
-  const addedInfo = [];
-  let numItemsFailed = 0;
-  if (itemsToAdd?.length) {
-    const { id } = maybeChannel;
-    for (const block of itemsToAdd) {
-      try {
-        const item = await addBlockToChannel({
-          channelId: id.toString(),
-          block,
-          arenaToken: accessToken,
-        });
-        addedInfo.push({
-          id: block.id,
-          connected_at: item.connected_at,
-          creator_slug: item.user.slug,
-        });
-      } catch (e) {
-        logError(e);
-        numItemsFailed++;
-      }
-    }
-  }
-
   return {
     newChannel: maybeChannel,
-    addedInfo,
-    numItemsFailed,
   };
 }
 
