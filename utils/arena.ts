@@ -480,13 +480,11 @@ export const buildFormDataFromFile = ({
   // for reference: https://github.com/benjreinhart/react-native-aws3
   file: { uri: string; name: string; type?: string };
   policy: S3UploadPolicy;
-  contentType?: string;
+  contentType: string;
 }): FormData => {
   const formData = new FormData();
 
-  if (contentType) {
-    formData.append("Content-Type", contentType);
-  }
+  formData.append("Content-Type", contentType);
   formData.append("key", policy.key);
   formData.append("AWSAccessKeyId", policy.AWSAccessKeyId);
   formData.append("acl", policy.acl);
@@ -568,12 +566,10 @@ export async function uploadFile({
   file,
   policy,
   contentType,
-  onDone = () => {},
 }: {
   file: { uri: string; name: string; type?: string };
-  contentType?: string;
+  contentType: string;
   policy: S3UploadPolicy;
-  onDone?: (url: string) => any;
 }): Promise<string> {
   const formData = buildFormDataFromFile({
     file,
@@ -581,21 +577,22 @@ export async function uploadFile({
     contentType,
   });
 
-  return fetch(policy.bucket, {
-    method: "POST",
-    body: formData,
-  })
-    .then((resp) => resp.text())
-    .then((data) => {
-      return parseLocationFromS3Response(data);
-    })
-    .then((url) => {
-      return url;
-    })
-    .catch((e) => {
-      logError(e);
-      throw e;
+  try {
+    const resp = await fetch(policy.bucket, {
+      method: "POST",
+      body: formData,
     });
+    const respBody = await resp.text();
+    if (!resp.ok) {
+      throw new Error(
+        `failed to upload file to arena: ${resp.status} ${respBody}`
+      );
+    }
+    return await parseLocationFromS3Response(respBody);
+  } catch (err) {
+    logError(err);
+    throw err;
+  }
 }
 
 async function getBodyForBlock(
@@ -618,7 +615,7 @@ async function getBodyForBlock(
           type: contentType || "",
         },
         policy: uploadPolicy,
-        contentType,
+        contentType: contentType || "image/jpeg",
       });
       console.log("Uploaded file to arena", url);
 

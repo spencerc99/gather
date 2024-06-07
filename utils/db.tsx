@@ -1646,34 +1646,33 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         return;
       }
 
+      // @ts-ignore
+      const connectionsToSync: BlockWithCollectionInfo[] = result.rows
+        .map((block) => {
+          const blockMappedToCamelCase =
+            mapSnakeCaseToCamelCaseProperties(block);
+          const mappedBlock = mapDbBlockToBlock(block);
+          return {
+            ...blockMappedToCamelCase,
+            ...mappedBlock,
+            collectionRemoteSourceType:
+              blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
+            collectionRemoteSourceInfo:
+              blockMappedToCamelCase.collectionRemoteSourceInfo
+                ? (JSON.parse(
+                    blockMappedToCamelCase.collectionRemoteSourceInfo
+                  ) as RemoteSourceInfo)
+                : null,
+            collectionId: block.collection_id,
+          };
+        })
+        .filter((b) => !queuedBlocksToSync.current.has(b.id));
+
+      connectionsToSync.forEach((c) => queuedBlocksToSync.current.add(c.id));
+
       try {
-        // @ts-ignore
-        const connectionsToSync: BlockWithCollectionInfo[] = result.rows
-          .map((block) => {
-            const blockMappedToCamelCase =
-              mapSnakeCaseToCamelCaseProperties(block);
-            const mappedBlock = mapDbBlockToBlock(block);
-            return {
-              ...blockMappedToCamelCase,
-              ...mappedBlock,
-              collectionRemoteSourceType:
-                blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
-              collectionRemoteSourceInfo:
-                blockMappedToCamelCase.collectionRemoteSourceInfo
-                  ? (JSON.parse(
-                      blockMappedToCamelCase.collectionRemoteSourceInfo
-                    ) as RemoteSourceInfo)
-                  : null,
-              collectionId: block.collection_id,
-            };
-          })
-          .filter((b) => !queuedBlocksToSync.current.has(b.id));
-
-        connectionsToSync.forEach((c) => queuedBlocksToSync.current.add(c.id));
-
         console.log(
-          `Syncing ${connectionsToSync.length} pending connections to arena`,
-          connectionsToSync
+          `Syncing ${connectionsToSync.length} pending connections to arena`
         );
 
         const succesfullySyncedConnections = [];
@@ -1690,19 +1689,19 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           }
         }
 
-        connectionsToSync.forEach((c) =>
-          queuedBlocksToSync.current.delete(c.id)
-        );
-
         console.log(
           `Successfully synced ${succesfullySyncedConnections.map(
             (c) => `${c.id}-${c.collectionId}`
           )} to arena. Failed to sync ${
-            succesfullySyncedConnections.length - connectionsToSync.length
+            connectionsToSync.length - succesfullySyncedConnections.length
           }`
         );
       } catch (err) {
         logError(err);
+      } finally {
+        connectionsToSync.forEach((c) =>
+          queuedBlocksToSync.current.delete(c.id)
+        );
       }
     });
     InteractionManager.runAfterInteractions(async () => {
@@ -1747,6 +1746,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         block.type === BlockType.Link &&
         image?.display.url &&
         image.display.url !== block.content;
+      // TODO: do these db updates in a transaction
       await db.execAsync(
         [
           {
@@ -1766,9 +1766,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         ],
         false
       );
-      queryClient.invalidateQueries({
-        queryKey: ["blocks", { blockId: block.id }],
-      });
       await upsertConnections([
         {
           blockId: block.id,
@@ -1777,6 +1774,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           createdBy: block.createdBy,
         },
       ]);
+      queryClient.invalidateQueries({
+        queryKey: ["blocks", { blockId: block.id }],
+      });
       return rawArenaItem;
     } catch (err) {
       logError(err);

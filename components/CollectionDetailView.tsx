@@ -139,6 +139,8 @@ export function CollectionDetailView({
           },
         },
       });
+      // The above update refreshes the UI immediately, so reset loading to true
+      setIsLoading(true);
 
       // Reverse order so they get added in right order, since fetched in descending
       const reversedItems = collectionItems.reverse();
