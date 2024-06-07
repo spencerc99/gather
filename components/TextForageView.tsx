@@ -98,8 +98,8 @@ export function TextForageView({
       },
       initialPageParam: 0,
       // TODO:
-      getPreviousPageParam: (firstPage) => firstPage.previousId ?? undefined,
-      getNextPageParam: (lastPage) => lastPage.nextId ?? undefined,
+      getPreviousPageParam: (firstPage) => firstPage?.previousId ?? undefined,
+      getNextPageParam: (lastPage) => lastPage?.nextId ?? undefined,
     });
 
   const blocks = data?.pages.flatMap((p) => p.blocks);
