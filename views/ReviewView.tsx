@@ -143,7 +143,7 @@ export function ReviewView() {
             borderBottomRightRadius="$1"
             paddingRight={0}
             backgroundColor="$background"
-            elevation="$4"
+            elevation="$3"
             overflow="hidden"
             // borderWidth={0.5}
             // borderColor="$gray7"

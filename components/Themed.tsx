@@ -338,7 +338,7 @@ export const StyledInput = styled(DefaultInput, {
     ...TextVariants,
   } as const,
 });
-export const StyledTextArea = styled(DefaultTextArea, {
+export const StyledTextArea = styled(DefaultInput, {
   width: "100%",
   multiline: true,
   // TODO: once figure out how to fix the number of default lines reove this

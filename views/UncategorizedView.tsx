@@ -88,7 +88,7 @@ export function UncategorizedView() {
     }, []);
 
     if (!events) {
-      return <></>;
+      return null;
     }
 
     return (

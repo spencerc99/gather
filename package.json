@@ -70,7 +70,8 @@
     "react-xml-parser": "^1.1.8",
     "tamagui": "^1.97.0",
     "url-metadata": "^3.3.1",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "expo-navigation-bar": "~2.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

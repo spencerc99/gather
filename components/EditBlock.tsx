@@ -29,7 +29,7 @@ export function EditBlock({ block }: { block: Block }) {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={"padding"}
           // Account for header height https://stackoverflow.com/questions/48420468/keyboardavoidingview-not-working-properly
           keyboardVerticalOffset={insets.top}
           style={{

@@ -1,7 +1,8 @@
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import { useContext, useEffect, useState } from "react";
-import { Alert, Dimensions, Image, SafeAreaView } from "react-native";
+import { Alert, Dimensions, Image } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Carousel from "react-native-reanimated-carousel";
 import {
@@ -111,6 +112,7 @@ export default function IntroScreen() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
   const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
+  const windowHeight = Dimensions.get("window").height;
 
   useEffect(() => {
     if (savedEmail) {
@@ -419,7 +421,8 @@ export default function IntroScreen() {
                               {
                                 text: "Thanks! I'll contribute later if I like it",
                               },
-                            ]
+                            ],
+                            { cancelable: true }
                           );
                           nextStep();
                         },
@@ -451,15 +454,11 @@ export default function IntroScreen() {
         }}
       >
         <KeyboardAwareScrollView
-          style={{ flex: 1 }}
+          style={{ flex: 1, height: windowHeight }}
           extraScrollHeight={70}
           scrollEnabled={scrollEnabled}
         >
-          <YStack
-            minHeight="100%"
-            backgroundColor="#FFDBB2"
-            paddingHorizontal="10%"
-          >
+          <YStack backgroundColor="#FFDBB2" paddingHorizontal="10%">
             <Progress
               theme="blue"
               value={Math.max(1, (step / NumSteps) * 100)}

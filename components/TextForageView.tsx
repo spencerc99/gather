@@ -284,7 +284,7 @@ export function TextForageView({
         style={{ flex: 1 }}
         // 'position' makes it push everything up even when the scrollview doesnt have the full height, and also you can't scroll through all of them (scrollView seems to be constrained by the viewport solely)
         // but the other ones don't properly push up the nested scrollview
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={"padding"}
         contentContainerStyle={{
           justifyContent: "space-between",
           flex: 1,

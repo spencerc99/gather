@@ -171,7 +171,7 @@ export function SlidingScalePayment({
         <Slider.Thumb
           index={0}
           circular
-          elevate
+          elevation="$0.5"
           size="$3"
           backgroundColor="$green10"
           borderColor="$green11"

@@ -11,7 +11,11 @@ import { StatusBar } from "expo-status-bar";
 import { useContext, useEffect } from "react";
 import { InteractionManager, Keyboard, useColorScheme } from "react-native";
 import { HoldMenuProvider } from "react-native-hold-menu";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { enableFreeze } from "react-native-screens";
 import { TamaguiProvider, Theme } from "tamagui";
 import useShareIntent from "../hooks/useShareIntent";
@@ -67,31 +71,33 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <ErrorsProvider>
-        <TamaguiProvider config={config}>
-          <Theme name={colorScheme === "dark" ? "dark" : "light"}>
-            <QueryClientProvider client={client}>
-              <HoldMenuProvider
-                theme={colorScheme || undefined}
-                safeAreaInsets={insets}
-                // @ts-ignore
-                onOpen={() => {
-                  if (Keyboard.isVisible()) {
-                    Keyboard.dismiss();
-                  }
-                }}
-              >
-                <UserProvider>
-                  <DatabaseProvider>
-                    <RootLayoutNav />
-                    <StatusBar style="auto" />
-                  </DatabaseProvider>
-                </UserProvider>
-              </HoldMenuProvider>
-            </QueryClientProvider>
-          </Theme>
-        </TamaguiProvider>
-      </ErrorsProvider>
+      <SafeAreaProvider>
+        <ErrorsProvider>
+          <TamaguiProvider config={config}>
+            <Theme name={colorScheme === "dark" ? "dark" : "light"}>
+              <QueryClientProvider client={client}>
+                <HoldMenuProvider
+                  theme={colorScheme || undefined}
+                  safeAreaInsets={insets}
+                  // @ts-ignore
+                  onOpen={() => {
+                    if (Keyboard.isVisible()) {
+                      Keyboard.dismiss();
+                    }
+                  }}
+                >
+                  <UserProvider>
+                    <DatabaseProvider>
+                      <RootLayoutNav />
+                      <StatusBar style="auto" />
+                    </DatabaseProvider>
+                  </UserProvider>
+                </HoldMenuProvider>
+              </QueryClientProvider>
+            </Theme>
+          </TamaguiProvider>
+        </ErrorsProvider>
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }
