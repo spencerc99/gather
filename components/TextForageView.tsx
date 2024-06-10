@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
-import { DatabaseContext } from "../utils/db";
+import { BlockSelectLimit, DatabaseContext } from "../utils/db";
 import { BlockType, MimeType } from "../utils/mimeTypes";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { UserContext } from "../utils/user";
@@ -92,8 +92,8 @@ export function TextForageView({
 
         return {
           blocks,
-          nextId: page + 1,
-          previousId: page === 0 ? undefined : page - 1,
+          nextId: blocks.length < BlockSelectLimit ? null : page + 1,
+          previousId: page === 0 ? null : page - 1,
         };
       },
       initialPageParam: 0,

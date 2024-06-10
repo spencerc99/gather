@@ -776,12 +776,30 @@ export async function removeBlockFromChannel({
   }
 }
 
-async function getUserInfo(accessToken: string): Promise<RawArenaUser> {
+export async function getMyArenaUserInfo(
+  accessToken: string
+): Promise<RawArenaUser> {
   return await fetch(`${ArenaApiUrl}/me`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-  }).then((r) => r.json());
+  })
+    .then((r) => r.json())
+    .catch((err) => {
+      logError(err);
+      throw err;
+    });
+}
+
+export async function getArenaUserInfo(
+  slug: string
+): Promise<RawArenaUser | null> {
+  return await fetch(`${ArenaApiUrl}/users/${slug}`, {})
+    .then((r) => r.json())
+    .catch((err) => {
+      logError(err);
+      throw err;
+    });
 }
 
 interface UserChannelResponse {
@@ -797,7 +815,7 @@ export async function getUserChannels(
     search,
   }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
-  const userInfo = await getUserInfo(accessToken);
+  const userInfo = await getMyArenaUserInfo(accessToken);
   const baseUrl = search
     ? withQueryParams(`https://api.are.na/v2/search/user/${userInfo.id}`, {
         "filter[type]": "channels",

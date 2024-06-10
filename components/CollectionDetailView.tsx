@@ -4,6 +4,7 @@ import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import {
   ArenaLogo,
+  ButtonWithConfirm,
   ExternalLinkText,
   StyledButton,
   StyledParagraph,
@@ -12,7 +13,7 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { addBlockToChannel, createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
-import { getCreatedByForRemote } from "../utils/user";
+import { UserContext, getCreatedByForRemote } from "../utils/user";
 import { ErrorsContext } from "../utils/errors";
 import { useStickyValue } from "../utils/asyncStorage";
 
@@ -36,12 +37,13 @@ export function CollectionDetailView({
     syncNewRemoteItems,
     deleteCollection,
     fullDeleteCollection,
-    arenaAccessToken,
+
     getCollectionItems,
     updateCollection,
     upsertConnections,
     syncBlockToArena,
   } = useContext(DatabaseContext);
+  const { arenaAccessToken } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { logError } = useContext(ErrorsContext);
@@ -261,24 +263,24 @@ export function CollectionDetailView({
                   </StyledButton>
                 </>
               ) : null}
-              <StyledButton
+              <ButtonWithConfirm
                 theme="red"
                 onPress={() => onPressDelete()}
                 disabled={isLoading}
                 icon={isLoading ? <Spinner size="small" /> : null}
               >
                 Delete Collection
-              </StyledButton>
+              </ButtonWithConfirm>
               {remoteSourceType && (
                 <YStack>
-                  <StyledButton
+                  <ButtonWithConfirm
                     theme="red"
                     onPress={() => onPressFullDelete()}
                     disabled={isLoading}
                     icon={isLoading ? <Spinner size="small" /> : null}
                   >
                     Delete Collection & Contained Blocks
-                  </StyledButton>
+                  </ButtonWithConfirm>
                   <StyledText metadata>
                     contained blocks are blocks that are only in this channel.
                     use this when you want to "undo" an import.

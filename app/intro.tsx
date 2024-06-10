@@ -52,10 +52,14 @@ export default function IntroScreen() {
   const router = useRouter();
   const { logError } = useContext(ErrorsContext);
   const width = Dimensions.get("window").width;
-  const { email: savedEmail, setupUser, currentUser } = useContext(UserContext);
+  const {
+    email: savedEmail,
+    setupUser,
+    currentUser,
+    arenaAccessToken,
+  } = useContext(UserContext);
   const [email, setEmail] = useState("");
-  const { arenaAccessToken, tryImportArenaChannel } =
-    useContext(DatabaseContext);
+  const { tryImportArenaChannel } = useContext(DatabaseContext);
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
     []
   );

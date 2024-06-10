@@ -1,6 +1,5 @@
 import { InteractionManager, Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
-import * as SecureStore from "expo-secure-store";
 import {
   InfiniteData,
   useMutation,
@@ -166,7 +165,7 @@ function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
   return chunks;
 }
 
-const BlockSelectLimit = 15;
+export const BlockSelectLimit = 15;
 const CollectionSelectLimit = 15;
 
 interface GetBlocksOptions {
@@ -224,8 +223,6 @@ interface DatabaseContextProps {
   shareIntent: ShareIntent | null;
 
   // arena
-  arenaAccessToken: string | null;
-  updateArenaAccessToken: (newToken: string | null) => void;
   tryImportArenaChannel: (
     arenaChannel: string | ArenaChannelInfo,
     selectedCollection?: string
@@ -277,8 +274,6 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   setShareIntent: () => {},
   shareIntent: null,
 
-  arenaAccessToken: null,
-  updateArenaAccessToken: () => {},
   tryImportArenaChannel: async () => {
     throw new Error("not yet loaded");
   },
@@ -372,9 +367,8 @@ function handleSqlErrors(
 }
 
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
-  const { currentUser } = useContext(UserContext);
+  const { currentUser, arenaAccessToken } = useContext(UserContext);
 
-  const [arenaAccessToken, setArenaAccessToken] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(true);
   const [selectedReviewCollection, setSelectedReviewCollection] =
     useStickyValue<string | null>(CollectionToReviewKey, null);
@@ -416,13 +410,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   useEffect(() => {
     InteractionManager.runAfterInteractions(async () => {
-      await Promise.all([
-        initDatabases(),
-        intializeFilesystemFolder(),
-        getArenaAccessToken().then((accessToken) => {
-          setArenaAccessToken(accessToken);
-        }),
-      ]);
+      await Promise.all([initDatabases(), intializeFilesystemFolder(), ,]);
     });
     const unsubscribe = NetInfo.addEventListener((state) => {
       setIsConnected(Boolean(state.isConnected));
@@ -1398,6 +1386,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             SELECT      blocks.*,
                         block_connections.collection_ids as collection_ids,
                         connections.remote_created_at as remote_connected_at,
+                        connections.created_by as connected_by,
                         COALESCE(block_connections.num_connections, 0) as num_connections
             FROM        blocks
             INNER JOIN  connections ON blocks.id = connections.block_id
@@ -1500,10 +1489,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
     void debouncedTriggerBlockSync();
-  }
-
-  async function getArenaAccessToken(): Promise<string | null> {
-    return await SecureStore.getItemAsync(ArenaTokenStorageKey);
   }
 
   // TODO: change this to return Connection type
@@ -2094,18 +2079,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   const [shareIntent, setShareIntent] = useState<ShareIntent | null>(null);
 
-  async function updateArenaAccessToken(newToken: string | null) {
-    // TODO: handle web
-    if (Platform.OS !== "web") {
-      if (newToken === null) {
-        await SecureStore.deleteItemAsync(ArenaTokenStorageKey);
-      } else {
-        await SecureStore.setItemAsync(ArenaTokenStorageKey, newToken);
-      }
-    }
-    setArenaAccessToken(newToken);
-  }
-
   async function tryImportArenaChannel(
     arenaChannel: string | ArenaChannelInfo,
     selectedCollection?: string
@@ -2175,8 +2148,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         getCollectionItems,
         syncNewRemoteItems,
         syncBlockToArena,
-        arenaAccessToken,
-        updateArenaAccessToken,
         tryImportArenaChannel,
         selectedReviewCollection,
         setSelectedReviewCollection,

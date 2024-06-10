@@ -270,7 +270,8 @@ export function BlockTexts({
           paddingHorizontal: 8,
           gap: 16,
           width: "100%",
-          alignItems: "flex-end",
+          // NOTE: this is handled in BlockTextSummary
+          // alignItems: "flex-end",
         }}
       ></FlatList>
       {/* TODO: this shows weird if the text field is growing */}
