@@ -1,5 +1,8 @@
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import { useContext, useEffect, useState } from "react";
 import { Alert, Dimensions, Image } from "react-native";
@@ -92,7 +95,9 @@ export default function IntroScreen() {
   const [step, setStep] = useState<number>(0);
   const router = useRouter();
   const { logError } = useContext(ErrorsContext);
-  const width = Dimensions.get("window").width;
+  const { width, height: windowHeight } = Dimensions.get("window");
+  const insets = useSafeAreaInsets();
+  const visibleScreenHeight = windowHeight - insets.top - insets.bottom;
   const {
     email: savedEmail,
     setupUser,
@@ -112,7 +117,6 @@ export default function IntroScreen() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
   const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
-  const windowHeight = Dimensions.get("window").height;
 
   useEffect(() => {
     if (savedEmail) {
@@ -454,11 +458,16 @@ export default function IntroScreen() {
         }}
       >
         <KeyboardAwareScrollView
-          style={{ flex: 1, height: windowHeight }}
+          style={{ flex: 1, height: visibleScreenHeight }}
           extraScrollHeight={70}
           scrollEnabled={scrollEnabled}
         >
-          <YStack backgroundColor="#FFDBB2" paddingHorizontal="10%">
+          <YStack
+            backgroundColor="#FFDBB2"
+            paddingHorizontal="10%"
+            height="100%"
+            minHeight={visibleScreenHeight}
+          >
             <Progress
               theme="blue"
               value={Math.max(1, (step / NumSteps) * 100)}

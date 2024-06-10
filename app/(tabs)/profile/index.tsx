@@ -1,8 +1,9 @@
 import dayjs from "dayjs";
 import * as Application from "expo-application";
 import { useContext, useMemo, useState } from "react";
-import { Animated, Image, SafeAreaView, useColorScheme } from "react-native";
+import { Animated, Image, useColorScheme } from "react-native";
 import { Avatar, H5, ScrollView, Spinner, XStack, YStack } from "tamagui";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Icon,
   LinkButton,

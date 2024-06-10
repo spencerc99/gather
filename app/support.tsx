@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import * as WebBrowser from "expo-web-browser";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   SlidingScalePayment,
   StartingSlidingScaleValue,
@@ -9,13 +10,13 @@ import {
 } from "../components/SlidingScalePayment";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { useQueryClient } from "@tanstack/react-query";
-import { SafeAreaView } from "react-native";
 import { H3, Theme, YStack } from "tamagui";
 import { StyledButton, StyledText } from "../components/Themed";
 import { ContributionsKey } from "../utils/asyncStorage";
 import { ContributionsList } from "../components/ContributionsList";
 import { UserContext } from "../utils/user";
 import { UsageInfo } from "../components/UsageInfo";
+import { Platform } from "react-native";
 
 export default function Support() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
@@ -35,7 +36,7 @@ export default function Support() {
       >
         <YStack
           backgroundColor="#FFDBB2"
-          paddingTop="10%"
+          paddingTop={Platform.OS === "android" ? "10%" : 0}
           paddingBottom="5%"
           paddingHorizontal="10%"
           gap="$3"

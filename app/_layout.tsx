@@ -1,4 +1,6 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { TransitionPresets } from "@react-navigation/stack";
 import {
   DarkTheme,
   DefaultTheme,
@@ -9,7 +11,12 @@ import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useContext, useEffect } from "react";
-import { InteractionManager, Keyboard, useColorScheme } from "react-native";
+import {
+  InteractionManager,
+  Keyboard,
+  Platform,
+  useColorScheme,
+} from "react-native";
 import { HoldMenuProvider } from "react-native-hold-menu";
 import {
   SafeAreaView,
@@ -76,6 +83,7 @@ export default function RootLayout() {
           <TamaguiProvider config={config}>
             <Theme name={colorScheme === "dark" ? "dark" : "light"}>
               <QueryClientProvider client={client}>
+                {/* <GestureHandlerRootView style={{ flex: 1 }}> */}
                 <HoldMenuProvider
                   theme={colorScheme || undefined}
                   safeAreaInsets={insets}
@@ -93,6 +101,7 @@ export default function RootLayout() {
                     </DatabaseProvider>
                   </UserProvider>
                 </HoldMenuProvider>
+                {/* </GestureHandlerRootView> */}
               </QueryClientProvider>
             </Theme>
           </TamaguiProvider>
@@ -136,6 +145,16 @@ function RootLayoutNav() {
         options={{
           presentation: "modal",
           headerShown: false,
+          ...TransitionPresets.ModalPresentationIOS,
+          gestureEnabled: true,
+          contentStyle:
+            Platform.OS === "android"
+              ? {
+                  marginTop: 10,
+                  borderTopStartRadius: 20,
+                  borderTopEndRadius: 20,
+                }
+              : {},
         }}
       />
       <Stack.Screen

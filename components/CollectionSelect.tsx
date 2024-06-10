@@ -1,6 +1,6 @@
 import { memo, useCallback, useContext, useEffect, useState } from "react";
 import { Alert, FlatList } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
+import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import {
   Adapt,
   GetProps,
@@ -100,7 +100,7 @@ const CollectionSelectView = memo(
   )
 );
 
-export function CollectionSelect({
+export function CollectionSelectImpl({
   selectedCollection,
   setSelectedCollection,
   collectionPlaceholder = "New collection",
@@ -297,3 +297,5 @@ export function CollectionSelect({
     </Select>
   );
 }
+
+export const CollectionSelect = gestureHandlerRootHOC(CollectionSelectImpl);
