@@ -19,6 +19,7 @@ import {
 } from "tamagui";
 import {
   ArenaLogo,
+  ButtonWithConfirm,
   Icon,
   SearchBarInput,
   StyledButton,
@@ -103,7 +104,7 @@ export function ArenaLogin({ path }: { path: string }) {
       >
         Login again
       </StyledButton>
-      <StyledButton
+      <ButtonWithConfirm
         flex={1}
         disabled={!request}
         onPress={() => {
@@ -112,7 +113,7 @@ export function ArenaLogin({ path }: { path: string }) {
         theme="red"
       >
         Logout
-      </StyledButton>
+      </ButtonWithConfirm>
     </XStack>
   ) : (
     <StyledButton

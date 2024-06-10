@@ -9,7 +9,11 @@ import {
 import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { ErrorsContext } from "./errors";
-import { getBlock as getArenaBlock, recordPendingBlockUpdate } from "./arena";
+import {
+  getBlock as getArenaBlock,
+  rawArenaBlocksToBlockInsertInfo,
+  recordPendingBlockUpdate,
+} from "./arena";
 import {
   PropsWithChildren,
   createContext,
@@ -1799,36 +1803,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     // @ts-ignore
     return result.rows.map((block) => mapDbBlockToBlock(block))[0];
-  }
-
-  function rawArenaBlocksToBlockInsertInfo(
-    arenaBlocks: RawArenaChannelItem[]
-  ): DatabaseBlockInsert[] {
-    return arenaBlocks.map((block) => ({
-      title: block.title,
-      description: block.description,
-      content:
-        block.attachment?.url ||
-        // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
-        // it only provides the html iframe code..
-        block.embed?.url ||
-        block.image?.display.url ||
-        block.content,
-      type: arenaClassToBlockType(block),
-      contentType: arenaClassToMimeType(block),
-      source: block.source?.url,
-      createdBy: getCreatedByForRemote(RemoteSourceType.Arena, block.user.slug),
-      remoteSourceType: RemoteSourceType.Arena,
-      remoteSourceInfo: {
-        arenaId: block.id,
-        arenaClass: "Block",
-      },
-      remoteConnectedAt: block.connected_at,
-      connectedBy: getCreatedByForRemote(
-        RemoteSourceType.Arena,
-        block.connected_by_user_slug
-      ),
-    }));
   }
 
   async function syncNewRemoteItemsForCollection(collection: Collection) {

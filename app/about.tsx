@@ -135,9 +135,10 @@ export function AboutSection({
           handmade software
         </ExternalLinkText>{" "}
         is how I <StyledText bold>make my living</StyledText> as an indie
-        engineer-artist, but I'm offering sliding scale payment to make my work
-        accessible. Your contribution enables{" "}
-        <StyledText bold>lifetime access</StyledText> and continued development.
+        engineer-artist. Gather doesn't have ads or require a subscription, so
+        your contribution gives you{" "}
+        <StyledText bold>lifetime access</StyledText> and supports continued
+        development.
       </StyledText>
       <StyledText>
         I appreciate your support and hope you enjoy Gather 🧡

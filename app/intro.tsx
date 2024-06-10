@@ -9,6 +9,7 @@ import {
   Checkbox,
   H2,
   Progress,
+  ScrollView,
   Spinner,
   Stack,
   Theme,
@@ -35,13 +36,52 @@ import {
 } from "../components/Themed";
 import { ArenaChannelMultiSelect } from "../components/arena/ArenaChannelMultiSelect";
 import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
-import { ArenaChannelInfo } from "../utils/arena";
+import {
+  ArenaChannelInfo,
+  getChannelThumb,
+  rawArenaBlocksToBlockInsertInfo,
+} from "../utils/arena";
 import { setBoolean, useStickyValue } from "../utils/asyncStorage";
 import { DatabaseContext } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { ArenaLogin } from "../views/ArenaLogin";
 import { AboutSection } from "./about";
 import { ErrorsContext } from "../utils/errors";
+import { useQuery } from "@tanstack/react-query";
+import { HelpGuideUrl } from "../utils/constants";
+
+interface ExampleCollectionType {
+  name: string;
+  arenaChannelUrl?: string;
+}
+
+const ExampleCollections: ExampleCollectionType[] = [
+  {
+    name: "moments people made you smile",
+    arenaChannelUrl:
+      "https://www.are.na/spencer-chang/moments-people-made-you-smile-example",
+  },
+  {
+    name: "times you said wow",
+    arenaChannelUrl: "https://www.are.na/spencer-chang/wow-geoi3s6ev74",
+  },
+  {
+    name: "what's in your bag",
+    arenaChannelUrl: "https://www.are.na/laurel-schwulst/four-things-in-my-bag",
+  },
+  {
+    name: "a gratitude journal",
+    arenaChannelUrl: "https://www.are.na/laura-houlberg/gratitude-journal",
+  },
+  {
+    name: "orange things",
+    arenaChannelUrl: "https://www.are.na/spencer-chang/orange-ffcsx6iwyk8",
+  },
+  {
+    name: "outfits of the day",
+    arenaChannelUrl: "https://www.are.na/spencer-chang/fits-example",
+  },
+];
 
 const NumSteps = 4;
 // source https://uibakery.io/regex-library/email
@@ -250,60 +290,26 @@ export default function IntroScreen() {
       case 1:
         return (
           <>
-            <AboutSection
-              value={value}
-              setValue={setValue}
-              onSlideStart={onSlideStart}
-              onSlideEnd={onSlideEnd}
-              shortened
-            />
-
-            <YStack gap="$2" marginTop="auto">
-              <NextStepButton
-                text={
-                  <StyledText>
-                    Contribute <StyledText bold>${moneyValue}</StyledText>
-                  </StyledText>
-                }
-                onPress={async () => {
-                  await WebBrowser.openBrowserAsync(paymentLink);
-                  recordContribution(moneyValue);
-                }}
-                marginBottom={0}
-              />
-              <StyledText
-                metadata
-                fontSize="$small"
-                textAlign="center"
-                onPress={() => {
-                  Alert.alert(
-                    "pretty please?",
-                    "This work, like all handmade software, only happens because of people like you contributing a few dollars. Together, we can make it possible to create software with data that's entirely yours and not subject to ads or adverse incentives.",
-                    [
-                      {
-                        text: "Sorry I really can't",
-                        onPress: () => {
-                          Alert.alert(
-                            "It's okay",
-                            "I hope you enjoy the app regardless and that you'll find a way to contribute later if you find it useful!",
-                            []
-                          );
-                          nextStep();
-                        },
-                        style: "default",
-                      },
-                      {
-                        text: "Ok you've convinced me",
-                        onPress: () => {},
-                        style: "cancel",
-                      },
-                    ]
-                  );
-                }}
-              >
-                I'm sorry I can't support you right now
-              </StyledText>
+            <StyledText bold fontSize="$6">
+              Gathering Practices
+            </StyledText>
+            <StyledText fontSize="$4">
+              Create collections to start gathering. Treat them as ideas you
+              want to revisit, things you want to pay attention to, or rituals
+              you want to cultivate.
+            </StyledText>
+            <StyledText fontSize="$4">
+              In addition to the below examples, we wrote{" "}
+              <ExternalLinkText href={HelpGuideUrl}>a guide</ExternalLinkText>{" "}
+              to help give some ideas.
+            </StyledText>
+            <YStack gap="$3">
+              {/* TODO: change these to collapsible lists and show the examples of things, maybe just take 3 or so for each */}
+              {ExampleCollections.map((collection, idx) => (
+                <ExampleCollection key={idx} {...collection} />
+              ))}
             </YStack>
+            <NextStepButton text="I think I get it" marginTop="$2" />
           </>
         );
       case 2:
@@ -314,7 +320,12 @@ export default function IntroScreen() {
             </StyledText>
             <StyledText>
               Gather stores your data locally on your device. You can optionally
-              sync specific collections to Are.na.
+              sync specific collections to Are.na. For shared Are.na channels,
+              you'll be able to "chat" with them in Gather.
+            </StyledText>
+            <StyledText>
+              Please ensure you have a stable network connection before
+              importing! You can always do so later in your profile.
             </StyledText>
             {!arenaAccessToken ? (
               <>
@@ -366,51 +377,62 @@ export default function IntroScreen() {
           </>
         );
       case 3:
-        // collection examples
         return (
           <>
-            <StyledText bold fontSize="$6">
-              One last tip...
-            </StyledText>
-            <StyledText fontSize="$4">
-              Create collections to start gathering. Treat them as ideas,
-              angles, or perspectives you want to continue revisiting.
-            </StyledText>
-            <YStack space="$1">
-              {/* TODO: change these to collapsible lists and show the examples of things, maybe just take 3 or so for each */}
-              <StyledText fontSize="$4">
-                -{" "}
-                <ExternalLinkText href="https://www.are.na/spencer-chang/i-want-to-remember-this-fih_jry0poi">
-                  things you want to remember
-                </ExternalLinkText>
+            <AboutSection
+              value={value}
+              setValue={setValue}
+              onSlideStart={onSlideStart}
+              onSlideEnd={onSlideEnd}
+              shortened
+            />
+
+            <YStack gap="$2" marginTop="auto">
+              <NextStepButton
+                text={
+                  <StyledText>
+                    Contribute <StyledText bold>${moneyValue}</StyledText>
+                  </StyledText>
+                }
+                onPress={async () => {
+                  await WebBrowser.openBrowserAsync(paymentLink);
+                  recordContribution(moneyValue);
+                }}
+                marginBottom={0}
+              />
+              <StyledText
+                metadata
+                fontSize="$small"
+                textAlign="center"
+                onPress={() => {
+                  Alert.alert(
+                    "pretty please?",
+                    "This work, like all handmade software, only happens because of people like you contributing a few dollars. Together, we can make it possible to create software with data that's entirely yours and not subject to ads or adverse incentives.",
+                    [
+                      {
+                        text: "Sorry I really can't",
+                        onPress: () => {
+                          Alert.alert(
+                            "It's okay",
+                            "I hope you enjoy the app regardless!",
+                            []
+                          );
+                          nextStep();
+                        },
+                        style: "default",
+                      },
+                      {
+                        text: "Ok you've convinced me",
+                        onPress: () => {},
+                        style: "cancel",
+                      },
+                    ]
+                  );
+                }}
+              >
+                I'm sorry I can't support you right now
               </StyledText>
-              <StyledText fontSize="$4">- times you love life</StyledText>
-              <StyledText fontSize="$4">
-                - descriptions of people you watch
-              </StyledText>
-              <StyledText fontSize="$4">
-                - times{" "}
-                <ExternalLinkText href="https://www.are.na/channel/wow-geoi3s6ev74">
-                  you said wow
-                </ExternalLinkText>
-              </StyledText>
-              <StyledText fontSize="$4">- orange things</StyledText>
-              <StyledText fontSize="$4">
-                - nice things people say about you
-              </StyledText>
-              <StyledText fontSize="$4">
-                - nice things you say about other people
-              </StyledText>
-              <StyledText fontSize="$4">- songs that slap</StyledText>
-              <StyledText fontSize="$4">
-                -{" "}
-                <ExternalLinkText href="https://www.spencerchang.me/fits">
-                  outfits of the day
-                </ExternalLinkText>
-              </StyledText>
-              <StyledText fontSize="$4">- morning mood log</StyledText>
             </YStack>
-            <NextStepButton text="Start gathering" />
           </>
         );
     }
@@ -478,5 +500,63 @@ export default function IntroScreen() {
         </KeyboardAwareScrollView>
       </SafeAreaView>
     </Theme>
+  );
+}
+
+function ExampleCollection({ name, arenaChannelUrl }: ExampleCollectionType) {
+  const { data: items } = useQuery({
+    queryKey: [arenaChannelUrl],
+    queryFn: async () => {
+      if (!arenaChannelUrl) {
+        return [];
+      }
+      const items = await getChannelThumb(arenaChannelUrl);
+      return rawArenaBlocksToBlockInsertInfo(items).slice(0, 5);
+    },
+  });
+
+  return (
+    <YStack gap="$1.5">
+      {arenaChannelUrl ? (
+        <ExternalLinkText href={arenaChannelUrl}>
+          <StyledText fontSize="$4" bold link>
+            {name}
+          </StyledText>
+        </ExternalLinkText>
+      ) : (
+        <StyledText fontSize="$4" bold>
+          {name}
+        </StyledText>
+      )}
+      {Boolean(items?.length) ? (
+        <ScrollView horizontal flex={1}>
+          <XStack gap="$2" height={140}>
+            {items?.map((item, idx) => (
+              <YStack height={140} maxWidth={140}>
+                <BlockContent
+                  key={idx}
+                  {...item}
+                  mediaStyle={{
+                    maxHeight: 140,
+                    maxWidth: 140,
+                  }}
+                  containerStyle={{
+                    maxHeight: 140,
+                    height: "100%",
+                  }}
+                  textContainerProps={{
+                    padding: 2,
+                    width: 140,
+                  }}
+                  textProps={{
+                    fontSize: "$1",
+                  }}
+                />
+              </YStack>
+            ))}
+          </XStack>
+        </ScrollView>
+      ) : null}
+    </YStack>
   );
 }

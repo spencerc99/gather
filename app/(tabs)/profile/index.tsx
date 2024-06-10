@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import * as Application from "expo-application";
 import { useContext, useMemo, useState } from "react";
-import { Image, SafeAreaView } from "react-native";
+import { Image, SafeAreaView, useColorScheme } from "react-native";
 import { Avatar, H3, ScrollView, Spinner, YStack } from "tamagui";
 import {
   Icon,
@@ -24,6 +24,7 @@ import { Contribution, Flower } from "../../../components/SlidingScalePayment";
 import { ContributionsKey, getItem } from "../../../utils/asyncStorage";
 import { useIsFocused } from "@react-navigation/native";
 import { ErrorsContext } from "../../../utils/errors";
+import { HelpGuideUrl } from "../../../utils/constants";
 
 const DefaultAppSrc = require(`../../../assets/images/icon.png`);
 
@@ -31,6 +32,7 @@ export default function ProfileScreen() {
   const { tryImportArenaChannel } = useContext(DatabaseContext);
 
   const { currentUser } = useContext(UserContext);
+  const colorScheme = useColorScheme();
   const today = dayjs();
   const started = currentUser?.createdAt ? dayjs(currentUser.createdAt) : today;
   const daysUsedApp = today.diff(started, "day");
@@ -173,6 +175,35 @@ export default function ProfileScreen() {
           <LinkButton
             flex={1}
             width="100%"
+            href={HelpGuideUrl}
+            theme="gray"
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+            icon={<Icon name="document-text" />}
+            justifyContent="flex-start"
+          >
+            Guide
+          </LinkButton>
+          <LinkButton
+            justifyContent="flex-start"
+            icon={<Icon name="heart" />}
+            flex={1}
+            width="100%"
+            href="/support"
+            theme="green"
+          >
+            Support development
+          </LinkButton>
+          <LinkButton
+            href="/feedback"
+            justifyContent="flex-start"
+            theme="purple"
+            icon={<Icon name="mail" />}
+          >
+            Give feedback
+          </LinkButton>
+          <LinkButton
+            flex={1}
+            width="100%"
             href="/icons"
             justifyContent="flex-start"
             icon={
@@ -190,23 +221,6 @@ export default function ProfileScreen() {
           >
             App icons
           </LinkButton>
-          <LinkButton
-            justifyContent="flex-start"
-            icon={<Icon name="gift" />}
-            flex={1}
-            width="100%"
-            href="/support"
-          >
-            Support development
-          </LinkButton>
-          <LinkButton
-            href="/feedback"
-            justifyContent="flex-start"
-            icon={<Icon name="mail" />}
-          >
-            Give feedback
-          </LinkButton>
-
           {/* <LinkButton>Share</LinkButton> */}
           {/* <StyledButton>
         What's new

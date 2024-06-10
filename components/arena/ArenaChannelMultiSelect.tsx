@@ -1,5 +1,5 @@
 import { memo, useCallback, useContext, useMemo, useState } from "react";
-import { FlatList } from "react-native";
+import { FlatList, useColorScheme } from "react-native";
 import {
   Sheet,
   Spinner,
@@ -48,6 +48,7 @@ export function ArenaChannelMultiSelect({
   setSelectedChannels: (selectedChannels: ArenaChannelInfo[]) => void;
 }) {
   const { arenaAccessToken } = useContext(UserContext);
+  const colorScheme = useColorScheme();
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const [open, setOpen] = useState(false);
@@ -124,7 +125,12 @@ export function ArenaChannelMultiSelect({
   return (
     <Stack>
       <XStack justifyContent="center" width="100%" alignItems="center" gap="$2">
-        <StyledButton flexGrow={1} onPress={() => setOpen(true)} theme="grey">
+        <StyledButton
+          flexGrow={1}
+          onPress={() => setOpen(true)}
+          theme="grey"
+          backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+        >
           {isLoading
             ? "Loading from are.na..."
             : selectedChannels.length > 0
@@ -176,6 +182,7 @@ export function ArenaChannelMultiSelect({
                 setSelectedChannels([]);
                 setOpen(false);
               }}
+              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
               size="$small"
             >
               cancel

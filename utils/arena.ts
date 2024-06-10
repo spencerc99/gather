@@ -1,9 +1,15 @@
-import { Block, LastSyncedInfo } from "./dataTypes";
+import {
+  Block,
+  DatabaseBlockInsert,
+  LastSyncedInfo,
+  RemoteSourceType,
+} from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
 import { logError } from "./errors";
 import { withQueryParams } from "./url";
 const XMLParser = require("react-xml-parser");
 import { ArenaUpdatedBlocksKey, getItem, setItem } from "./asyncStorage";
+import { getCreatedByForRemote } from "./user";
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
@@ -252,6 +258,21 @@ export function transformChannelUrlToApiUrl(url: string): string {
 
   const channel = maybeParseChannelIdentifierFromUrl(maybeChannelUrl);
   return `${ArenaChannelsApi}/${channel}`;
+}
+
+export async function getChannelThumb(
+  channelIdOrUrl: string,
+  { accessToken }: { accessToken?: string | null } = {}
+): Promise<RawArenaChannelItem[]> {
+  const channelId = maybeParseChannelIdentifierFromUrl(channelIdOrUrl);
+  const url = `${ArenaChannelsApi}/${channelId}/thumb`;
+  const resp = await fetch(url, {
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  });
+  const respBody = await resp.json();
+  return respBody.contents;
 }
 
 export async function getChannelContents(
@@ -935,4 +956,34 @@ export function removePendingBlockUpdate(blockId: string) {
   const updatedBlocks = getPendingBlockUpdates();
   delete updatedBlocks[blockId];
   setItem(ArenaUpdatedBlocksKey, updatedBlocks);
+}
+
+export function rawArenaBlocksToBlockInsertInfo(
+  arenaBlocks: RawArenaChannelItem[]
+): DatabaseBlockInsert[] {
+  return arenaBlocks.map((block) => ({
+    title: block.title,
+    description: block.description,
+    content:
+      block.attachment?.url ||
+      // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
+      // it only provides the html iframe code..
+      block.embed?.url ||
+      block.image?.display.url ||
+      block.content,
+    type: arenaClassToBlockType(block),
+    contentType: arenaClassToMimeType(block),
+    source: block.source?.url,
+    createdBy: getCreatedByForRemote(RemoteSourceType.Arena, block.user.slug),
+    remoteSourceType: RemoteSourceType.Arena,
+    remoteSourceInfo: {
+      arenaId: block.id,
+      arenaClass: "Block",
+    },
+    remoteConnectedAt: block.connected_at,
+    connectedBy: getCreatedByForRemote(
+      RemoteSourceType.Arena,
+      block.connected_by_user_slug
+    ),
+  }));
 }
