@@ -22,16 +22,20 @@ import {
   StyledView,
 } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import { GetProps, TextProps, YStack, useTheme } from "tamagui";
+import { GetProps, Image, TextProps, XStack, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { Link, router, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
 import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
-import { jsxJoin } from "../utils/react";
+import { ensureUnreachable, jsxJoin } from "../utils/react";
 import { StyleProps } from "react-native-reanimated";
 import { ErrorsContext } from "../utils/errors";
+import { UserContext, extractCreatorFromCreatedBy } from "../utils/user";
+import { useQuery } from "@tanstack/react-query";
+import { getArenaUserInfo } from "../utils/arena";
+import { BlockCreatedByAvatar } from "./BlockCreatedByAvatar";
 
 function useBlockMenuItems(
   block: Block,
@@ -320,11 +324,17 @@ export function BlockTextSummary({
   isRemoteCollection?: boolean;
   containerProps?: GetProps<typeof YStack>;
 }) {
-  const { id, type, source, title, description } = block;
+  // TODO: add connectedBy for getCollectionItems... maybe default this to createdBy or undefined for others
+  const { id, type, source, title, description, connectedBy } = block;
   const theme = useTheme();
   const { updateBlock, deleteBlock } = useContext(DatabaseContext);
+  const { isBlockConnectedByUser, isBlockCreatedByUser } =
+    useContext(UserContext);
   const [isEditing, setIsEditing] = useState(false);
   const widthProperty = blockStyle?.width || 250;
+  const isOwner = connectedBy
+    ? isBlockConnectedByUser(block)
+    : isBlockCreatedByUser(block);
 
   const { logError } = useContext(ErrorsContext);
 
@@ -371,7 +381,7 @@ export function BlockTextSummary({
           borderRadius: "$2",
           borderColor: theme.color?.get(),
           space: "$2",
-          padding: "$3",
+          padding: "$2.5",
           width: "100%",
         }}
       />
@@ -428,7 +438,7 @@ export function BlockTextSummary({
       !hideMetadata && (
         <BlockMetadata
           block={block}
-          textProps={{ textAlign: "right" }}
+          textProps={{ textAlign: isOwner === false ? "left" : "right" }}
           isRemoteCollection={isRemoteCollection}
           dateKind="relative"
         />
@@ -437,18 +447,34 @@ export function BlockTextSummary({
   }, [hideMetadata, isRemoteCollection, block]);
 
   const renderedSummary = (
-    <YStack space="$1" {...containerProps}>
-      <HoldItem items={blockMenuItems} closeOnTap>
-        <StyledView
-          backgroundColor={showBackground ? "$gray6" : undefined}
-          borderRadius="$4"
-          height="auto"
-        >
-          {renderContent()}
-        </StyledView>
-      </HoldItem>
-      {renderedMetadata}
-    </YStack>
+    <XStack
+      gap="$1.5"
+      {...containerProps}
+      maxWidth={isOwner === false ? "90%" : "100%"}
+      justifyContent={isOwner === false ? "flex-start" : "flex-end"}
+    >
+      {isOwner === false && (
+        <BlockCreatedByAvatar
+          block={block}
+          containerProps={{
+            alignSelf: "flex-end",
+            marginBottom: "$5",
+          }}
+        ></BlockCreatedByAvatar>
+      )}
+      <YStack gap="$1">
+        <HoldItem items={blockMenuItems} closeOnTap>
+          <StyledView
+            backgroundColor={showBackground ? "$gray6" : undefined}
+            borderRadius="$4"
+            height="auto"
+          >
+            {renderContent()}
+          </StyledView>
+        </HoldItem>
+        {renderedMetadata}
+      </YStack>
+    </XStack>
   );
 
   return shouldLink && !isEditing ? (
@@ -484,9 +510,16 @@ export function BlockReviewSummary({
   isRemoteCollection?: boolean;
   containerProps?: GetProps<typeof YStack>;
 }) {
-  const { id, type, source, title, description } = block;
+  const { id, type, source, title, description, createdBy, connectedBy } =
+    block;
   const theme = useTheme();
   const widthProperty = blockStyle?.width || 250;
+  const { isBlockCreatedByUser, isBlockConnectedByUser } =
+    useContext(UserContext);
+  const isOwner = connectedBy
+    ? isBlockConnectedByUser(block)
+    : isBlockCreatedByUser(block);
+  const { userId } = extractCreatorFromCreatedBy(connectedBy || createdBy);
 
   const showBackground =
     [BlockType.Link].includes(type) ||
@@ -551,7 +584,7 @@ export function BlockReviewSummary({
 
   const renderedSummary = useMemo(
     () => (
-      <YStack gap="$1.5" {...containerProps}>
+      <YStack gap="$2" {...containerProps}>
         {title && (
           <StyledParagraph title textAlign="center">
             {title}
@@ -567,6 +600,13 @@ export function BlockReviewSummary({
             {renderContent()}
           </StyledView>
         </HoldItem>
+        {/* TODO: this should be who connected it */}
+        {isOwner === false && (
+          <XStack gap="$1.5" alignItems="center">
+            <BlockCreatedByAvatar block={block} />
+            <StyledText>{userId}</StyledText>
+          </XStack>
+        )}
         {!hideMetadata && <BlockConnections block={block} />}
       </YStack>
     ),
@@ -643,7 +683,7 @@ export function BlockMetadata({
   }
 
   return (
-    <StyledText metadata ellipse={true} textAlign="right">
+    <StyledText metadata ellipse={true} textAlign="right" {...textProps}>
       {metadata}
     </StyledText>
   );

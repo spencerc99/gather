@@ -34,6 +34,7 @@ import {
 } from "../utils/arena";
 import { DatabaseContext } from "../utils/db";
 import { useArenaUserChannels } from "../utils/hooks/useArenaUserChannels";
+import { UserContext } from "../utils/user";
 
 const SCHEME = Constants.platform?.scheme;
 
@@ -63,8 +64,7 @@ export function ArenaLogin({ path }: { path: string }) {
     },
     discovery
   );
-  const { arenaAccessToken, updateArenaAccessToken } =
-    useContext(DatabaseContext);
+  const { arenaAccessToken, updateArenaAccessToken } = useContext(UserContext);
 
   useEffect(() => {
     if (response?.type === "success") {

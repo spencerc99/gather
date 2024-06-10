@@ -34,8 +34,8 @@ export function ArenaChannelSummary({
         collection={{
           ...mapSnakeCaseToCamelCaseProperties(channel),
           description: channel.metadata?.description || undefined,
-          thumbnail: channel.contents?.find((c) => c.image?.thumb.url)?.image
-            ?.thumb.url,
+          thumbnail: channel.contents?.find((c) => Boolean(c.image?.thumb.url))
+            ?.image?.thumb.url,
           remoteSourceType: RemoteSourceType.Arena,
           numBlocks: channel.length,
           createdAt: new Date(channel.created_at),

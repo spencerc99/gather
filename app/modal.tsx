@@ -30,8 +30,8 @@ function CreateCollectionModal() {
   const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { createCollection, arenaAccessToken } = useContext(DatabaseContext);
-  const { currentUser: user } = useContext(UserContext);
+  const { createCollection } = useContext(DatabaseContext);
+  const { currentUser: user, arenaAccessToken } = useContext(UserContext);
 
   return (
     <YStack style={styles.createCollection}>

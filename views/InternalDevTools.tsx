@@ -24,15 +24,12 @@ import {
 
 export function InternalDevTools({}: {}) {
   const {
-    db,
-    initDatabases,
     trySyncPendingArenaBlocks,
     trySyncNewArenaBlocks,
     getPendingArenaBlocks,
-    arenaAccessToken,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { currentUser } = useContext(UserContext);
+  const { currentUser, arenaAccessToken } = useContext(UserContext);
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
 
   const [devModeEnabled, setDevModeEnabled] = useStickyValue(

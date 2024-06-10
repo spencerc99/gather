@@ -20,11 +20,15 @@ import {
   StyledView,
 } from "./Themed";
 import { ExternalLink } from "./ExternalLink";
-import { extractCreatorFromCreatedBy } from "../utils/user";
+import { UserContext, extractCreatorFromCreatedBy } from "../utils/user";
 import { ensureUnreachable } from "../utils/react";
 import { useStickyValue } from "../utils/asyncStorage";
+import { RawArenaUser } from "../utils/arena";
 
-function getDisplayForCreatedBy(createdBy: string) {
+function getDisplayForCreatedBy(
+  createdBy: string,
+  arenaUserInfo: RawArenaUser | null
+) {
   const { userId, source } = extractCreatorFromCreatedBy(createdBy);
   if (!source) {
     return "you";
@@ -35,7 +39,7 @@ function getDisplayForCreatedBy(createdBy: string) {
         <>
           <StyledText>
             <ExternalLinkText href={`https://are.na/${userId}`}>
-              {userId}
+              {arenaUserInfo && userId === arenaUserInfo.slug ? "you" : userId}
             </ExternalLinkText>{" "}
           </StyledText>
           <ArenaLogo />
@@ -72,6 +76,7 @@ export function BlockDetailView({ block }: { block: Block }) {
 
   const router = useRouter();
   const { updateBlock } = useContext(DatabaseContext);
+  const { arenaUserInfo } = useContext(UserContext);
   const { data: connections, isLoading: loadingData } = useBlockConnections(
     id.toString()
   );
@@ -79,7 +84,7 @@ export function BlockDetailView({ block }: { block: Block }) {
     () => connections?.some((c) => Boolean(c.remoteSourceType)),
     [connections]
   );
-  const createdByDisplay = getDisplayForCreatedBy(createdBy);
+  const createdByDisplay = getDisplayForCreatedBy(createdBy, arenaUserInfo);
   const [devModeEnabled] = useStickyValue("devModeEnabled", false);
 
   useFixExpoRouter3NavigationTitle();

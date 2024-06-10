@@ -9,10 +9,10 @@ import {
   useDebounceValue,
 } from "tamagui";
 import { ArenaChannelInfo } from "../../utils/arena";
-import { DatabaseContext } from "../../utils/db";
 import { useArenaUserChannels } from "../../utils/hooks/useArenaUserChannels";
 import { SearchBarInput, StyledButton } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
+import { UserContext } from "../../utils/user";
 
 const ChannelView = memo(
   ({
@@ -47,7 +47,7 @@ export function ArenaChannelMultiSelect({
   selectedChannels: ArenaChannelInfo[];
   setSelectedChannels: (selectedChannels: ArenaChannelInfo[]) => void;
 }) {
-  const { arenaAccessToken } = useContext(DatabaseContext);
+  const { arenaAccessToken } = useContext(UserContext);
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const [open, setOpen] = useState(false);

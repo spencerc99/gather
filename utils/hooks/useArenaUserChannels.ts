@@ -3,10 +3,11 @@ import { useContext, useMemo } from "react";
 import { useDebounce, useDebounceValue } from "tamagui";
 import { getUserChannels } from "../arena";
 import { DatabaseContext } from "../db";
+import { UserContext } from "../user";
 
 export function useArenaUserChannels(searchValue: string) {
-  const { arenaAccessToken, getArenaCollectionIds } =
-    useContext(DatabaseContext);
+  const { getArenaCollectionIds } = useContext(DatabaseContext);
+  const { arenaAccessToken } = useContext(UserContext);
   const debouncedSearch = useDebounceValue(searchValue, 300);
 
   const { data: remoteCollectionIds } = useQuery({
