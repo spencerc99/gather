@@ -450,8 +450,9 @@ export function BlockTextSummary({
     <XStack
       gap="$1.5"
       {...containerProps}
-      maxWidth={isOwner === false ? "90%" : "100%"}
+      // maxWidth={isOwner === false ? "90%" : undefined}
       justifyContent={isOwner === false ? "flex-start" : "flex-end"}
+      marginLeft={isOwner === false ? undefined : "auto"}
     >
       {isOwner === false && (
         <BlockCreatedByAvatar

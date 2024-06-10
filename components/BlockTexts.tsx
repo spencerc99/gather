@@ -99,6 +99,9 @@ const BlockView = memo(
         blockStyle={{
           maxHeight: 320,
         }}
+        containerProps={{
+          maxWidth: "85%",
+        }}
         shouldLink
         isRemoteCollection={isRemoteCollection}
       />
