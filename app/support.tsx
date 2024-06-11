@@ -15,6 +15,7 @@ import { StyledButton, StyledText } from "../components/Themed";
 import { ContributionsKey } from "../utils/asyncStorage";
 import { ContributionsList } from "../components/ContributionsList";
 import { UserContext } from "../utils/user";
+import { UsageInfo } from "../components/UsageInfo";
 
 export default function Support() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
@@ -41,10 +42,12 @@ export default function Support() {
         >
           <H3>Contribution Box</H3>
           <StyledText>
-            Your contribution helps me continue development of and maintain
-            Gather. I hope you can contribute what you can to support your
-            lifetime access of this app 🧡
+            Gather doesn't have ads or require a subscription, so your
+            contribution gives you <StyledText bold>lifetime access</StyledText>{" "}
+            and supports continued development. Thank you for contributing what
+            you can to support my work 🧡
           </StyledText>
+          <UsageInfo />
           <ContributionsList />
           <SlidingScalePayment val={value} setVal={setValue} />
           <YStack marginTop="$10">

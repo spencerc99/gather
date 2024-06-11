@@ -1,11 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Image } from "react-native";
 import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
 import { H3, Slider, XStack, XStackProps, YStack } from "tamagui";
 import { StyledText } from "./Themed";
 import { ContributionsKey, getItem, setItem } from "../utils/asyncStorage";
-import { UserInfo } from "../utils/user";
+import { UserContext, UserInfo } from "../utils/user";
 import { withQueryParams } from "../utils/url";
+import dayjs from "dayjs";
+import {
+  useTotalBlockCount,
+  useTotalCollectionCount,
+  useTotalConnectionCount,
+} from "../utils/db";
 
 export const SlidingPrice = [1, 3, 6, 9, 21, 33, 60];
 export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
@@ -70,17 +76,25 @@ const FlowerOptions = [
   require("../assets/images/flower-pink.png"),
 ];
 
-export function Flower({ style }: { style: XStackProps }) {
+export function Flower({
+  startSize = 8,
+  endSize = 30,
+  style,
+}: {
+  style: XStackProps;
+  startSize?: number;
+  endSize?: number;
+}) {
   const randomFlower = useMemo(
     () => FlowerOptions[Math.floor(Math.random() * FlowerOptions.length)],
     []
   );
-  const animatedWidth = useSharedValue(8);
-  const animatedHeight = useSharedValue(8);
+  const animatedWidth = useSharedValue(startSize);
+  const animatedHeight = useSharedValue(startSize);
 
   useEffect(() => {
-    animatedWidth.value = withTiming(30, { duration: 500 });
-    animatedHeight.value = withTiming(30, { duration: 500 });
+    animatedWidth.value = withTiming(endSize, { duration: 500 });
+    animatedHeight.value = withTiming(endSize, { duration: 500 });
   }, [animatedWidth, animatedHeight]);
 
   return (
@@ -135,6 +149,7 @@ export function SlidingScalePayment({
       );
     });
   }, [numFlowers]);
+
   return (
     <YStack gap="$3">
       <StyledText metadata bold>

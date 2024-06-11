@@ -94,7 +94,7 @@ export function ArenaChannelMultiSelect({
       });
     }
     return mapped;
-  }, [channels]);
+  }, [channels, searchValue]);
 
   const renderChannel = useCallback(
     ({

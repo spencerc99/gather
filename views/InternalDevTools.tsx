@@ -11,6 +11,7 @@ import {
   removeItem,
   LastSyncedAtKey,
   useStickyValue,
+  ContributionsKey,
 } from "../utils/asyncStorage";
 import { UserContext, UserInfoId } from "../utils/user";
 import { useContext, useEffect, useState } from "react";
@@ -129,6 +130,15 @@ export function InternalDevTools({}: {}) {
           icon={isLoading ? <Spinner size="small" /> : null}
         >
           Reset intro seen
+        </StyledButton>
+        <StyledButton
+          onPress={() => {
+            removeItem(ContributionsKey);
+          }}
+          disabled={isLoading}
+          icon={isLoading ? <Spinner size="small" /> : null}
+        >
+          Reset contributions
         </StyledButton>
         {__DEV__ && (
           <StyledButton

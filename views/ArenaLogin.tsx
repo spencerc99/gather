@@ -6,7 +6,7 @@ import {
 import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { FlatList } from "react-native";
+import { FlatList, useColorScheme } from "react-native";
 import {
   Adapt,
   Select,
@@ -66,6 +66,7 @@ export function ArenaLogin({ path }: { path: string }) {
     discovery
   );
   const { arenaAccessToken, updateArenaAccessToken } = useContext(UserContext);
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     if (response?.type === "success") {
@@ -100,12 +101,13 @@ export function ArenaLogin({ path }: { path: string }) {
         onPress={() => {
           promptAsync();
         }}
-        theme="green"
+        backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+        theme="gray"
       >
         Login again
       </StyledButton>
       <ButtonWithConfirm
-        flex={1}
+        flex={0.4}
         disabled={!request}
         onPress={() => {
           updateArenaAccessToken(null);

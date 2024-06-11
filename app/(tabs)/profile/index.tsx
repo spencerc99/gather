@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import * as Application from "expo-application";
-import { useContext, useMemo, useState } from "react";
-import { Image, SafeAreaView, useColorScheme } from "react-native";
-import { Avatar, H3, ScrollView, Spinner, YStack } from "tamagui";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { Animated, Image, SafeAreaView, useColorScheme } from "react-native";
+import { Avatar, H3, ScrollView, Spinner, XStack, YStack } from "tamagui";
 import {
   Icon,
   LinkButton,
@@ -22,15 +22,20 @@ import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Contribution, Flower } from "../../../components/SlidingScalePayment";
 import { ContributionsKey, getItem } from "../../../utils/asyncStorage";
-import { useIsFocused } from "@react-navigation/native";
 import { ErrorsContext } from "../../../utils/errors";
 import { HelpGuideUrl } from "../../../utils/constants";
+import {
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  useAnimatedStyle,
+  runOnJS,
+} from "react-native-reanimated";
 
 const DefaultAppSrc = require(`../../../assets/images/icon.png`);
 
 export default function ProfileScreen() {
   const { tryImportArenaChannel } = useContext(DatabaseContext);
-
   const { currentUser } = useContext(UserContext);
   const colorScheme = useColorScheme();
   const today = dayjs();
@@ -69,6 +74,7 @@ export default function ProfileScreen() {
       return getItem<Contribution[]>(ContributionsKey) || [];
     },
   });
+  const hasContributed = useMemo(() => (contributions?.length || 0) > 0, []);
 
   const [appIconSource, setAppIconSource] = useState(DefaultAppSrc);
   useFocusEffect(() => {
@@ -165,9 +171,9 @@ export default function ProfileScreen() {
             flex={1}
             width="100%"
             href="/about"
-            icon={<Icon name="egg" />}
-            theme="orange"
-            backgroundColor="$orange6"
+            icon={<Icon name="egg" color="$orange9" />}
+            theme="gray"
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
             justifyContent="flex-start"
           >
             Origins
@@ -183,20 +189,69 @@ export default function ProfileScreen() {
           >
             Guide
           </LinkButton>
-          <LinkButton
-            justifyContent="flex-start"
-            icon={<Icon name="heart" />}
-            flex={1}
-            width="100%"
-            href="/support"
-            theme="green"
+          <Animated.View
+            style={{
+              position: "relative",
+            }}
           >
-            Support development
-          </LinkButton>
+            <LinkButton
+              justifyContent="flex-start"
+              icon={<Icon name="heart" color="$red9" />}
+              flex={1}
+              width="100%"
+              href="/support"
+            >
+              Support development
+            </LinkButton>
+            {!hasContributed && (
+              <>
+                <Flower
+                  style={{
+                    position: "absolute",
+                    zIndex: 1,
+                    top: "-5%",
+                    right: "-2%",
+                    transform: [{ rotate: "45deg" }],
+                  }}
+                  endSize={20}
+                />
+                <Flower
+                  style={{
+                    position: "absolute",
+                    zIndex: 1,
+                    bottom: "-10%",
+                    right: "7%",
+                    transform: [{ rotate: "80deg" }],
+                  }}
+                  endSize={20}
+                />
+                <Flower
+                  style={{
+                    position: "absolute",
+                    zIndex: 1,
+                    right: "22%",
+                    top: "-8%",
+                    transform: [{ rotate: "22deg" }],
+                  }}
+                  endSize={20}
+                />
+                <Flower
+                  style={{
+                    position: "absolute",
+                    zIndex: 1,
+                    left: "-2%",
+                    transform: [{ rotate: "180deg" }],
+                  }}
+                  endSize={20}
+                />
+              </>
+            )}
+          </Animated.View>
           <LinkButton
             href="/feedback"
             justifyContent="flex-start"
-            theme="purple"
+            theme="gray"
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
             icon={<Icon name="mail" />}
           >
             Give feedback
@@ -218,10 +273,12 @@ export default function ProfileScreen() {
                 />
               ) : null
             }
+            theme="gray"
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
           >
             App icons
           </LinkButton>
-          {/* <LinkButton>Share</LinkButton> */}
+          {/* TODO: add changelog */}
           {/* <StyledButton>
         What's new
       </StyledButton> */}

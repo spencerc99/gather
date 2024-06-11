@@ -15,6 +15,8 @@ export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
 export const ArenaGraphqlKey = process.env.EXPO_PUBLIC_ARENA_GRAPHQL_KEY!;
 export const ArenaTokenStorageKey = "arena-token";
+const GatherArenaAttribution =
+  "created with [Gather](https://gather.directory/)";
 
 enum ArenaVisibility {
   Public = "public",
@@ -705,7 +707,8 @@ export async function addBlockToChannel({
       throw new Error(JSON.stringify(resp));
     }
     response = await resp.json();
-    const { title, description } = block;
+    const { title, description: blockDescription } = block;
+    let description = blockDescription || GatherArenaAttribution;
     if (title || description) {
       updateArenaBlock({
         blockId: response.id,
@@ -886,6 +889,7 @@ export async function createChannel({
     method: "POST",
     body: JSON.stringify({
       title,
+      description: GatherArenaAttribution,
       status: visibility,
     }),
     headers: {

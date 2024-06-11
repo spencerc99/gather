@@ -20,6 +20,7 @@ import { ContributionsList } from "../components/ContributionsList";
 import { ContributionsKey } from "../utils/asyncStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserContext } from "../utils/user";
+import { UsageInfo } from "../components/UsageInfo";
 
 export default function About() {
   const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
@@ -128,6 +129,14 @@ export function AboutSection({
           </StyledText>
         )}
         , it has become an expression of how I wish to interact with my data.
+        {!shortened && (
+          <StyledText>
+            You can read more about the origins in
+            {/* TODO: ADD LINK */}
+            <ExternalLinkText href="">this interview</ExternalLinkText> with
+            Are.na
+          </StyledText>
+        )}
       </StyledText>
       <StyledText>
         Making{" "}
@@ -143,6 +152,7 @@ export function AboutSection({
       <StyledText>
         I appreciate your support and hope you enjoy Gather 🧡
       </StyledText>
+      {!shortened && <UsageInfo />}
       {!shortened && <ContributionsList />}
       <YStack marginTop="$2">
         <SlidingScalePayment

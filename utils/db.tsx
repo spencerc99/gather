@@ -2177,6 +2177,50 @@ export function useTotalBlockCount() {
   });
 }
 
+export function useTotalCollectionCount() {
+  const { db } = useContext(DatabaseContext);
+
+  async function getCollectionCount(): Promise<number> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `SELECT COUNT(*) as count FROM collections;`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows[0].count;
+  }
+  return useQuery({
+    queryKey: ["collections", "count"],
+    queryFn: getCollectionCount,
+  });
+}
+
+export function useTotalConnectionCount() {
+  const { db } = useContext(DatabaseContext);
+
+  async function getConnectionCount(): Promise<number> {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `SELECT COUNT(*) as count FROM connections;`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows[0].count;
+  }
+  return useQuery({
+    queryKey: ["connections", "count"],
+    queryFn: getConnectionCount,
+  });
+}
+
 export function useUncategorizedBlocks() {
   const { db } = useContext(DatabaseContext);
 
