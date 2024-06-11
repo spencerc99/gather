@@ -21,6 +21,7 @@ import { ContributionsKey } from "../utils/asyncStorage";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserContext } from "../utils/user";
 import { UsageInfo } from "../components/UsageInfo";
+import { ArenaInterviewUrl } from "../utils/constants";
 
 export default function About() {
   const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
@@ -131,10 +132,11 @@ export function AboutSection({
         , it has become an expression of how I wish to interact with my data.
         {!shortened && (
           <StyledText>
-            You can read more about the origins in
-            {/* TODO: ADD LINK */}
-            <ExternalLinkText href="">this interview</ExternalLinkText> with
-            Are.na
+            You can read more about the origins in{" "}
+            <ExternalLinkText href={ArenaInterviewUrl}>
+              this interview
+            </ExternalLinkText>{" "}
+            with Are.na
           </StyledText>
         )}
       </StyledText>
