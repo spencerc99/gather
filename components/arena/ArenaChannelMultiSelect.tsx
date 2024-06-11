@@ -4,13 +4,17 @@ import {
   Sheet,
   Spinner,
   Stack,
+  ToggleGroup,
   XStack,
   YStack,
   useDebounceValue,
 } from "tamagui";
 import { ArenaChannelInfo } from "../../utils/arena";
-import { useArenaUserChannels } from "../../utils/hooks/useArenaUserChannels";
-import { SearchBarInput, StyledButton } from "../Themed";
+import {
+  ChannelScope,
+  useArenaChannels,
+} from "../../utils/hooks/useArenaUserChannels";
+import { SearchBarInput, StyledButton, StyledText } from "../Themed";
 import { ArenaChannelSummary } from "./ArenaChannelSummary";
 import { UserContext } from "../../utils/user";
 
@@ -52,6 +56,9 @@ export function ArenaChannelMultiSelect({
   const [searchValue, setSearchValue] = useState("");
   const debouncedSearch = useDebounceValue(searchValue, 300);
   const [open, setOpen] = useState(false);
+  const [toggleValue, setToggleValue] = useState<ChannelScope>(
+    ChannelScope.User
+  );
 
   const toggleChannel = useCallback(
     (channel: ArenaChannelInfo, isSelected: boolean) => {
@@ -74,7 +81,7 @@ export function ArenaChannelMultiSelect({
   );
 
   const { channels, isLoading, isFetchingNextPage, fetchMore } =
-    useArenaUserChannels(debouncedSearch);
+    useArenaChannels(debouncedSearch, toggleValue);
 
   const sortedAndAnnotatedChannels = useMemo(() => {
     const mapped = (channels || []).map((channel) => ({
@@ -122,6 +129,8 @@ export function ArenaChannelMultiSelect({
     return null;
   }
 
+  console.log(toggleValue);
+
   return (
     <Stack>
       <XStack justifyContent="center" width="100%" alignItems="center" gap="$2">
@@ -154,8 +163,14 @@ export function ArenaChannelMultiSelect({
       <Sheet
         open={open}
         modal
+        animationConfig={{
+          type: "spring",
+          damping: 10,
+          mass: 0.3,
+          stiffness: 120,
+        }}
         onOpenChange={setOpen}
-        dismissOnSnapToBottom
+        snapPoints={[85]}
         animation="quick"
       >
         <Sheet.Overlay
@@ -165,6 +180,26 @@ export function ArenaChannelMultiSelect({
         />
         <Sheet.Handle />
         <Sheet.Frame padding="$1" gap="$2">
+          <XStack marginHorizontal="$2" alignItems="center" marginTop="$2">
+            <ToggleGroup
+              flex={1}
+              theme="blue"
+              type="single"
+              disableDeactivation
+              value={toggleValue}
+              onValueChange={setToggleValue}
+            >
+              {Object.keys(ChannelScope).map((scope) => (
+                <ToggleGroup.Item
+                  flex={1}
+                  value={scope}
+                  backgroundColor={toggleValue === scope ? "$blue6" : undefined}
+                >
+                  <StyledText>{scope} channels</StyledText>
+                </ToggleGroup.Item>
+              ))}
+            </ToggleGroup>
+          </XStack>
           <XStack margin="$2" alignItems="center">
             <Stack flexGrow={1} paddingRight="$2">
               <SearchBarInput

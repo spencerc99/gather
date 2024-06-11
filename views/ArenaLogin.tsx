@@ -34,7 +34,7 @@ import {
   ArenaClientSecret,
 } from "../utils/arena";
 import { DatabaseContext } from "../utils/db";
-import { useArenaUserChannels } from "../utils/hooks/useArenaUserChannels";
+import { useArenaChannels } from "../utils/hooks/useArenaUserChannels";
 import { UserContext } from "../utils/user";
 
 const SCHEME = Constants.platform?.scheme;
@@ -166,7 +166,7 @@ export function SelectArenaChannel({
   const debouncedSearch = useDebounceValue(searchValue, 300);
 
   const { channels, isLoading, isFetchingNextPage, fetchMore } =
-    useArenaUserChannels(debouncedSearch);
+    useArenaChannels(debouncedSearch);
 
   const renderChannel = useCallback(
     ({

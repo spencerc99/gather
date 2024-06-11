@@ -870,6 +870,38 @@ export async function getUserChannels(
     throw e;
   }
 }
+export async function searchChannels(
+  accessToken: string,
+  {
+    page = 1,
+    per = 30,
+    search,
+  }: { page?: number; per?: number; search?: string } = {}
+): Promise<UserChannelResponse> {
+  const baseUrl = withQueryParams(`https://api.are.na/v2/search/channels`, {
+    q: search,
+    page,
+    per,
+  });
+  try {
+    const resp = await fetch(baseUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const respBody = await resp.json();
+    return {
+      channels: respBody.channels,
+      nextPage:
+        respBody.current_page < respBody.total_pages
+          ? respBody.current_page + 1
+          : undefined,
+    };
+  } catch (e) {
+    logError(e);
+    throw e;
+  }
+}
 
 // TODO: this doesn't set the remote_created_at on connection
 export async function createChannel({

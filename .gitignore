@@ -46,6 +46,7 @@ android
 
 # local builds
 builds/*.ipa
+android-builds/*.aab
 
 .env
 
