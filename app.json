@@ -34,7 +34,8 @@
     },
     "android": {
       "permissions": ["android.permission.RECORD_AUDIO"],
-      "package": "net.tiny_inter.gather"
+      "package": "net.tiny_inter.gather",
+      "versionCode": 67
     },
     "web": {
       "bundler": "metro",
