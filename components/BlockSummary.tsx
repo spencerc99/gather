@@ -22,19 +22,17 @@ import {
   StyledView,
 } from "./Themed";
 import { BlockContent } from "./BlockContent";
-import { GetProps, Image, TextProps, XStack, YStack, useTheme } from "tamagui";
+import { GetProps, TextProps, XStack, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
-import { Link, router, useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
 import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
-import { ensureUnreachable, jsxJoin } from "../utils/react";
+import { jsxJoin } from "../utils/react";
 import { StyleProps } from "react-native-reanimated";
 import { ErrorsContext } from "../utils/errors";
 import { UserContext, extractCreatorFromCreatedBy } from "../utils/user";
-import { useQuery } from "@tanstack/react-query";
-import { getArenaUserInfo } from "../utils/arena";
 import { BlockCreatedByAvatar } from "./BlockCreatedByAvatar";
 
 function useBlockMenuItems(
@@ -447,6 +445,18 @@ export function BlockTextSummary({
   }, [hideMetadata, isRemoteCollection, block]);
 
   const renderedSummary = (
+    <HoldItem items={blockMenuItems} closeOnTap>
+      <StyledView
+        backgroundColor={showBackground ? "$gray6" : undefined}
+        borderRadius="$4"
+        height="auto"
+      >
+        {renderContent()}
+      </StyledView>
+    </HoldItem>
+  );
+
+  return (
     <XStack
       gap="$1.5"
       {...containerProps}
@@ -464,33 +474,23 @@ export function BlockTextSummary({
         ></BlockCreatedByAvatar>
       )}
       <YStack gap="$1">
-        <HoldItem items={blockMenuItems} closeOnTap>
-          <StyledView
-            backgroundColor={showBackground ? "$gray6" : undefined}
-            borderRadius="$4"
-            height="auto"
+        {shouldLink && !isEditing ? (
+          <Link
+            href={{
+              pathname: "/block/[id]/",
+              params: { id: block.id },
+            }}
+            key={block.id}
+            asChild
           >
-            {renderContent()}
-          </StyledView>
-        </HoldItem>
+            <Pressable>{renderedSummary}</Pressable>
+          </Link>
+        ) : (
+          renderedSummary
+        )}
         {renderedMetadata}
       </YStack>
     </XStack>
-  );
-
-  return shouldLink && !isEditing ? (
-    <Link
-      href={{
-        pathname: "/block/[id]/",
-        params: { id: block.id },
-      }}
-      key={block.id}
-      asChild
-    >
-      <Pressable>{renderedSummary}</Pressable>
-    </Link>
-  ) : (
-    renderedSummary
   );
 }
 
