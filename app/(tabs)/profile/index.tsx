@@ -2,7 +2,17 @@ import dayjs from "dayjs";
 import * as Application from "expo-application";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Animated, Image, SafeAreaView, useColorScheme } from "react-native";
-import { Avatar, H3, ScrollView, Spinner, XStack, YStack } from "tamagui";
+import {
+  Avatar,
+  H3,
+  H4,
+  H5,
+  H6,
+  ScrollView,
+  Spinner,
+  XStack,
+  YStack,
+} from "tamagui";
 import {
   Icon,
   LinkButton,
@@ -136,7 +146,7 @@ export default function ProfileScreen() {
               {flowers}
             </YStack>
           )}
-          <H3>Are.na</H3>
+          <H5 fontWeight="700">Are.na</H5>
           <ArenaLogin path="internal" />
           <ArenaChannelMultiSelect
             setSelectedChannels={setSelectedChannels}
@@ -166,14 +176,14 @@ export default function ProfileScreen() {
             </StyledButton>
           )}
 
-          <H3>Gather</H3>
+          <H5 fontWeight="700">Gather</H5>
           <LinkButton
             flex={1}
             width="100%"
             href="/about"
             icon={<Icon name="egg" color="$orange9" />}
-            theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+            theme="orange"
+            backgroundColor={colorScheme === "light" ? "#FFDBB2" : undefined}
             justifyContent="flex-start"
           >
             Origins
