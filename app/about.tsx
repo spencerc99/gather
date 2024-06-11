@@ -14,6 +14,7 @@ import {
   ExternalLinkText,
   StyledButton,
   StyledText,
+  StyledView,
 } from "../components/Themed";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { ContributionsList } from "../components/ContributionsList";
@@ -22,6 +23,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { UserContext } from "../utils/user";
 import { UsageInfo } from "../components/UsageInfo";
 import { ArenaInterviewUrl } from "../utils/constants";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function About() {
   const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
@@ -33,14 +35,14 @@ export default function About() {
   const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
   useFixExpoRouter3NavigationTitle();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
   return (
     <Theme name="light">
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: "#FFDBB2",
-        }}
+      <StyledView
+        flex={1}
+        paddingBottom={insets.bottom}
+        backgroundColor="#FFDBB2"
       >
         <KeyboardAwareScrollView
           style={{ flex: 1 }}
@@ -49,7 +51,6 @@ export default function About() {
         >
           <YStack
             minHeight="100%"
-            backgroundColor="#FFDBB2"
             paddingTop="5%"
             paddingBottom="5%"
             paddingHorizontal="10%"
@@ -80,7 +81,7 @@ export default function About() {
             </YStack>
           </YStack>
         </KeyboardAwareScrollView>
-      </SafeAreaView>
+      </StyledView>
     </Theme>
   );
 }

@@ -35,72 +35,74 @@ const CollectionSelectView = memo(
     deleteCollection: (collectionId: string) => void;
     index: number;
     selectedCollection: string | null;
-  }) => (
-    <Swipeable
-      key={collection.id}
-      containerStyle={{
-        overflow: "visible",
-      }}
-      friction={2}
-      renderRightActions={(_progress, _drag, swipeable) => (
-        <YStack
-          alignItems="center"
-          padding="$2"
-          paddingLeft={0}
-          justifyContent="center"
-        >
-          <StyledButton
-            circular
-            theme="red"
-            size="$6"
-            icon={<Icon name="trash" />}
-            onPress={() => {
-              Alert.alert("Delete Collection?", undefined, [
-                {
-                  text: "Cancel",
-                  onPress: () => {
-                    swipeable.close();
-                  },
-                  style: "cancel",
-                },
-                {
-                  text: "Delete",
-                  onPress: () => {
-                    deleteCollection(collection.id);
-                    swipeable.close();
-                  },
-                  style: "destructive",
-                },
-              ]);
-            }}
-          ></StyledButton>
-        </YStack>
-      )}
-    >
-      <Select.Item
-        index={index + 1}
+  }) =>
+    // @ts-ignore
+    gestureHandlerRootHOC(() => (
+      <Swipeable
         key={collection.id}
-        value={collection.id}
-        backgroundColor={
-          selectedCollection === collection.id ? "$green4" : undefined
-        }
+        containerStyle={{
+          overflow: "visible",
+        }}
+        friction={2}
+        renderRightActions={(_progress, _drag, swipeable) => (
+          <YStack
+            alignItems="center"
+            padding="$2"
+            paddingLeft={0}
+            justifyContent="center"
+          >
+            <StyledButton
+              circular
+              theme="red"
+              size="$6"
+              icon={<Icon name="trash" />}
+              onPress={() => {
+                Alert.alert("Delete Collection?", undefined, [
+                  {
+                    text: "Cancel",
+                    onPress: () => {
+                      swipeable.close();
+                    },
+                    style: "cancel",
+                  },
+                  {
+                    text: "Delete",
+                    onPress: () => {
+                      deleteCollection(collection.id);
+                      swipeable.close();
+                    },
+                    style: "destructive",
+                  },
+                ]);
+              }}
+            ></StyledButton>
+          </YStack>
+        )}
       >
-        <CollectionSummary
-          collection={collection}
-          viewProps={{
-            borderWidth: 0,
-            paddingHorizontal: 0,
-            paddingVertical: 0,
-            backgroundColor: "inherit",
-          }}
-        />
-        <Select.ItemText display="none">{collection.title}</Select.ItemText>
-      </Select.Item>
-    </Swipeable>
-  )
+        <Select.Item
+          index={index + 1}
+          key={collection.id}
+          value={collection.id}
+          backgroundColor={
+            selectedCollection === collection.id ? "$green4" : undefined
+          }
+        >
+          <CollectionSummary
+            collection={collection}
+            viewProps={{
+              borderWidth: 0,
+              paddingHorizontal: 0,
+              paddingVertical: 0,
+              backgroundColor: "inherit",
+            }}
+          />
+          <Select.ItemText display="none">{collection.title}</Select.ItemText>
+        </Select.Item>
+      </Swipeable>
+    ))()
 );
 
-export function CollectionSelectImpl({
+export function CollectionSelect({
   selectedCollection,
   setSelectedCollection,
   collectionPlaceholder = "New collection",
@@ -297,5 +299,3 @@ export function CollectionSelectImpl({
     </Select>
   );
 }
-
-export const CollectionSelect = gestureHandlerRootHOC(CollectionSelectImpl);

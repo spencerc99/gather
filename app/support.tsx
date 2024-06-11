@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import * as WebBrowser from "expo-web-browser";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   SlidingScalePayment,
   StartingSlidingScaleValue,
@@ -11,7 +11,7 @@ import {
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { useQueryClient } from "@tanstack/react-query";
 import { H3, Theme, YStack } from "tamagui";
-import { StyledButton, StyledText } from "../components/Themed";
+import { StyledButton, StyledText, StyledView } from "../components/Themed";
 import { ContributionsKey } from "../utils/asyncStorage";
 import { ContributionsList } from "../components/ContributionsList";
 import { UserContext } from "../utils/user";
@@ -25,14 +25,15 @@ export default function Support() {
   const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
   useFixExpoRouter3NavigationTitle();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
   return (
     <Theme name="light">
-      <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: "#FFDBB2",
-        }}
+      <StyledView
+        flex={1}
+        backgroundColor={"#FFDBB2"}
+        paddingBottom={insets.bottom}
+        paddingTop={insets.top}
       >
         <YStack
           backgroundColor="#FFDBB2"
@@ -68,7 +69,7 @@ export default function Support() {
             </StyledButton>
           </YStack>
         </YStack>
-      </SafeAreaView>
+      </StyledView>
     </Theme>
   );
 }

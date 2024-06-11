@@ -61,7 +61,13 @@ export function ChatDetailView({
             maxWidth: "70%",
           },
           headerTitle: () => (
-            <YStack paddingBottom="$3" marginHorizontal="auto">
+            <YStack
+              justifyContent="center"
+              alignItems="center"
+              height="100%"
+              width="100%"
+              marginBottom="$2"
+            >
               <CollectionSelect
                 onTriggerSelect={() => {
                   Keyboard.dismiss();

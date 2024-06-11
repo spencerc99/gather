@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import { HoldMenuProvider } from "react-native-hold-menu";
 import {
-  SafeAreaView,
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";

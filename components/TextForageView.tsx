@@ -284,7 +284,7 @@ export function TextForageView({
         style={{ flex: 1 }}
         // 'position' makes it push everything up even when the scrollview doesnt have the full height, and also you can't scroll through all of them (scrollView seems to be constrained by the viewport solely)
         // but the other ones don't properly push up the nested scrollview
-        behavior={"padding"}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         contentContainerStyle={{
           justifyContent: "space-between",
           flex: 1,
@@ -402,6 +402,8 @@ export function TextForageView({
               ></StyledButton>
             </YStack>
             <StyledTextArea
+              // NOTE: idk why but the padding is huge on android lol
+              padding={Platform.OS === "android" ? "$2" : undefined}
               paddingRight="$6"
               placeholder={textPlaceholder}
               minHeight={undefined}

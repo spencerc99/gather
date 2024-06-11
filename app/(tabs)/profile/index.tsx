@@ -3,7 +3,7 @@ import * as Application from "expo-application";
 import { useContext, useMemo, useState } from "react";
 import { Animated, Image, useColorScheme } from "react-native";
 import { Avatar, H5, ScrollView, Spinner, XStack, YStack } from "tamagui";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Icon,
   LinkButton,
@@ -95,219 +95,221 @@ export default function ProfileScreen() {
       }),
     [numFlowers]
   );
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView>
-        <YStack gap="$2" padding="10%" position="relative">
-          {currentUser && (
-            <YStack space="$2" padding="$4" alignItems="center" paddingTop={0}>
-              <Avatar size="$6" circular>
-                {/* <Avatar.Image
+    <ScrollView
+      contentContainerStyle={{
+        paddingTop: insets.top,
+      }}
+    >
+      <YStack gap="$2" padding="10%" position="relative">
+        {currentUser && (
+          <YStack space="$2" padding="$4" alignItems="center" paddingTop={0}>
+            <Avatar size="$6" circular>
+              {/* <Avatar.Image
             // accessibilityLabel={user.name}
             // src={user.imgSrc}
             src={
               "https://images.unsplash.com/photo-1548142813-c348350df52b?&w=150&h=150&dpr=2&q=80"
             }
           /> */}
-                <Avatar.Fallback
-                  backgroundColor={stringToColor(currentUser?.email)}
-                />
-              </Avatar>
-              <StyledText title>{currentUser.email}</StyledText>
-              <YStack alignItems="center" space="$1">
-                <StyledText metadata>
-                  joined on {dayjs(currentUser.createdAt).format("MM/DD/YY")},{" "}
-                  {daysUsedApp} days ago
-                </StyledText>
-              </YStack>
-              {flowers}
+              <Avatar.Fallback
+                backgroundColor={stringToColor(currentUser?.email)}
+              />
+            </Avatar>
+            <StyledText title>{currentUser.email}</StyledText>
+            <YStack alignItems="center" space="$1">
+              <StyledText metadata>
+                joined on {dayjs(currentUser.createdAt).format("MM/DD/YY")},{" "}
+                {daysUsedApp} days ago
+              </StyledText>
             </YStack>
-          )}
-          <H5 fontWeight="700">Are.na</H5>
-          <ArenaLogin path="internal" />
-          <ArenaChannelMultiSelect
-            setSelectedChannels={setSelectedChannels}
-            selectedChannels={selectedChannels}
-          />
-          {selectedChannels.length > 0 && (
-            <YStack gap="$1.5">
-              {selectedChannels.map((channel) => (
-                <ArenaChannelSummary
-                  channel={channel}
-                  key={channel.id.toString()}
-                  viewProps={{ backgroundColor: "$green4" }}
-                />
-              ))}
-            </YStack>
-          )}
-          {selectedChannels.length > 0 && (
-            <StyledButton
-              icon={isLoading ? <Spinner size="small" /> : null}
-              disabled={!selectedChannels.length || isLoading}
-              onPress={importSelectedChannels}
-              alignSelf="flex-end"
-            >
-              {isLoading
-                ? `Importing ${selectedChannels.length} channels...`
-                : `Import ${selectedChannels.length} channels`}
-            </StyledButton>
-          )}
+          </YStack>
+        )}
+        <H5 fontWeight="700">Are.na</H5>
+        <ArenaLogin path="internal" />
+        <ArenaChannelMultiSelect
+          setSelectedChannels={setSelectedChannels}
+          selectedChannels={selectedChannels}
+        />
+        {selectedChannels.length > 0 && (
+          <YStack gap="$1.5">
+            {selectedChannels.map((channel) => (
+              <ArenaChannelSummary
+                channel={channel}
+                key={channel.id.toString()}
+                viewProps={{ backgroundColor: "$green4" }}
+              />
+            ))}
+          </YStack>
+        )}
+        {selectedChannels.length > 0 && (
+          <StyledButton
+            icon={isLoading ? <Spinner size="small" /> : null}
+            disabled={!selectedChannels.length || isLoading}
+            onPress={importSelectedChannels}
+            alignSelf="flex-end"
+          >
+            {isLoading
+              ? `Importing ${selectedChannels.length} channels...`
+              : `Import ${selectedChannels.length} channels`}
+          </StyledButton>
+        )}
 
-          <H5 fontWeight="700">Gather</H5>
+        <H5 fontWeight="700">Gather</H5>
+        <LinkButton
+          flex={1}
+          width="100%"
+          href="/about"
+          icon={<Icon name="egg" color="$orange9" />}
+          theme="orange"
+          backgroundColor={colorScheme === "light" ? "#FFDBB2" : undefined}
+          justifyContent="flex-start"
+        >
+          Origins
+        </LinkButton>
+        <XStack gap="$2">
           <LinkButton
             flex={1}
             width="100%"
-            href="/about"
-            icon={<Icon name="egg" color="$orange9" />}
-            theme="orange"
-            backgroundColor={colorScheme === "light" ? "#FFDBB2" : undefined}
+            href={HelpGuideUrl}
+            theme="gray"
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+            icon={<Icon name="document-text" />}
             justifyContent="flex-start"
           >
-            Origins
+            Guide
           </LinkButton>
-          <XStack gap="$2">
-            <LinkButton
-              flex={1}
-              width="100%"
-              href={HelpGuideUrl}
-              theme="gray"
-              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-              icon={<Icon name="document-text" />}
-              justifyContent="flex-start"
-            >
-              Guide
-            </LinkButton>
-            <LinkButton
-              href="/feedback"
-              justifyContent="flex-start"
-              theme="gray"
-              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-              icon={<Icon name="mail" />}
-            >
-              Give feedback
-            </LinkButton>
-          </XStack>
-          <XStack gap="$2">
-            <LinkButton
-              flex={1}
-              href="/changelog"
-              justifyContent="flex-start"
-              theme="gray"
-              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-              icon={<Icon name="newspaper" />}
-            >
-              What's new
-            </LinkButton>
-            <LinkButton
-              flex={1}
-              width="100%"
-              href="/icons"
-              justifyContent="flex-start"
-              icon={
-                <Image
-                  source={appIconSource}
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 4,
-                  }}
-                />
-              }
-              theme="gray"
-              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-            >
-              App icons
-            </LinkButton>
-          </XStack>
-          <Animated.View
-            style={{
-              position: "relative",
-            }}
-          >
-            <LinkButton
-              justifyContent="flex-start"
-              icon={<Icon name="heart" color="$red9" />}
-              flex={1}
-              width="100%"
-              href="/support"
-            >
-              Support development
-            </LinkButton>
-            {!hasContributed && (
-              <>
-                <Flower
-                  style={{
-                    position: "absolute",
-                    zIndex: 1,
-                    top: "-5%",
-                    right: "-2%",
-                    transform: [{ rotate: "45deg" }],
-                  }}
-                  endSize={20}
-                />
-                <Flower
-                  style={{
-                    position: "absolute",
-                    zIndex: 1,
-                    bottom: "-10%",
-                    right: "7%",
-                    transform: [{ rotate: "80deg" }],
-                  }}
-                  endSize={20}
-                />
-                <Flower
-                  style={{
-                    position: "absolute",
-                    zIndex: 1,
-                    right: "22%",
-                    top: "-8%",
-                    transform: [{ rotate: "22deg" }],
-                  }}
-                  endSize={20}
-                />
-                <Flower
-                  style={{
-                    position: "absolute",
-                    zIndex: 1,
-                    left: "-2%",
-                    transform: [{ rotate: "180deg" }],
-                  }}
-                  endSize={20}
-                />
-              </>
-            )}
-          </Animated.View>
-
-          <StyledParagraph>
-            Thank you for giving your space and time to this app.
-          </StyledParagraph>
-          <YStack alignItems="center">
-            <Image
-              source={appIconSource}
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-              }}
-            />
-            <StyledText>
-              {Application.nativeApplicationVersion} (
-              {Application.nativeBuildVersion})
-            </StyledText>
-          </YStack>
           <LinkButton
-            marginTop="$8"
-            alignSelf="center"
-            href="/dev"
-            size="$medium"
+            href="/feedback"
+            justifyContent="flex-start"
             theme="gray"
-            icon={<Icon name="code" />}
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+            icon={<Icon name="mail" />}
           >
-            Internal Developer Tools
+            Give feedback
           </LinkButton>
+        </XStack>
+        <XStack gap="$2">
+          <LinkButton
+            flex={1}
+            href="/changelog"
+            justifyContent="flex-start"
+            theme="gray"
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+            icon={<Icon name="newspaper" />}
+          >
+            What's new
+          </LinkButton>
+          <LinkButton
+            flex={1}
+            width="100%"
+            href="/icons"
+            justifyContent="flex-start"
+            icon={
+              <Image
+                source={appIconSource}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
+                }}
+              />
+            }
+            theme="gray"
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+          >
+            App icons
+          </LinkButton>
+        </XStack>
+        <Animated.View
+          style={{
+            position: "relative",
+          }}
+        >
+          <LinkButton
+            justifyContent="flex-start"
+            icon={<Icon name="heart" color="$red9" />}
+            flex={1}
+            width="100%"
+            href="/support"
+          >
+            Support development
+          </LinkButton>
+          {!hasContributed && (
+            <>
+              <Flower
+                style={{
+                  position: "absolute",
+                  zIndex: 1,
+                  top: "-5%",
+                  right: "-2%",
+                  transform: [{ rotate: "45deg" }],
+                }}
+                endSize={20}
+              />
+              <Flower
+                style={{
+                  position: "absolute",
+                  zIndex: 1,
+                  bottom: "-10%",
+                  right: "7%",
+                  transform: [{ rotate: "80deg" }],
+                }}
+                endSize={20}
+              />
+              <Flower
+                style={{
+                  position: "absolute",
+                  zIndex: 1,
+                  right: "22%",
+                  top: "-8%",
+                  transform: [{ rotate: "22deg" }],
+                }}
+                endSize={20}
+              />
+              <Flower
+                style={{
+                  position: "absolute",
+                  zIndex: 1,
+                  left: "-2%",
+                  transform: [{ rotate: "180deg" }],
+                }}
+                endSize={20}
+              />
+            </>
+          )}
+        </Animated.View>
+
+        <StyledParagraph>
+          Thank you for giving your space and time to this app.
+        </StyledParagraph>
+        <YStack alignItems="center">
+          <Image
+            source={appIconSource}
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 12,
+            }}
+          />
+          <StyledText>
+            {Application.nativeApplicationVersion} (
+            {Application.nativeBuildVersion})
+          </StyledText>
         </YStack>
-      </ScrollView>
-    </SafeAreaView>
+        <LinkButton
+          marginTop="$8"
+          alignSelf="center"
+          href="/dev"
+          size="$medium"
+          theme="gray"
+          icon={<Icon name="code" />}
+        >
+          Internal Developer Tools
+        </LinkButton>
+      </YStack>
+    </ScrollView>
   );
 }

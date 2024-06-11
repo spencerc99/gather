@@ -79,9 +79,11 @@ const BlockView = gestureHandlerRootHOC(
     }) => (
       <Swipeable
         key={block.id}
-        containerStyle={{
-          overflow: "visible",
-        }}
+        containerStyle={
+          {
+            // overflow: "visible",
+          }
+        }
         friction={2}
         renderRightActions={() => <RightActions />}
         onSwipeableOpen={(direction, swipeable) => {

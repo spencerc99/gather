@@ -115,13 +115,15 @@ export function BlockDetailView({ block }: { block: Block }) {
         <Stack.Screen
           options={{
             title: "",
+            // TODO: this issue makes the back button disappear for androis... https://github.com/react-navigation/react-navigation/issues/10391
+            // workaround is to make the native one not show and then render a custom one lol
             headerTitle: () =>
               isLoading ? (
                 <XStack gap="$2" justifyContent="center">
                   <Spinner />
                   <StyledText>Updating...</StyledText>
                 </XStack>
-              ) : null,
+              ) : undefined,
           }}
         />
         <YStack gap="$2" marginBottom="$2" flexGrow={1}>
