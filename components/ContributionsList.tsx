@@ -1,17 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { ContributionsKey, getItem } from "../utils/asyncStorage";
 import { YStack } from "tamagui";
 import { StyledText } from "./Themed";
 import dayjs from "dayjs";
-import { Contribution } from "./SlidingScalePayment";
+import { useContributions } from "../utils/hooks/useContributions";
 
 export function ContributionsList() {
-  const { data: contributions } = useQuery<Contribution[]>({
-    queryKey: [ContributionsKey],
-    queryFn: () => {
-      return getItem<Contribution[]>(ContributionsKey) || [];
-    },
-  });
+  const contributions = useContributions();
 
   return contributions?.length ? (
     <>

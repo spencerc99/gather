@@ -15,7 +15,6 @@ export function useArenaChannels(
   channelScope: ChannelScope = ChannelScope.User
 ) {
   const { getArenaCollectionIds } = useContext(DatabaseContext);
-  const { arenaAccessToken } = useContext(UserContext);
   const debouncedSearch = useDebounceValue(searchValue, 300);
 
   const { data: remoteCollectionIds } = useQuery({

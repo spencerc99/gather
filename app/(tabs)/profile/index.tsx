@@ -1,17 +1,10 @@
 import dayjs from "dayjs";
 import * as Application from "expo-application";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Animated, Image, SafeAreaView, useColorScheme } from "react-native";
 import {
-  Avatar,
-  H3,
-  H4,
-  H5,
-  H6,
-  ScrollView,
-  Spinner,
-  XStack,
-  YStack,
+  Avatar, H5, ScrollView,
+  Spinner, YStack
 } from "tamagui";
 import {
   Icon,
@@ -29,18 +22,10 @@ import { UserContext } from "../../../utils/user";
 import { ArenaLogin } from "../../../views/ArenaLogin";
 import { getAppIconSource } from "../../icons";
 import { useFocusEffect } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { Contribution, Flower } from "../../../components/SlidingScalePayment";
-import { ContributionsKey, getItem } from "../../../utils/asyncStorage";
+import { Flower } from "../../../components/SlidingScalePayment";
 import { ErrorsContext } from "../../../utils/errors";
 import { HelpGuideUrl } from "../../../utils/constants";
-import {
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  useAnimatedStyle,
-  runOnJS,
-} from "react-native-reanimated";
+import { useContributions } from "../../../utils/hooks/useContributions";
 
 const DefaultAppSrc = require(`../../../assets/images/icon.png`);
 
@@ -78,12 +63,7 @@ export default function ProfileScreen() {
   }
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { data: contributions } = useQuery<Contribution[]>({
-    queryKey: [ContributionsKey],
-    queryFn: () => {
-      return getItem<Contribution[]>(ContributionsKey) || [];
-    },
-  });
+  const contributions = useContributions();
   const hasContributed = useMemo(() => (contributions?.length || 0) > 0, []);
 
   const [appIconSource, setAppIconSource] = useState(DefaultAppSrc);
