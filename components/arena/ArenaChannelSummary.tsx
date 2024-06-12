@@ -3,7 +3,8 @@ import { ArenaChannelInfo } from "../../utils/arena";
 import { RemoteSourceType } from "../../utils/dataTypes";
 import { mapSnakeCaseToCamelCaseProperties } from "../../utils/db";
 import { CollectionSummary } from "../CollectionSummary";
-import { StyledLabel, StyledView } from "../Themed";
+import { StyledLabel, StyledView, UserAvatar } from "../Themed";
+import { getCreatedByForRemote } from "../../utils/user";
 
 export function ArenaChannelSummary({
   channel,
@@ -14,6 +15,19 @@ export function ArenaChannelSummary({
   isDisabled?: boolean;
   viewProps?: GetProps<typeof StyledView>;
 }) {
+  let titleColor;
+  switch (channel.status) {
+    case "private":
+      titleColor = "$red10";
+      break;
+    case "public":
+      titleColor = "$green10";
+      break;
+    case "closed":
+    default:
+      break;
+  }
+
   return (
     <>
       {isDisabled && (
@@ -31,6 +45,7 @@ export function ArenaChannelSummary({
         </YStack>
       )}
       <CollectionSummary
+        // TODO: extract this into a rawArenaChannelToCollection function
         collection={{
           ...mapSnakeCaseToCamelCaseProperties(channel),
           description: channel.metadata?.description || undefined,
@@ -41,7 +56,10 @@ export function ArenaChannelSummary({
           createdAt: new Date(channel.created_at),
           updatedAt: new Date(channel.updated_at),
           lastConnectedAt: new Date(channel.added_to_at),
-          createdBy: channel.user.slug,
+          createdBy: getCreatedByForRemote(
+            RemoteSourceType.Arena,
+            channel.user.slug
+          ),
           title: channel.title,
         }}
         viewProps={{
@@ -51,6 +69,16 @@ export function ArenaChannelSummary({
           paddingVertical: "$2",
           ...viewProps,
         }}
+        titleProps={{
+          color: titleColor,
+        }}
+        extraMetadata={
+          <UserAvatar
+            profilePic={channel.user.avatar_image.thumb}
+            userId={channel.user.slug}
+            size={16}
+          />
+        }
       />
     </>
   );

@@ -129,8 +129,6 @@ export function ArenaChannelMultiSelect({
     return null;
   }
 
-  console.log(toggleValue);
-
   return (
     <Stack>
       <XStack justifyContent="center" width="100%" alignItems="center" gap="$2">

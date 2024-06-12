@@ -8,9 +8,13 @@ import { RemoteSourceLabel } from "./RemoteSourceLabel";
 export function CollectionSummary({
   collection,
   viewProps = {},
+  titleProps,
+  extraMetadata,
 }: {
   collection: Collection;
   viewProps?: GetProps<typeof StyledView>;
+  titleProps?: GetProps<typeof StyledParagraph>;
+  extraMetadata?: React.ReactNode;
 }) {
   const {
     title,
@@ -35,28 +39,30 @@ export function CollectionSummary({
       {...viewProps}
     >
       {/* TODO: this doesnt work with long overflowing titles im gonna kms */}
-      <YStack flexGrow={1}>
-        <XStack overflow="hidden">
+      <YStack flexGrow={1} flex={1}>
+        <XStack overflow="hidden" flex={1}>
           <StyledParagraph
             title
+            flex={1}
             flexGrow={1}
+            ellipse
+            whiteSpace="nowrap"
             {...(Boolean(remoteSourceType)
               ? {
                   paddingRight: "$3",
                 }
               : {})}
-            // TODO: this doesnt work idk why
-            wordWrap="break-word"
+            {...(titleProps || {})}
           >
             {title}
           </StyledParagraph>
           <RemoteSourceLabel remoteSourceType={remoteSourceType} />
         </XStack>
         <StyledView style={styles.metaContainer}>
-          <StyledParagraph metadata>
-            {/* {createdBy} | {numItems} items */}
-            {numItems} items
-          </StyledParagraph>
+          <XStack gap="$1.5" alignItems="center">
+            {extraMetadata}
+            <StyledParagraph metadata>{numItems} items</StyledParagraph>
+          </XStack>
           <StyledParagraph style={styles.floatRight} metadata>
             {getRelativeDate(lastConnectedAt || updatedAt)}
           </StyledParagraph>

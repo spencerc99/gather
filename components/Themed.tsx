@@ -716,3 +716,40 @@ export function Collapsible({
     </YStack>
   );
 }
+
+export function UserAvatar({
+  profilePic,
+  containerProps,
+  userId,
+  size = 20,
+}: {
+  profilePic?: string;
+  containerProps?: GetProps<typeof StyledView>;
+  userId: string;
+  size?: number;
+}) {
+  return (
+    <StyledView
+      width={size}
+      height={size}
+      borderRadius={100}
+      justifyContent="center"
+      alignItems="center"
+      backgroundColor="$gray7"
+      position="relative"
+      {...containerProps}
+    >
+      {profilePic && (
+        <Image
+          position="absolute"
+          source={{ uri: profilePic }}
+          width={size}
+          height={size}
+          borderRadius={100}
+          zIndex={1}
+        />
+      )}
+      <StyledText>{userId[0].toUpperCase()}</StyledText>
+    </StyledView>
+  );
+}

@@ -7,7 +7,7 @@ import { UserContext } from "../user";
 
 export enum ChannelScope {
   User = "User",
-  All = "All",
+  Open = "Open",
 }
 
 export function useArenaChannels(
@@ -115,6 +115,7 @@ function useArenaUserChannels(debouncedSearch: string) {
     fetchMore,
   };
 }
+// Only returns open channels
 function useSearchArenaChannels(debouncedSearch: string) {
   const { arenaAccessToken } = useContext(UserContext);
 
@@ -135,8 +136,10 @@ function useSearchArenaChannels(debouncedSearch: string) {
           page: pageParam,
           search: debouncedSearch,
         });
+
         return {
           ...resp,
+          channels: resp.channels.filter((c) => c.status === "public"),
           lastPage: pageParam > 1 ? pageParam - 1 : undefined,
         };
       },

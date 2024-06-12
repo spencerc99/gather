@@ -1,5 +1,5 @@
 import { GetProps, Image } from "tamagui";
-import { StyledText, StyledView } from "./Themed";
+import { StyledText, StyledView, UserAvatar } from "./Themed";
 import { useQuery } from "@tanstack/react-query";
 import { getArenaUserInfo } from "../utils/arena";
 import { Block, RemoteSourceType } from "../utils/dataTypes";
@@ -15,6 +15,7 @@ export function BlockCreatedByAvatar({
   containerProps?: GetProps<typeof StyledView>;
 }) {
   const { connectedBy, createdBy, remoteSourceType } = block;
+  // TODO: change these to generic "createdBy" and just pass in connected or created
   const { isBlockConnectedByUser, isBlockCreatedByUser } =
     useContext(UserContext);
   const { userId } = extractCreatorFromCreatedBy(connectedBy || createdBy);
@@ -39,27 +40,10 @@ export function BlockCreatedByAvatar({
   });
 
   return (
-    <StyledView
-      width={20}
-      height={20}
-      borderRadius={100}
-      justifyContent="center"
-      alignItems="center"
-      backgroundColor="$gray7"
-      position="relative"
-      {...containerProps}
-    >
-      {profilePic && (
-        <Image
-          position="absolute"
-          source={{ uri: profilePic }}
-          width={20}
-          height={20}
-          borderRadius={100}
-          zIndex={1}
-        />
-      )}
-      <StyledText>{userId[0].toUpperCase()}</StyledText>
-    </StyledView>
+    <UserAvatar
+      profilePic={profilePic}
+      containerProps={containerProps}
+      userId={userId}
+    />
   );
 }

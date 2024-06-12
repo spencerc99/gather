@@ -442,7 +442,7 @@ export function BlockTextSummary({
         />
       )
     );
-  }, [hideMetadata, isRemoteCollection, block]);
+  }, [hideMetadata, isRemoteCollection, block, isOwner]);
 
   const renderedSummary = (
     <HoldItem items={blockMenuItems} closeOnTap>
@@ -460,7 +460,6 @@ export function BlockTextSummary({
     <XStack
       gap="$1.5"
       {...containerProps}
-      // maxWidth={isOwner === false ? "90%" : undefined}
       justifyContent={isOwner === false ? "flex-start" : "flex-end"}
       marginLeft={isOwner === false ? undefined : "auto"}
     >
