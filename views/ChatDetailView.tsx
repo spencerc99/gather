@@ -58,6 +58,8 @@ export function ChatDetailView({
           // ),
           headerRight: () => <MainHeaderIcons />,
           headerTitleContainerStyle: {
+            alignItems: "center",
+            justifyContent: "center",
             maxWidth: "70%",
           },
           headerTitle: () => (

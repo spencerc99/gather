@@ -1,5 +1,5 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as NavigationBar from "expo-navigation-bar";
 import { TransitionPresets } from "@react-navigation/stack";
 import {
   DarkTheme,
@@ -71,6 +71,13 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  useEffect(() => {
+    NavigationBar.getBackgroundColorAsync().then((color) => console.log(color));
+    NavigationBar.setBackgroundColorAsync(
+      colorScheme === "light" ? "white" : "black"
+    );
+  }, [colorScheme]);
+
   if (!loaded) {
     return null;
   }
@@ -82,7 +89,6 @@ export default function RootLayout() {
           <TamaguiProvider config={config}>
             <Theme name={colorScheme === "dark" ? "dark" : "light"}>
               <QueryClientProvider client={client}>
-                {/* <GestureHandlerRootView style={{ flex: 1 }}> */}
                 <HoldMenuProvider
                   theme={colorScheme || undefined}
                   safeAreaInsets={insets}
@@ -96,11 +102,16 @@ export default function RootLayout() {
                   <UserProvider>
                     <DatabaseProvider>
                       <RootLayoutNav />
-                      <StatusBar style="auto" />
+                      <StatusBar
+                        style="auto"
+                        // NOTE: idk why but "auto" doesn't properly change color on Android.
+                        backgroundColor={
+                          colorScheme === "light" ? "white" : "black"
+                        }
+                      />
                     </DatabaseProvider>
                   </UserProvider>
                 </HoldMenuProvider>
-                {/* </GestureHandlerRootView> */}
               </QueryClientProvider>
             </Theme>
           </TamaguiProvider>
@@ -122,13 +133,15 @@ function RootLayoutNav() {
   }, [shareIntent]);
 
   return (
-    <Stack>
+    <JsStack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
+      <JsStack.Screen
         name="modal"
         options={{
           presentation: "modal",
           headerShown: false,
+          ...TransitionPresets.ModalPresentationIOS,
+          gestureEnabled: true,
         }}
       />
       <Stack.Screen
@@ -139,24 +152,16 @@ function RootLayoutNav() {
           headerShown: false,
         }}
       />
-      <Stack.Screen
+      <JsStack.Screen
         name="icons"
         options={{
           presentation: "modal",
           headerShown: false,
           ...TransitionPresets.ModalPresentationIOS,
           gestureEnabled: true,
-          contentStyle:
-            Platform.OS === "android"
-              ? {
-                  marginTop: 10,
-                  borderTopStartRadius: 20,
-                  borderTopEndRadius: 20,
-                }
-              : {},
         }}
       />
-      <Stack.Screen
+      <JsStack.Screen
         name="support"
         options={{
           presentation: "card",
@@ -184,11 +189,13 @@ function RootLayoutNav() {
           title: "",
         }}
       />
-      <Stack.Screen
+      <JsStack.Screen
         name="feedback"
         options={{
           presentation: "modal",
           headerShown: false,
+          ...TransitionPresets.ModalPresentationIOS,
+          gestureEnabled: true,
         }}
       />
       <Stack.Screen
@@ -211,12 +218,32 @@ function RootLayoutNav() {
           title: "",
         }}
       />
-      <Stack.Screen
+      <JsStack.Screen
         name="block/[id]/connect"
         options={{
           presentation: "modal",
+          ...TransitionPresets.ModalPresentationIOS,
+          gestureEnabled: true,
+          headerLeft: null,
         }}
       />
-    </Stack>
+    </JsStack>
   );
 }
+
+import {
+  // Import the creation function
+  createStackNavigator,
+  // Import the types
+  StackNavigationOptions,
+} from "@react-navigation/stack";
+
+import { withLayoutContext } from "expo-router";
+
+const { Navigator } = createStackNavigator();
+
+// This can be used like `<JsStack />`
+export const JsStack = withLayoutContext<
+  StackNavigationOptions,
+  typeof Navigator
+>(Navigator);

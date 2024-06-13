@@ -70,20 +70,19 @@ export function TextForageView({
   const [textPlaceholder, setTextPlaceholder] = useState(
     Placeholders[Math.floor(Math.random() * Placeholders.length)]
   );
-  const insets = useSafeAreaInsets();
   const queryKey = ["blocks", { collectionId }] as const;
   const { logError } = useContext(ErrorsContext);
   const bottomTabHeight = useBottomTabBarHeight();
   const keyboard = useAnimatedKeyboard();
-  const [inputFocused, setInputFocused] = useState<boolean>(false);
   const translateStyle = useAnimatedStyle(() => {
     return {
-      paddingBottom: inputFocused
-        ? -(keyboard.height.value - bottomTabHeight)
-        : 0,
+      paddingBottom: keyboard.height.value
+        ? keyboard.height.value -
+          bottomTabHeight +
+          (Platform.OS === "android" ? 24 : 0)
+        : undefined,
     };
-  }, [inputFocused]);
-  console.log(translateStyle);
+  }, [keyboard.height]);
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
@@ -309,11 +308,7 @@ export function TextForageView({
         keyboardVerticalOffset={insets.top + 44}
       > */}
       <Animated.View
-        style={{
-          flex: 1,
-          justifyContent: "space-between",
-          ...translateStyle,
-        }}
+        style={[{ flex: 1, justifyContent: "space-between" }, translateStyle]}
       >
         <BlockTexts
           collectionId={collectionId}
