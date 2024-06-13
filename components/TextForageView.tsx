@@ -22,6 +22,11 @@ import { MediaView } from "./MediaView";
 import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
 import { useFocusEffect, useNavigation } from "expo-router";
 import { ErrorsContext } from "../utils/errors";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -68,6 +73,17 @@ export function TextForageView({
   const insets = useSafeAreaInsets();
   const queryKey = ["blocks", { collectionId }] as const;
   const { logError } = useContext(ErrorsContext);
+  const bottomTabHeight = useBottomTabBarHeight();
+  const keyboard = useAnimatedKeyboard();
+  const [inputFocused, setInputFocused] = useState<boolean>(false);
+  const translateStyle = useAnimatedStyle(() => {
+    return {
+      paddingBottom: inputFocused
+        ? -(keyboard.height.value - bottomTabHeight)
+        : 0,
+    };
+  }, [inputFocused]);
+  console.log(translateStyle);
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
@@ -280,11 +296,9 @@ export function TextForageView({
         flex: 1,
       }}
     >
-      <KeyboardAvoidingView
+      {/* <KeyboardAvoidingView
         style={{ flex: 1 }}
-        // 'position' makes it push everything up even when the scrollview doesnt have the full height, and also you can't scroll through all of them (scrollView seems to be constrained by the viewport solely)
-        // but the other ones don't properly push up the nested scrollview
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={"padding"}
         contentContainerStyle={{
           justifyContent: "space-between",
           flex: 1,
@@ -293,6 +307,13 @@ export function TextForageView({
         // NOTE: this needs to adjust based on the height of YStack below
         // TODO: make this smaller when there is a collectionId (because tabs don't show)
         keyboardVerticalOffset={insets.top + 44}
+      > */}
+      <Animated.View
+        style={{
+          flex: 1,
+          justifyContent: "space-between",
+          ...translateStyle,
+        }}
       >
         <BlockTexts
           collectionId={collectionId}
@@ -418,7 +439,8 @@ export function TextForageView({
             />
           </XStack>
         </YStack>
-      </KeyboardAvoidingView>
+      </Animated.View>
+      {/* </KeyboardAvoidingView> */}
     </SafeAreaView>
   );
 }
