@@ -1,24 +1,18 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Image } from "react-native";
 import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
 import { H3, Slider, XStack, XStackProps, YStack } from "tamagui";
 import { StyledText } from "./Themed";
 import { ContributionsKey, getItem, setItem } from "../utils/asyncStorage";
-import { UserContext, UserInfo } from "../utils/user";
+import { UserInfo } from "../utils/user";
 import { withQueryParams } from "../utils/url";
-import dayjs from "dayjs";
-import {
-  useTotalBlockCount,
-  useTotalCollectionCount,
-  useTotalConnectionCount,
-} from "../utils/db";
 
-export const SlidingPrice = [1, 3, 6, 9, 21, 33, 60];
+export const SlidingPrice = [3, 6, 9, 13, 21, 33, 60];
 export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
 
 const PriceMessages = [
-  "No worries. I appreciate you paying what you can to support my work",
-  "No worries. I appreciate you paying what you can to support my work",
+  "No worries. I appreciate what you can afford to support my work",
+  "No worries. I appreciate what you can afford to support my work",
   "Thank you for making this work possible!",
   "Thank you for making this work possible!",
   "Thank you so much for your generosity!!",
@@ -27,10 +21,10 @@ const PriceMessages = [
 ];
 
 const PaymentLinks = [
-  "https://buy.stripe.com/00g7uT7cff2g1i05ko", // $1
   "https://buy.stripe.com/28o9D18gjcU88Ks147", // $3
   "https://buy.stripe.com/00gdThfIL1bq9Ow9AG", // $6
   "https://buy.stripe.com/8wMg1p8gjf2g2m4bIN", // $9
+  "https://buy.stripe.com/fZe9D14031bq6CkeV4", // $13
   "https://buy.stripe.com/14kg1peEH1bqd0I7sz", // $21
   "https://buy.stripe.com/bIY16vgMPf2g8KsfZ6", // $33
   "https://buy.stripe.com/9AQ2az40307m9OwaEN", // $60
