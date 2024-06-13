@@ -72,10 +72,11 @@ export default function RootLayout() {
   }, [loaded]);
 
   useEffect(() => {
-    NavigationBar.getBackgroundColorAsync().then((color) => console.log(color));
-    NavigationBar.setBackgroundColorAsync(
-      colorScheme === "light" ? "white" : "black"
-    );
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync(
+        colorScheme === "light" ? "white" : "black"
+      );
+    }
   }, [colorScheme]);
 
   if (!loaded) {
