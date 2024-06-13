@@ -2,15 +2,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import {
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { Dimensions, Platform, SafeAreaView, ScrollView } from "react-native";
 import { XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { BlockSelectLimit, DatabaseContext } from "../utils/db";
@@ -74,15 +67,16 @@ export function TextForageView({
   const { logError } = useContext(ErrorsContext);
   const bottomTabHeight = useBottomTabBarHeight();
   const keyboard = useAnimatedKeyboard();
+  const [textFocused, setTextFocused] = useState(false);
   const translateStyle = useAnimatedStyle(() => {
     return {
-      paddingBottom: keyboard.height.value
+      paddingBottom: textFocused
         ? keyboard.height.value -
           bottomTabHeight +
           (Platform.OS === "android" ? 24 : 0)
         : undefined,
     };
-  }, [keyboard.height]);
+  }, [keyboard.height, textFocused]);
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
@@ -431,6 +425,12 @@ export function TextForageView({
               maxHeight={Dimensions.get("window").height / 2}
               value={textValue}
               enablesReturnKeyAutomatically
+              onFocus={() => {
+                setTextFocused(true);
+              }}
+              onBlur={() => {
+                setTextFocused(false);
+              }}
             />
           </XStack>
         </YStack>

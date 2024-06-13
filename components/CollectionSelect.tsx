@@ -1,5 +1,5 @@
-import { memo, useCallback, useContext, useEffect, useState } from "react";
-import { Alert, FlatList } from "react-native";
+import { memo, useCallback, useContext, useState } from "react";
+import { Alert, FlatList, Keyboard } from "react-native";
 import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import {
   Adapt,
@@ -20,7 +20,6 @@ import { CollectionSummary } from "./CollectionSummary";
 import { CreateCollectionButton } from "./CreateCollectionButton";
 import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
 import { ModalView } from "react-native-ios-modal";
-import { usePathname } from "expo-router";
 
 setupNativeSheet("ios", ModalView);
 
@@ -173,6 +172,7 @@ export function CollectionSelect({
       }
       disablePreventBodyScroll
       onOpenChange={(isOpen) => {
+        Keyboard.dismiss();
         if (!isOpen) {
           setSearchValue("");
         }
