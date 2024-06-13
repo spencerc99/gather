@@ -225,6 +225,11 @@ export function EditableTextOnClick({
   function commitEdit(newContent?: string | null) {
     setEditing(false);
     inputRef.current?.blur();
+    if (editableContent === text) {
+      // No-op so just return
+      return;
+    }
+
     if (newContent === null || newContent === undefined) {
       setEditableContent(text);
       return;
@@ -266,8 +271,7 @@ export function EditableTextOnClick({
             // TODO: padding is weird here. It doesn't animate properly when it goes from full to 0 when there is no text, so we have to manually specify a smaller padding here..
             {...{
               borderWidth: "$.5",
-              paddingLeft: "$1",
-              paddingTop: "$1",
+              padding: "$2.5",
             }}
           />
         ) : (
@@ -308,7 +312,7 @@ export function EditableTextOnClick({
               theme="green"
               size="$tiny"
               icon={<Icon name="checkmark" />}
-              disabled={editableContent === text || disabled}
+              disabled={disabled}
             />
           </XStack>
         )}
