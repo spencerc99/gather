@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Dimensions, Platform, SafeAreaView, ScrollView } from "react-native";
 import { XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";

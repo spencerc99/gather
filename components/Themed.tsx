@@ -22,7 +22,7 @@ import {
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import { Keyboard, useColorScheme } from "react-native";
+import { Keyboard, Platform, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
 import { ensure } from "../utils/react";
@@ -258,6 +258,9 @@ export function EditableTextOnClick({
       <XStack gap="$2">
         {editing ? (
           <InputComponent
+            flex={1}
+            alignItems="flex-start"
+            justifyContent="flex-start"
             ref={inputRef}
             value={editableContent}
             placeholder={defaultText}
@@ -265,8 +268,13 @@ export function EditableTextOnClick({
             pointerEvents={editing ? "auto" : "none"}
             {...inputProps}
             autogrow
+            onBlur={() => {
+              setEditing(false);
+            }}
             onSubmitEditing={() => commitEdit(editableContent)}
             paddingRight="$9"
+            // so dumb that android renders text vertically aligned in center
+            verticalAlign={Platform.OS === "android" ? "top" : undefined}
             ellipse
             // TODO: padding is weird here. It doesn't animate properly when it goes from full to 0 when there is no text, so we have to manually specify a smaller padding here..
             {...{
@@ -284,6 +292,10 @@ export function EditableTextOnClick({
             {...inputProps}
             padding={0}
             autogrow
+            onFocus={() => {
+              // onStart isn't working on android... so we have to do this
+              setEditing(true);
+            }}
             onSubmitEditing={() => commitEdit(editableContent)}
             ellipse
             {...{
