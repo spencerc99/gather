@@ -178,7 +178,7 @@ export function ArenaChannelMultiSelect({
           exitStyle={{ opacity: 0 }}
         />
         <Sheet.Handle />
-        <Sheet.Frame padding="$1" gap="$2">
+        <Sheet.Frame padding="$1" gap="$2" paddingBottom="$4">
           <XStack marginHorizontal="$2" alignItems="center" marginTop="$2">
             <ToggleGroup
               flex={1}
@@ -215,12 +215,15 @@ export function ArenaChannelMultiSelect({
               disabled={!selectedChannels.length}
               onPress={() => {
                 setSelectedChannels([]);
-                setOpen(false);
               }}
-              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+              backgroundColor={
+                selectedChannels.length && colorScheme === "light"
+                  ? "$gray5"
+                  : undefined
+              }
               size="$small"
             >
-              cancel
+              clear
             </StyledButton>
           </XStack>
           {isLoading ? (
@@ -260,6 +263,14 @@ export function ArenaChannelMultiSelect({
               }}
             />
           )}
+          <StyledButton
+            theme="green"
+            onPress={() => {
+              setOpen(false);
+            }}
+          >
+            Done selecting
+          </StyledButton>
         </Sheet.Frame>
       </Sheet>
     </Stack>

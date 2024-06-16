@@ -27,6 +27,8 @@ import {
 import { afterAnimations } from "../utils/afterAnimations";
 import { Block, SortType } from "../utils/dataTypes";
 import { DatabaseContext } from "../utils/db";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 enum ViewType {
   Carousel = "carousel",
@@ -131,13 +133,7 @@ export function ReviewView() {
 
   return (
     <YStack gap="$2" flex={1}>
-      <XStack
-        marginTop="$2"
-        position="absolute"
-        width="100%"
-        zIndex={1}
-        paddingHorizontal="$2"
-      >
+      <XStack marginTop="$2" width="100%" zIndex={1} paddingHorizontal="$2">
         <XStack alignItems="center" width="100%" justifyContent="space-between">
           <XStack
             paddingHorizontal="$3"
@@ -272,10 +268,14 @@ export function CarouselView({
   //     scrollPanGesture,
   //     nativeGesture
   //   );
-  const height = useWindowDimensions().height;
+  // 44 is the height of the top bar
+  const bottomTabHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const height =
+    useWindowDimensions().height - 44 - bottomTabHeight - insets.top;
 
   return (
-    <YStack flex={1} paddingHorizontal="$4" width="100%">
+    <YStack flex={1} paddingHorizontal="$4" width="100%" minHeight={height}>
       <Carousel
         ref={carouselRef}
         loop={false}
@@ -288,33 +288,27 @@ export function CarouselView({
         windowSize={5}
         snapEnabled
         renderItem={({ item, index }) => (
-          <YStack
-            alignItems="center"
-            justifyContent="center"
-            flex={1}
-            flexGrow={1}
-            marginBottom="40%"
-            width="100%"
-            height="100%"
-          >
+          <YStack flex={1} flexGrow={1}>
             <BlockReviewSummary
               shouldLink
               block={item}
-              // TODO: not scrolling properly
               style={{
                 width: "100%",
-                maxHeight: (height / 5) * 3,
+                maxHeight: height * 0.9,
               }}
               blockStyle={{
                 width: "100%",
-                borderRadius: 8,
-                maxHeight: (height / 5) * 3,
+                maxHeight: height * 0.8,
                 resizeMode: "contain",
                 aspectRatio: undefined,
+                flexShrink: 1,
               }}
               containerProps={{
                 width: "100%",
                 minWidth: "100%",
+                height: height,
+                marginVertical: "auto",
+                justifyContent: "center",
               }}
             />
           </YStack>

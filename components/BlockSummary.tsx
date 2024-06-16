@@ -539,7 +539,7 @@ export function BlockReviewSummary({
         mediaStyle={{
           width: widthProperty,
           // @ts-ignore
-          borderRadius: "$2",
+          borderRadius: "$4",
           ...blockStyle,
         }}
         textContainerProps={{
@@ -559,6 +559,7 @@ export function BlockReviewSummary({
     }
   }
 
+  // TODO: need to truncate title, etc. to make it fit
   const renderedSummary = useMemo(
     () => (
       <YStack gap="$2" {...containerProps}>

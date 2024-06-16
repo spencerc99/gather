@@ -33,6 +33,7 @@ export function UncategorizedView() {
         editable={true}
         style={{
           height: "100%",
+          width: "100%",
         }}
         containerProps={{
           width: "90%",

@@ -289,7 +289,7 @@ export function EditableTextOnClick({
             {...{
               borderWidth: 0,
               backgroundColor: "transparent",
-              minHeight: "auto",
+              minHeight: undefined,
             }}
           />
         )}
