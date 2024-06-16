@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import * as Application from "expo-application";
 import { useContext, useMemo, useState } from "react";
 import { Animated, Image, SafeAreaView, useColorScheme } from "react-native";
-import { Avatar, H5, ScrollView, Spinner, YStack } from "tamagui";
+import { Avatar, H5, ScrollView, Spinner, XStack, YStack } from "tamagui";
 import {
   Icon,
   LinkButton,
@@ -165,17 +165,60 @@ export default function ProfileScreen() {
           >
             Origins
           </LinkButton>
-          <LinkButton
-            flex={1}
-            width="100%"
-            href={HelpGuideUrl}
-            theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-            icon={<Icon name="document-text" />}
-            justifyContent="flex-start"
-          >
-            Guide
-          </LinkButton>
+          <XStack gap="$2">
+            <LinkButton
+              flex={1}
+              width="100%"
+              href={HelpGuideUrl}
+              theme="gray"
+              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+              icon={<Icon name="document-text" />}
+              justifyContent="flex-start"
+            >
+              Guide
+            </LinkButton>
+            <LinkButton
+              href="/feedback"
+              justifyContent="flex-start"
+              theme="gray"
+              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+              icon={<Icon name="mail" />}
+            >
+              Give feedback
+            </LinkButton>
+          </XStack>
+          <XStack gap="$2">
+            <LinkButton
+              flex={1}
+              href="/changelog"
+              justifyContent="flex-start"
+              theme="gray"
+              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+              icon={<Icon name="newspaper" />}
+            >
+              What's new
+            </LinkButton>
+            <LinkButton
+              flex={1}
+              width="100%"
+              href="/icons"
+              justifyContent="flex-start"
+              icon={
+                <Image
+                  source={appIconSource}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 4,
+                  }}
+                />
+              }
+              theme="gray"
+              backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+            >
+              App icons
+            </LinkButton>
+          </XStack>
           <Animated.View
             style={{
               position: "relative",
@@ -234,45 +277,6 @@ export default function ProfileScreen() {
               </>
             )}
           </Animated.View>
-          <LinkButton
-            href="/feedback"
-            justifyContent="flex-start"
-            theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-            icon={<Icon name="mail" />}
-          >
-            Give feedback
-          </LinkButton>
-          <LinkButton
-            flex={1}
-            width="100%"
-            href="/icons"
-            justifyContent="flex-start"
-            icon={
-              <Image
-                source={appIconSource}
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: 4,
-                }}
-              />
-            }
-            theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-          >
-            App icons
-          </LinkButton>
-          <LinkButton
-            flex={1}
-            href="/changelog"
-            justifyContent="flex-start"
-            theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-            icon={<Icon name="newspaper" />}
-          >
-            What's new
-          </LinkButton>
 
           <StyledParagraph>
             Thank you for giving your space and time to this app.
