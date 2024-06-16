@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext, useState } from "react";
+import { memo, useCallback, useContext, useEffect, useState } from "react";
 import { Alert, FlatList } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import {
@@ -20,6 +20,7 @@ import { CollectionSummary } from "./CollectionSummary";
 import { CreateCollectionButton } from "./CreateCollectionButton";
 import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
 import { ModalView } from "react-native-ios-modal";
+import { usePathname } from "expo-router";
 
 setupNativeSheet("ios", ModalView);
 

@@ -189,6 +189,7 @@ export function ArenaChannelMultiSelect({
             >
               {Object.keys(ChannelScope).map((scope) => (
                 <ToggleGroup.Item
+                  key={scope}
                   flex={1}
                   value={scope}
                   backgroundColor={toggleValue === scope ? "$blue6" : undefined}

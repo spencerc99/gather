@@ -1226,6 +1226,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     let arenaBlock;
 
     if (!block.remoteSourceInfo) {
+      removePendingBlockUpdate(block.id);
       return;
     }
 

@@ -73,26 +73,36 @@ function CreateCollectionModal() {
           to import one of your channels
         </StyledText>
       ) : (
-        <ImportArenaChannelSelect
-          {...{
-            isLoading,
-            setIsLoading,
-            onSuccess: () => {
-              router.replace("..");
-            },
-          }}
-          frameProps={{
-            marginLeft: "-10%",
-            width: "120%",
-          }}
-          overlayProps={{
-            height: "126%",
-            width: "126%",
-            marginLeft: "-13%",
-            marginTop: "-13%",
-          }}
-          modal={false}
-        />
+        <>
+          {/* TODO: this is jank, the select collections modal is still open after this
+           */}
+          <StyledText>
+            or{" "}
+            <Link href="/(tabs)/profile">
+              <StyledText link>import multiple...</StyledText>
+            </Link>
+          </StyledText>
+          <ImportArenaChannelSelect
+            {...{
+              isLoading,
+              setIsLoading,
+              onSuccess: () => {
+                router.replace("..");
+              },
+            }}
+            frameProps={{
+              marginLeft: "-10%",
+              width: "120%",
+            }}
+            overlayProps={{
+              height: "126%",
+              width: "126%",
+              marginLeft: "-13%",
+              marginTop: "-13%",
+            }}
+            modal={false}
+          />
+        </>
       )}
     </YStack>
   );
