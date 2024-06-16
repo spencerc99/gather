@@ -161,7 +161,7 @@ export function SlidingScalePayment({
         onSlideEnd={() => {
           onSlideEnd?.();
         }}
-        onSlideStart={() => {
+        onSlideStart={(e) => {
           onSlideStart?.();
         }}
       >

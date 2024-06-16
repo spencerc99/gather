@@ -26,6 +26,8 @@ export default function Feedback() {
     },
   });
 
+  // TODO: select set of gather channels to import, if connected to are.na, otherwise send to form.
+  // store if imported in mmkv
   return (
     <SafeAreaView
       style={{

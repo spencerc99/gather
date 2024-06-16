@@ -5,6 +5,7 @@ import { DatabaseContext } from "../utils/db";
 import {
   ArenaLogo,
   ButtonWithConfirm,
+  EditableTextOnClick,
   ExternalLinkText,
   StyledButton,
   StyledParagraph,
@@ -48,6 +49,14 @@ export function CollectionDetailView({
   const router = useRouter();
   const { logError } = useContext(ErrorsContext);
   const [devModeEnabled] = useStickyValue("devModeEnabled", false);
+  async function update(updateFn: () => ReturnType<typeof updateBlock>) {
+    setIsLoading(true);
+    try {
+      await updateFn();
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   async function onClickSyncNewItems() {
     setIsLoading(true);
@@ -187,9 +196,24 @@ export function CollectionDetailView({
         <YStack padding="10%">
           <YStack flex={1} gap="$1">
             {/* TODO: change all these to labels and make them editable with a save */}
-            <StyledParagraph title marginBottom="$2">
-              {title}
-            </StyledParagraph>
+            <EditableTextOnClick
+              text={title}
+              disabled={isLoading}
+              onEdit={async (newTitle) => {
+                await update(
+                  async () =>
+                    await updateCollection({
+                      collectionId: id,
+                      editInfo: { title: newTitle },
+                    })
+                );
+              }}
+              marginBottom="$2"
+              inputProps={{
+                title: true,
+                enterKeyHint: "done",
+              }}
+            />
             {(__DEV__ || devModeEnabled) && (
               <StyledParagraph metadata>ID: {id}</StyledParagraph>
             )}

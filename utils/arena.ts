@@ -1,5 +1,6 @@
 import {
   Block,
+  Collection,
   DatabaseBlockInsert,
   LastSyncedInfo,
   RemoteSourceType,
@@ -8,7 +9,12 @@ import { BlockType, MimeType } from "./mimeTypes";
 import { logError } from "./errors";
 import { withQueryParams } from "./url";
 const XMLParser = require("react-xml-parser");
-import { ArenaUpdatedBlocksKey, getItem, setItem } from "./asyncStorage";
+import {
+  ArenaUpdatedBlocksKey,
+  ArenaUpdatedChannelsKey,
+  getItem,
+  setItem,
+} from "./asyncStorage";
 import { getCreatedByForRemote } from "./user";
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
@@ -372,6 +378,11 @@ export async function getChannelInfo(
       },
     });
     const respBody = await resp.json();
+    if (!resp.ok) {
+      throw new Error(
+        `failed to fetch channel info: ${JSON.stringify(respBody)}`
+      );
+    }
     const { contents, ...rest } = respBody;
     channelInfo = rest as ArenaChannelInfo;
   } catch (e) {
@@ -903,7 +914,6 @@ export async function searchChannels(
   }
 }
 
-// TODO: this doesn't set the remote_created_at on connection
 export async function createChannel({
   accessToken,
   title,
@@ -934,6 +944,11 @@ export async function createChannel({
     logError(`failed to create channel ${resp.status}: ${maybeChannel}`);
     throw new Error(JSON.stringify(maybeChannel));
   }
+  await updateArenaChannel({
+    channelId: maybeChannel.id.toString(),
+    arenaToken: accessToken,
+    description: GatherArenaAttribution,
+  });
 
   return {
     newChannel: maybeChannel,
@@ -960,11 +975,11 @@ export async function getBlock(
   return json;
 }
 
-type FieldUpdate = {
+type BlockFieldUpdate = {
   [k in keyof Block]: number;
 };
 interface UpdatedBlocks {
-  [blockId: string]: FieldUpdate;
+  [blockId: string]: BlockFieldUpdate;
 }
 
 export function getPendingBlockUpdates(): UpdatedBlocks {
@@ -1023,3 +1038,153 @@ export function rawArenaBlocksToBlockInsertInfo(
     ),
   }));
 }
+
+type CollectionFieldUpdate = {
+  [k in keyof Collection]: number;
+};
+interface UpdatedCollections {
+  [collectionId: string]: CollectionFieldUpdate;
+}
+
+export function getPendingCollectionUpdates(): UpdatedCollections {
+  const updatedCollections = getItem<UpdatedCollections>(
+    ArenaUpdatedChannelsKey
+  );
+  return updatedCollections || {};
+}
+
+export function recordPendingCollectionUpdate(
+  collectionId: string,
+  updatedFields: (keyof Collection)[]
+) {
+  const now = Date.now();
+  const updatedCollections = getPendingCollectionUpdates();
+  const existing = updatedCollections[collectionId] || {};
+  setItem(ArenaUpdatedChannelsKey, {
+    ...updatedCollections,
+    [collectionId]: {
+      ...existing,
+      ...Object.fromEntries(updatedFields.map((key) => [key, now])),
+    },
+  });
+}
+
+export function removePendingCollectionUpdate(collectionId: string) {
+  const updatedCollections = getPendingCollectionUpdates();
+  delete updatedCollections[collectionId];
+  setItem(ArenaUpdatedChannelsKey, updatedCollections);
+}
+
+export async function updateArenaChannel({
+  channelId,
+  arenaToken,
+  title,
+  description,
+  status,
+}: {
+  channelId: string;
+  arenaToken: string;
+  title?: string;
+  description?: string;
+  status?: ArenaVisibility;
+}) {
+  console.log("updating channel", channelId, title, description, status);
+  const updateMetadata = await fetch(ArenaGraphqlApi, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${arenaToken}`,
+      "Content-Type": "application/json",
+      "X-APP-TOKEN": ArenaGraphqlKey,
+    },
+    body: JSON.stringify({
+      query: updateChannelMutation,
+      variables: {
+        id: channelId,
+        title,
+        description,
+        status,
+      },
+    }),
+  });
+  if (!updateMetadata.ok) {
+    logError(
+      `failed to update block metadata in arena ${
+        updateMetadata.status
+      }: ${JSON.stringify(updateMetadata)}`
+    );
+  }
+  return updateMetadata;
+}
+
+const updateChannelMutation = `
+  mutation updateChannelMutation(
+    $id: ID!
+    $title: String
+    $description: String
+    $visibility: ChannelVisibility
+    $content_flag: ContentFlag
+    $owner: ChannelMemberInput
+  ) {
+    update_channel(
+      input: {
+        id: $id
+        title: $title
+        description: $description
+        visibility: $visibility
+        content_flag: $content_flag
+        owner: $owner
+      }
+    ) {
+      channel {
+        ...ManageChannel
+      }
+    }
+  }
+  fragment ManageChannel on Channel {
+    id
+    href
+    title
+    description(format: MARKDOWN)
+    visibility
+    content_flag
+    can {
+      destroy
+      export
+    }
+    user {
+      id
+    }
+    owner {
+      __typename
+      ... on User {
+        id
+      }
+      ... on Group {
+        id
+      }
+    }
+    ...TransferChannel
+  }
+  fragment TransferChannel on Channel {
+    id
+    can {
+      transfer
+    }
+    is_pending_transfer
+    transfer_request {
+      recipient {
+        __typename
+        ... on User {
+          id
+          name
+        }
+        ... on Group {
+          id
+          name
+        }
+      }
+      is_recipient_member
+    }
+    visibility
+  }
+`;

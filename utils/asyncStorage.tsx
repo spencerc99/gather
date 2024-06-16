@@ -9,6 +9,7 @@ interface LastSyncedRemoteInfo {
 export const CollectionToReviewKey = "collectionToReview";
 export const ContributionsKey = "contributions";
 export const ArenaUpdatedBlocksKey = "arenaUpdatedBlocks";
+export const ArenaUpdatedChannelsKey = "arenaUpdatedChannels";
 
 export function getLastSyncedInfoForChannel(
   channelId: string

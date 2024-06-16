@@ -135,8 +135,8 @@ function RootLayoutNav() {
       <Stack.Screen
         name="support"
         options={{
-          presentation: "modal",
-          headerShown: false,
+          presentation: "card",
+          title: "",
         }}
       />
       <Stack.Screen

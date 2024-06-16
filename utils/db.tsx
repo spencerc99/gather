@@ -11,8 +11,12 @@ import * as SQLite from "expo-sqlite";
 import { ErrorsContext } from "./errors";
 import {
   getBlock as getArenaBlock,
+  getPendingCollectionUpdates,
   rawArenaBlocksToBlockInsertInfo,
   recordPendingBlockUpdate,
+  recordPendingCollectionUpdate,
+  removePendingCollectionUpdate,
+  updateArenaChannel,
 } from "./arena";
 import {
   PropsWithChildren,
@@ -73,7 +77,7 @@ import { Indices, Migrations, migrateCreatedBy } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { UserContext, getCreatedByForRemote } from "./user";
 import { filterItemsBySearchValue } from "./search";
-import { ensure } from "./react";
+import { ensure, ensureUnreachable } from "./react";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -1288,6 +1292,85 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
   }
 
+  async function handleCollectionRemoteUpdate(collection: Collection) {
+    const collectionUpdates = getPendingCollectionUpdates();
+    const updates = collectionUpdates[collection.id];
+
+    if (!collection.remoteSourceType || !collection.remoteSourceInfo) {
+      removePendingCollectionUpdate(collection.id);
+      return;
+    }
+
+    switch (collection.remoteSourceType) {
+      case RemoteSourceType.Arena: {
+        const { arenaId: arenaCollectionId } = collection.remoteSourceInfo;
+        let arenaCollection;
+        try {
+          arenaCollection = await getChannelInfo(
+            arenaCollectionId,
+            arenaAccessToken
+          );
+        } catch (err) {
+          logError(err);
+          // TODO: only skip if 404
+          removePendingCollectionUpdate(collection.id);
+          return;
+        }
+
+        if (arenaCollection) {
+          try {
+            const updated_at = new Date(arenaCollection.updated_at);
+            // if updated timestamp > remoteupdated timestamp, then record it
+            const remoteUpdates = [];
+            const localUpdates = [];
+            // ONLY TITLE ELIGIBLE
+            const EligibleKeys = ["title"] as const;
+            for (const key of EligibleKeys) {
+              if (key in updates) {
+                const updatedTime = updates[key];
+                if (updatedTime && updatedTime > updated_at.getTime()) {
+                  remoteUpdates.push([key, collection[key]]);
+                }
+              }
+
+              if (
+                arenaCollection[key] &&
+                arenaCollection[key] !== collection[key] &&
+                updated_at.getTime() > collection.updatedAt.getTime()
+              ) {
+                localUpdates.push([key, arenaCollection[key]]);
+              }
+            }
+
+            if (remoteUpdates.length > 0) {
+              console.log("[CHANNEL] UPDATING REMOTE", remoteUpdates);
+              await updateArenaChannel({
+                channelId: arenaCollectionId,
+                arenaToken: arenaAccessToken,
+                ...Object.fromEntries(remoteUpdates),
+              });
+            }
+
+            if (localUpdates.length > 0) {
+              console.log("[CHANNEL] UPDATING LOCAL", localUpdates);
+              await updateCollection({
+                collectionId: collection.id,
+                editInfo: Object.fromEntries(localUpdates),
+                ignoreRemoteUpdate: true,
+              });
+            }
+            removePendingCollectionUpdate(collection.id);
+          } catch (err) {
+            logError(err);
+          }
+        }
+        return;
+      }
+      default:
+        ensureUnreachable(collection.remoteSourceType);
+    }
+  }
+
   async function updateBlockBase({
     blockId,
     editInfo,
@@ -1430,9 +1513,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   async function updateCollectionBase({
     collectionId,
     editInfo,
+    ignoreRemoteUpdate,
   }: {
     collectionId: string;
     editInfo: CollectionEditInfo;
+    ignoreRemoteUpdate?: boolean;
   }): Promise<void> {
     if (Object.keys(editInfo).length === 0) {
       return;
@@ -1465,7 +1550,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
 
     handleSqlErrors(result);
-    // return mapDbCollectionToCollection(result.rows[0]);
+    const newCollection = await getCollection(collectionId);
+    if (!ignoreRemoteUpdate) {
+      recordPendingCollectionUpdate(
+        collectionId,
+        Object.keys(editInfo) as (keyof Collection)[]
+      );
+      void handleCollectionRemoteUpdate(newCollection);
+    }
   }
 
   const updateCollectionMutation = useMutation({
@@ -1525,6 +1617,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
   async function getPendingArenaBlocksToUpdate(): Promise<Block[]> {
     const blocksToUpdate = getPendingBlockUpdates();
+    if (!Object.keys(blocksToUpdate).length) {
+      return [];
+    }
+
     const [result] = await db.execAsync(
       [
         {
@@ -1543,6 +1639,30 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     handleSqlErrors(result);
     return result.rows.map(mapDbBlockToBlock);
+  }
+  async function getPendingArenaCollectionsToUpdate(): Promise<Collection[]> {
+    const collectionsToUpdate = getPendingCollectionUpdates();
+    if (!Object.keys(collectionsToUpdate).length) {
+      return [];
+    }
+
+    const [result] = await db.execAsync(
+      [
+        {
+          // TODO: this query should be just arena when supporting other providers
+          sql: inParam(
+            `SELECT  collections.id, collections.title, collections.description, collections.remote_source_type, collections.remote_source_info, collections.updated_timestamp
+            FROM        collections
+            WHERE       collections.id IN (?#);`,
+            Object.keys(collectionsToUpdate)
+          ),
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows.map(mapDbCollectionToCollection);
   }
   async function getPendingArenaBlocksToDelete(): Promise<Block[]> {
     const [result] = await db.execAsync(
@@ -1709,6 +1829,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           logError(err);
         }
       }
+      const collectionsToUpdate = await getPendingArenaCollectionsToUpdate();
+      console.log(
+        "[Arena Sync] Collection Updates:",
+        collectionsToUpdate.length
+      );
+      for (const collection of collectionsToUpdate) {
+        try {
+          handleCollectionRemoteUpdate(collection);
+        } catch (err) {
+          logError(err);
+        }
+      }
     });
     InteractionManager.runAfterInteractions(async () => {
       const blocksToDelete = await getPendingArenaBlocksToDelete();
@@ -1833,17 +1965,19 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
         // TODO: a little ineficient bc this always fetches the 1st page of contents
         const channelInfo = await getChannelInfo(channelId, arenaAccessToken);
-        // TODO: this could get a little out of sync if we allow editing the title on our end and arena doesn't update properly
-        // so it needs to take into account the updatedAt timestamp to be fully safe.
         console.log("Title:", channelInfo.title);
         if (channelInfo.title !== collection.title) {
-          console.log(
-            `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`
-          );
-          await updateCollection({
-            collectionId,
-            editInfo: { title: channelInfo.title },
-          });
+          if (
+            channelInfo.updated_at.getTime() > collection.updatedAt.getTime()
+          ) {
+            console.log(
+              `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`
+            );
+            await updateCollection({
+              collectionId,
+              editInfo: { title: channelInfo.title },
+            });
+          }
         }
 
         const lastContents = await getChannelContents(channelId, {
