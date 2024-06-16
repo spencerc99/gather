@@ -168,7 +168,7 @@ export function ArenaChannelMultiSelect({
           stiffness: 120,
         }}
         onOpenChange={setOpen}
-        snapPoints={[85]}
+        snapPoints={[80]}
         animation="quick"
         dismissOnSnapToBottom
       >

@@ -413,9 +413,13 @@ export default function IntroScreen() {
                         text: "Sorry I really can't",
                         onPress: () => {
                           Alert.alert(
-                            "It's okay",
-                            "I hope you enjoy the app regardless!",
-                            []
+                            "That's okay",
+                            "I hope you enjoy Gather and find it useful. If you change your mind, you can always contribute later in the profile tab.",
+                            [
+                              {
+                                text: "Thanks! I'll contribute later if I like it",
+                              },
+                            ]
                           );
                           nextStep();
                         },
