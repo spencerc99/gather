@@ -70,11 +70,11 @@ export function ReviewView() {
     },
   });
   const [seed, setSeed] = useState(generateSeed());
-  const outputBlocks = useMemo(
+  const randomizedBlocks = useMemo(
     () =>
       isLoading
         ? []
-        : (tempBlocks || []).sort(
+        : [...(tempBlocks || [])].sort(
             (a, b) =>
               Math.sin(Number(a.id) + seed) - Math.sin(Number(b.id) + seed)
           ),
@@ -83,6 +83,10 @@ export function ReviewView() {
   function randomizeBlocks() {
     setSeed(generateSeed());
   }
+  const outputBlocks = useMemo(
+    () => (sortType === SortType.Random ? randomizedBlocks : tempBlocks),
+    [sortType, randomizedBlocks, tempBlocks]
+  );
 
   // TODO: use this when native sqlite random sort works
   // const [seed, setSeed] = useState(generateSeed());
@@ -170,11 +174,25 @@ export function ReviewView() {
           </XStack>
           <XStack gap="$1">
             {/* square */}
-            {/* <SortSelect/> */}
+            {/* <SortSelect /> */}
             <StyledButton
               size="$small"
-              onPress={randomizeBlocks}
-              icon={<Icon name="random" type={IconType.FontAwesomeIcon} />}
+              onPress={() => {
+                if (sortType === SortType.Created) {
+                  randomizeBlocks();
+                }
+                setSortType((prev) =>
+                  prev === SortType.Random ? SortType.Created : SortType.Random
+                );
+                carouselRef.current?.scrollTo({ index: 0 });
+              }}
+              icon={
+                sortType === SortType.Created ? (
+                  <Icon name="random" type={IconType.FontAwesomeIcon} />
+                ) : (
+                  <Icon name="sort" type={IconType.FontAwesomeIcon} />
+                )
+              }
               borderRadius={100}
             ></StyledButton>
             <StyledButton
@@ -372,7 +390,7 @@ export function FeedView({
 
 function SortSelect() {
   return (
-    <Select defaultValue="one" native>
+    <Select defaultValue="creation" native>
       <Select.Trigger maxWidth="$6" padding="$1" justifyContent="center">
         <Select.Value placeholder="Sort..." />
       </Select.Trigger>
@@ -394,13 +412,10 @@ function SortSelect() {
         <Select.Viewport>
           <Select.Group>
             <Select.Item value="creation" index={0}>
-              <Select.ItemText>creation</Select.ItemText>
+              <Select.ItemText>Chronological</Select.ItemText>
             </Select.Item>
             <Select.Item value="random" index={1}>
-              <Select.ItemText>random</Select.ItemText>
-            </Select.Item>
-            <Select.Item value="hlelo" index={2}>
-              <Select.ItemText>hlelo</Select.ItemText>
+              <Select.ItemText>Random</Select.ItemText>
             </Select.Item>
           </Select.Group>
         </Select.Viewport>

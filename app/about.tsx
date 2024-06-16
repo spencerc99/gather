@@ -103,7 +103,7 @@ export function AboutSection({
       <XStack>
         <H2>
           Hi, I'm{" "}
-          <ExternalLinkText href="https://spencer.place">
+          <ExternalLinkText href="https://spencer.place" bold>
             Spencer
           </ExternalLinkText>
         </H2>
@@ -137,11 +137,12 @@ export function AboutSection({
         , it has become an expression of how I wish to interact with my data.
         {!shortened && (
           <StyledText>
-            You can read more about the origins in{" "}
+            {" "}
+            You can learn more about the origins in{" "}
             <ExternalLinkText href={ArenaInterviewUrl}>
-              this interview
-            </ExternalLinkText>{" "}
-            with Are.na
+              my interview with Are.na
+            </ExternalLinkText>
+            .
           </StyledText>
         )}
       </StyledText>
