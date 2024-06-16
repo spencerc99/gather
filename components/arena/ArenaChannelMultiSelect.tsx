@@ -170,6 +170,7 @@ export function ArenaChannelMultiSelect({
         onOpenChange={setOpen}
         snapPoints={[85]}
         animation="quick"
+        dismissOnSnapToBottom
       >
         <Sheet.Overlay
           animation="lazy"
@@ -226,6 +227,8 @@ export function ArenaChannelMultiSelect({
             <Spinner size="small" color="$orange9" />
           ) : (
             <FlatList
+              // @ts-ignore
+              renderScrollComponent={(props) => <Sheet.ScrollView {...props} />}
               contentContainerStyle={{
                 // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
                 paddingBottom: 24,
@@ -237,16 +240,16 @@ export function ArenaChannelMultiSelect({
               data={sortedAndAnnotatedChannels}
               renderItem={renderChannel}
               ListFooterComponent={
-                isFetchingNextPage ? (
-                  <YStack
-                    justifyContent="center"
-                    alignSelf="center"
-                    alignItems="center"
-                    width="100%"
-                  >
+                <YStack
+                  justifyContent="center"
+                  alignSelf="center"
+                  alignItems="center"
+                  width="100%"
+                >
+                  {isFetchingNextPage && (
                     <Spinner size="small" color="$orange9" />
-                  </YStack>
-                ) : null
+                  )}
+                </YStack>
               }
               onEndReachedThreshold={0.3}
               onEndReached={() => {
