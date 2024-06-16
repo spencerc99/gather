@@ -285,12 +285,14 @@ export function CarouselView({
               // TODO: not scrolling properly
               style={{
                 width: "100%",
-                maxHeight: height / 2,
+                maxHeight: (height / 5) * 3,
               }}
               blockStyle={{
                 width: "100%",
                 borderRadius: 8,
-                maxHeight: height / 2,
+                maxHeight: (height / 5) * 3,
+                resizeMode: "contain",
+                aspectRatio: undefined,
               }}
               containerProps={{
                 width: "100%",
@@ -325,7 +327,7 @@ export function FeedView({
           height: 170,
         }}
         blockStyle={{
-          resizeMode: "contain",
+          objectFit: "contain",
         }}
         style={{
           width: 170,

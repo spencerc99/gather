@@ -1,12 +1,11 @@
-import { Tabs, Stack, useFocusEffect } from "expo-router";
-import { YStack, XStack, useTheme } from "tamagui";
+import { Tabs, Stack } from "expo-router";
+import { YStack } from "tamagui";
 import { MainHeaderIcons } from "../app/(tabs)/_layout";
 import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { TextForageView } from "../components/TextForageView";
-import { useContext, useEffect, useState } from "react";
-import { DatabaseContext } from "../utils/db";
-import { Keyboard, Pressable, useColorScheme } from "react-native";
+import { useEffect, useState } from "react";
+import { Keyboard } from "react-native";
 
 export function ChatDetailView({
   initialCollectionId,

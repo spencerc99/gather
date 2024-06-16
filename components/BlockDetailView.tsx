@@ -147,7 +147,7 @@ export function BlockDetailView({ block }: { block: Block }) {
           <BlockSummary
             block={block}
             blockStyle={{
-              resizeMode: "contain",
+              objectFit: "contain",
               aspectRatio: undefined,
               maxHeight: "100%",
             }}

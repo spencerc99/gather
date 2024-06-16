@@ -32,13 +32,18 @@ export function UncategorizedView() {
         key={block.id}
         editable={true}
         style={{
-          width: "100%",
           height: "100%",
         }}
         containerProps={{
           width: "90%",
-          aspectRatio: 1,
+          maxHeight: "80%",
           marginBottom: "$8",
+          justifyContent: "center",
+          marginVertical: "auto",
+          aspectRatio: 1,
+        }}
+        blockStyle={{
+          resizeMode: "contain",
         }}
       />
     );

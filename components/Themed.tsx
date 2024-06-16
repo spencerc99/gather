@@ -571,6 +571,7 @@ export function AspectRatioImage({
               }
             : require("../assets/images/placeholder-image.jpg")
         }
+        // NOTE: I tried switching this to objectFit but it didnt always work
         resizeMode="cover"
         // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
         // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling

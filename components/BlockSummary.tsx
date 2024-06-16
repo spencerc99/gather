@@ -554,31 +554,8 @@ export function BlockReviewSummary({
     );
     switch (type) {
       default:
-        return (
-          // TODO: don't render content for link without image (content === '')
-          <YStack>
-            {content}
-            {(description || source) && (
-              <YStack
-                maxWidth={widthProperty}
-                flexShrink={1}
-                paddingHorizontal="$2"
-                paddingVertical="$2"
-              >
-                {source && (
-                  <StyledText metadata ellipse={true}>
-                    {source}
-                  </StyledText>
-                )}
-                {description && (
-                  <StyledText ellipse={true} numberOfLines={3}>
-                    {description}
-                  </StyledText>
-                )}
-              </YStack>
-            )}
-          </YStack>
-        );
+        // TODO: don't render content for link without image (content === '')
+        return content;
     }
   }
 
@@ -591,15 +568,22 @@ export function BlockReviewSummary({
           </StyledParagraph>
         )}
         <HoldItem items={blockMenuItems} closeOnTap>
-          <StyledView
-            backgroundColor={showBackground ? "$gray6" : undefined}
-            borderRadius="$4"
-            height="auto"
-            width="100%"
-          >
-            {renderContent()}
-          </StyledView>
+          {renderContent()}
         </HoldItem>
+        {(description || source) && (
+          <YStack maxWidth={widthProperty} flexShrink={1}>
+            {source && (
+              <StyledText metadata ellipse={true}>
+                {source}
+              </StyledText>
+            )}
+            {description && (
+              <StyledText ellipse={true} numberOfLines={3}>
+                {description}
+              </StyledText>
+            )}
+          </YStack>
+        )}
         {/* TODO: this should be who connected it */}
         {isOwner === false && (
           <XStack gap="$1.5" alignItems="center">

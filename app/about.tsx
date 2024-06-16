@@ -101,7 +101,12 @@ export function AboutSection({
   return (
     <>
       <XStack>
-        <H2>Hi, I'm Spencer</H2>
+        <H2>
+          Hi, I'm{" "}
+          <ExternalLinkText href="https://spencer.place">
+            Spencer
+          </ExternalLinkText>
+        </H2>
         <Image
           source={require("../assets/images/spencer-happy-taiwan.png")}
           style={{
