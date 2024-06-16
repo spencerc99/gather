@@ -147,6 +147,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="changelog"
+        options={{
+          presentation: "card",
+          title: "What's New",
+        }}
+      />
+      <Stack.Screen
         name="errors"
         options={{
           presentation: "card",

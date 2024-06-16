@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
   KeyboardAvoidingView,
@@ -102,7 +102,7 @@ export function TextForageView({
       getNextPageParam: (lastPage) => lastPage?.nextId ?? undefined,
     });
 
-  const blocks = data?.pages.flatMap((p) => p.blocks);
+  const blocks = useMemo(() => data?.pages.flatMap((p) => p.blocks), [data]);
 
   useEffect(() => {
     if (shareIntent !== null) {

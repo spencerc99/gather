@@ -2,10 +2,7 @@ import dayjs from "dayjs";
 import * as Application from "expo-application";
 import { useContext, useMemo, useState } from "react";
 import { Animated, Image, SafeAreaView, useColorScheme } from "react-native";
-import {
-  Avatar, H5, ScrollView,
-  Spinner, YStack
-} from "tamagui";
+import { Avatar, H5, ScrollView, Spinner, YStack } from "tamagui";
 import {
   Icon,
   LinkButton,
@@ -252,26 +249,30 @@ export default function ProfileScreen() {
             href="/icons"
             justifyContent="flex-start"
             icon={
-              appIconSource ? (
-                <Image
-                  source={appIconSource}
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 4,
-                  }}
-                />
-              ) : null
+              <Image
+                source={appIconSource}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
+                }}
+              />
             }
             theme="gray"
             backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
           >
             App icons
           </LinkButton>
-          {/* TODO: add changelog */}
-          {/* <StyledButton>
-        What's new
-      </StyledButton> */}
+          <LinkButton
+            flex={1}
+            href="/changelog"
+            justifyContent="flex-start"
+            theme="gray"
+            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
+            icon={<Icon name="newspaper" />}
+          >
+            What's new
+          </LinkButton>
 
           <StyledParagraph>
             Thank you for giving your space and time to this app.

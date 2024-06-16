@@ -102,6 +102,8 @@ export interface RawArenaChannelItem {
   title: string;
   content: string;
   content_html: string;
+  created_at: string;
+  updated_at: string;
   description_html: string;
   description: string;
   image: {
@@ -151,6 +153,7 @@ export interface RawArenaBlock {
   title: string;
   updated_at: string;
   created_at: string;
+  connected_at: string | null;
   state: string;
   comment_count: number;
   generated_title: string;
@@ -171,12 +174,30 @@ export interface RawArenaBlock {
   source: {
     url: string;
   } | null;
-  embed: null;
-  attachment: null;
+  embed: {
+    url: null;
+    type: string;
+    title: null;
+    author_name: string;
+    author_url: string;
+    source_url: null;
+    thumbnail_url: null;
+    width: number;
+    height: number;
+    html: string;
+  } | null;
+  attachment: {
+    file_name: string;
+    file_size: number;
+    file_size_display: string;
+    content_type: string;
+    extension: string;
+    url: string;
+  };
   metadata: null;
   id: number;
-  base_class: string;
-  class: string;
+  base_class: "Block" | "Channel";
+  class: ArenaClass;
   user: RawArenaUser;
   connections: Connection[];
 }
@@ -281,6 +302,30 @@ export async function getChannelThumb(
   });
   const respBody = await resp.json();
   return respBody.contents;
+}
+export async function getChannelContentsPaginated(
+  channelId: string,
+  {
+    accessToken,
+    page,
+    per,
+  }: { accessToken?: string | null; page?: number; per?: number } = {}
+): Promise<RawArenaChannelItem[]> {
+  const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
+  const url = withQueryParams(baseUrl, { page, per });
+  const resp = await fetch(url, {
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  });
+  const respBody = await resp.json();
+  if (!resp.ok) {
+    logError("failed to fetch channel contents", JSON.stringify(respBody));
+    throw new Error(
+      `failed to fetch channel contents: ${JSON.stringify(respBody)}`
+    );
+  }
+  return respBody.contents as RawArenaChannelItem[];
 }
 
 export async function getChannelContents(
@@ -1012,7 +1057,13 @@ export function removePendingBlockUpdate(blockId: string) {
 export function rawArenaBlocksToBlockInsertInfo(
   arenaBlocks: RawArenaChannelItem[]
 ): DatabaseBlockInsert[] {
-  return arenaBlocks.map((block) => ({
+  return arenaBlocks.map(rawArenaBlockToBlockInsertInfo);
+}
+
+export function rawArenaBlockToBlockInsertInfo(
+  block: RawArenaChannelItem
+): DatabaseBlockInsert {
+  return {
     title: block.title,
     description: block.description,
     content:
@@ -1036,7 +1087,18 @@ export function rawArenaBlocksToBlockInsertInfo(
       RemoteSourceType.Arena,
       block.connected_by_user_slug
     ),
-  }));
+  };
+}
+export function rawArenaBlockToBlock(block: RawArenaChannelItem): Block {
+  return {
+    id: block.id.toString(),
+    ...rawArenaBlockToBlockInsertInfo(block),
+    createdAt: new Date(block.created_at),
+    updatedAt: new Date(block.updated_at),
+    remoteConnectedAt: block.connected_at ? new Date(block.connected_at) : null,
+    numConnections: 1,
+    collectionIds: [],
+  };
 }
 
 type CollectionFieldUpdate = {
