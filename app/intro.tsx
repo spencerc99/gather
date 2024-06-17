@@ -3,7 +3,14 @@ import * as NavigationBar from "expo-navigation-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import { useContext, useEffect, useState } from "react";
-import { SafeAreaView, Alert, Dimensions, Image, Platform } from "react-native";
+import {
+  SafeAreaView,
+  Alert,
+  Dimensions,
+  Image,
+  Platform,
+  useColorScheme,
+} from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Carousel from "react-native-reanimated-carousel";
 import {
@@ -116,6 +123,7 @@ export default function IntroScreen() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
   const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     if (savedEmail) {

@@ -30,10 +30,8 @@ import { ExternalLink } from "./ExternalLink";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS, useAnimatedRef } from "react-native-reanimated";
 
-export type LinkButtonProps = Omit<ButtonProps, "onPress"> & {} & Pick<
-    LinkProps<any>,
-    "href"
-  >;
+export type LinkButtonProps = Optional<ButtonProps, "onPress"> &
+  Pick<LinkProps<any>, "href">;
 
 const TextVariants = {
   title: {

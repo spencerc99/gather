@@ -108,6 +108,7 @@ export function BlockDetailView({ block }: { block: Block }) {
           padding: "10%",
         }}
         enableOnAndroid
+        scrollIndicatorInsets={{ right: 1 }}
         keyboardShouldPersistTaps="handled"
         scrollToOverflowEnabled
         extraScrollHeight={40}

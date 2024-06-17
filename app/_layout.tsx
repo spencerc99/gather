@@ -162,6 +162,9 @@ function RootLayoutNav() {
           headerShown: false,
           ...TransitionPresets.ModalPresentationIOS,
           gestureEnabled: true,
+          cardStyle: {
+            zIndex: 1000,
+          },
         }}
       />
       <Stack.Screen

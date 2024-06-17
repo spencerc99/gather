@@ -1,5 +1,5 @@
 import { memo, useCallback, useContext, useState } from "react";
-import { Alert, FlatList, Keyboard } from "react-native";
+import { Alert, FlatList, Keyboard, Platform } from "react-native";
 import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import {
   Adapt,
@@ -122,6 +122,7 @@ export function CollectionSelect({
   const [searchValue, setSearchValue] = useState("");
   const { currentUser: user } = useContext(UserContext);
   const { collections, isLoading } = useCollections(searchValue);
+  const [open, setOpen] = useState(false);
 
   // TODO: collapse with SelectCollectionsList
   const renderCollection = useCallback(
@@ -171,7 +172,9 @@ export function CollectionSelect({
         selectedCollection ? selectedCollection.toString() : selectedCollection
       }
       disablePreventBodyScroll
+      open={open}
       onOpenChange={(isOpen) => {
+        setOpen(isOpen);
         Keyboard.dismiss();
         if (!isOpen) {
           setSearchValue("");
@@ -259,7 +262,11 @@ export function CollectionSelect({
                   </SizableText>
                 </StyledButton>
               ) : (
-                <CreateCollectionButton />
+                <CreateCollectionButton
+                  onPress={() => {
+                    setOpen(false);
+                  }}
+                />
               )}
             </XStack>
             {/* TODO: add some preview about last message */}
