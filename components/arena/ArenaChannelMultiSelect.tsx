@@ -132,12 +132,7 @@ export function ArenaChannelMultiSelect({
   return (
     <Stack>
       <XStack justifyContent="center" width="100%" alignItems="center" gap="$2">
-        <StyledButton
-          flexGrow={1}
-          onPress={() => setOpen(true)}
-          theme="grey"
-          backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
-        >
+        <StyledButton flexGrow={1} onPress={() => setOpen(true)} theme="grey">
           {isLoading
             ? "Loading from are.na..."
             : selectedChannels.length > 0

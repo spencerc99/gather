@@ -175,7 +175,6 @@ export default function ProfileScreen() {
             width="100%"
             href={HelpGuideUrl}
             theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
             icon={<Icon name="document-text" />}
             justifyContent="flex-start"
           >
@@ -185,7 +184,6 @@ export default function ProfileScreen() {
             href="/feedback"
             justifyContent="flex-start"
             theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
             icon={<Icon name="mail" />}
           >
             Give feedback
@@ -197,7 +195,6 @@ export default function ProfileScreen() {
             href="/changelog"
             justifyContent="flex-start"
             theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
             icon={<Icon name="newspaper" />}
           >
             What's new
@@ -218,7 +215,6 @@ export default function ProfileScreen() {
               />
             }
             theme="gray"
-            backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
           >
             App icons
           </LinkButton>

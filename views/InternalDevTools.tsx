@@ -131,15 +131,18 @@ export function InternalDevTools({}: {}) {
         >
           Reset intro seen
         </StyledButton>
-        <StyledButton
-          onPress={() => {
-            removeItem(ContributionsKey);
-          }}
-          disabled={isLoading}
-          icon={isLoading ? <Spinner size="small" /> : null}
-        >
-          Reset contributions
-        </StyledButton>
+        {__DEV__ && (
+          <StyledButton
+            onPress={() => {
+              removeItem(ContributionsKey);
+            }}
+            disabled={isLoading}
+            icon={isLoading ? <Spinner size="small" /> : null}
+            theme="purple"
+          >
+            Reset contributions
+          </StyledButton>
+        )}
         {__DEV__ && (
           <StyledButton
             onPress={() => {
@@ -147,6 +150,7 @@ export function InternalDevTools({}: {}) {
             }}
             disabled={isLoading}
             icon={isLoading ? <Spinner size="small" /> : null}
+            theme="purple"
           >
             Clear user
           </StyledButton>

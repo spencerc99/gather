@@ -101,7 +101,6 @@ export function ArenaLogin({ path }: { path: string }) {
         onPress={() => {
           promptAsync();
         }}
-        backgroundColor={colorScheme === "light" ? "$gray5" : undefined}
         theme="gray"
       >
         Login again

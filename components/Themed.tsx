@@ -139,7 +139,17 @@ const PressableButton = styled(DefaultButton, {
 });
 
 export function StyledButton(props: ButtonProps) {
-  return <PressableButton {...props}></PressableButton>;
+  const colorScheme = useColorScheme();
+  let computedBackgroundColor = props.backgroundColor;
+  if (props.theme === "gray" && !props.disabled && colorScheme === "light") {
+    computedBackgroundColor = "$gray5";
+  }
+  return (
+    <PressableButton
+      {...props}
+      backgroundColor={computedBackgroundColor}
+    ></PressableButton>
+  );
 }
 
 // TODO: remove, consiolidate with button

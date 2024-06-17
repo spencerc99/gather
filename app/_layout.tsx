@@ -1,4 +1,13 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import {
+  // Import the creation function
+  createStackNavigator,
+  // Import the types
+  StackNavigationOptions,
+} from "@react-navigation/stack";
+
+import { withLayoutContext } from "expo-router";
+import { NetworkProvider } from "../utils/network";
 import * as NavigationBar from "expo-navigation-bar";
 import { TransitionPresets } from "@react-navigation/stack";
 import {
@@ -33,6 +42,14 @@ import { ErrorsProvider } from "../utils/errors";
 const client = new QueryClient();
 
 enableFreeze(true);
+
+const { Navigator } = createStackNavigator();
+
+// This can be used like `<JsStack />`
+export const JsStack = withLayoutContext<
+  StackNavigationOptions,
+  typeof Navigator
+>(Navigator);
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -90,29 +107,31 @@ export default function RootLayout() {
           <TamaguiProvider config={config}>
             <Theme name={colorScheme === "dark" ? "dark" : "light"}>
               <QueryClientProvider client={client}>
-                <HoldMenuProvider
-                  theme={colorScheme || undefined}
-                  safeAreaInsets={insets}
-                  // @ts-ignore
-                  onOpen={() => {
-                    if (Keyboard.isVisible()) {
-                      Keyboard.dismiss();
-                    }
-                  }}
-                >
-                  <UserProvider>
-                    <DatabaseProvider>
-                      <RootLayoutNav />
-                      <StatusBar
-                        style="auto"
-                        // NOTE: idk why but "auto" doesn't properly change color on Android.
-                        backgroundColor={
-                          colorScheme === "light" ? "white" : "black"
-                        }
-                      />
-                    </DatabaseProvider>
-                  </UserProvider>
-                </HoldMenuProvider>
+                <NetworkProvider>
+                  <HoldMenuProvider
+                    theme={colorScheme || undefined}
+                    safeAreaInsets={insets}
+                    // @ts-ignore
+                    onOpen={() => {
+                      if (Keyboard.isVisible()) {
+                        Keyboard.dismiss();
+                      }
+                    }}
+                  >
+                    <UserProvider>
+                      <DatabaseProvider>
+                        <RootLayoutNav />
+                        <StatusBar
+                          style="auto"
+                          // NOTE: idk why but "auto" doesn't properly change color on Android.
+                          backgroundColor={
+                            colorScheme === "light" ? "white" : "black"
+                          }
+                        />
+                      </DatabaseProvider>
+                    </UserProvider>
+                  </HoldMenuProvider>
+                </NetworkProvider>
               </QueryClientProvider>
             </Theme>
           </TamaguiProvider>
@@ -225,26 +244,9 @@ function RootLayoutNav() {
           presentation: "modal",
           ...TransitionPresets.ModalPresentationIOS,
           gestureEnabled: true,
-          headerLeft: null,
+          headerLeft: () => null,
         }}
       />
     </JsStack>
   );
 }
-
-import {
-  // Import the creation function
-  createStackNavigator,
-  // Import the types
-  StackNavigationOptions,
-} from "@react-navigation/stack";
-
-import { withLayoutContext } from "expo-router";
-
-const { Navigator } = createStackNavigator();
-
-// This can be used like `<JsStack />`
-export const JsStack = withLayoutContext<
-  StackNavigationOptions,
-  typeof Navigator
->(Navigator);
