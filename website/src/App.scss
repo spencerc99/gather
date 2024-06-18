@@ -4,6 +4,9 @@ body {
   background: url("./cardboard.png") repeat;
   font-family: "EB Garamond";
   background-size: 600px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
 }
 
 main {
