@@ -1,7 +1,9 @@
 html,
 body {
   background: rgb(239, 239, 239);
+  background: url("./cardboard.png") repeat;
   font-family: "EB Garamond";
+  background-size: 600px;
 }
 
 main {
@@ -13,6 +15,10 @@ main {
   margin-left: auto;
   margin-right: auto;
   padding: 0 2em;
+
+  @media screen and (max-width: 800px) {
+    padding: 0 1em;
+  }
 }
 
 .logo {
@@ -30,6 +36,7 @@ main {
   gap: 0.25em;
   font-size: 1.5em;
   max-width: 800px;
+  backdrop-filter: blur(2px);
 }
 
 .cta {
@@ -40,18 +47,54 @@ main {
   max-width: 800px;
   border-radius: 16px;
   box-shadow: 0px 0px 8px 4px #fed15d;
+
+  @media screen and (max-width: 800px) {
+    padding: 1em 1em;
+  }
+}
+
+.cover {
+  position: absolute;
+  z-index: -1;
+  min-width: 1500px;
+  margin-top: -4%;
+}
+
+.stickies {
+  display: flex;
+  gap: 3em;
 }
 
 .carousel {
   display: flex;
-  max-width: 1200px;
   overflow-x: auto;
   gap: 1em;
   margin: 2em 0;
-  img {
+  background-size: contain;
+  padding: 4em;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  justify-content: center;
+  background-repeat: no-repeat;
+
+  img:not(.sticky) {
     max-height: 500px;
     border-radius: 8px;
+    box-shadow: 0px 0px 16px 6px rgba(41, 41, 41, 0.3);
   }
+  @media screen and (max-width: 1280px) {
+    padding: 4em;
+    padding-left: 1em;
+    padding-right: 1em;
+    // margin-left: -1em;
+    width: calc(100% + 5em);
+    justify-content: start;
+  }
+}
+
+.sticky {
+  max-width: 180px;
+  filter: drop-shadow(0px 0px 6px rgba(41, 41, 41, 0.3));
 }
 
 footer {
@@ -61,14 +104,14 @@ footer {
   margin-right: auto;
   width: 100%;
   text-align: center;
-  font-size: 1.2em;
+  font-size: 1.3em;
   display: flex;
   flex-direction: column;
   align-items: center;
 
   a {
     text-decoration: none;
-    color: #4d5fff;
+    color: #1b4ad8;
   }
 }
 
@@ -82,10 +125,13 @@ footer {
   opacity: 1;
 }
 
+footer {
+  color: rgb(51, 51, 51);
+}
+
 .logos {
   display: flex;
   margin-top: 0.25em;
-  color: gray;
   gap: 0.5em;
   div {
     display: flex;

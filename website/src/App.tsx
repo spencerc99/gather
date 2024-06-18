@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.scss";
 import { ImageZoom } from "./components/ImageZoom";
 
@@ -11,7 +11,7 @@ const Icons = [
 
 function App() {
   const [iconSrc, setIconSrc] = useState(Icons[0]);
-  const rerollIcon = () => {
+  const rerollIcon = (finalIconIdx?: number) => {
     let currentIndex = Icons.indexOf(iconSrc);
     const maxIndex = Icons.length - 1;
     const interval = setInterval(() => {
@@ -25,10 +25,14 @@ function App() {
 
     setTimeout(() => {
       clearInterval(interval);
-      // Optionally, you can set the icon to a random one at the end
-      setIconSrc(Icons[Math.floor(Math.random() * Icons.length)]);
+      setIconSrc(
+        Icons[finalIconIdx ?? Math.floor(Math.random() * Icons.length)]
+      );
     }, 1000); // Adjust time for longer rolling
   };
+  useEffect(() => {
+    rerollIcon(0);
+  }, []);
 
   return (
     <>
@@ -50,20 +54,26 @@ function App() {
           />{" "}
           Gather
         </h1>
-
         <div className="description">
           <h3>
             Gather is a local-first app for archiving, cultivating, and curating
             your data collections.
           </h3>
         </div>
+        <img src="/cover-no-bg.png" className="cover" />
         <div className="carousel">
           {/* TODO: add hero demo */}
-          <ImageZoom src="/splash.png" />
           <ImageZoom src="/gather-app-texts.png" />
-          <ImageZoom src="/gather-app-collection-select.png" />
           <ImageZoom src="/gather-app-organize.png" />
           <ImageZoom src="/gather-app-review.png" />
+          <ImageZoom src="/gather-app-chats.png" />
+          <ImageZoom src="/gather-collections-screen.png" />
+        </div>
+        <div className="stickies">
+          <img src="/gather-title-sticky-1.png" className="sticky" />
+          <img src="/gather-title-sticky-2.png" className="sticky" />
+          <img src="/gather-title-sticky-3.png" className="sticky" />
+          <img src="/gather-title-sticky-4.png" className="sticky" />
         </div>
 
         <div
@@ -73,23 +83,20 @@ function App() {
           }}
         >
           <p>
-            Testflight opening soon.
+            Available now in beta on{" "}
+            <a href="https://testflight.apple.com/join/dnskzBf8">iOS</a> and{" "}
+            <a href="https://play.google.com/store/apps/details?id=net.tiny_inter.gather">
+              Android
+            </a>
+            .
             <br />
-            <a href="https://coda.io/form/Untitled-Form_dwglAPFKR8v">
-              Sign your email up
-            </a>{" "}
-            for updates.
+            Coming soon to app stores..
           </p>
         </div>
         <div className="description">
           {/* TODO: make these all telescopic that swap between and have a button that allows you to randomize */}
           <p>
-            <strong>
-              <a href="https://www.are.na/spencer-chang/gather-rdwff2kongm">
-                Gather is
-              </a>
-              ...
-            </strong>
+            <strong>Gather is ...</strong>
           </p>
           <ul>
             <li>
@@ -106,6 +113,11 @@ function App() {
                   <a href="http://are.na">are.na</a>
                 </li>
                 <li>your camera roll + your figma moodboard</li>
+                <li>
+                  <a href="https://www.are.na/spencer-chang/gather-aqbjgwcvh1y">
+                    and more...
+                  </a>
+                </li>
               </ul>
             </li>
             <li>
@@ -217,20 +229,14 @@ function App() {
       <footer>
         <p
           style={{
-            color: "gray",
             margin: 0,
           }}
         >
-          created by <a href="https://spencerchang.me">spencer chang</a>
+          created & maintained by{" "}
+          <a href="https://spencerchang.me">spencer chang</a>
         </p>
 
-        <div
-          style={{
-            color: "gray",
-          }}
-        >
-          with support from
-        </div>
+        <div style={{}}>with support from</div>
         <div className="logos">
           <a href="https://canvas.xyz" target="_blank">
             <div>
