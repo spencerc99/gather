@@ -57,8 +57,15 @@ function App() {
         <div className="description">
           <h3>
             Gather is a local-first app for archiving, cultivating, and curating
-            your data collections.
+            multimedia data collections.
           </h3>
+          <p>
+            <i>
+              works completely offline, all data stored on-device, and
+              optionally syncs to external data sources (like{" "}
+              <a href="https://are.na">Are.na</a>)
+            </i>
+          </p>
         </div>
         <img src="/cover-no-bg.png" className="cover" />
         <div className="carousel">
@@ -176,6 +183,11 @@ function App() {
             <strong>that can be used for...</strong>
           </p>
           <ul>
+            <li>
+              <a href="https://www.are.na/spencer-chang/moments-people-made-you-smile-example">
+                moments people made you smile
+              </a>
+            </li>
             <li>things you're grateful for</li>
             <li>things that rewired your brain</li>
             <li>songs that slap</li>
@@ -190,7 +202,9 @@ function App() {
                 things i want to remember
               </a>
             </li>
-            <li>orange things</li>
+            <li href="https://www.are.na/spencer-chang/orange-ffcsx6iwyk8">
+              orange things
+            </li>
             <li>peoplewatching log</li>
             <li>
               <a href="https://spencerchang.me/fits">fits log</a>
@@ -223,7 +237,23 @@ function App() {
                 you enjoy
               </a>
             </li>
+            <li>
+              <a href="https://www.are.na/spencer-chang/gather-good-channels-to-play-with">
+                and more...
+              </a>
+            </li>
           </ul>
+          <p>
+            learn more through{" "}
+            <a href="https://www.are.na/editorial/an-interview-with-spencer-chang">
+              my interview with Are.na
+            </a>{" "}
+            and how to use it on the{" "}
+            <a href="https://help.are.na/docs/partner-guides/gather">
+              partner guide
+            </a>
+            .
+          </p>
         </div>
       </main>
       <footer>
