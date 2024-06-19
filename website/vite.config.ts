@@ -5,6 +5,7 @@ import { glob } from "glob";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: "./",
   plugins: [react()],
   build: {
     rollupOptions: {

@@ -84,6 +84,7 @@ function App() {
         </div>
 
         <div
+          id="cta"
           className="cta"
           style={{
             textAlign: "center",
