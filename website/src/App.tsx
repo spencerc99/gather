@@ -93,9 +93,13 @@ function App() {
           <p>
             Available now in beta on{" "}
             <a href="https://testflight.apple.com/join/dnskzBf8">iOS</a> and{" "}
-            <a href="https://play.google.com/store/apps/details?id=net.tiny_inter.gather">
-              Android
-            </a>
+            {/* <a href="https://play.google.com/store/apps/details?id=net.tiny_inter.gather"> */}
+            Android (
+            <a href="https://coda.io/form/Untitled-Form_dwglAPFKR8v?fromWebsite=true">
+              sign up your email
+            </a>{" "}
+            to be manually added)
+            {/* </a> */}
             .
             <br />
             Coming soon to app stores..
