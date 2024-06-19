@@ -203,8 +203,10 @@ function App() {
                 things i want to remember
               </a>
             </li>
-            <li href="https://www.are.na/spencer-chang/orange-ffcsx6iwyk8">
-              orange things
+            <li>
+              <a href="https://www.are.na/spencer-chang/orange-ffcsx6iwyk8">
+                orange things
+              </a>
             </li>
             <li>peoplewatching log</li>
             <li>
