@@ -119,8 +119,8 @@ export interface BlocksInsertInfo {
 // NOTE: if not handling deletions, you can add page here
 export interface LastSyncedInfo {
   lastSyncedAt: string;
-  lastSyncedBlockId: string;
-  lastSyncedBlockCreatedAt: string;
+  lastSyncedBlockId?: string;
+  lastSyncedBlockCreatedAt?: string;
 }
 
 export interface ArenaImportInfo {

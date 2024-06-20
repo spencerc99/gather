@@ -49,8 +49,8 @@ export default function ProfileScreen() {
           async (channel) => await tryImportArenaChannel(channel.id.toString())
         )
       ).then(() => {
-        alert(`Imported ${selectedChannels.length} channels`);
         setSelectedChannels([]);
+        alert(`Imported ${selectedChannels.length} channels`);
       });
     } catch (error) {
       logError(error);

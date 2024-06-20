@@ -343,6 +343,7 @@ export async function getChannelContents(
   );
   let fetchedItems: RawArenaChannelItem[] = [];
   let newItemsFound = lastSyncedInfo ? false : true;
+  const lastSyncedBlockCreatedAt = lastSyncedInfo?.lastSyncedBlockCreatedAt;
   // TODO: fix as with below
   // const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
   // TODO: this needs an API that only gets blocks AFTER given date.
@@ -366,18 +367,18 @@ export async function getChannelContents(
       numItemsFetched += contents.length;
 
       if (
-        lastSyncedInfo &&
+        lastSyncedBlockCreatedAt &&
         contents.some(
           (c) =>
             new Date(c.connected_at).getTime() >
-            new Date(lastSyncedInfo.lastSyncedBlockCreatedAt).getTime()
+            new Date(lastSyncedBlockCreatedAt).getTime()
         )
       ) {
         contents = contents.slice(
           contents.findIndex(
             (c) =>
               new Date(c.connected_at).getTime() >
-              new Date(lastSyncedInfo.lastSyncedBlockCreatedAt).getTime()
+              new Date(lastSyncedBlockCreatedAt).getTime()
           )
         );
         newItemsFound = true;

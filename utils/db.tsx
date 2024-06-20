@@ -1996,8 +1996,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           await updateLastSyncedInfoForChannel(channelId, {
             lastSyncedAt: new Date().toISOString(),
             lastSyncedBlockCreatedAt:
-              lastContents[lastContents.length - 1].connected_at,
-            lastSyncedBlockId: lastContents[lastContents.length - 1].id,
+              lastContents[lastContents.length - 1]?.connected_at,
+            lastSyncedBlockId: lastContents[lastContents.length - 1]?.id,
           });
         }
         break;
@@ -2194,7 +2194,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     selectedCollection?: string
   ): Promise<ArenaImportInfo> {
     console.log(`importing ${JSON.stringify(arenaChannel)}`);
-    const { title, id, contents, user } =
+    const { title, id, contents, user, created_at } =
       typeof arenaChannel === "string"
         ? await getChannelInfoFromUrl(arenaChannel, arenaAccessToken)
         : arenaChannel;
@@ -2219,8 +2219,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     });
     await updateLastSyncedInfoForChannel(channelId, {
       lastSyncedAt: new Date().toISOString(),
-      lastSyncedBlockCreatedAt: contents[contents.length - 1].connected_at,
-      lastSyncedBlockId: contents[contents.length - 1].id,
+      lastSyncedBlockCreatedAt: contents[contents.length - 1]?.connected_at,
+      lastSyncedBlockId: contents[contents.length - 1]?.id,
     });
     return { title, size: contents.length };
   }

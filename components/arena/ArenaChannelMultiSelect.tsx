@@ -263,6 +263,7 @@ export function ArenaChannelMultiSelect({
             onPress={() => {
               setOpen(false);
             }}
+            marginTop="auto"
           >
             Done selecting
           </StyledButton>
