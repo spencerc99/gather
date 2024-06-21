@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.scss";
 import { ImageZoom } from "./components/ImageZoom";
 
@@ -11,9 +11,11 @@ const Icons = [
 
 function App() {
   const [iconSrc, setIconSrc] = useState(Icons[0]);
+  const logoRef = useRef<HTMLImageElement>(null);
   const rerollIcon = (finalIconIdx?: number) => {
     let currentIndex = Icons.indexOf(iconSrc);
     const maxIndex = Icons.length - 1;
+    logoRef.current?.classList.add("switching");
     const interval = setInterval(() => {
       if (currentIndex < maxIndex) {
         currentIndex++;
@@ -25,6 +27,7 @@ function App() {
 
     setTimeout(() => {
       clearInterval(interval);
+      logoRef.current?.classList.remove("switching");
       setIconSrc(
         Icons[finalIconIdx ?? Math.floor(Math.random() * Icons.length)]
       );
@@ -46,6 +49,7 @@ function App() {
           }}
         >
           <img
+            ref={logoRef}
             src={iconSrc}
             className="logo"
             onClick={() => {
@@ -54,7 +58,7 @@ function App() {
           />{" "}
           Gather
         </h1>
-        <div className="description">
+        <div className="description oneliner">
           <h3>
             Gather is a local-first app for archiving, cultivating, and curating
             multimedia data collections.
@@ -270,7 +274,7 @@ function App() {
           }}
         >
           created & maintained by{" "}
-          <a href="https://spencerchang.me">spencer chang</a>
+          <a href="https://spencer.place">spencer chang</a>
         </p>
 
         <div style={{}}>with support from</div>

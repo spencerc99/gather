@@ -7,6 +7,9 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
+  @media screen and (max-width: 800px) {
+    font-size: 13px;
+  }
 }
 
 main {
@@ -31,6 +34,27 @@ main {
   cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'  width='32' height='38' viewport='0 0 100 100' style='fill:black;font-size:19px;'><text y='50%'>🎲</text></svg>")
       16 0,
     auto; /*!emojicursor.app*/
+
+  transition: box-shadow 0.2s;
+  &.switching {
+    animation: pulse 0.4s infinite;
+  }
+
+  &:hover {
+    box-shadow: 0 0 12px 2px #fed15d;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 12px 2px #fed15d;
+  }
+  50% {
+    box-shadow: 0 0 12px 8px #fed15d;
+  }
+  100% {
+    box-shadow: 0 0 12px 2px #fed15d;
+  }
 }
 
 .description {
@@ -39,7 +63,6 @@ main {
   gap: 0.25em;
   font-size: 1.5em;
   max-width: 800px;
-  backdrop-filter: blur(2px);
 }
 
 .cta {
@@ -60,7 +83,10 @@ main {
   position: absolute;
   z-index: -1;
   min-width: 1500px;
-  margin-top: -4%;
+
+  @media screen and (max-width: 520px) {
+    margin-top: 60%;
+  }
 }
 
 .stickies {
