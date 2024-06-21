@@ -62,7 +62,10 @@ export default function ProfileScreen() {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const contributions = useContributions();
-  const hasContributed = useMemo(() => (contributions?.length || 0) > 0, []);
+  const hasContributed = useMemo(
+    () => (contributions?.length || 0) > 0,
+    [contributions]
+  );
 
   const [appIconSource, setAppIconSource] = useState(DefaultAppSrc);
   useFocusEffect(() => {
@@ -119,12 +122,26 @@ export default function ProfileScreen() {
               />
             </Avatar>
             <StyledText title>{currentUser.email}</StyledText>
-            <YStack alignItems="center" space="$1">
+            <YStack alignItems="center" gap="0">
               <StyledText metadata>
                 joined on {dayjs(currentUser.createdAt).format("MM/DD/YY")},{" "}
                 {daysUsedApp} days ago
               </StyledText>
+              {hasContributed && (
+                <XStack alignItems="center">
+                  <Icon name="heart" color="$red9" size="$small" />
+                  <StyledText
+                    metadata
+                    alignItems="center"
+                    verticalAlign={"middle"}
+                  >
+                    {" "}
+                    contributor
+                  </StyledText>
+                </XStack>
+              )}
             </YStack>
+            {flowers}
           </YStack>
         )}
         <H5 fontWeight="700">Are.na</H5>
@@ -281,9 +298,7 @@ export default function ProfileScreen() {
         <StyledText>
           Thank you for giving your space and time to this app.
         </StyledText>
-        <StyledParagraph>
-          If you need any specific help, reach out to gather@spencer.place.
-        </StyledParagraph>
+        <StyledText>If you need help, mail gather@spencer.place.</StyledText>
         <YStack alignItems="center">
           <Image
             source={appIconSource}
