@@ -426,7 +426,7 @@ export async function getChannelInfo(
     const respBody = await resp.json();
     if (!resp.ok) {
       throw new Error(
-        `failed to fetch channel info: ${JSON.stringify(respBody)}`
+        `${resp.status}: failed to fetch channel info ${resp.statusText}`
       );
     }
     const { contents, ...rest } = respBody;
@@ -816,10 +816,9 @@ export async function updateArenaBlock({
   });
   if (!updateMetadata.ok) {
     logError(
-      `failed to update block metadata in arena ${
-        updateMetadata.status
-      }: ${JSON.stringify(updateMetadata)}`
+      `failed to update block metadata in arena ${updateMetadata.status}`
     );
+    throw new Error(`${updateMetadata.status}: ${updateMetadata.statusText}`);
   }
   return updateMetadata;
 }
@@ -1013,10 +1012,10 @@ export async function getBlock(
   });
   const json = await resp.json();
   if (!resp.ok) {
-    logError(
-      `failed to get block channels ${resp.status}: ${JSON.stringify(json)}`
+    logError(`${resp.status} failed to get block channels ${resp.statusText}`);
+    throw new Error(
+      `${resp.status} failed to get block channels ${resp.statusText}`
     );
-    throw new Error(JSON.stringify(json));
   }
   return json;
 }

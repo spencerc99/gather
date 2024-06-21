@@ -1,5 +1,5 @@
 import { memo, useCallback, useContext, useState } from "react";
-import { Alert, FlatList, Keyboard, Platform } from "react-native";
+import { Alert, FlatList, Keyboard } from "react-native";
 import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import {
   Adapt,

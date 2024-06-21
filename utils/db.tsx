@@ -123,6 +123,7 @@ export function mapDbBlockToBlock(block: any): Block {
     source: block.source === null ? undefined : block.source,
     createdAt: convertDbTimestampToDate(block.created_timestamp),
     updatedAt: convertDbTimestampToDate(block.updated_timestamp),
+    connectedAt: convertDbTimestampToDate(block.connected_at),
     remoteConnectedAt: block.remote_connected_at
       ? new Date(block.remote_connected_at)
       : undefined,
@@ -981,6 +982,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const SelectBlocksSortTypeToClause = (
     sortType: SortType,
     remoteConnectedAt: string,
+    connectedAt: string,
     { seed }: { seed?: number } = {}
   ) => {
     ensure(
@@ -989,7 +991,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     switch (sortType) {
       case SortType.Created:
-        return `ORDER BY  MIN(COALESCE(${remoteConnectedAt}, blocks.created_timestamp), blocks.created_timestamp) DESC`;
+        return `ORDER BY  CASE WHEN ${remoteConnectedAt} THEN ${remoteConnectedAt} ELSE COALESCE(${connectedAt}, blocks.created_timestamp) END DESC`;
       case SortType.Random:
         // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
         // return `ORDER BY  SIN(blocks.id + ${seed})`;
@@ -1008,6 +1010,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     ${SelectBlocksSortTypeToClause(
       sortType,
       "block_connections.remote_connected_at",
+      "NULL",
       { seed }
     )}
     ${
@@ -1235,8 +1238,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       arenaBlock = await getArenaBlock(arenaBlockId, arenaAccessToken);
     } catch (err) {
       logError(err);
-      // TODO: only skip if 404
-      removePendingBlockUpdate(block.id);
+      if (
+        typeof err === "string" &&
+        (err.includes("404") || err.includes("401"))
+      ) {
+        removePendingBlockUpdate(block.id);
+      }
     }
 
     if (arenaBlock) {
@@ -1283,6 +1290,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         }
         removePendingBlockUpdate(block.id);
       } catch (err) {
+        if (typeof err === "string" && err.includes("401")) {
+          // If unauthorized, remove the pending update
+          removePendingBlockUpdate(block.id);
+        }
         logError(err);
       }
     }
@@ -1308,8 +1319,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           );
         } catch (err) {
           logError(err);
-          // TODO: only skip if 404
-          removePendingCollectionUpdate(collection.id);
+          if (
+            typeof err === "string" &&
+            (err.includes("404") || err.includes("401"))
+          ) {
+            removePendingCollectionUpdate(collection.id);
+          }
           return;
         }
 
@@ -1357,6 +1372,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             }
             removePendingCollectionUpdate(collection.id);
           } catch (err) {
+            if (typeof err === "string" && err.includes("401")) {
+              // If unauthorized, remove the pending update
+              removePendingCollectionUpdate(collection.id);
+            }
             logError(err);
           }
         }
@@ -1475,6 +1494,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             SELECT      blocks.*,
                         block_connections.collection_ids as collection_ids,
                         connections.remote_created_at as remote_connected_at,
+                        connections.created_timestamp as connected_at,
                         connections.created_by as connected_by,
                         COALESCE(block_connections.num_connections, 0) as num_connections
             FROM        blocks
@@ -1486,6 +1506,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             ${SelectBlocksSortTypeToClause(
               sortType,
               "connections.remote_created_at",
+              "connections.created_timestamp",
               {
                 seed,
               }

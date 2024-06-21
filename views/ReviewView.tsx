@@ -284,7 +284,7 @@ export function CarouselView({
         windowSize={5}
         snapEnabled
         renderItem={({ item, index }) => (
-          <YStack flex={1} flexGrow={1}>
+          <YStack flex={1} flexGrow={1} alignItems="center">
             <BlockReviewSummary
               shouldLink
               block={item}

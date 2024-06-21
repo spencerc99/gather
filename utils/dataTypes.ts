@@ -74,6 +74,7 @@ export interface Block
   updatedAt: Date;
   numConnections: number;
   remoteConnectedAt?: Date | null; // only present when selecting from a single collection
+  connectedAt?: Date | null; // only present when selecting from a single collection
   collectionIds: string[];
 }
 

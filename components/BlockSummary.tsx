@@ -559,10 +559,14 @@ export function BlockReviewSummary({
     }
   }
 
+  const dateInfo = useMemo(
+    () => getDateForBlock(block, { isRemoteCollection, dateKind: "absolute" }),
+    [block, isRemoteCollection]
+  );
   // TODO: need to truncate title, etc. to make it fit
   const renderedSummary = useMemo(
     () => (
-      <YStack gap="$2" {...containerProps}>
+      <YStack gap="$1.5" {...containerProps}>
         {title && (
           <StyledParagraph title textAlign="center">
             {title}
@@ -571,19 +575,15 @@ export function BlockReviewSummary({
         <HoldItem items={blockMenuItems} closeOnTap>
           {renderContent()}
         </HoldItem>
-        {(description || source) && (
-          <YStack maxWidth={widthProperty} flexShrink={1}>
-            {source && (
-              <StyledText metadata ellipse={true}>
-                {source}
-              </StyledText>
-            )}
-            {description && (
-              <StyledText ellipse={true} numberOfLines={3}>
-                {description}
-              </StyledText>
-            )}
-          </YStack>
+        {source && (
+          <StyledText metadata ellipse={true}>
+            {source}
+          </StyledText>
+        )}
+        {description && (
+          <StyledText ellipse={true} numberOfLines={2}>
+            {description}
+          </StyledText>
         )}
         {/* TODO: this should be who connected it */}
         {isOwner === false && (
@@ -592,6 +592,7 @@ export function BlockReviewSummary({
             <StyledText>{userId}</StyledText>
           </XStack>
         )}
+        <StyledText metadata>{dateInfo}</StyledText>
         {!hideMetadata && <BlockConnections block={block} />}
       </YStack>
     ),
@@ -628,6 +629,7 @@ export function BlockMetadata({
     type,
     createdAt,
     remoteConnectedAt,
+    connectedAt,
     source,
     numConnections,
     remoteSourceInfo,
@@ -643,14 +645,7 @@ export function BlockMetadata({
     //   );
     //   break;
     default:
-      const date =
-        isRemoteCollection && remoteConnectedAt
-          ? new Date(remoteConnectedAt)
-          : createdAt;
-      const dateInfo =
-        dateKind === "relative"
-          ? getRelativeDate(date)
-          : `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+      const dateInfo = getDateForBlock(block, { isRemoteCollection, dateKind });
       metadata = (
         <>
           {dateInfo}
@@ -674,6 +669,26 @@ export function BlockMetadata({
   );
 }
 
+function getDateForBlock(
+  block: Block,
+  {
+    isRemoteCollection,
+    dateKind,
+  }: { isRemoteCollection?: boolean; dateKind?: "relative" | "absolute" }
+) {
+  const { createdAt, remoteConnectedAt, connectedAt } = block;
+
+  const date =
+    isRemoteCollection && remoteConnectedAt
+      ? remoteConnectedAt
+      : connectedAt ?? createdAt;
+  const dateInfo =
+    dateKind === "relative"
+      ? getRelativeDate(date)
+      : `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  return dateInfo;
+}
+
 export function BlockConnections({ block }: { block: Block }) {
   const { collectionIds } = block;
   const { getCollection } = useContext(DatabaseContext);
@@ -689,7 +704,7 @@ export function BlockConnections({ block }: { block: Block }) {
   }, []);
 
   return (
-    <StyledText metadata numberOfLines={3}>
+    <StyledText metadata numberOfLines={2}>
       {collectionsToShow.map((c) => (
         <Fragment key={c}>
           <IconComponent

@@ -31,6 +31,10 @@ export function convertDbTimestampToDate(
   return dateFromUTC(timestamp);
 }
 
+function pluralizeTime(unit: number, singular: string) {
+  return `${unit} ${unit === 1 ? singular : singular + "s"} ago`;
+}
+
 export function getRelativeDate(date: Date) {
   const now = new Date();
   const diff = now.getTime() - date.getTime();
@@ -38,14 +42,15 @@ export function getRelativeDate(date: Date) {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
+
   if (days > 0) {
-    return `${days} days ago`;
+    return pluralizeTime(days, "day");
   }
   if (hours > 0) {
-    return `${hours} hours ago`;
+    return pluralizeTime(hours, "hour");
   }
   if (minutes > 0) {
-    return `${minutes} minutes ago`;
+    return pluralizeTime(minutes, "minute");
   }
   return `< a minute ago`;
 }
