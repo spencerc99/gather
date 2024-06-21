@@ -15,7 +15,10 @@
     "android": "expo run:android",
     "build-ios": "EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./builds\" eas build -p ios --local --non-interactive",
     "submit-ios": "eas submit -p ios --non-interactive --path=\"./builds/$(ls -1 builds | sort | tail -n 1)\"",
-    "build-and-submit-ios": "npm run build-ios && npm run submit-ios"
+    "build-and-submit-ios": "npm run build-ios && npm run submit-ios",
+    "build-android": "EAS_LOCAL_BUILD_ARTIFACTS_DIR=\"./android-builds\" eas build -p android --local --non-interactive",
+    "submit-android": "eas submit -p android --non-interactive --path=\"./android-builds/$(ls -1 android-builds | sort | tail -n 1)\"",
+    "build-and-submit-android": "npm run build-android && npm run submit-android"
   },
   "jest": {
     "preset": "jest-expo"
@@ -26,10 +29,11 @@
     "@react-native-community/netinfo": "11.1.0",
     "@react-navigation/bottom-tabs": "^6.5.20",
     "@react-navigation/native": "^6.0.2",
+    "@react-navigation/stack": "^6.3.29",
     "@tanstack/react-query": "^5.32.0",
     "buffer": "^6.0.3",
     "dayjs": "^1.11.10",
-    "expo": "^50.0.17",
+    "expo": "~50.0.19",
     "expo-application": "~5.8.4",
     "expo-auth-session": "~5.4.0",
     "expo-av": "~13.10.6",
@@ -44,6 +48,7 @@
     "expo-haptics": "~12.8.1",
     "expo-image-picker": "~14.7.1",
     "expo-linking": "~6.2.2",
+    "expo-navigation-bar": "~2.8.1",
     "expo-router": "~3.4.10",
     "expo-secure-store": "~12.8.1",
     "expo-splash-screen": "~0.26.5",

@@ -1,6 +1,6 @@
 import { Link, Stack, useRouter } from "expo-router";
 import { useContext, useMemo, useState } from "react";
-import { Pressable } from "react-native";
+import { Platform, Pressable } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Spinner, XStack, YStack, useWindowDimensions } from "tamagui";
 import { Block, RemoteSourceType } from "../utils/dataTypes";
@@ -108,6 +108,7 @@ export function BlockDetailView({ block }: { block: Block }) {
           padding: "10%",
         }}
         enableOnAndroid
+        scrollIndicatorInsets={{ right: 1 }}
         keyboardShouldPersistTaps="handled"
         scrollToOverflowEnabled
         extraScrollHeight={40}
@@ -115,13 +116,17 @@ export function BlockDetailView({ block }: { block: Block }) {
         <Stack.Screen
           options={{
             title: "",
-            headerTitle: () =>
-              isLoading ? (
-                <XStack gap="$2" justifyContent="center">
-                  <Spinner />
-                  <StyledText>Updating...</StyledText>
-                </XStack>
-              ) : null,
+            // TODO: [ANDROID] this issue makes the back button disappear for androis... https://github.com/react-navigation/react-navigation/issues/10391 if you change headerTitle..
+            // workaround is to make the native one not show and then render a custom one lol
+            ...{
+              [Platform.OS === "android" ? "headerRight" : "headerTitle"]: () =>
+                isLoading ? (
+                  <XStack gap="$2" justifyContent="center">
+                    <Spinner />
+                    <StyledText>Updating...</StyledText>
+                  </XStack>
+                ) : undefined,
+            },
           }}
         />
         <YStack gap="$2" marginBottom="$2" flexGrow={1}>

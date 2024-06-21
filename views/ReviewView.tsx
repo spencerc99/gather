@@ -1,8 +1,4 @@
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useContext, useMemo, useRef, useState } from "react";
 import { FlatList, Keyboard } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
@@ -143,7 +139,7 @@ export function ReviewView() {
             borderBottomRightRadius="$1"
             paddingRight={0}
             backgroundColor="$background"
-            elevation="$4"
+            elevation="$3"
             overflow="hidden"
             // borderWidth={0.5}
             // borderColor="$gray7"

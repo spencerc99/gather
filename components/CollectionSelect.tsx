@@ -1,6 +1,6 @@
-import { memo, useCallback, useContext, useEffect, useState } from "react";
-import { Alert, FlatList } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
+import { memo, useCallback, useContext, useState } from "react";
+import { Alert, FlatList, Keyboard, Platform } from "react-native";
+import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import {
   Adapt,
   GetProps,
@@ -20,7 +20,6 @@ import { CollectionSummary } from "./CollectionSummary";
 import { CreateCollectionButton } from "./CreateCollectionButton";
 import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
 import { ModalView } from "react-native-ios-modal";
-import { usePathname } from "expo-router";
 
 setupNativeSheet("ios", ModalView);
 
@@ -35,69 +34,71 @@ const CollectionSelectView = memo(
     deleteCollection: (collectionId: string) => void;
     index: number;
     selectedCollection: string | null;
-  }) => (
-    <Swipeable
-      key={collection.id}
-      containerStyle={{
-        overflow: "visible",
-      }}
-      friction={2}
-      renderRightActions={(_progress, _drag, swipeable) => (
-        <YStack
-          alignItems="center"
-          padding="$2"
-          paddingLeft={0}
-          justifyContent="center"
-        >
-          <StyledButton
-            circular
-            theme="red"
-            size="$6"
-            icon={<Icon name="trash" />}
-            onPress={() => {
-              Alert.alert("Delete Collection?", undefined, [
-                {
-                  text: "Cancel",
-                  onPress: () => {
-                    swipeable.close();
-                  },
-                  style: "cancel",
-                },
-                {
-                  text: "Delete",
-                  onPress: () => {
-                    deleteCollection(collection.id);
-                    swipeable.close();
-                  },
-                  style: "destructive",
-                },
-              ]);
-            }}
-          ></StyledButton>
-        </YStack>
-      )}
-    >
-      <Select.Item
-        index={index + 1}
+  }) =>
+    // @ts-ignore
+    gestureHandlerRootHOC(() => (
+      <Swipeable
         key={collection.id}
-        value={collection.id}
-        backgroundColor={
-          selectedCollection === collection.id ? "$green4" : undefined
-        }
+        containerStyle={{
+          overflow: "visible",
+        }}
+        friction={2}
+        renderRightActions={(_progress, _drag, swipeable) => (
+          <YStack
+            alignItems="center"
+            padding="$2"
+            paddingLeft={0}
+            justifyContent="center"
+          >
+            <StyledButton
+              circular
+              theme="red"
+              size="$6"
+              icon={<Icon name="trash" />}
+              onPress={() => {
+                Alert.alert("Delete Collection?", undefined, [
+                  {
+                    text: "Cancel",
+                    onPress: () => {
+                      swipeable.close();
+                    },
+                    style: "cancel",
+                  },
+                  {
+                    text: "Delete",
+                    onPress: () => {
+                      deleteCollection(collection.id);
+                      swipeable.close();
+                    },
+                    style: "destructive",
+                  },
+                ]);
+              }}
+            ></StyledButton>
+          </YStack>
+        )}
       >
-        <CollectionSummary
-          collection={collection}
-          viewProps={{
-            borderWidth: 0,
-            paddingHorizontal: 0,
-            paddingVertical: 0,
-            backgroundColor: "inherit",
-          }}
-        />
-        <Select.ItemText display="none">{collection.title}</Select.ItemText>
-      </Select.Item>
-    </Swipeable>
-  )
+        <Select.Item
+          index={index + 1}
+          key={collection.id}
+          value={collection.id}
+          backgroundColor={
+            selectedCollection === collection.id ? "$green4" : undefined
+          }
+        >
+          <CollectionSummary
+            collection={collection}
+            viewProps={{
+              borderWidth: 0,
+              paddingHorizontal: 0,
+              paddingVertical: 0,
+              backgroundColor: "inherit",
+            }}
+          />
+          <Select.ItemText display="none">{collection.title}</Select.ItemText>
+        </Select.Item>
+      </Swipeable>
+    ))()
 );
 
 export function CollectionSelect({
@@ -121,6 +122,7 @@ export function CollectionSelect({
   const [searchValue, setSearchValue] = useState("");
   const { currentUser: user } = useContext(UserContext);
   const { collections, isLoading } = useCollections(searchValue);
+  const [open, setOpen] = useState(false);
 
   // TODO: collapse with SelectCollectionsList
   const renderCollection = useCallback(
@@ -170,7 +172,10 @@ export function CollectionSelect({
         selectedCollection ? selectedCollection.toString() : selectedCollection
       }
       disablePreventBodyScroll
+      open={open}
       onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        Keyboard.dismiss();
         if (!isOpen) {
           setSearchValue("");
         }
@@ -257,7 +262,11 @@ export function CollectionSelect({
                   </SizableText>
                 </StyledButton>
               ) : (
-                <CreateCollectionButton />
+                <CreateCollectionButton
+                  onPress={() => {
+                    setOpen(false);
+                  }}
+                />
               )}
             </XStack>
             {/* TODO: add some preview about last message */}

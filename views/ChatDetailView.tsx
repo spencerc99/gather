@@ -1,6 +1,5 @@
 import { Tabs, Stack } from "expo-router";
 import { YStack } from "tamagui";
-import { MainHeaderIcons } from "../app/(tabs)/_layout";
 import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
 import { CollectionSelect } from "../components/CollectionSelect";
 import { TextForageView } from "../components/TextForageView";
@@ -56,12 +55,19 @@ export function ChatDetailView({
           //     </Pressable>
           //   </XStack>
           // ),
-          headerRight: () => <MainHeaderIcons />,
           headerTitleContainerStyle: {
+            alignItems: "center",
+            justifyContent: "center",
             maxWidth: "70%",
           },
           headerTitle: () => (
-            <YStack paddingBottom="$3" marginHorizontal="auto">
+            <YStack
+              justifyContent="center"
+              alignItems="center"
+              height="100%"
+              width="100%"
+              marginBottom="$2"
+            >
               <CollectionSelect
                 onTriggerSelect={() => {
                   Keyboard.dismiss();

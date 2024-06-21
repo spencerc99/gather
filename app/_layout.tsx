@@ -1,5 +1,16 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
+  // Import the creation function
+  createStackNavigator,
+  // Import the types
+  StackNavigationOptions,
+} from "@react-navigation/stack";
+
+import { withLayoutContext } from "expo-router";
+import { NetworkProvider } from "../utils/network";
+import * as NavigationBar from "expo-navigation-bar";
+import { TransitionPresets } from "@react-navigation/stack";
+import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
@@ -9,9 +20,17 @@ import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useContext, useEffect } from "react";
-import { InteractionManager, Keyboard, useColorScheme } from "react-native";
+import {
+  InteractionManager,
+  Keyboard,
+  Platform,
+  useColorScheme,
+} from "react-native";
 import { HoldMenuProvider } from "react-native-hold-menu";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { enableFreeze } from "react-native-screens";
 import { TamaguiProvider, Theme } from "tamagui";
 import useShareIntent from "../hooks/useShareIntent";
@@ -23,6 +42,14 @@ import { ErrorsProvider } from "../utils/errors";
 const client = new QueryClient();
 
 enableFreeze(true);
+
+const { Navigator } = createStackNavigator();
+
+// This can be used like `<JsStack />`
+export const JsStack = withLayoutContext<
+  StackNavigationOptions,
+  typeof Navigator
+>(Navigator);
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -61,37 +88,55 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync(
+        colorScheme === "light" ? "white" : "black"
+      );
+    }
+  }, [colorScheme]);
+
   if (!loaded) {
     return null;
   }
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <ErrorsProvider>
-        <TamaguiProvider config={config}>
-          <Theme name={colorScheme === "dark" ? "dark" : "light"}>
-            <QueryClientProvider client={client}>
-              <HoldMenuProvider
-                theme={colorScheme || undefined}
-                safeAreaInsets={insets}
-                // @ts-ignore
-                onOpen={() => {
-                  if (Keyboard.isVisible()) {
-                    Keyboard.dismiss();
-                  }
-                }}
-              >
-                <UserProvider>
-                  <DatabaseProvider>
-                    <RootLayoutNav />
-                    <StatusBar style="auto" />
-                  </DatabaseProvider>
-                </UserProvider>
-              </HoldMenuProvider>
-            </QueryClientProvider>
-          </Theme>
-        </TamaguiProvider>
-      </ErrorsProvider>
+      <SafeAreaProvider>
+        <ErrorsProvider>
+          <TamaguiProvider config={config}>
+            <Theme name={colorScheme === "dark" ? "dark" : "light"}>
+              <QueryClientProvider client={client}>
+                <NetworkProvider>
+                  <HoldMenuProvider
+                    theme={colorScheme || undefined}
+                    safeAreaInsets={insets}
+                    // @ts-ignore
+                    onOpen={() => {
+                      if (Keyboard.isVisible()) {
+                        Keyboard.dismiss();
+                      }
+                    }}
+                  >
+                    <UserProvider>
+                      <DatabaseProvider>
+                        <RootLayoutNav />
+                        <StatusBar
+                          style="auto"
+                          // NOTE: idk why but "auto" doesn't properly change color on Android.
+                          backgroundColor={
+                            colorScheme === "light" ? "white" : "black"
+                          }
+                        />
+                      </DatabaseProvider>
+                    </UserProvider>
+                  </HoldMenuProvider>
+                </NetworkProvider>
+              </QueryClientProvider>
+            </Theme>
+          </TamaguiProvider>
+        </ErrorsProvider>
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }
@@ -108,13 +153,18 @@ function RootLayoutNav() {
   }, [shareIntent]);
 
   return (
-    <Stack>
+    <JsStack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
+      <JsStack.Screen
         name="modal"
         options={{
           presentation: "modal",
           headerShown: false,
+          ...TransitionPresets.ModalPresentationIOS,
+          gestureEnabled: true,
+          cardStyle: {
+            zIndex: 1000,
+          },
         }}
       />
       <Stack.Screen
@@ -125,14 +175,16 @@ function RootLayoutNav() {
           headerShown: false,
         }}
       />
-      <Stack.Screen
+      <JsStack.Screen
         name="icons"
         options={{
           presentation: "modal",
           headerShown: false,
+          ...TransitionPresets.ModalPresentationIOS,
+          gestureEnabled: true,
         }}
       />
-      <Stack.Screen
+      <JsStack.Screen
         name="support"
         options={{
           presentation: "card",
@@ -160,11 +212,13 @@ function RootLayoutNav() {
           title: "",
         }}
       />
-      <Stack.Screen
+      <JsStack.Screen
         name="feedback"
         options={{
           presentation: "modal",
           headerShown: false,
+          ...TransitionPresets.ModalPresentationIOS,
+          gestureEnabled: true,
         }}
       />
       <Stack.Screen
@@ -187,12 +241,15 @@ function RootLayoutNav() {
           title: "",
         }}
       />
-      <Stack.Screen
+      <JsStack.Screen
         name="block/[id]/connect"
         options={{
           presentation: "modal",
+          ...TransitionPresets.ModalPresentationIOS,
+          gestureEnabled: true,
+          headerLeft: () => null,
         }}
       />
-    </Stack>
+    </JsStack>
   );
 }

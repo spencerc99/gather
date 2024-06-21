@@ -114,6 +114,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     marginTop: "10%",
+    zIndex: 1000,
   },
   createCollection: {
     gap: 8,

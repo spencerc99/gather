@@ -19,6 +19,7 @@ import { BlockType } from "../utils/mimeTypes";
 import Carousel from "react-native-reanimated-carousel";
 import { RawAnimations } from "../animations";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { gestureHandlerRootHOC } from "react-native-gesture-handler";
 
 export const InspoBlocks = [
   {
@@ -67,45 +68,49 @@ const RightActions = memo(() => (
   </YStack>
 ));
 
-const BlockView = memo(
-  ({
-    block,
-    isRemoteCollection,
-  }: {
-    block: Block;
-    isRemoteCollection: boolean;
-  }) => (
-    <Swipeable
-      key={block.id}
-      containerStyle={{
-        overflow: "visible",
-      }}
-      friction={2}
-      renderRightActions={() => <RightActions />}
-      onSwipeableOpen={(direction, swipeable) => {
-        if (direction === "left") {
-          return;
+const BlockView = gestureHandlerRootHOC(
+  memo(
+    ({
+      block,
+      isRemoteCollection,
+    }: {
+      block: Block;
+      isRemoteCollection: boolean;
+    }) => (
+      <Swipeable
+        key={block.id}
+        containerStyle={
+          {
+            // overflow: "visible",
+          }
         }
-        router.push({
-          pathname: "/block/[id]/connect",
-          params: { id: block.id },
-        });
-        swipeable.close();
-      }}
-    >
-      <BlockTextSummary
-        block={block}
-        style={{ maxHeight: 320 }}
-        blockStyle={{
-          maxHeight: 320,
+        friction={2}
+        renderRightActions={() => <RightActions />}
+        onSwipeableOpen={(direction, swipeable) => {
+          if (direction === "left") {
+            return;
+          }
+          router.push({
+            pathname: "/block/[id]/connect",
+            params: { id: block.id },
+          });
+          swipeable.close();
         }}
-        containerProps={{
-          maxWidth: "85%",
-        }}
-        shouldLink
-        isRemoteCollection={isRemoteCollection}
-      />
-    </Swipeable>
+      >
+        <BlockTextSummary
+          block={block}
+          style={{ maxHeight: 320 }}
+          blockStyle={{
+            maxHeight: 320,
+          }}
+          containerProps={{
+            maxWidth: "85%",
+          }}
+          shouldLink
+          isRemoteCollection={isRemoteCollection}
+        />
+      </Swipeable>
+    )
   )
 );
 

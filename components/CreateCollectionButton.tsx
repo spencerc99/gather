@@ -1,6 +1,9 @@
-import { LinkButton } from "./Themed";
+import { LinkButton, LinkButtonProps } from "./Themed";
 
-export function CreateCollectionButton({ disabled }: { disabled?: boolean }) {
+export function CreateCollectionButton({
+  disabled,
+  ...rest
+}: Partial<LinkButtonProps>) {
   return (
     <LinkButton
       href="/modal"
@@ -12,6 +15,7 @@ export function CreateCollectionButton({ disabled }: { disabled?: boolean }) {
       }}
       borderRadius={16}
       disabled={disabled}
+      {...rest}
     >
       New Collection
     </LinkButton>

@@ -1,7 +1,16 @@
 import { useRouter } from "expo-router";
+import * as NavigationBar from "expo-navigation-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import { useContext, useEffect, useState } from "react";
-import { Alert, Dimensions, Image, SafeAreaView } from "react-native";
+import {
+  SafeAreaView,
+  Alert,
+  Dimensions,
+  Image,
+  Platform,
+  useColorScheme,
+} from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Carousel from "react-native-reanimated-carousel";
 import {
@@ -39,7 +48,7 @@ import { ArenaChannelSummary } from "../components/arena/ArenaChannelSummary";
 import {
   ArenaChannelInfo,
   getChannelThumb,
-  rawArenaBlocksToBlockInsertInfo,
+  rawArenaBlockToBlock,
 } from "../utils/arena";
 import { setBoolean, useStickyValue } from "../utils/asyncStorage";
 import { DatabaseContext } from "../utils/db";
@@ -49,6 +58,7 @@ import { AboutSection } from "./about";
 import { ErrorsContext } from "../utils/errors";
 import { useQuery } from "@tanstack/react-query";
 import { HelpGuideUrl } from "../utils/constants";
+import { NetworkContext } from "../utils/network";
 
 interface ExampleCollectionType {
   name: string;
@@ -91,7 +101,9 @@ export default function IntroScreen() {
   const [step, setStep] = useState<number>(0);
   const router = useRouter();
   const { logError } = useContext(ErrorsContext);
-  const width = Dimensions.get("window").width;
+  const { width, height: windowHeight } = Dimensions.get("window");
+  const insets = useSafeAreaInsets();
+  const visibleScreenHeight = windowHeight - insets.top - insets.bottom;
   const {
     email: savedEmail,
     setupUser,
@@ -111,12 +123,24 @@ export default function IntroScreen() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
   const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     if (savedEmail) {
       setEmail(savedEmail);
     }
   }, [savedEmail]);
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync("#FFDBB2");
+    }
+    return () => {
+      NavigationBar.setBackgroundColorAsync(
+        colorScheme === "light" ? "white" : "black"
+      );
+    };
+  }, []);
 
   async function maybeSubscribeEmail() {
     if (!checked) {
@@ -419,7 +443,8 @@ export default function IntroScreen() {
                               {
                                 text: "Thanks! I'll contribute later if I like it",
                               },
-                            ]
+                            ],
+                            { cancelable: true }
                           );
                           nextStep();
                         },
@@ -451,14 +476,15 @@ export default function IntroScreen() {
         }}
       >
         <KeyboardAwareScrollView
-          style={{ flex: 1 }}
+          style={{ flex: 1, height: visibleScreenHeight }}
           extraScrollHeight={70}
           scrollEnabled={scrollEnabled}
         >
           <YStack
-            minHeight="100%"
             backgroundColor="#FFDBB2"
             paddingHorizontal="10%"
+            height="100%"
+            minHeight={visibleScreenHeight}
           >
             <Progress
               theme="blue"
@@ -508,6 +534,7 @@ export default function IntroScreen() {
 }
 
 function ExampleCollection({ name, arenaChannelUrl }: ExampleCollectionType) {
+  const { isConnected } = useContext(NetworkContext);
   const { data: items } = useQuery({
     queryKey: [arenaChannelUrl],
     queryFn: async () => {
@@ -515,7 +542,7 @@ function ExampleCollection({ name, arenaChannelUrl }: ExampleCollectionType) {
         return [];
       }
       const items = await getChannelThumb(arenaChannelUrl);
-      return rawArenaBlocksToBlockInsertInfo(items).slice(0, 5);
+      return items.map(rawArenaBlockToBlock).slice(0, 5);
     },
   });
 
@@ -532,11 +559,11 @@ function ExampleCollection({ name, arenaChannelUrl }: ExampleCollectionType) {
           {name}
         </StyledText>
       )}
-      {Boolean(items?.length) ? (
+      {isConnected && Boolean(items?.length) ? (
         <ScrollView horizontal flex={1}>
           <XStack gap="$2" height={140}>
             {items?.map((item, idx) => (
-              <YStack height={140} maxWidth={140}>
+              <YStack height={140} maxWidth={140} key={item.id}>
                 <BlockContent
                   key={idx}
                   {...item}

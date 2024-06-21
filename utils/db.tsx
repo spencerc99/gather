@@ -78,6 +78,7 @@ import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { UserContext, getCreatedByForRemote } from "./user";
 import { filterItemsBySearchValue } from "./search";
 import { ensure, ensureUnreachable } from "./react";
+import { NetworkContext } from "./network";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -376,8 +377,7 @@ function handleSqlErrors(
 
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const { currentUser, arenaAccessToken } = useContext(UserContext);
-
-  const [isConnected, setIsConnected] = useState<boolean>(true);
+  const { isConnected } = useContext(NetworkContext);
   const [selectedReviewCollection, setSelectedReviewCollection] =
     useStickyValue<string | null>(CollectionToReviewKey, null);
   const queuedBlocksToSync = useRef<Set<string>>(new Set<string>());
@@ -420,10 +420,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     InteractionManager.runAfterInteractions(async () => {
       await Promise.all([initDatabases(), intializeFilesystemFolder(), ,]);
     });
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsConnected(Boolean(state.isConnected));
-    });
-    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

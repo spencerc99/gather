@@ -3,14 +3,7 @@ import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import {
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Dimensions, Platform, SafeAreaView, ScrollView } from "react-native";
 import { XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { BlockSelectLimit, DatabaseContext } from "../utils/db";
@@ -22,6 +15,11 @@ import { MediaView } from "./MediaView";
 import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
 import { useFocusEffect, useNavigation } from "expo-router";
 import { ErrorsContext } from "../utils/errors";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -65,9 +63,20 @@ export function TextForageView({
   const [textPlaceholder, setTextPlaceholder] = useState(
     Placeholders[Math.floor(Math.random() * Placeholders.length)]
   );
-  const insets = useSafeAreaInsets();
   const queryKey = ["blocks", { collectionId }] as const;
   const { logError } = useContext(ErrorsContext);
+  const bottomTabHeight = useBottomTabBarHeight();
+  const keyboard = useAnimatedKeyboard();
+  const [textFocused, setTextFocused] = useState(false);
+  const translateStyle = useAnimatedStyle(() => {
+    return {
+      paddingBottom: textFocused
+        ? keyboard.height.value -
+          bottomTabHeight +
+          (Platform.OS === "android" ? 24 : 0)
+        : undefined,
+    };
+  }, [keyboard.height, textFocused]);
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
@@ -280,11 +289,9 @@ export function TextForageView({
         flex: 1,
       }}
     >
-      <KeyboardAvoidingView
+      {/* <KeyboardAvoidingView
         style={{ flex: 1 }}
-        // 'position' makes it push everything up even when the scrollview doesnt have the full height, and also you can't scroll through all of them (scrollView seems to be constrained by the viewport solely)
-        // but the other ones don't properly push up the nested scrollview
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={"padding"}
         contentContainerStyle={{
           justifyContent: "space-between",
           flex: 1,
@@ -293,6 +300,9 @@ export function TextForageView({
         // NOTE: this needs to adjust based on the height of YStack below
         // TODO: make this smaller when there is a collectionId (because tabs don't show)
         keyboardVerticalOffset={insets.top + 44}
+      > */}
+      <Animated.View
+        style={[{ flex: 1, justifyContent: "space-between" }, translateStyle]}
       >
         <BlockTexts
           collectionId={collectionId}
@@ -402,6 +412,8 @@ export function TextForageView({
               ></StyledButton>
             </YStack>
             <StyledTextArea
+              // NOTE: idk why but the padding is huge on android lol
+              padding={Platform.OS === "android" ? "$2" : undefined}
               paddingRight="$6"
               placeholder={textPlaceholder}
               minHeight={undefined}
@@ -413,10 +425,17 @@ export function TextForageView({
               maxHeight={Dimensions.get("window").height / 2}
               value={textValue}
               enablesReturnKeyAutomatically
+              onFocus={() => {
+                setTextFocused(true);
+              }}
+              onBlur={() => {
+                setTextFocused(false);
+              }}
             />
           </XStack>
         </YStack>
-      </KeyboardAvoidingView>
+      </Animated.View>
+      {/* </KeyboardAvoidingView> */}
     </SafeAreaView>
   );
 }

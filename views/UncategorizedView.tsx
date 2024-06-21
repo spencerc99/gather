@@ -78,15 +78,6 @@ export function UncategorizedView() {
   );
 
   function CarouselItem({ item, index }: { item: Block; index: number }) {
-    useEffect(() => {
-      // TODO: bring back if putting all blocks here
-      // getConnectionsForBlock(item.id).then((connections) => {
-      //   setSelectedCollections(
-      //     connections.map((connection) => connection.collectionId)
-      //   );
-      // });
-    }, []);
-
     if (!events) {
       return <></>;
     }
@@ -135,7 +126,7 @@ export function UncategorizedView() {
             opacity={selectedCollections.length > 0 ? 1 : 0}
           >
             <StyledButton
-              elevate
+              elevation="$0.5"
               size="$medium"
               onPress={() => {
                 onClickConnect(item.id, selectedCollections);
@@ -152,7 +143,7 @@ export function UncategorizedView() {
               Connect
             </StyledButton>
             <StyledButton
-              elevate
+              elevation="$0.5"
               theme="red"
               circular
               size="$small"
@@ -174,6 +165,7 @@ export function UncategorizedView() {
     return {
       transform: [
         {
+          // TODO: needs extra padding for android
           translateY: collectionsSelectInputFocused
             ? -(keyboard.height.value - bottomTabHeight)
             : 0,
