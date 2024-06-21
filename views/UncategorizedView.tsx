@@ -8,7 +8,14 @@ import { Block } from "../utils/dataTypes";
 import { Icon, StyledButton, StyledText } from "../components/Themed";
 import { Dimensions, Keyboard, SafeAreaView } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
-import { SizableText, Spinner, Stack, XStack, YStack } from "tamagui";
+import {
+  ScrollView,
+  SizableText,
+  Spinner,
+  Stack,
+  XStack,
+  YStack,
+} from "tamagui";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { SelectCollectionsList } from "../components/SelectCollectionsList";
 import { UserContext } from "../utils/user";
@@ -199,7 +206,10 @@ export function UncategorizedView() {
         flex: 1,
       }}
     >
-      <Animated.View style={{ ...translateStyle }}>
+      <Animated.View
+        style={{ ...translateStyle }}
+        onTouchStart={() => Keyboard.dismiss()}
+      >
         <Stack minHeight="100%">
           <XStack flex={1} flexGrow={1}>
             <Carousel
