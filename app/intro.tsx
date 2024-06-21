@@ -504,7 +504,7 @@ export default function IntroScreen() {
               <XStack flexGrow={0}>
                 {step > 0 && (
                   <StyledButton
-                    theme="grey"
+                    theme="gray"
                     size="$small"
                     left={0}
                     onPress={() => {

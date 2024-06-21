@@ -132,7 +132,7 @@ export function ArenaChannelMultiSelect({
   return (
     <Stack>
       <XStack justifyContent="center" width="100%" alignItems="center" gap="$2">
-        <StyledButton flexGrow={1} onPress={() => setOpen(true)} theme="grey">
+        <StyledButton flexGrow={1} onPress={() => setOpen(true)} theme="gray">
           {isLoading
             ? "Loading from are.na..."
             : selectedChannels.length > 0
@@ -142,7 +142,7 @@ export function ArenaChannelMultiSelect({
         {selectedChannels.length > 0 && (
           <StyledButton
             flexShrink={1}
-            theme="grey"
+            theme="gray"
             borderRadius={100}
             disabled={!selectedChannels.length}
             onPress={() => setSelectedChannels([])}
@@ -205,7 +205,7 @@ export function ArenaChannelMultiSelect({
             </Stack>
             <StyledButton
               flexShrink={1}
-              theme="grey"
+              theme="gray"
               borderRadius={100}
               disabled={!selectedChannels.length}
               onPress={() => {

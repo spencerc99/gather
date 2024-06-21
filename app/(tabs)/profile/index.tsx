@@ -278,8 +278,11 @@ export default function ProfileScreen() {
           )}
         </Animated.View>
 
-        <StyledParagraph>
+        <StyledText>
           Thank you for giving your space and time to this app.
+        </StyledText>
+        <StyledParagraph>
+          If you need any specific help, reach out to gather@spencer.place.
         </StyledParagraph>
         <YStack alignItems="center">
           <Image

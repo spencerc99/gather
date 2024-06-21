@@ -386,7 +386,7 @@ export function TextForageView({
               icon={<Icon size={24} name="images" />}
               onPress={pickImage}
               paddingHorizontal="$2"
-              theme="grey"
+              theme="gray"
               chromeless
               alignSelf="flex-end"
             />

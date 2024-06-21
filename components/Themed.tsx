@@ -708,11 +708,13 @@ export function ExternalLinkText({
   ...rest
 }: GetProps<typeof StyledText> & { href: string }) {
   return (
-    <ExternalLink href={href}>
-      <StyledText link {...rest}>
-        {children}
-      </StyledText>
-    </ExternalLink>
+    <StyledParagraph>
+      <ExternalLink href={href}>
+        <StyledParagraph link {...rest}>
+          {children}
+        </StyledParagraph>
+      </ExternalLink>
+    </StyledParagraph>
   );
 }
 

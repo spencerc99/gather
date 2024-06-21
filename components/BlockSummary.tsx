@@ -14,6 +14,7 @@ import {
 } from "react";
 import {
   EditableTextOnClick,
+  ExternalLinkText,
   Icon,
   IconComponent,
   IconType,
@@ -25,7 +26,6 @@ import { BlockContent } from "./BlockContent";
 import { GetProps, TextProps, XStack, YStack, useTheme } from "tamagui";
 import { getRelativeDate } from "../utils/date";
 import { Link, useRouter } from "expo-router";
-import { ExternalLink } from "./ExternalLink";
 import * as FileSystem from "expo-file-system";
 import * as Clipboard from "expo-clipboard";
 import { MenuItemProps } from "react-native-hold-menu/lib/typescript/components/menu/types";
@@ -226,7 +226,7 @@ export function BlockSummary({
       case BlockType.Link:
         metadata.push(
           <Fragment key={"link"}>
-            from <ExternalLink href={source!}>{source}</ExternalLink>
+            from <ExternalLinkText href={source!}>{source}</ExternalLinkText>
           </Fragment>
         );
         break;
@@ -560,7 +560,12 @@ export function BlockReviewSummary({
   }
 
   const dateInfo = useMemo(
-    () => getDateForBlock(block, { isRemoteCollection, dateKind: "absolute" }),
+    () =>
+      getDateForBlock(block, {
+        isRemoteCollection,
+        dateKind: "absolute",
+        includeDescription: true,
+      }),
     [block, isRemoteCollection]
   );
   // TODO: need to truncate title, etc. to make it fit
@@ -582,7 +587,7 @@ export function BlockReviewSummary({
         )}
         {description && (
           <StyledText ellipse={true} numberOfLines={2}>
-            {description}
+            {description.trim()}
           </StyledText>
         )}
         {/* TODO: this should be who connected it */}
@@ -674,7 +679,12 @@ function getDateForBlock(
   {
     isRemoteCollection,
     dateKind,
-  }: { isRemoteCollection?: boolean; dateKind?: "relative" | "absolute" }
+    includeDescription,
+  }: {
+    isRemoteCollection?: boolean;
+    dateKind?: "relative" | "absolute";
+    includeDescription?: boolean;
+  }
 ) {
   const { createdAt, remoteConnectedAt, connectedAt } = block;
 
@@ -686,7 +696,13 @@ function getDateForBlock(
     dateKind === "relative"
       ? getRelativeDate(date)
       : `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-  return dateInfo;
+  const dateDescription =
+    isRemoteCollection && remoteConnectedAt
+      ? "synced"
+      : connectedAt
+      ? "connected"
+      : "created";
+  return includeDescription ? `${dateDescription} @ ${dateInfo}` : dateInfo;
 }
 
 export function BlockConnections({ block }: { block: Block }) {

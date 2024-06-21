@@ -19,7 +19,6 @@ import {
   StyledText,
   StyledView,
 } from "./Themed";
-import { ExternalLink } from "./ExternalLink";
 import { UserContext, extractCreatorFromCreatedBy } from "../utils/user";
 import { ensureUnreachable } from "../utils/react";
 import { useStickyValue } from "../utils/asyncStorage";
@@ -37,11 +36,9 @@ function getDisplayForCreatedBy(
     case RemoteSourceType.Arena:
       return (
         <>
-          <StyledText>
-            <ExternalLinkText href={`https://are.na/${userId}`}>
-              {arenaUserInfo && userId === arenaUserInfo.slug ? "you" : userId}
-            </ExternalLinkText>{" "}
-          </StyledText>
+          <ExternalLinkText href={`https://are.na/${userId}`}>
+            {arenaUserInfo && userId === arenaUserInfo.slug ? "you" : userId}{" "}
+          </ExternalLinkText>
           <ArenaLogo />
         </>
       );
@@ -190,16 +187,12 @@ export function BlockDetailView({ block }: { block: Block }) {
           {/* TODO: genericize when opening up remote sources */}
           {remoteSourceInfo ? (
             <XStack alignItems="center">
-              <StyledText metadata>
-                Block{" "}
-                <ExternalLink
-                  href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
-                >
-                  <StyledParagraph link>
-                    {remoteSourceInfo.arenaId}
-                  </StyledParagraph>
-                </ExternalLink>{" "}
-              </StyledText>
+              <StyledText metadata>Block </StyledText>
+              <ExternalLinkText
+                href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
+              >
+                {remoteSourceInfo.arenaId}{" "}
+              </ExternalLinkText>
               <ArenaLogo />
             </XStack>
           ) : hasRemoteConnection ? (
