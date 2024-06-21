@@ -17,6 +17,7 @@ import { useFocusEffect, useNavigation } from "expo-router";
 import { ErrorsContext } from "../utils/errors";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import Animated, {
+  KeyboardState,
   useAnimatedKeyboard,
   useAnimatedStyle,
 } from "react-native-reanimated";
@@ -74,7 +75,7 @@ export function TextForageView({
         ? keyboard.height.value -
           bottomTabHeight +
           (Platform.OS === "android" ? 24 : 0)
-        : undefined,
+        : 0,
     };
   }, [keyboard.height, textFocused]);
 
