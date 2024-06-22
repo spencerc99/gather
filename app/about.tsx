@@ -24,6 +24,7 @@ import { UserContext } from "../utils/user";
 import { UsageInfo } from "../components/UsageInfo";
 import { ArenaInterviewUrl } from "../utils/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ExternalLink } from "../components/ExternalLink";
 
 export default function About() {
   const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
@@ -104,9 +105,9 @@ export function AboutSection({
       <XStack>
         <H2>
           Hi, I'm{" "}
-          <ExternalLinkText href="https://spencer.place" bold>
-            Spencer
-          </ExternalLinkText>
+          <StyledText link bold>
+            <ExternalLink href="https://spencer.place">Spencer</ExternalLink>
+          </StyledText>
         </H2>
         <Image
           source={require("../assets/images/spencer-happy-taiwan.png")}

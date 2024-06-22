@@ -278,6 +278,7 @@ export default function IntroScreen() {
               value={email}
               onChangeText={(text) => setEmail(text)}
               inputMode="email"
+              textContentType="emailAddress"
               returnKeyType="done"
             ></StyledInput>
             <XStack alignItems="center" gap="$1.5">
