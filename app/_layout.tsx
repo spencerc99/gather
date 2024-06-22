@@ -245,7 +245,10 @@ function RootLayoutNav() {
         name="block/[id]/connect"
         options={{
           presentation: "modal",
-          ...TransitionPresets.ModalPresentationIOS,
+          // Very laggy on ios using the preset
+          ...(Platform.OS === "android"
+            ? { ...TransitionPresets.ModalPresentationIOS }
+            : {}),
           gestureEnabled: true,
           headerLeft: () => null,
         }}

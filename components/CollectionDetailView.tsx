@@ -14,9 +14,10 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { addBlockToChannel, createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
-import { UserContext, getCreatedByForRemote } from "../utils/user";
+import { UserContext } from "../utils/user";
 import { ErrorsContext } from "../utils/errors";
 import { useStickyValue } from "../utils/asyncStorage";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function CollectionDetailView({
   collection,
@@ -38,18 +39,17 @@ export function CollectionDetailView({
     syncNewRemoteItems,
     deleteCollection,
     fullDeleteCollection,
-
     getCollectionItems,
     updateCollection,
-    upsertConnections,
     syncBlockToArena,
   } = useContext(DatabaseContext);
   const { arenaAccessToken } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { logError } = useContext(ErrorsContext);
+  const queryClient = useQueryClient();
   const [devModeEnabled] = useStickyValue("devModeEnabled", false);
-  async function update(updateFn: () => ReturnType<typeof updateBlock>) {
+  async function update(updateFn: () => ReturnType<typeof updateCollection>) {
     setIsLoading(true);
     try {
       await updateFn();
@@ -68,7 +68,6 @@ export function CollectionDetailView({
   }
   useFixExpoRouter3NavigationTitle();
 
-  //   TODO: add confirmation dialog https://tamagui.dev/docs/components/alert-dialog/1.0.0
   async function onPressDelete() {
     setIsLoading(true);
     try {
@@ -149,9 +148,8 @@ export function CollectionDetailView({
             arenaClass: "Collection",
           },
         },
+        noInvalidation: true,
       });
-      // The above update refreshes the UI immediately, so reset loading to true
-      setIsLoading(true);
 
       // Reverse order so they get added in right order, since fetched in descending
       const reversedItems = collectionItems.reverse();
@@ -182,6 +180,9 @@ export function CollectionDetailView({
       );
     } finally {
       setIsLoading(false);
+      queryClient.invalidateQueries({
+        queryKey: ["collection", { collectionId: id }],
+      });
     }
   }
 

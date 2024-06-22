@@ -294,6 +294,10 @@ export default function ProfileScreen() {
             </>
           )}
         </Animated.View>
+        {/* TODO: select a channel to send? */}
+        {/* <StyledButton justifyContent="flex-start">
+          Gift a collection
+        </StyledButton> */}
 
         <StyledText>
           Thank you for giving your space and time to this app.

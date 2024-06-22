@@ -896,6 +896,9 @@ export async function getUserChannels(
   }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
   const userInfo = await getMyArenaUserInfo(accessToken);
+  if (!userInfo?.id) {
+    throw Error("failed to get user info from are.na");
+  }
   const baseUrl = search
     ? withQueryParams(`https://api.are.na/v2/search/user/${userInfo.id}`, {
         "filter[type]": "channels",

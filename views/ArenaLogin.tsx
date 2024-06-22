@@ -33,7 +33,6 @@ import {
   ArenaClientId,
   ArenaClientSecret,
 } from "../utils/arena";
-import { DatabaseContext } from "../utils/db";
 import { useArenaChannels } from "../utils/hooks/useArenaUserChannels";
 import { UserContext } from "../utils/user";
 
@@ -159,7 +158,7 @@ export function SelectArenaChannel({
   overlayProps?: YStackProps;
   modal?: boolean;
 }) {
-  const { arenaAccessToken } = useContext(DatabaseContext);
+  const { arenaAccessToken } = useContext(UserContext);
   const [searchValue, setSearchValue] = useState("");
   const [open, setOpen] = useState(false);
   const debouncedSearch = useDebounceValue(searchValue, 300);

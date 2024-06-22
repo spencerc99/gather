@@ -205,6 +205,8 @@ interface DatabaseContextProps {
   updateCollection: (opts: {
     collectionId: string;
     editInfo: CollectionEditInfo;
+    ignoreRemoteUpdate?: boolean;
+    noInvalidation?: boolean;
   }) => Promise<void>;
   getCollectionItems: (
     collectionId: string,
@@ -901,8 +903,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
   const deleteCollectionMutation = useMutation({
     mutationFn: deleteCollectionBase,
-    onSuccess: () => {
+    onSuccess: (_res, collectionId) => {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
+      queryClient.invalidateQueries({
+        queryKey: ["collection", { collectionId }],
+      });
     },
   });
   const deleteCollection = deleteCollectionMutation.mutateAsync;
@@ -991,7 +996,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     switch (sortType) {
       case SortType.Created:
-        return `ORDER BY  CASE WHEN ${remoteConnectedAt} THEN ${remoteConnectedAt} ELSE COALESCE(${connectedAt}, blocks.created_timestamp) END DESC`;
+        // NOTE: local timestamp are stored as HH:MM:SS and remote_created_at is ISO timestamp, so we convert it to local to compare.
+        return `ORDER BY  CASE WHEN ${remoteConnectedAt} THEN datetime(${remoteConnectedAt}) ELSE COALESCE(${connectedAt}, blocks.created_timestamp) END DESC`;
       case SortType.Random:
         // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
         // return `ORDER BY  SIN(blocks.id + ${seed})`;
@@ -1531,10 +1537,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     collectionId,
     editInfo,
     ignoreRemoteUpdate,
+    noInvalidation,
   }: {
     collectionId: string;
     editInfo: CollectionEditInfo;
     ignoreRemoteUpdate?: boolean;
+    noInvalidation?: boolean;
   }): Promise<void> {
     if (Object.keys(editInfo).length === 0) {
       return;
@@ -1579,9 +1587,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   const updateCollectionMutation = useMutation({
     mutationFn: updateCollectionBase,
-    onSuccess: (_data, { collectionId }) => {
+    onSuccess: (_data, { collectionId, noInvalidation }) => {
+      if (noInvalidation) {
+        return;
+      }
       queryClient.invalidateQueries({
-        queryKey: ["collections", { collectionId }],
+        queryKey: ["collection", { collectionId }],
       });
     },
   });
@@ -2073,6 +2084,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     mutationFn: upsertConnectionsBase,
     onSuccess: (_data, connections) => {
       const collectionIds = connections.map((c) => c.collectionId);
+      // TODO: change numConnectiosn to separate query to just invalidate that
       queryClient.invalidateQueries({ queryKey: ["collections"] });
       for (const collectionId of collectionIds) {
         queryClient.invalidateQueries({
@@ -2452,7 +2464,7 @@ export function useCollection(collectionId: string) {
   const { getCollection } = useContext(DatabaseContext);
 
   return useQuery({
-    queryKey: ["collections", { collectionId }],
+    queryKey: ["collection", { collectionId }],
     queryFn: async () => {
       return await getCollection(collectionId);
     },

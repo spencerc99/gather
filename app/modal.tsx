@@ -8,6 +8,7 @@ import { DatabaseContext } from "../utils/db";
 import { PortalProvider } from "tamagui";
 import { ImportArenaChannelSelect } from "../components/ImportArenaChannelSelect";
 import { UserContext } from "../utils/user";
+import { logError } from "../utils/errors";
 
 export default function ModalScreen() {
   // TODO: type the diff modals by the pathname?
@@ -50,10 +51,18 @@ function CreateCollectionModal() {
       /> */}
       <StyledButton
         onPress={async () => {
-          await createCollection({ title, description, createdBy: user!.id });
-          router.replace("..");
+          setIsLoading(true);
+          try {
+            await createCollection({ title, description, createdBy: user!.id });
+          } catch (err) {
+            logError(err);
+            alert("Failed to create collection. Please try again later.");
+          } finally {
+            router.replace("..");
+            setIsLoading(false);
+          }
         }}
-        disabled={!title}
+        disabled={!title || isLoading}
         // style={{ marginLeft: "auto" }}
       >
         Create

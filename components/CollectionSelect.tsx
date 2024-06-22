@@ -56,23 +56,27 @@ const CollectionSelectView = memo(
               size="$6"
               icon={<Icon name="trash" />}
               onPress={() => {
-                Alert.alert("Delete Collection?", undefined, [
-                  {
-                    text: "Cancel",
-                    onPress: () => {
-                      swipeable.close();
+                Alert.alert(
+                  `Delete "${collection.title}"?`,
+                  "Connected blocks won't be affected.",
+                  [
+                    {
+                      text: "Cancel",
+                      onPress: () => {
+                        swipeable.close();
+                      },
+                      style: "cancel",
                     },
-                    style: "cancel",
-                  },
-                  {
-                    text: "Delete",
-                    onPress: () => {
-                      deleteCollection(collection.id);
-                      swipeable.close();
+                    {
+                      text: "Delete",
+                      onPress: () => {
+                        deleteCollection(collection.id);
+                        swipeable.close();
+                      },
+                      style: "destructive",
                     },
-                    style: "destructive",
-                  },
-                ]);
+                  ]
+                );
               }}
             ></StyledButton>
           </YStack>

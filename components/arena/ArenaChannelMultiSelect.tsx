@@ -80,7 +80,7 @@ export function ArenaChannelMultiSelect({
     [selectedChannels]
   );
 
-  const { channels, isLoading, isFetchingNextPage, fetchMore } =
+  const { channels, isLoading, isFetchingNextPage, fetchMore, error } =
     useArenaChannels(debouncedSearch, toggleValue);
 
   const sortedAndAnnotatedChannels = useMemo(() => {
@@ -133,7 +133,9 @@ export function ArenaChannelMultiSelect({
     <Stack>
       <XStack justifyContent="center" width="100%" alignItems="center" gap="$2">
         <StyledButton flexGrow={1} onPress={() => setOpen(true)} theme="gray">
-          {isLoading
+          {error
+            ? error.message || "Error loading channels from Are.na"
+            : isLoading
             ? "Loading from are.na..."
             : selectedChannels.length > 0
             ? "Configure channels"

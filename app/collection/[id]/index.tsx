@@ -1,10 +1,8 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import { useContext, useEffect, useState } from "react";
 import { Spinner } from "tamagui";
 import { HeaderIcon } from "../../(tabs)/_layout";
 import { CollectionDetailView } from "../../../components/CollectionDetailView";
-import { Collection } from "../../../utils/dataTypes";
-import { DatabaseContext, useCollection } from "../../../utils/db";
+import { useCollection } from "../../../utils/db";
 
 export function CollectionDetailsHeaderLink({ id }: { id: string }) {
   return (

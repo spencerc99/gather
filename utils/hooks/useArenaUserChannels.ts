@@ -17,7 +17,7 @@ export function useArenaChannels(
   const { getArenaCollectionIds } = useContext(DatabaseContext);
   const debouncedSearch = useDebounceValue(searchValue, 300);
 
-  const { data: remoteCollectionIds } = useQuery({
+  const { data: remoteCollectionIds, error } = useQuery({
     queryKey: ["collections", "ids"],
     queryFn: async () => await getArenaCollectionIds(),
   });
@@ -67,6 +67,7 @@ export function useArenaChannels(
     isLoading,
     isFetchingNextPage,
     fetchMore,
+    error,
   };
 }
 
