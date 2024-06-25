@@ -16,7 +16,6 @@ import { ContributionsKey } from "../utils/asyncStorage";
 import { ContributionsList } from "../components/ContributionsList";
 import { UserContext } from "../utils/user";
 import { UsageInfo } from "../components/UsageInfo";
-import { Platform } from "react-native";
 
 export default function Support() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
@@ -37,7 +36,7 @@ export default function Support() {
       >
         <YStack
           backgroundColor="#FFDBB2"
-          paddingTop={Platform.OS === "android" ? "10%" : 0}
+          paddingTop={"10%"}
           paddingBottom="5%"
           paddingHorizontal="10%"
           gap="$3"

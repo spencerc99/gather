@@ -68,49 +68,58 @@ const RightActions = memo(() => (
   </YStack>
 ));
 
-const BlockView = gestureHandlerRootHOC(
-  memo(
-    ({
-      block,
-      isRemoteCollection,
-    }: {
-      block: Block;
-      isRemoteCollection: boolean;
-    }) => (
-      <Swipeable
-        key={block.id}
-        containerStyle={
-          {
-            // overflow: "visible",
-          }
-        }
-        friction={2}
-        renderRightActions={() => <RightActions />}
-        onSwipeableOpen={(direction, swipeable) => {
-          if (direction === "left") {
-            return;
-          }
-          router.push({
-            pathname: "/block/[id]/connect",
-            params: { id: block.id },
-          });
-          swipeable.close();
-        }}
-      >
-        <BlockTextSummary
-          block={block}
-          style={{ maxHeight: 320 }}
-          blockStyle={{
-            maxHeight: 320,
-          }}
-          containerProps={{
-            maxWidth: "85%",
-          }}
-          shouldLink
-          isRemoteCollection={isRemoteCollection}
-        />
-      </Swipeable>
-    )
+const BlockViewImpl = ({
+  block,
+  isRemoteCollection,
+}: {
+  block: Block;
+  isRemoteCollection: boolean;
+}) => (
+  <Swipeable
+    key={block.id}
+    containerStyle={
+      {
+        // overflow: "visible",
+      }
+    }
+    friction={2}
+    renderRightActions={() => <RightActions />}
+    onSwipeableOpen={(direction, swipeable) => {
+      if (direction === "left") {
+        return;
+      }
+      router.push({
+        pathname: "/block/[id]/connect",
+        params: { id: block.id },
+      });
+      swipeable.close();
+    }}
+  >
+    <BlockTextSummary
+      block={block}
+      style={{ maxHeight: 320 }}
+      blockStyle={{
+        maxHeight: 320,
+      }}
+      containerProps={{
+        maxWidth: "85%",
+      }}
+      shouldLink
+      isRemoteCollection={isRemoteCollection}
+    />
+  </Swipeable>
+);
+const BlockViewWrapped = gestureHandlerRootHOC(BlockViewImpl);
+
+const BlockView = memo(
+  ({
+    block,
+    isRemoteCollection,
+  }: {
+    block: Block;
+    isRemoteCollection: boolean;
+  }) => (
+    <BlockViewWrapped block={block} isRemoteCollection={isRemoteCollection} />
   )
 );
 

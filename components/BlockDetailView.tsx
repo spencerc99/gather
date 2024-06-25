@@ -103,6 +103,7 @@ export function BlockDetailView({ block }: { block: Block }) {
         contentContainerStyle={{
           flexGrow: 1,
           padding: "10%",
+          paddingTop: Platform.OS === "ios" ? "30%" : "15%",
         }}
         enableOnAndroid
         scrollIndicatorInsets={{ right: 1 }}
@@ -178,31 +179,31 @@ export function BlockDetailView({ block }: { block: Block }) {
               );
             }}
           />
-          {createdBy && createdByDisplay !== "you" && (
-            <XStack alignItems="center">
-              <StyledText metadata>Created by </StyledText>
-              {createdByDisplay}
-            </XStack>
-          )}
-          {/* TODO: genericize when opening up remote sources */}
-          {remoteSourceInfo ? (
-            <XStack alignItems="center">
-              <StyledText metadata>Block </StyledText>
-              <ExternalLinkText
-                href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
-              >
-                {remoteSourceInfo.arenaId}{" "}
-              </ExternalLinkText>
-              <ArenaLogo />
-            </XStack>
-          ) : hasRemoteConnection ? (
-            <XStack alignItems="center">
-              <StyledText metadata>Waiting to sync to </StyledText>
-              <ArenaLogo />
-              <StyledText metadata> ...</StyledText>
-            </XStack>
-          ) : null}
           <StyledView gap="$1">
+            {createdBy && createdByDisplay !== "you" && (
+              <XStack alignItems="center">
+                <StyledText metadata>Created by </StyledText>
+                {createdByDisplay}
+              </XStack>
+            )}
+            {/* TODO: genericize when opening up remote sources */}
+            {remoteSourceInfo ? (
+              <XStack alignItems="center">
+                <StyledText metadata>Block </StyledText>
+                <ExternalLinkText
+                  href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
+                >
+                  {remoteSourceInfo.arenaId}{" "}
+                </ExternalLinkText>
+                <ArenaLogo />
+              </XStack>
+            ) : hasRemoteConnection ? (
+              <XStack alignItems="center">
+                <StyledText metadata>Waiting to sync to </StyledText>
+                <ArenaLogo />
+                <StyledText metadata> ...</StyledText>
+              </XStack>
+            ) : null}
             {/* <StyledParagraph metadata>By: {createdBy}</StyledParagraph> */}
             {source && (
               <StyledText metadata>

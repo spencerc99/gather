@@ -315,15 +315,15 @@ export default function IntroScreen() {
       case 1:
         return (
           <>
-            <StyledText bold fontSize="$6">
+            <StyledText size="$6" bold>
               Gathering Practices
             </StyledText>
-            <StyledText fontSize="$4">
+            <StyledText size="$4">
               Create collections to start gathering. Treat them as ideas you
               want to revisit, things you want to pay attention to, or rituals
               you want to cultivate.
             </StyledText>
-            <StyledText fontSize="$4">
+            <StyledText size="$4">
               In addition to the below examples, we wrote{" "}
               <ExternalLinkText href={HelpGuideUrl}>a guide</ExternalLinkText>{" "}
               to help give some ideas.
@@ -340,7 +340,7 @@ export default function IntroScreen() {
       case 2:
         return (
           <>
-            <StyledText bold fontSize="$6">
+            <StyledText size="$6" bold>
               Adding to Are.na <ArenaLogo />
             </StyledText>
             <StyledText>
@@ -551,12 +551,12 @@ function ExampleCollection({ name, arenaChannelUrl }: ExampleCollectionType) {
     <YStack gap="$1.5">
       {arenaChannelUrl ? (
         <ExternalLinkText href={arenaChannelUrl}>
-          <StyledText fontSize="$4" bold link>
+          <StyledText size="$4" bold link>
             {name}
           </StyledText>
         </ExternalLinkText>
       ) : (
-        <StyledText fontSize="$4" bold>
+        <StyledText size="$4" bold>
           {name}
         </StyledText>
       )}

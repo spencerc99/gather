@@ -18,6 +18,7 @@ import {
   Spinner,
   Input,
   H3,
+  SizableText,
 } from "tamagui";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome, FontAwesome6, Ionicons } from "@expo/vector-icons";
@@ -58,7 +59,10 @@ const TextVariants = {
   },
 } as const;
 
-export const StyledText = styled(Text, {
+export const StyledText = styled(SizableText, {
+  variants: TextVariants,
+});
+export const StyledDefaultText = styled(Text, {
   variants: TextVariants,
 });
 

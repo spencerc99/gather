@@ -264,6 +264,10 @@ export function CollectionDetailView({
                     {`Sync new items from ${remoteSourceType}`}
                     <ArenaLogo style={{ marginLeft: -4 }} />
                   </StyledButton>
+                  <StyledText metadata>
+                    This happens automatically every few hours when you open the
+                    app. Only use this if you want a faster update.
+                  </StyledText>
                   {/* TODO: add a button to "reset" channel from remote, which deletes items that it doesn't find */}
                   {/* <StyledButton
                     onPress={onClickSyncNewItems}

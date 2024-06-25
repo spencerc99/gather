@@ -186,7 +186,7 @@ export function SlidingScalePayment({
           alignItems="center"
         >
           {Array.from({ length: SlidingPrice.length }, (_, index) => (
-            <StyledText key={index} metadata fontSize="$7" elevation={5} bold>
+            <StyledText key={index} metadata size="$7" elevation={5} bold>
               ●
             </StyledText>
           ))}

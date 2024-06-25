@@ -489,6 +489,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               created_timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
               created_by TEXT NOT NULL,
               remote_created_at timestamp,
+              remote_connected_at_datetime AS (datetime(remote_created_at)),
   
               PRIMARY KEY (block_id, collection_id),
               FOREIGN KEY (block_id) REFERENCES blocks(id),
@@ -972,7 +973,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   const SelectBlockSql = `WITH block_connections AS (
             SELECT    connections.block_id,
-                      MIN(connections.remote_created_at) AS remote_connected_at,
+                      MIN(connections.remote_connected_at_datetime) AS remote_connected_at,
                       COUNT(connections.collection_id) as num_connections,
                       json_group_array(connections.collection_id) as collection_ids
             FROM      connections
@@ -997,7 +998,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     switch (sortType) {
       case SortType.Created:
         // NOTE: local timestamp are stored as HH:MM:SS and remote_created_at is ISO timestamp, so we convert it to local to compare.
-        return `ORDER BY  CASE WHEN ${remoteConnectedAt} THEN datetime(${remoteConnectedAt}) ELSE COALESCE(${connectedAt}, blocks.created_timestamp) END DESC`;
+        return `ORDER BY  CASE WHEN ${remoteConnectedAt} IS NOT NULL THEN ${remoteConnectedAt} ELSE COALESCE(${connectedAt}, blocks.created_timestamp) END DESC`;
       case SortType.Random:
         // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
         // return `ORDER BY  SIN(blocks.id + ${seed})`;
@@ -1511,7 +1512,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             }
             ${SelectBlocksSortTypeToClause(
               sortType,
-              "connections.remote_created_at",
+              "connections.remote_connected_at_datetime",
               "connections.created_timestamp",
               {
                 seed,

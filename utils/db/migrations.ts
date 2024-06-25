@@ -3,15 +3,17 @@ import { storage } from "../mmkv";
 import { UserInfo } from "../user";
 
 export const Migrations = [
-  // Added 2023-12-18
-  `ALTER TABLE blocks ADD COLUMN arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'));`,
-  `ALTER TABLE connections ADD COLUMN remote_created_at timestamp;`,
-  // Added 2024-04-26
-  `ALTER TABLE collections ADD COLUMN arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'));`,
+  // // Added 2023-12-18
+  // `ALTER TABLE blocks ADD COLUMN arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'));`,
+  // `ALTER TABLE connections ADD COLUMN remote_created_at timestamp;`,
+  // // Added 2024-04-26
+  // `ALTER TABLE collections ADD COLUMN arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'));`,
   // Added 2024-06-03
   `ALTER TABLE blocks ADD COLUMN local_asset_id VARCHAR(128);`,
   // Added 2024-05-18
   `ALTER TABLE blocks ADD COLUMN deletion_timestamp timestamp;`,
+  // Added 2024-05-18
+  `ALTER TABLE connections ADD COLUMN remote_connected_at_datetime AS (datetime(remote_created_at));`,
 ];
 
 export const Indices = [

@@ -1,6 +1,6 @@
 import * as WebBrowser from "expo-web-browser";
 import { useContext, useState } from "react";
-import { Image, SafeAreaView } from "react-native";
+import { Image, Platform } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { H2, Theme, XStack, YStack } from "tamagui";
 import {
@@ -13,6 +13,7 @@ import {
 import {
   ExternalLinkText,
   StyledButton,
+  StyledDefaultText,
   StyledText,
   StyledView,
 } from "../components/Themed";
@@ -42,6 +43,7 @@ export default function About() {
     <Theme name="light">
       <StyledView
         flex={1}
+        paddingTop={Platform.OS === "ios" ? "20%" : 30}
         paddingBottom={insets.bottom}
         backgroundColor="#FFDBB2"
       >
@@ -105,9 +107,11 @@ export function AboutSection({
       <XStack>
         <H2>
           Hi, I'm{" "}
-          <StyledText link bold>
-            <ExternalLink href="https://spencer.place">Spencer</ExternalLink>
-          </StyledText>
+          <ExternalLink href="https://spencer.place">
+            <StyledDefaultText bold link>
+              Spencer
+            </StyledDefaultText>
+          </ExternalLink>
         </H2>
         <Image
           source={require("../assets/images/spencer-happy-taiwan.png")}

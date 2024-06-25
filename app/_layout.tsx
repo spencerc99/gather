@@ -184,11 +184,12 @@ function RootLayoutNav() {
           gestureEnabled: true,
         }}
       />
-      <JsStack.Screen
+      <Stack.Screen
         name="support"
         options={{
           presentation: "card",
           title: "",
+          headerTransparent: true,
         }}
       />
       <Stack.Screen
@@ -226,6 +227,7 @@ function RootLayoutNav() {
         options={{
           presentation: "card",
           title: "",
+          headerTransparent: true,
         }}
       />
       <Stack.Screen
@@ -239,20 +241,29 @@ function RootLayoutNav() {
         options={{
           presentation: "card",
           title: "",
+          headerTransparent: true,
         }}
       />
-      <JsStack.Screen
-        name="block/[id]/connect"
-        options={{
-          presentation: "modal",
-          // Very laggy on ios using the preset
-          ...(Platform.OS === "android"
-            ? { ...TransitionPresets.ModalPresentationIOS }
-            : {}),
-          gestureEnabled: true,
-          headerLeft: () => null,
-        }}
-      />
+      {Platform.OS === "android" ? (
+        <JsStack.Screen
+          name="block/[id]/connect"
+          options={{
+            presentation: "modal",
+            // Very laggy on ios using the preset
+            ...TransitionPresets.ModalPresentationIOS,
+            gestureEnabled: true,
+            headerLeft: () => null,
+          }}
+        />
+      ) : (
+        <Stack.Screen
+          name="block/[id]/connect"
+          options={{
+            presentation: "modal",
+            headerLeft: () => null,
+          }}
+        />
+      )}
     </JsStack>
   );
 }

@@ -123,7 +123,7 @@ export function SelectCollectionsList({
       }
       return 0;
     });
-  }, [collections, searchValue]);
+  }, [collections]);
 
   const toggleCollection = useCallback(
     (collection: Collection) => {

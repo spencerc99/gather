@@ -122,13 +122,14 @@ export default function ProfileScreen() {
               />
             </Avatar>
             <StyledText title>{currentUser.email}</StyledText>
-            <YStack alignItems="center" gap="0">
+            <YStack alignItems="center" gap={0}>
               <StyledText metadata>
                 joined on {dayjs(currentUser.createdAt).format("MM/DD/YY")},{" "}
                 {daysUsedApp} days ago
               </StyledText>
               {hasContributed && (
                 <XStack alignItems="center">
+                  {/* @ts-ignore */}
                   <Icon name="heart" color="$red9" size="$small" />
                   <StyledText
                     metadata
@@ -302,7 +303,10 @@ export default function ProfileScreen() {
         <StyledText>
           Thank you for giving your space and time to this app.
         </StyledText>
-        <StyledText>If you need help, mail gather@spencer.place.</StyledText>
+        <StyledParagraph>
+          For help, mail <StyledParagraph>gather@spencer.place</StyledParagraph>
+          .
+        </StyledParagraph>
         <YStack alignItems="center">
           <Image
             source={appIconSource}
