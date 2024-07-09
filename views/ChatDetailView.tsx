@@ -85,15 +85,15 @@ export function ChatDetailView({
         }}
       />
       <YStack height="100%" overflow="hidden">
-        {selectedCollection !== null && (
-          <Stack.Screen
-            options={{
-              headerRight: (props) => {
-                return <CollectionDetailsHeaderLink id={selectedCollection} />;
-              },
-            }}
-          />
-        )}
+        <Stack.Screen
+          options={{
+            headerRight: (props) => {
+              return selectedCollection !== null ? (
+                <CollectionDetailsHeaderLink id={selectedCollection} />
+              ) : null;
+            },
+          }}
+        />
         <TextForageView
           collectionId={selectedCollection || undefined}
           isSearching={isSearching}
