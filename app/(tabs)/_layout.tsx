@@ -5,6 +5,7 @@ import { Link, LinkProps, Tabs } from "expo-router";
 import { Pressable, useColorScheme } from "react-native";
 import { XStack, YStack, useTheme } from "tamagui";
 import Colors from "../../constants/Styles";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -19,16 +20,18 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const headerIcons = <MainHeaderIcons />;
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
+      // TODO: this doesn't work on some ios lol
+      safeAreaInsets={insets}
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         tabBarStyle: {
           // backgroundColor: "transparent",
+          // marginBottom: insets.bottom,
         },
-        // TODO: this helps a lot with RAM but makes it a bit jank bc it reloads every time you navigate..
-        // unmountOnBlur: true,
       }}
     >
       <Tabs.Screen
