@@ -1449,6 +1449,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     mutationFn: updateBlockBase,
     onSuccess: (_data, { blockId }) => {
       // TODO: can probably make this more efficient.. but for now it needs to refresh.
+      // just invalidate the specific block ID but
+      // manually set query data if present of the other one
       queryClient.invalidateQueries({
         queryKey: ["blocks"],
       });
@@ -1544,7 +1546,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     editInfo: CollectionEditInfo;
     ignoreRemoteUpdate?: boolean;
     noInvalidation?: boolean;
-  }): Promise<void> {
+  }): Promise<Collection | undefined> {
     if (Object.keys(editInfo).length === 0) {
       return;
     }
@@ -1584,16 +1586,33 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       );
       void handleCollectionRemoteUpdate(newCollection);
     }
+    return newCollection;
   }
 
   const updateCollectionMutation = useMutation({
     mutationFn: updateCollectionBase,
-    onSuccess: (_data, { collectionId, noInvalidation }) => {
+    onSuccess: (newCollection, { collectionId, noInvalidation }) => {
       if (noInvalidation) {
         return;
       }
       queryClient.invalidateQueries({
         queryKey: ["collection", { collectionId }],
+      });
+      if (!newCollection) {
+        return;
+      }
+      queryClient.setQueryData(["collections"], (old) => {
+        if (!old) {
+          return old;
+        }
+        if (!Array.isArray(old)) return old;
+
+        return old.map((collection) => {
+          if (collection.id === collectionId) {
+            return newCollection;
+          }
+          return collection;
+        });
       });
     },
   });
