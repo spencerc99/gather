@@ -58,10 +58,13 @@ export function UncategorizedView() {
   }, []);
 
   const onClickConnect = useCallback(
-    async (itemId: string, selectedCollections: string[]) => {
+    async (itemId: string, selectedCollections: string[], index: number) => {
       if (!events) {
         return;
       } else {
+        if (index === events.length - 1) {
+          carouselRef.current?.prev({ count: 1 });
+        }
         await addConnections(itemId, selectedCollections, currentUser!.id);
       }
       Keyboard.dismiss();
@@ -136,7 +139,7 @@ export function UncategorizedView() {
               elevation="$0.5"
               size="$medium"
               onPress={() => {
-                onClickConnect(item.id, selectedCollections);
+                onClickConnect(item.id, selectedCollections, index);
                 setSearchValue("");
                 setSelectedCollections([]);
               }}
