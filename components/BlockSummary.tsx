@@ -37,7 +37,7 @@ import { BlockCreatedByAvatar } from "./BlockCreatedByAvatar";
 
 function useBlockMenuItems(
   block: Block,
-  { onClickEdit }: { onClickEdit?: () => void } = {}
+  { onClickEdit, isOwner }: { onClickEdit?: () => void; isOwner?: boolean } = {}
 ): {
   blockMenuItems: MenuItemProps[];
 } {
@@ -102,7 +102,7 @@ function useBlockMenuItems(
               },
             },
           ]),
-      ...(type === BlockType.Text && onClickEdit
+      ...(isOwner !== false && type === BlockType.Text && onClickEdit
         ? [
             {
               text: "Edit",
@@ -190,22 +190,25 @@ export function BlockSummary({
     onClickEdit: () => setIsEditing(true),
   });
 
-  const renderedBlockContent = (
-    <BlockContent
-      {...block}
-      isEditing={isEditing}
-      commitEdit={commitEdit}
-      containerStyle={style}
-      textContainerProps={{
-        minWidth: "100%",
-      }}
-      mediaStyle={{
-        aspectRatio: 1,
-        // @ts-ignore
-        borderRadius: "$2",
-        ...blockStyle,
-      }}
-    />
+  const renderedBlockContent = useMemo(
+    () => (
+      <BlockContent
+        {...block}
+        isEditing={isEditing}
+        commitEdit={commitEdit}
+        containerStyle={style}
+        textContainerProps={{
+          minWidth: "100%",
+        }}
+        mediaStyle={{
+          aspectRatio: 1,
+          // @ts-ignore
+          borderRadius: "$2",
+          ...blockStyle,
+        }}
+      />
+    ),
+    [block, isEditing]
   );
 
   function renderMetadata() {
@@ -357,9 +360,10 @@ export function BlockTextSummary({
     onClickEdit: () => {
       setIsEditing(true);
     },
+    isOwner,
   });
 
-  const renderContent = useCallback(() => {
+  const content = useMemo(() => {
     const content = (
       <BlockContent
         key={id}
@@ -429,7 +433,7 @@ export function BlockTextSummary({
       default:
         return content;
     }
-  }, [block]);
+  }, [block, isEditing, isOwner]);
 
   const renderedMetadata = useMemo(() => {
     return (
@@ -451,7 +455,7 @@ export function BlockTextSummary({
         borderRadius="$4"
         height="auto"
       >
-        {renderContent()}
+        {content}
       </StyledView>
     </HoldItem>
   );

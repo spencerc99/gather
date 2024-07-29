@@ -47,12 +47,27 @@ export function BlockContent({
           {!isEditing ? (
             <Paragraph {...textProps}>{content}</Paragraph>
           ) : (
-            <StyledTextArea
-              value={editableContent}
-              onChangeText={setEditableContent}
-              minHeight={undefined}
-              flex={1}
-            />
+            <>
+              <StyledTextArea
+                value={editableContent}
+                onChangeText={setEditableContent}
+                minHeight={undefined}
+                flex={1}
+                enterKeyHint="done"
+              />
+              <StyledButton
+                onPress={() => {
+                  commitEdit?.(null);
+                }}
+                theme="gray"
+                position="absolute"
+                right="$1"
+                bottom="$1"
+                size="$xtiny"
+                circular
+                icon={<Icon name="close" />}
+              />
+            </>
           )}
         </ScrollView>
       );
@@ -106,28 +121,6 @@ export function BlockContent({
   return (
     <YStack style={(styles.block, containerStyle)} {...containerProps}>
       {renderedContent}
-      {isEditing && (
-        <XStack space="$2" justifyContent="flex-end">
-          <StyledButton
-            onPress={() => {
-              commitEdit?.(null);
-            }}
-            theme="red"
-            // size={}
-            height="$2"
-            icon={<Icon name="close" />}
-          />
-          <StyledButton
-            onPress={() => {
-              commitEdit?.(editableContent);
-            }}
-            theme="green"
-            height="$2"
-            icon={<Icon name="checkmark" />}
-            disabled={editableContent === content || editableContent === ""}
-          />
-        </XStack>
-      )}
     </YStack>
   );
 }

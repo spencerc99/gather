@@ -99,6 +99,11 @@ const PressableButton = styled(DefaultButton, {
         height: "$1.5",
         width: "$1.5",
       },
+      $xtiny: {
+        padding: "$.5",
+        height: "$1.5",
+        width: "$1.5",
+      },
     },
     disabled: {
       true: {
@@ -318,14 +323,14 @@ export function EditableTextOnClick({
           />
         )}
         {editing && (
-          <XStack gap="$1" position="absolute" right="$1" bottom="$2">
+          <XStack gap="$1" position="absolute" right="$1.5" bottom="$1.5">
             <StyledButton
               onPress={(e) => {
                 commitEdit(null);
               }}
               circular
-              theme="red"
-              size="$tiny"
+              theme="gray"
+              size="$xtiny"
               icon={<Icon name="close" />}
             />
           </XStack>

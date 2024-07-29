@@ -48,6 +48,7 @@ const bodyFont = createInterFont(
       700: { normal: "InterBold" },
     },
     size: {
+      xtiny: 8,
       tiny: 10,
       small: 12,
       medium: 14,
