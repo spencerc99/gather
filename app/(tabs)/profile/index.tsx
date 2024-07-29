@@ -24,6 +24,7 @@ import { Flower } from "../../../components/SlidingScalePayment";
 import { ErrorsContext } from "../../../utils/errors";
 import { HelpGuideUrl } from "../../../utils/constants";
 import { useContributions } from "../../../utils/hooks/useContributions";
+import { UsageInfo } from "../../../components/UsageInfo";
 
 const DefaultAppSrc = require(`../../../assets/images/icon.png`);
 
@@ -31,9 +32,6 @@ export default function ProfileScreen() {
   const { tryImportArenaChannel } = useContext(DatabaseContext);
   const { currentUser } = useContext(UserContext);
   const colorScheme = useColorScheme();
-  const today = dayjs();
-  const started = currentUser?.createdAt ? dayjs(currentUser.createdAt) : today;
-  const daysUsedApp = today.diff(started, "day");
   const { logError } = useContext(ErrorsContext);
 
   const [selectedChannels, setSelectedChannels] = useState<ArenaChannelInfo[]>(
@@ -124,13 +122,12 @@ export default function ProfileScreen() {
             <StyledText title>{currentUser.email}</StyledText>
             <YStack alignItems="center" gap={0}>
               <StyledText metadata>
-                joined on {dayjs(currentUser.createdAt).format("MM/DD/YY")},{" "}
-                {daysUsedApp} days ago
+                joined on {dayjs(currentUser.createdAt).format("MM/DD/YY")}
               </StyledText>
               {hasContributed && (
                 <XStack alignItems="center">
                   {/* @ts-ignore */}
-                  <Icon name="heart" color="$red9" size="$small" />
+                  <Icon name="heart" color="$red9" />
                   <StyledText
                     metadata
                     alignItems="center"
@@ -176,6 +173,7 @@ export default function ProfileScreen() {
         )}
 
         <H5 fontWeight="700">Gather</H5>
+        <UsageInfo />
         <LinkButton
           flex={1}
           width="100%"

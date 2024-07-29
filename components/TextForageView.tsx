@@ -2,8 +2,15 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Dimensions, Platform, SafeAreaView, ScrollView } from "react-native";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Dimensions, Platform, ScrollView } from "react-native";
 import { XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { BlockSelectLimit, DatabaseContext } from "../utils/db";
@@ -12,7 +19,13 @@ import { extractDataFromUrl, isUrl } from "../utils/url";
 import { UserContext } from "../utils/user";
 import { BlockTexts } from "./BlockTexts";
 import { MediaView } from "./MediaView";
-import { Icon, IconType, StyledButton, StyledTextArea } from "./Themed";
+import {
+  Icon,
+  IconType,
+  StyledButton,
+  StyledTextArea,
+  StyledView,
+} from "./Themed";
 import { useFocusEffect, useNavigation } from "expo-router";
 import { ErrorsContext } from "../utils/errors";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -21,6 +34,7 @@ import Animated, {
   useAnimatedKeyboard,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -66,15 +80,22 @@ export function TextForageView({
   );
   const queryKey = ["blocks", { collectionId }] as const;
   const { logError } = useContext(ErrorsContext);
+  const insets = useSafeAreaInsets();
   const bottomTabHeight = useBottomTabBarHeight();
-  const keyboard = useAnimatedKeyboard();
+  const keyboard = useAnimatedKeyboard({
+    isStatusBarTranslucentAndroid: true,
+  });
+  const [messageBarKeyboardPadding, setMessageBarKeyboardPadding] = useState(0);
   const [textFocused, setTextFocused] = useState(false);
   const translateStyle = useAnimatedStyle(() => {
     return {
       paddingBottom: textFocused
         ? keyboard.height.value -
-          bottomTabHeight +
-          (Platform.OS === "android" ? 24 : 0)
+          (Platform.OS === "android"
+            ? messageBarKeyboardPadding
+            : Platform.OS === "ios"
+            ? bottomTabHeight
+            : 0)
         : 0,
     };
   }, [keyboard.height, textFocused]);
@@ -285,26 +306,8 @@ export function TextForageView({
   }
 
   return isSearching ? null : ( // TODO: integrate the search directly into the chat box
-    <SafeAreaView
-      style={{
-        flex: 1,
-      }}
-    >
-      {/* <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={"padding"}
-        contentContainerStyle={{
-          justifyContent: "space-between",
-          flex: 1,
-        }}
-        enabled
-        // NOTE: this needs to adjust based on the height of YStack below
-        // TODO: make this smaller when there is a collectionId (because tabs don't show)
-        keyboardVerticalOffset={insets.top + 44}
-      > */}
-      <Animated.View
-        style={[{ flex: 1, justifyContent: "space-between" }, translateStyle]}
-      >
+    <StyledView flex={1} paddingTop={insets.top}>
+      <Animated.View style={[{ flex: 1 }, translateStyle]}>
         <BlockTexts
           collectionId={collectionId}
           // TODO: types
@@ -318,6 +321,12 @@ export function TextForageView({
           borderTopStartRadius={4}
           borderRadius={4}
           elevation="$2"
+          onLayout={(evt) => {
+            if (messageBarKeyboardPadding > 0) {
+              return;
+            }
+            setMessageBarKeyboardPadding(evt.nativeEvent.layout.height - 12);
+          }}
           backgroundColor="$background"
         >
           <XStack gap="$1" width="100%">
@@ -360,11 +369,6 @@ export function TextForageView({
               icon={<Icon name="photo" />}
               onPress={pickImage}
               theme="orange"
-            /> */}
-          {/* <StyledButton
-              icon={<Icon name="file" />}
-              onPress={pickFile}
-              theme="purple"
             /> */}
           {/* TODO: access camera */}
           {/* <StyledButton
@@ -436,7 +440,6 @@ export function TextForageView({
           </XStack>
         </YStack>
       </Animated.View>
-      {/* </KeyboardAvoidingView> */}
-    </SafeAreaView>
+    </StyledView>
   );
 }

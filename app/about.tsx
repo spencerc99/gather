@@ -43,7 +43,7 @@ export default function About() {
     <Theme name="light">
       <StyledView
         flex={1}
-        paddingTop={Platform.OS === "ios" ? "20%" : 30}
+        paddingTop={Platform.OS === "ios" ? "20%" : insets.top + 30}
         paddingBottom={insets.bottom}
         backgroundColor="#FFDBB2"
       >

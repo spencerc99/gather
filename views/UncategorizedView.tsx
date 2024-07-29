@@ -6,9 +6,10 @@ import {
 } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import { Icon, StyledButton, StyledText } from "../components/Themed";
-import { Dimensions, Keyboard, SafeAreaView } from "react-native";
+import { Dimensions, Keyboard, Platform, SafeAreaView } from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
 import {
+  H3,
   ScrollView,
   SizableText,
   Spinner,
@@ -110,7 +111,7 @@ export function UncategorizedView() {
           marginBottom="auto"
           textAlign="center"
           width="100%"
-          marginTop="$1"
+          marginTop="$1.5"
         >
           {index + 1} / {events.length} unconnected,{" "}
           {totalBlocks === null ? "..." : totalBlocks} total
@@ -177,7 +178,14 @@ export function UncategorizedView() {
         {
           // TODO: needs extra padding for android
           translateY: collectionsSelectInputFocused
-            ? -(keyboard.height.value - bottomTabHeight)
+            ? -(
+                keyboard.height.value -
+                (Platform.OS === "android"
+                  ? 40
+                  : Platform.OS === "ios"
+                  ? bottomTabHeight
+                  : 0)
+              )
             : 0,
         },
       ],
@@ -194,14 +202,17 @@ export function UncategorizedView() {
       justifyContent="center"
       alignItems="center"
       paddingHorizontal="$4"
-      space="$3"
+      gap="$3"
     >
-      <StyledText position="absolute" top="$1" textAlign="center" width="100%">
+      <StyledText
+        position="absolute"
+        top="$1.5"
+        textAlign="center"
+        width="100%"
+      >
         {totalBlocks} total blocks
       </StyledText>
-      <StyledText textAlign="center" fontSize="$7">
-        No uncategorized items!
-      </StyledText>
+      <H3 textAlign="center">No uncategorized items!</H3>
     </YStack>
   ) : (
     <SafeAreaView

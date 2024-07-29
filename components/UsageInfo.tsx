@@ -8,25 +8,38 @@ import {
 import { UserContext } from "../utils/user";
 import { StyledText } from "./Themed";
 
+function pluralize(word: string, count: number) {
+  return count === 1 ? word : `${word}s`;
+}
+
 export function UsageInfo() {
   const { currentUser } = useContext(UserContext);
   const today = dayjs();
   const started = currentUser?.createdAt ? dayjs(currentUser.createdAt) : today;
   const daysUsedApp = today.diff(started, "day");
-  const { data: totalBlocks } = useTotalBlockCount();
-  const { data: totalCollections } = useTotalCollectionCount();
-  const { data: totalConnections } = useTotalConnectionCount();
+  const { data: totalBlocks = 0 } = useTotalBlockCount();
+  const { data: totalCollections = 0 } = useTotalCollectionCount();
+  const { data: totalConnections = 0 } = useTotalConnectionCount();
 
   return (
     <StyledText>
       You've been using Gather for{" "}
-      <StyledText color="sienna">{daysUsedApp} days</StyledText>, collecting{" "}
-      <StyledText color="cornflowerblue">{totalBlocks} blocks</StyledText> in{" "}
+      <StyledText color="sienna">
+        {daysUsedApp} {pluralize("day", daysUsedApp)}
+      </StyledText>
+      , collecting{" "}
+      <StyledText color="cornflowerblue">
+        {totalBlocks} {pluralize("block", totalBlocks)}
+      </StyledText>{" "}
+      in{" "}
       <StyledText color="darkolivegreen">
-        {totalCollections} collections
+        {totalCollections} {pluralize("collection", totalCollections)}
       </StyledText>{" "}
       through{" "}
-      <StyledText color="orchid">{totalConnections} connections</StyledText>.
+      <StyledText color="orchid">
+        {totalConnections} {pluralize("connection", totalConnections)}
+      </StyledText>
+      .
     </StyledText>
   );
 }

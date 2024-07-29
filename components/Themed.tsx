@@ -328,16 +328,6 @@ export function EditableTextOnClick({
               size="$tiny"
               icon={<Icon name="close" />}
             />
-            <StyledButton
-              onPress={() => {
-                commitEdit(editableContent);
-              }}
-              circular
-              theme="green"
-              size="$tiny"
-              icon={<Icon name="checkmark" />}
-              disabled={disabled}
-            />
           </XStack>
         )}
       </XStack>

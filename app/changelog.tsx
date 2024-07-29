@@ -13,7 +13,15 @@ export default function Changelog() {
   useFixExpoRouter3NavigationTitle();
 
   const blocks = useMemo(
-    () => data?.pages.flatMap((p) => p.contents)?.map(rawArenaBlockToBlock),
+    () =>
+      data?.pages
+        .flatMap((p) => p.contents)
+        ?.map(rawArenaBlockToBlock)
+        .sort(
+          (a, b) =>
+            new Date(b.remoteConnectedAt || b.createdAt).getTime() -
+            new Date(a.remoteConnectedAt || a.createdAt).getTime()
+        ),
     [data]
   );
 
