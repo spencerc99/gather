@@ -11,6 +11,7 @@ import { ErrorsContext } from "./errors";
 import {
   getBlock as getArenaBlock,
   getPendingCollectionUpdates,
+  RawArenaBlock,
   rawArenaBlocksToBlockInsertInfo,
   recordPendingBlockUpdate,
   recordPendingCollectionUpdate,
@@ -31,7 +32,7 @@ import { ShareIntent } from "../hooks/useShareIntent";
 import {
   ArenaChannelInfo,
   RawArenaChannelItem,
-  addBlockToChannel,
+  createBlock as createBlockArena,
   getChannelContents,
   getChannelInfo,
   getChannelInfoFromUrl,
@@ -182,6 +183,10 @@ interface GetBlocksOptions {
   seed?: number;
 }
 type GetCollectionsOptions = GetBlocksOptions;
+interface ArenaCollectionInfo {
+  collectionId: string;
+  channelId: string;
+}
 
 interface DatabaseContextProps {
   getBlocks: (opts?: GetBlocksOptions) => Promise<Block[]>;
@@ -210,10 +215,9 @@ interface DatabaseContextProps {
   ) => Promise<CollectionBlock[]>;
   syncNewRemoteItems: (collectionId: string) => Promise<void>;
   syncBlockToArena: (
-    channelId: string,
     block: Block,
-    collectionId: string
-  ) => Promise<RawArenaChannelItem | undefined>;
+    collectionInfos: ArenaCollectionInfo[]
+  ) => Promise<RawArenaBlock | undefined>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => Promise<void>;
   fullDeleteCollection: (id: string) => Promise<void>;
@@ -676,7 +680,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     collectionsToConnect: connections,
     ...block
   }: BlockInsertInfo): Promise<string> => {
-    console.log("inserting with asset id", block.localAssetId);
     const [result] = await db.execAsync(
       [
         {
@@ -1643,14 +1646,26 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       [
         {
           // TODO: this query should be just arena when supporting other providers
-          sql: `SELECT  blocks.*, 
-                        collections.id as collection_id, collections.remote_source_type as collection_remote_source_type, collections.remote_source_info as collection_remote_source_info
-            FROM        connections
-            INNER JOIN  blocks ON blocks.id = connections.block_id
-            LEFT JOIN   collections ON connections.collection_id = collections.id 
-            WHERE       collections.remote_source_type IS NOT NULL AND
-                        collections.remote_source_info IS NOT NULL AND
-                        connections.remote_created_at IS NULL;`,
+          sql: `
+          WITH block_connections AS (
+                  SELECT    blocks.id as block_id,
+                            json_group_array(collections.id) as collection_ids,
+                            json_group_array(collections.remote_source_type) as collection_remote_source_types,
+                            json_group_array(collections.remote_source_info) as collection_remote_source_infos
+                FROM        connections
+                INNER JOIN  blocks ON blocks.id = connections.block_id
+                LEFT JOIN   collections ON connections.collection_id = collections.id 
+                WHERE       collections.remote_source_type IS NOT NULL AND
+                            collections.remote_source_info IS NOT NULL AND
+                            connections.remote_created_at IS NULL
+                GROUP BY    blocks.id
+          )
+          SELECT      blocks.*, 
+                      block_connections.collection_ids as collection_ids,
+                      block_connections.collection_remote_source_types as collection_remote_source_types,
+                      block_connections.collection_remote_source_infos as collection_remote_source_infos
+          FROM        block_connections
+          INNER JOIN  blocks ON blocks.id = block_connections.block_id;`,
           args: [],
         },
       ],
@@ -1814,16 +1829,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           return {
             ...blockMappedToCamelCase,
             ...mappedBlock,
-            collectionRemoteSourceType:
-              blockMappedToCamelCase.collectionRemoteSourceType as RemoteSourceType,
-            collectionRemoteSourceInfo:
-              blockMappedToCamelCase.collectionRemoteSourceInfo
+            collectionRemoteSourceTypes:
+              blockMappedToCamelCase.collectionRemoteSourceTypes as RemoteSourceType[],
+            collectionRemoteSourceInfos:
+              blockMappedToCamelCase.collectionRemoteSourceInfos
                 ? (JSON.parse(
-                    blockMappedToCamelCase.collectionRemoteSourceInfo
-                  ) as RemoteSourceInfo)
+                    blockMappedToCamelCase.collectionRemoteSourceInfos
+                  ).map(
+                    (info) => JSON.parse(info) as RemoteSourceInfo
+                  ) as RemoteSourceInfo[])
                 : null,
-            collectionId: block.collection_id,
-          };
+          } as BlockWithCollectionInfo;
         })
         .filter((b) => !queuedBlocksToSync.current.has(b.id));
 
@@ -1838,10 +1854,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
         for (const connToSync of connectionsToSync) {
           console.log("syncing", connToSync);
+          const { collectionRemoteSourceInfos, collectionIds } = connToSync;
+          const arenaCollectionInfo = collectionRemoteSourceInfos.map(
+            (c, idx) => ({
+              channelId: c.arenaId,
+              collectionId: collectionIds[idx],
+            })
+          );
           const newRemoteItem = await syncBlockToArena(
-            connToSync.collectionRemoteSourceInfo!.arenaId!,
             connToSync,
-            connToSync.collectionId
+            arenaCollectionInfo
           );
           if (newRemoteItem) {
             succesfullySyncedConnections.push(connToSync);
@@ -1850,7 +1872,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
         console.log(
           `Successfully synced ${succesfullySyncedConnections.map(
-            (c) => `${c.id}-${c.collectionId}`
+            (c) => `${c.id}-${c.collectionIds}`
           )} to arena. Failed to sync ${
             connectionsToSync.length - succesfullySyncedConnections.length
           }`
@@ -1898,17 +1920,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   async function syncBlockToArena(
-    channelId: string,
     block: Block,
-    collectionId: string
-  ): Promise<RawArenaChannelItem | undefined> {
+    collectionInfos: ArenaCollectionInfo[]
+  ): Promise<RawArenaBlock | undefined> {
     if (!arenaAccessToken) {
       return;
     }
 
     try {
-      const rawArenaItem = await addBlockToChannel({
-        channelId,
+      const channelIds = collectionInfos.map((c) => c.channelId);
+      const rawArenaItem = await createBlockArena({
+        channelIds,
         block,
         arenaToken: arenaAccessToken,
       });
@@ -1927,7 +1949,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             args: [
               RemoteSourceType.Arena,
               JSON.stringify({
-                arenaId: newBlockId,
+                arenaId: newBlockId.toString(),
                 arenaClass: "Block",
               } as RemoteSourceInfo),
               ...(hasUpdatedImage ? [image.display.url] : []),
@@ -1937,14 +1959,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         ],
         false
       );
-      await upsertConnections([
-        {
-          blockId: block.id,
-          collectionId: collectionId,
-          remoteCreatedAt: rawArenaItem.connected_at,
-          createdBy: block.createdBy,
-        },
-      ]);
+      for (const collectionInfo of collectionInfos) {
+        await upsertConnections([
+          {
+            blockId: block.id,
+            collectionId: collectionInfo.collectionId,
+            // KINDA JANK BUT OH WELL WE DONT HAVE THE INFO!!
+            remoteCreatedAt: new Date().toISOString(),
+            createdBy: block.createdBy,
+          },
+        ]);
+      }
       queryClient.invalidateQueries({
         queryKey: ["blocks", { blockId: block.id }],
       });

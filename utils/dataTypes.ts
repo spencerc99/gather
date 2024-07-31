@@ -79,9 +79,9 @@ export interface Block
 }
 
 export interface BlockWithCollectionInfo extends Block {
-  collectionRemoteSourceInfo: RemoteSourceInfo;
-  collectionRemoteSourceType: RemoteSourceType;
-  collectionId: string;
+  collectionRemoteSourceInfos: RemoteSourceInfo[];
+  collectionRemoteSourceTypes: RemoteSourceType[];
+  collectionIds: string[];
 }
 
 export interface CollectionBlock extends Block {

@@ -13,7 +13,7 @@ import {
   StyledText,
 } from "./Themed";
 import { Stack, useRouter } from "expo-router";
-import { addBlockToChannel, createChannel } from "../utils/arena";
+import { createBlock, createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { UserContext } from "../utils/user";
 import { ErrorsContext } from "../utils/errors";
@@ -120,9 +120,9 @@ export function CollectionDetailView({
           console.log(
             `adding block ${block.remoteSourceInfo?.arenaId} to channel ${remoteSourceInfo?.arenaId}`
           );
-          await addBlockToChannel({
+          await createBlock({
             arenaToken: arenaAccessToken,
-            channelId: remoteSourceInfo?.arenaId!,
+            channelIds: [remoteSourceInfo?.arenaId!],
             block,
           });
         } catch (err) {
@@ -165,7 +165,9 @@ export function CollectionDetailView({
       const { id: channelId } = newChannel;
       for (const block of reversedItems) {
         try {
-          await syncBlockToArena(channelId.toString(), block, id);
+          await syncBlockToArena(block, [
+            { channelId: channelId.toString(), collectionId: id },
+          ]);
         } catch (e) {
           logError(e);
           numItemsFailed++;

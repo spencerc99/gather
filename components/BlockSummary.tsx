@@ -664,15 +664,7 @@ export function BlockMetadata({
   isRemoteCollection?: boolean;
   dateKind?: "relative" | "absolute";
 }) {
-  const {
-    type,
-    createdAt,
-    remoteConnectedAt,
-    connectedAt,
-    source,
-    numConnections,
-    remoteSourceInfo,
-  } = block;
+  const { type, numConnections } = block;
 
   // update every minute
   const time = useTime(60 * 1000);

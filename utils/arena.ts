@@ -709,6 +709,170 @@ async function getBodyForBlock(
       throw new Error("unsupported type");
   }
 }
+async function getValueForBlock(
+  block: Block,
+  accessToken: string
+): Promise<any> {
+  const { type, title, content, source, contentType } = block;
+  switch (type) {
+    case BlockType.Text:
+      return content;
+    case BlockType.Image:
+    case BlockType.Video:
+      const uploadPolicy = await getUploadPolicy(accessToken);
+      const url = await uploadFile({
+        file: {
+          uri: content,
+          name: title || "",
+          type: contentType || "",
+        },
+        policy: uploadPolicy,
+        contentType: contentType || "image/jpeg",
+      });
+      console.log("Uploaded file to arena", url);
+
+      return url;
+    case BlockType.Link:
+      return source!;
+    case BlockType.Audio:
+    case BlockType.Document:
+      throw new Error("unsupported type");
+  }
+}
+
+const searchBlocksQuery = "";
+
+const createBlockMutation = `
+  mutation createBlockMutation(
+    $channel_ids: [ID]!
+    $value: String
+    $title: String
+    $description: String
+  ) {
+    create_block(
+      input: {
+        channel_ids: $channel_ids
+        value: $value
+        title: $title
+        description: $description
+      }
+    ) {
+      block: blokk {
+        __typename
+        ... on Model {
+          id
+        }
+      }
+    }
+  }
+`;
+
+const createConnectionMutation = `
+  mutation createConnectionMutation(
+    $channel_ids: [ID]!
+    $connectable_id: ID!
+    $connectable_type: BaseConnectableTypeEnum!
+  ) {
+    __typename
+    create_connection(
+      input: {
+        channel_ids: $channel_ids
+        connectable_type: $connectable_type
+        connectable_id: $connectable_id
+      }
+    ) {
+      __typename
+      konnectable {
+      }
+    }
+  }`;
+
+export async function createBlock({
+  block,
+  channelIds,
+  arenaToken,
+}: {
+  block: Block;
+  channelIds: string[];
+  arenaToken: string;
+}): Promise<RawArenaBlock> {
+  let resp: Response;
+  let blockId = block.remoteSourceInfo?.arenaId;
+  if (block.remoteSourceInfo?.arenaId) {
+    console.log(
+      `adding existing arena block ${block.remoteSourceInfo.arenaId} to channel`,
+      channelIds
+    );
+    resp = await fetch(ArenaGraphqlApi, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${arenaToken}`,
+        "Content-Type": "application/json",
+        "X-APP-TOKEN": ArenaGraphqlKey,
+      },
+      body: JSON.stringify({
+        query: createConnectionMutation,
+        variables: {
+          channel_ids: channelIds,
+          connectable_type: "BLOCK",
+          connectable_id: block.remoteSourceInfo.arenaId,
+        },
+      }),
+    });
+    const response = await resp.json();
+    if (response.errors?.length) {
+      logError(
+        `failed to create connection in arena ${JSON.stringify(response)}`
+      );
+      throw new Error(JSON.stringify(resp));
+    }
+  } else {
+    const value = await getValueForBlock(block, arenaToken);
+    console.log("adding block to channel", channelIds, value, arenaToken);
+    const { title, description: blockDescription } = block;
+    let description = blockDescription || GatherArenaAttribution;
+    resp = await fetch(ArenaGraphqlApi, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${arenaToken}`,
+        "Content-Type": "application/json",
+        "X-APP-TOKEN": ArenaGraphqlKey,
+      },
+      body: JSON.stringify({
+        query: createBlockMutation,
+        variables: {
+          channel_ids: channelIds,
+          value,
+          title,
+          description,
+        },
+      }),
+    });
+    if (!resp.ok) {
+      logError(
+        `failed to create block in arena ${resp.status}: ${JSON.stringify(
+          resp
+        )}`
+      );
+      throw new Error(JSON.stringify(resp));
+    }
+
+    const response = await resp.json();
+
+    if (response.errors?.length) {
+      logError(`failed to create block in arena ${JSON.stringify(response)}`);
+      throw new Error(JSON.stringify(resp));
+    }
+    blockId = response.data.create_block.block.id!;
+  }
+
+  if (!blockId) {
+    logError("failed to get block id from response");
+    throw new Error("failed to get block id from response");
+  }
+
+  return await getBlock(blockId, arenaToken);
+}
 
 export async function addBlockToChannel({
   channelId,
@@ -1015,10 +1179,8 @@ export async function getBlock(
   });
   const json = await resp.json();
   if (!resp.ok) {
-    logError(`${resp.status} failed to get block channels ${resp.statusText}`);
-    throw new Error(
-      `${resp.status} failed to get block channels ${resp.statusText}`
-    );
+    logError(`${resp.status} failed to get block ${resp.statusText}`);
+    throw new Error(`${resp.status} failed to get block ${resp.statusText}`);
   }
   return json;
 }
