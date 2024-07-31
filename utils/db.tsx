@@ -70,10 +70,11 @@ import {
 import { convertDbTimestampToDate } from "./date";
 import { Indices, Migrations, migrateCreatedBy } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
-import { UserContext, getCreatedByForRemote } from "./user";
+import { UserContext } from "./user";
 import { filterItemsBySearchValue } from "./search";
 import { ensure, ensureUnreachable } from "./react";
 import { NetworkContext } from "./network";
+import { getCreatedByForRemote } from "./remote";
 
 function openDatabase() {
   if (Platform.OS === "web") {

@@ -15,7 +15,7 @@ import {
   getItem,
   setItem,
 } from "./asyncStorage";
-import { getCreatedByForRemote } from "./user";
+import { getCreatedByForRemote } from "./remote";
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;

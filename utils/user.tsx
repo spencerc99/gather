@@ -9,7 +9,6 @@ import {
   getMyArenaUserInfo,
 } from "./arena";
 import { InteractionManager, Platform } from "react-native";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { ensureUnreachable } from "./react";
 
 // TODO: add uuid based on device? https://docs.expo.dev/versions/latest/sdk/application/?redirected#applicationgetandroidid or just uuid.. and back it up to native cloud service
@@ -57,10 +56,6 @@ export const UserContext = createContext<UserContextProps>({
 });
 
 export const UserInfoId = "user";
-
-export function getCreatedByForRemote(source: RemoteSourceType, id: string) {
-  return `${source}:::${id}`;
-}
 
 export function extractCreatorFromCreatedBy(createdBy: string): CreatedBy {
   const split = createdBy.split(":::");

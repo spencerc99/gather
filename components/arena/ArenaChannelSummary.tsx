@@ -4,7 +4,7 @@ import { RemoteSourceType } from "../../utils/dataTypes";
 import { mapSnakeCaseToCamelCaseProperties } from "../../utils/db";
 import { CollectionSummary } from "../CollectionSummary";
 import { StyledLabel, StyledView, UserAvatar } from "../Themed";
-import { getCreatedByForRemote } from "../../utils/user";
+import { getCreatedByForRemote } from "../../utils/remote";
 
 export function ArenaChannelSummary({
   channel,
