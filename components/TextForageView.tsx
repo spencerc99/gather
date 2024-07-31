@@ -165,9 +165,7 @@ export function TextForageView({
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      // TODO: bring this back when actually supporting video, right now it doesn't show up
-      // mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       quality: 1,
       orderedSelection: true,
@@ -343,6 +341,11 @@ export function TextForageView({
                           resizeMode: "cover",
                           // @ts-ignore
                           borderRadius: "$2",
+                        }}
+                        videoProps={{
+                          isMuted: true,
+                          shouldPlay: true,
+                          isLooping: true,
                         }}
                       />
                       <StyledButton

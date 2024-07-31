@@ -29,12 +29,14 @@ export function MediaView({
   blockType,
   alt,
   style = {},
+  videoProps,
   children,
 }: PropsWithChildren<{
   media: string;
   blockType: BlockType;
   alt?: string;
   style?: StyleProps;
+  videoProps?: GetProps<typeof Video>;
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -123,6 +125,8 @@ export function MediaView({
               e.preventDefault();
               e.stopPropagation();
             }}
+            {...style}
+            overflow="hidden"
           >
             <Video
               ref={video}
@@ -133,12 +137,12 @@ export function MediaView({
                   height: "100%",
                   minWidth: "100%",
                 },
-                style,
               ]}
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
               isLooping
               onPlaybackStatusUpdate={(status) => setHasClicked(true)}
+              {...videoProps}
             />
             <StyledView
               display={hasClicked ? "none" : "flex"}
