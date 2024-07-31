@@ -23,6 +23,7 @@ import { UserContext, extractCreatorFromCreatedBy } from "../utils/user";
 import { ensureUnreachable } from "../utils/react";
 import { useStickyValue } from "../utils/asyncStorage";
 import { RawArenaUser } from "../utils/arena";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function getDisplayForCreatedBy(
   createdBy: string,
@@ -95,179 +96,182 @@ export function BlockDetailView({ block }: { block: Block }) {
     }
   }
   const height = useWindowDimensions().height;
+  const insets = useSafeAreaInsets();
 
   // TODO: proactively look for updates from arena (title, description) and call handleBlockRemoteUpdate
   return (
     <>
-      <KeyboardAwareScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          padding: "10%",
-          paddingTop: Platform.OS === "ios" ? "30%" : "15%",
-        }}
-        enableOnAndroid
-        scrollIndicatorInsets={{ right: 1 }}
-        keyboardShouldPersistTaps="handled"
-        scrollToOverflowEnabled
-        extraScrollHeight={40}
-      >
-        <Stack.Screen
-          options={{
-            title: "",
-            // TODO: [ANDROID] this issue makes the back button disappear for androis... https://github.com/react-navigation/react-navigation/issues/10391 if you change headerTitle..
-            // workaround is to make the native one not show and then render a custom one lol
-            ...{
-              [Platform.OS === "android" ? "headerRight" : "headerTitle"]: () =>
-                isLoading ? (
-                  <XStack gap="$2" justifyContent="center">
-                    <Spinner />
-                    <StyledText>Updating...</StyledText>
-                  </XStack>
-                ) : undefined,
-            },
+      <StyledView paddingTop={insets.top}>
+        <KeyboardAwareScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            padding: "10%",
           }}
-        />
-        <YStack gap="$2" marginBottom="$2" flexGrow={1}>
-          <EditableTextOnClick
-            inputProps={{
-              title: true,
-              enterKeyHint: "done",
-            }}
-            text={title}
-            defaultText="Add a title..."
-            disabled={isLoading}
-            onEdit={async (newTitle) => {
-              await update(
-                async () =>
-                  await updateBlock({
-                    blockId: id,
-                    editInfo: { title: newTitle },
-                  })
-              );
-            }}
-          />
-          {/* TODO: on delete navigate back */}
-          <BlockSummary
-            block={block}
-            blockStyle={{
-              objectFit: "contain",
-              aspectRatio: undefined,
-              maxHeight: "100%",
-            }}
-            style={{}}
-            containerProps={{
-              paddingBottom: "$2",
-              maxHeight: height / 2,
-              width: "100%",
-            }}
-            hideMetadata
-          />
-          {/* TODO: don't show hold item actions and render them inline instead */}
-          <EditableTextOnClick
-            inputProps={{ metadata: true }}
-            text={description}
-            defaultText="Add a description..."
-            multiline
-            disabled={isLoading}
-            onEdit={async (newDescription) => {
-              await update(
-                async () =>
-                  await updateBlock({
-                    blockId: id,
-                    editInfo: { description: newDescription },
-                  })
-              );
+          enableOnAndroid
+          scrollIndicatorInsets={{ right: 1 }}
+          keyboardShouldPersistTaps="handled"
+          scrollToOverflowEnabled
+          extraScrollHeight={40}
+        >
+          <Stack.Screen
+            options={{
+              title: "",
+              // TODO: [ANDROID] this issue makes the back button disappear for androis... https://github.com/react-navigation/react-navigation/issues/10391 if you change headerTitle..
+              // workaround is to make the native one not show and then render a custom one lol
+              ...{
+                [Platform.OS === "android" ? "headerRight" : "headerTitle"]:
+                  () =>
+                    isLoading ? (
+                      <XStack gap="$2" justifyContent="center">
+                        <Spinner />
+                        <StyledText>Updating...</StyledText>
+                      </XStack>
+                    ) : undefined,
+              },
             }}
           />
-          <StyledView gap="$1">
-            {createdBy && createdByDisplay !== "you" && (
-              <XStack alignItems="center">
-                <StyledText metadata>Created by </StyledText>
-                {createdByDisplay}
-              </XStack>
-            )}
-            {/* TODO: genericize when opening up remote sources */}
-            {remoteSourceInfo ? (
-              <XStack alignItems="center">
-                <StyledText metadata>Block </StyledText>
-                <ExternalLinkText
-                  href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
+          <YStack gap="$2" marginBottom="$2" flexGrow={1}>
+            <EditableTextOnClick
+              inputProps={{
+                title: true,
+                enterKeyHint: "done",
+              }}
+              text={title}
+              defaultText="Add a title..."
+              disabled={isLoading}
+              onEdit={async (newTitle) => {
+                await update(
+                  async () =>
+                    await updateBlock({
+                      blockId: id,
+                      editInfo: { title: newTitle },
+                    })
+                );
+              }}
+            />
+            {/* TODO: on delete navigate back */}
+            <BlockSummary
+              block={block}
+              blockStyle={{
+                objectFit: "contain",
+                aspectRatio: undefined,
+                maxHeight: "100%",
+              }}
+              style={{}}
+              containerProps={{
+                paddingBottom: "$2",
+                maxHeight: height / 2,
+                width: "100%",
+              }}
+              hideMetadata
+            />
+            {/* TODO: don't show hold item actions and render them inline instead */}
+            <EditableTextOnClick
+              inputProps={{ metadata: true }}
+              text={description}
+              defaultText="Add a description..."
+              multiline
+              disabled={isLoading}
+              onEdit={async (newDescription) => {
+                await update(
+                  async () =>
+                    await updateBlock({
+                      blockId: id,
+                      editInfo: { description: newDescription },
+                    })
+                );
+              }}
+            />
+            <StyledView gap="$1">
+              {createdBy && createdByDisplay !== "you" && (
+                <XStack alignItems="center">
+                  <StyledText metadata>Created by </StyledText>
+                  {createdByDisplay}
+                </XStack>
+              )}
+              {/* TODO: genericize when opening up remote sources */}
+              {remoteSourceInfo ? (
+                <XStack alignItems="center">
+                  <StyledText metadata>Block </StyledText>
+                  <ExternalLinkText
+                    href={`https://are.na/block/${remoteSourceInfo.arenaId}`}
+                  >
+                    {remoteSourceInfo.arenaId}{" "}
+                  </ExternalLinkText>
+                  <ArenaLogo />
+                </XStack>
+              ) : hasRemoteConnection ? (
+                <XStack alignItems="center">
+                  <StyledText metadata>Waiting to sync to </StyledText>
+                  <ArenaLogo />
+                  <StyledText metadata> ...</StyledText>
+                </XStack>
+              ) : null}
+              {/* <StyledParagraph metadata>By: {createdBy}</StyledParagraph> */}
+              {source && (
+                <StyledText metadata>
+                  From:{" "}
+                  <ExternalLinkText href={source}>
+                    {transformedSource}
+                  </ExternalLinkText>
+                </StyledText>
+              )}
+              <StyledParagraph metadata>
+                Created: {createdAt.toLocaleDateString()}
+              </StyledParagraph>
+              <StyledParagraph metadata>
+                Updated: {updatedAt.toLocaleDateString()}
+              </StyledParagraph>
+              {(__DEV__ || devModeEnabled) && (
+                <>
+                  <StyledParagraph metadata>ID: {id}</StyledParagraph>
+                  {contentType && (
+                    <StyledParagraph metadata>{contentType}</StyledParagraph>
+                  )}
+                  {localAssetId && (
+                    <StyledParagraph metadata>
+                      asset ID: {localAssetId}
+                    </StyledParagraph>
+                  )}
+                </>
+              )}
+            </StyledView>
+            <StyledButton
+              icon={<Icon name="link" type={IconType.FontAwesome6Icon} />}
+              onPress={() => {
+                router.push({
+                  pathname: "/block/[id]/connect",
+                  params: { id },
+                });
+              }}
+            >
+              Connect
+            </StyledButton>
+            {/* TODO: separate by your connections vs. friends vs world? */}
+            {loadingData ? (
+              <Spinner color="$orange9" size="small" />
+            ) : (
+              connections?.map((connection) => (
+                // TODO: jump to the location of the block??
+                <Link
+                  key={connection.collectionId}
+                  href={{
+                    pathname: "/(tabs)/home",
+                    params: {
+                      collectionId: connection.collectionId,
+                    },
+                  }}
+                  asChild
                 >
-                  {remoteSourceInfo.arenaId}{" "}
-                </ExternalLinkText>
-                <ArenaLogo />
-              </XStack>
-            ) : hasRemoteConnection ? (
-              <XStack alignItems="center">
-                <StyledText metadata>Waiting to sync to </StyledText>
-                <ArenaLogo />
-                <StyledText metadata> ...</StyledText>
-              </XStack>
-            ) : null}
-            {/* <StyledParagraph metadata>By: {createdBy}</StyledParagraph> */}
-            {source && (
-              <StyledText metadata>
-                From:{" "}
-                <ExternalLinkText href={source}>
-                  {transformedSource}
-                </ExternalLinkText>
-              </StyledText>
+                  <Pressable>
+                    <ConnectionSummary connection={connection} />
+                  </Pressable>
+                </Link>
+              ))
             )}
-            <StyledParagraph metadata>
-              Created: {createdAt.toLocaleDateString()}
-            </StyledParagraph>
-            <StyledParagraph metadata>
-              Updated: {updatedAt.toLocaleDateString()}
-            </StyledParagraph>
-            {(__DEV__ || devModeEnabled) && (
-              <>
-                <StyledParagraph metadata>ID: {id}</StyledParagraph>
-                {contentType && (
-                  <StyledParagraph metadata>{contentType}</StyledParagraph>
-                )}
-                {localAssetId && (
-                  <StyledParagraph metadata>
-                    asset ID: {localAssetId}
-                  </StyledParagraph>
-                )}
-              </>
-            )}
-          </StyledView>
-          <StyledButton
-            icon={<Icon name="link" type={IconType.FontAwesome6Icon} />}
-            onPress={() => {
-              router.push({
-                pathname: "/block/[id]/connect",
-                params: { id },
-              });
-            }}
-          >
-            Connect
-          </StyledButton>
-          {/* TODO: separate by your connections vs. friends vs world? */}
-          {loadingData ? (
-            <Spinner color="$orange9" size="small" />
-          ) : (
-            connections?.map((connection) => (
-              // TODO: jump to the location of the block??
-              <Link
-                key={connection.collectionId}
-                href={{
-                  pathname: "/(tabs)/home",
-                  params: {
-                    collectionId: connection.collectionId,
-                  },
-                }}
-                asChild
-              >
-                <Pressable>
-                  <ConnectionSummary connection={connection} />
-                </Pressable>
-              </Link>
-            ))
-          )}
-        </YStack>
-      </KeyboardAwareScrollView>
+          </YStack>
+        </KeyboardAwareScrollView>
+      </StyledView>
     </>
   );
 }

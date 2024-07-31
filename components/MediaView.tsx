@@ -1,11 +1,28 @@
-import { BlockType } from "../utils/mimeTypes";
-import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
+import {
+  BlockType,
+  isBlockContentVideo,
+  VideoFileExtensions,
+} from "../utils/mimeTypes";
+import {
+  StyledView,
+  StyledText,
+  Icon,
+  AspectRatioImage,
+  StyledButton,
+} from "./Themed";
 import { Pressable, Image } from "react-native";
-import { Audio, ResizeMode, Video } from "expo-av";
-import { useState, useEffect, PropsWithChildren, useContext } from "react";
+import { Audio, AVPlaybackStatus, ResizeMode, Video } from "expo-av";
+import {
+  useState,
+  useEffect,
+  PropsWithChildren,
+  useContext,
+  useRef,
+} from "react";
 import { GetProps } from "tamagui";
 import { StyleProps } from "react-native-reanimated";
 import { ErrorsContext } from "../utils/errors";
+import { cleanUrl } from "../utils/url";
 
 export function MediaView({
   media,
@@ -22,6 +39,10 @@ export function MediaView({
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
   const { logError } = useContext(ErrorsContext);
+
+  const mediaIsVideo = isBlockContentVideo(media, blockType);
+  const video = useRef<Video>(null);
+  const [hasClicked, setHasClicked] = useState(false);
 
   async function playSound() {
     console.log("play");
@@ -70,8 +91,18 @@ export function MediaView({
     switch (blockType) {
       case BlockType.Text:
         return <StyledText>{media}</StyledText>;
-      case BlockType.Image:
       case BlockType.Link:
+        // TODO: handle showing this in block detail if enabling changing image
+        return Boolean(media) ? (
+          <AspectRatioImage
+            uri={media}
+            // TODO: types
+            otherProps={{
+              ...style,
+            }}
+          />
+        ) : null;
+      case BlockType.Image:
         return (
           <AspectRatioImage
             uri={media}
@@ -82,16 +113,52 @@ export function MediaView({
           />
         );
       case BlockType.Document:
-        return <StyledText>Document of {media}</StyledText>;
+        if (!mediaIsVideo) {
+          return <StyledText>Document of {media}</StyledText>;
+        }
       case BlockType.Video:
         return (
-          <Video
-            source={{ uri: media }}
-            style={style}
-            useNativeControls
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping={false}
-          />
+          <StyledView
+            onPress={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <Video
+              ref={video}
+              source={{ uri: media }}
+              style={[
+                {
+                  width: "100%",
+                  height: "100%",
+                  minWidth: "100%",
+                },
+                style,
+              ]}
+              useNativeControls
+              resizeMode={ResizeMode.CONTAIN}
+              isLooping
+              onPlaybackStatusUpdate={(status) => setHasClicked(true)}
+            />
+            <StyledView
+              display={hasClicked ? "none" : "flex"}
+              position="absolute"
+              alignItems="center"
+              justifyContent="center"
+              width="100%"
+              height="100%"
+            >
+              <StyledButton
+                circular
+                theme="gray"
+                size="$small"
+                icon={<Icon name="play" />}
+                onPress={() => {
+                  video.current?.playAsync();
+                }}
+              ></StyledButton>
+            </StyledView>
+          </StyledView>
         );
       case BlockType.Audio:
         return (

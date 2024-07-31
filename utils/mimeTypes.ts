@@ -13,6 +13,20 @@ export const FileBlockTypes = [
   BlockType.Video,
 ];
 
+const VideoFileExtensions = [".mp4", ".mov", ".webm", ".m4v"];
+export function isBlockContentVideo(
+  content: string,
+  blockType: BlockType
+): boolean {
+  const maybeUrl = blockType === BlockType.Document ? new URL(content) : null;
+  const mediaIsVideo =
+    blockType === BlockType.Document &&
+    VideoFileExtensions.some(
+      (ext) => content.endsWith(ext) || maybeUrl?.pathname?.endsWith(ext)
+    );
+  return mediaIsVideo;
+}
+
 // TODO: convert mimetype to contentype
 export enum MimeType {
   // TODO:

@@ -1,5 +1,4 @@
 import { InteractionManager, Platform } from "react-native";
-import NetInfo from "@react-native-community/netinfo";
 import {
   InfiniteData,
   useMutation,
@@ -31,11 +30,8 @@ import { useDebounce, useDebounceValue } from "tamagui";
 import { ShareIntent } from "../hooks/useShareIntent";
 import {
   ArenaChannelInfo,
-  ArenaTokenStorageKey,
   RawArenaChannelItem,
   addBlockToChannel,
-  arenaClassToBlockType,
-  arenaClassToMimeType,
   getChannelContents,
   getChannelInfo,
   getChannelInfoFromUrl,
@@ -66,7 +62,6 @@ import {
   CollectionInsertInfo,
   Connection,
   ConnectionInsertInfo,
-  DatabaseBlockInsert,
   InsertBlockConnection,
   RemoteSourceInfo,
   RemoteSourceType,

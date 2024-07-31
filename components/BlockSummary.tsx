@@ -1,7 +1,7 @@
 import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import * as WebBrowser from "expo-web-browser";
-import { BlockType } from "../utils/mimeTypes";
+import { BlockType, isBlockContentVideo } from "../utils/mimeTypes";
 import { Pressable } from "react-native";
 import { HoldItem } from "react-native-hold-menu";
 import {
@@ -34,6 +34,9 @@ import { StyleProps } from "react-native-reanimated";
 import { ErrorsContext } from "../utils/errors";
 import { UserContext, extractCreatorFromCreatedBy } from "../utils/user";
 import { BlockCreatedByAvatar } from "./BlockCreatedByAvatar";
+import { useTime } from "../hooks/useTime";
+
+const MaxMenuTitleLength = 50;
 
 function useBlockMenuItems(
   block: Block,
@@ -44,10 +47,15 @@ function useBlockMenuItems(
   const { deleteBlock } = useContext(DatabaseContext);
   const router = useRouter();
   const { id, source, content, type, title } = block;
+  const noNewLinesTitle = title?.replace(/\n/g, " ");
+  const truncatedTitle =
+    noNewLinesTitle && noNewLinesTitle?.length > MaxMenuTitleLength
+      ? noNewLinesTitle.slice(0, MaxMenuTitleLength) + "..."
+      : noNewLinesTitle;
 
   const blockMenuItems = useMemo(
     () => [
-      { text: title || `Block ${id}`, isTitle: true },
+      { text: truncatedTitle || `Block ${id}`, isTitle: true },
       ...(source
         ? [
             {
@@ -328,7 +336,7 @@ export function BlockTextSummary({
   // TODO: add connectedBy for getCollectionItems... maybe default this to createdBy or undefined for others
   const { id, type, source, title, description, connectedBy } = block;
   const theme = useTheme();
-  const { updateBlock, deleteBlock } = useContext(DatabaseContext);
+  const { updateBlock } = useContext(DatabaseContext);
   const { isBlockConnectedByUser, isBlockCreatedByUser } =
     useContext(UserContext);
   const [isEditing, setIsEditing] = useState(false);
@@ -338,10 +346,11 @@ export function BlockTextSummary({
     : isBlockCreatedByUser(block);
 
   const { logError } = useContext(ErrorsContext);
-
+  const mediaIsVideo = isBlockContentVideo(block.content, block.type);
   const showBackground =
     [BlockType.Text, BlockType.Link].includes(type) ||
-    ([BlockType.Image].includes(type) && Boolean(title));
+    (([BlockType.Image, BlockType.Video].includes(type) || mediaIsVideo) &&
+      Boolean(title));
 
   async function commitEdit(newContent: string | null) {
     try {
@@ -360,7 +369,7 @@ export function BlockTextSummary({
     onClickEdit: () => {
       setIsEditing(true);
     },
-    isOwner,
+    isOwner: isOwner || undefined,
   });
 
   const content = useMemo(() => {
@@ -401,7 +410,15 @@ export function BlockTextSummary({
               paddingHorizontal="$2"
               paddingVertical="$1"
             >
-              <StyledText ellipse={true}>{title}</StyledText>
+              <StyledText
+                ellipse={true}
+                numberOfLines={2}
+                width="100%"
+                wordWrap="break-word"
+                whiteSpace="break-spaces"
+              >
+                {title}
+              </StyledText>
               <StyledText metadata ellipse={true}>
                 {source}
               </StyledText>
@@ -410,6 +427,11 @@ export function BlockTextSummary({
         );
 
         return inner;
+      case BlockType.Document:
+        if (!mediaIsVideo) {
+          return content;
+        }
+      case BlockType.Video:
       case BlockType.Image:
         if (title) {
           return (
@@ -422,7 +444,15 @@ export function BlockTextSummary({
                 paddingHorizontal="$2"
                 paddingVertical="$1"
               >
-                <StyledText ellipse={true}>{title}</StyledText>
+                <StyledText
+                  ellipse={true}
+                  numberOfLines={2}
+                  width="100%"
+                  wordWrap="break-word"
+                  whiteSpace="break-spaces"
+                >
+                  {title}
+                </StyledText>
                 <StyledText metadata ellipse={true} numberOfLines={1}>
                   {description}
                 </StyledText>
@@ -644,6 +674,13 @@ export function BlockMetadata({
     remoteSourceInfo,
   } = block;
 
+  // update every minute
+  const time = useTime(60 * 1000);
+  const dateInfo = useMemo(
+    () => getDateForBlock(block, { isRemoteCollection, dateKind }),
+    [time]
+  );
+
   let metadata;
   switch (type) {
     // case BlockType.Link:
@@ -654,7 +691,6 @@ export function BlockMetadata({
     //   );
     //   break;
     default:
-      const dateInfo = getDateForBlock(block, { isRemoteCollection, dateKind });
       metadata = (
         <>
           {dateInfo}

@@ -5,6 +5,7 @@ import { DatabaseContext } from "../utils/db";
 import {
   ArenaLogo,
   ButtonWithConfirm,
+  Collapsible,
   EditableTextOnClick,
   ExternalLinkText,
   StyledButton,
@@ -90,7 +91,14 @@ export function CollectionDetailView({
     }
   }
 
-  async function resyncBlocks() {
+  async function syncBlocksFromRemote() {
+    setIsLoading(true);
+    try {
+    } catch (err) {}
+    setIsLoading(false);
+  }
+
+  async function syncBlocksToRemote() {
     if (!arenaAccessToken) {
       return;
     }
@@ -243,33 +251,44 @@ export function CollectionDetailView({
               Collaborators: {collaborators}
             </StyledParagraph> */}
             {/* TODO: update to handle multiple sources */}
-            <YStack gap="$2">
-              {remoteSourceType ? (
-                <>
-                  <StyledParagraph metadata>
-                    Syncing to/from{" "}
-                    <ExternalLinkText
-                      href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
+            <Collapsible title="Advanced" marginTop="$2">
+              <YStack gap="$2">
+                {remoteSourceType ? (
+                  <>
+                    <StyledParagraph metadata>
+                      Syncing to/from{" "}
+                      <ExternalLinkText
+                        href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
+                      >
+                        {remoteSourceType}
+                      </ExternalLinkText>
+                    </StyledParagraph>
+                    {/* TODO: add a dev button to reset channel to start */}
+                    <StyledButton
+                      onPress={onClickSyncNewItems}
+                      disabled={isLoading}
+                      icon={isLoading ? <Spinner size="small" /> : null}
+                      marginTop="$2"
                     >
-                      {remoteSourceType}
-                    </ExternalLinkText>
-                  </StyledParagraph>
-                  {/* TODO: add a dev button to reset channel to start */}
-                  <StyledButton
-                    onPress={onClickSyncNewItems}
-                    disabled={isLoading}
-                    icon={isLoading ? <Spinner size="small" /> : null}
-                    marginTop="$2"
-                  >
-                    {`Sync new items from ${remoteSourceType}`}
-                    <ArenaLogo style={{ marginLeft: -4 }} />
-                  </StyledButton>
-                  <StyledText metadata>
-                    This happens automatically every few hours when you open the
-                    app. Only use this if you want a faster update.
-                  </StyledText>
-                  {/* TODO: add a button to "reset" channel from remote, which deletes items that it doesn't find */}
-                  {/* <StyledButton
+                      {`Sync new items from ${remoteSourceType}`}
+                      <ArenaLogo style={{ marginLeft: -4 }} />
+                    </StyledButton>
+                    <YStack>
+                      <StyledButton
+                        onPress={() => syncBlocksToRemote()}
+                        disabled={isLoading || !arenaAccessToken}
+                        icon={isLoading ? <Spinner size="small" /> : null}
+                      >
+                        {`Resync blocks to ${remoteSourceType}`}
+                        <ArenaLogo style={{ marginLeft: -4 }} />
+                      </StyledButton>
+                    </YStack>
+                    <StyledText metadata>
+                      Both of these happen automatically every few hours when
+                      you open Gather. Use if you want a faster update.
+                    </StyledText>
+                    {/* TODO: add a button to "reset" channel from remote, which deletes items that it doesn't find */}
+                    {/* <StyledButton
                     onPress={onClickSyncNewItems}
                     disabled={isLoading}
                     icon={isLoading ? <Spinner size="small" /> : null}
@@ -278,61 +297,48 @@ export function CollectionDetailView({
                     {`Sync new items from ${remoteSourceType}`}
                     <ArenaLogo style={{ marginLeft: -4 }} />
                   </StyledButton> */}
-                </>
-              ) : arenaAccessToken ? (
-                <>
-                  <StyledButton
-                    onPress={onClickLinkToArena}
-                    disabled={isLoading}
-                    icon={isLoading ? <Spinner size="small" /> : null}
-                    marginTop="$2"
-                  >
-                    Link collection to Are.na
-                    <ArenaLogo style={{ marginLeft: -4 }} />
-                  </StyledButton>
-                </>
-              ) : null}
-              <ButtonWithConfirm
-                theme="red"
-                onPress={() => onPressDelete()}
-                disabled={isLoading}
-                icon={isLoading ? <Spinner size="small" /> : null}
-              >
-                Delete Collection
-              </ButtonWithConfirm>
-              {remoteSourceType && (
-                <YStack>
-                  <ButtonWithConfirm
-                    theme="red"
-                    onPress={() => onPressFullDelete()}
-                    disabled={isLoading}
-                    icon={isLoading ? <Spinner size="small" /> : null}
-                  >
-                    Delete Collection & Contained Blocks
-                  </ButtonWithConfirm>
-                  <StyledText metadata>
-                    contained blocks are blocks that are only in this channel.
-                    use this when you want to "undo" an import.
-                  </StyledText>
-                </YStack>
-              )}
-              {remoteSourceType && (
-                <YStack>
-                  <StyledButton
-                    onPress={() => resyncBlocks()}
-                    disabled={isLoading}
-                    icon={isLoading ? <Spinner size="small" /> : null}
-                  >
-                    Resync blocks
-                  </StyledButton>
-                  <StyledText metadata>
-                    Try to resync all blocks up to the sync source. Use this if
-                    for whatever reason you have lost blocks in the remote
-                    source and want to push up any missing content.
-                  </StyledText>
-                </YStack>
-              )}
-            </YStack>
+                  </>
+                ) : arenaAccessToken ? (
+                  <>
+                    <StyledButton
+                      onPress={onClickLinkToArena}
+                      disabled={isLoading}
+                      icon={isLoading ? <Spinner size="small" /> : null}
+                      marginTop="$2"
+                    >
+                      Link collection to Are.na
+                      <ArenaLogo style={{ marginLeft: -4 }} />
+                    </StyledButton>
+                  </>
+                ) : null}
+                <ButtonWithConfirm
+                  theme="red"
+                  onPress={() => onPressDelete()}
+                  disabled={isLoading}
+                  icon={isLoading ? <Spinner size="small" /> : null}
+                >
+                  Delete Collection
+                </ButtonWithConfirm>
+                {remoteSourceType && (
+                  <>
+                    <YStack>
+                      <ButtonWithConfirm
+                        theme="red"
+                        onPress={() => onPressFullDelete()}
+                        disabled={isLoading}
+                        icon={isLoading ? <Spinner size="small" /> : null}
+                      >
+                        Remove Remote Collection
+                      </ButtonWithConfirm>
+                      <StyledText metadata>
+                        This will remove any blocks that are only in this
+                        collection and undo the channel import.
+                      </StyledText>
+                    </YStack>
+                  </>
+                )}
+              </YStack>
+            </Collapsible>
           </YStack>
         </YStack>
       </ScrollView>

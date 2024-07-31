@@ -190,7 +190,7 @@ export function ReviewView() {
             <StyledButton
               size="$small"
               icon={
-                <Icon name={view === ViewType.Carousel ? "grid" : "square"} />
+                <Icon name={view === ViewType.Carousel ? "grid" : "image"} />
               }
               backgroundColor="$gray6"
               onPress={toggleView}

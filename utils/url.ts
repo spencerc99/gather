@@ -1,7 +1,7 @@
 import urlMetadata from "url-metadata";
+import { logError } from "./errors";
 
-const UrlRegex =
-  /^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/;
+const UrlRegex = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i;
 
 export function cleanUrl(url: string): string {
   return url.trim();
@@ -35,21 +35,28 @@ export async function extractDataFromUrl(url: string): Promise<UrlMetadata> {
   }
 
   const cleanedUrl = cleanUrl(url);
-  const response = await urlMetadata(cleanedUrl);
-  let data: UrlMetadata = {
-    title: (response.title || response["og:title"]) as string,
-    description: (response.description ||
-      response["og:description"] ||
-      response["twitter:description"]) as string,
-    images: [
-      response.image,
-      response["og:image"],
-      response["twitter:image"],
-    ].filter((image) => Boolean(image)) as string[],
-    // @ts-ignore
-    favicon: response["favicons"]?.[0]?.href as string,
-    url: cleanedUrl,
-  };
-  // TODO: maybe use iframely here
-  return data as UrlMetadata;
+  try {
+    const response = await urlMetadata(cleanedUrl);
+    let data: UrlMetadata = {
+      title: (response.title || response["og:title"]) as string,
+      description: (response.description ||
+        response["og:description"] ||
+        response["twitter:description"]) as string,
+      images: [
+        response.image,
+        response["og:image"],
+        response["twitter:image"],
+      ].filter((image) => Boolean(image)) as string[],
+      // @ts-ignore
+      favicon: response["favicons"]?.[0]?.href as string,
+      url: cleanedUrl,
+    };
+    // TODO: maybe use iframely here
+    return data as UrlMetadata;
+  } catch (err) {
+    logError(err);
+    return {
+      url: cleanedUrl,
+    };
+  }
 }

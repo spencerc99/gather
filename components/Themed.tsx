@@ -19,10 +19,11 @@ import {
   Input,
   H3,
   SizableText,
+  H4,
 } from "tamagui";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome, FontAwesome6, Ionicons } from "@expo/vector-icons";
-import { useEffect, useMemo, useState } from "react";
+import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { Keyboard, Platform, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
@@ -271,72 +272,95 @@ export function EditableTextOnClick({
   }, [editing]);
 
   return (
-    <GestureDetector gesture={onDoubleTap}>
-      <XStack gap="$2">
-        {editing ? (
-          <InputComponent
-            flex={1}
-            alignItems="flex-start"
-            justifyContent="flex-start"
-            ref={inputRef}
-            value={editableContent}
-            placeholder={defaultText}
-            onChangeText={setEditableContent}
-            pointerEvents={editing ? "auto" : "none"}
-            {...inputProps}
-            autogrow
-            onBlur={() => {
-              setEditing(false);
+    <XStack width="100%">
+      <GestureDetector gesture={onDoubleTap}>
+        <XStack gap="$2" width="100%" height="100%">
+          {editing ? (
+            <InputComponent
+              flex={1}
+              alignItems="flex-start"
+              justifyContent="flex-start"
+              ref={inputRef}
+              value={editableContent}
+              placeholder={defaultText}
+              onChangeText={setEditableContent}
+              pointerEvents={editing ? "auto" : "none"}
+              {...inputProps}
+              autogrow
+              onBlur={() => {
+                setEditing(false);
+              }}
+              onSubmitEditing={() => commitEdit(editableContent)}
+              paddingRight="$9"
+              // so dumb that android renders text vertically aligned in center
+              verticalAlign={Platform.OS === "android" ? "top" : undefined}
+              ellipse
+              // TODO: padding is weird here. It doesn't animate properly when it goes from full to 0 when there is no text, so we have to manually specify a smaller padding here..
+              {...{
+                borderWidth: "$.5",
+                padding: "$2.5",
+              }}
+              {...(!multiline
+                ? { enterKeyHint: "done", returnKeyType: "done" }
+                : {})}
+            />
+          ) : (
+            <InputComponent
+              ref={inputRef}
+              value={editableContent}
+              placeholder={defaultText}
+              onChangeText={setEditableContent}
+              pointerEvents="none"
+              {...inputProps}
+              padding={0}
+              autogrow
+              overflow="visible"
+              onFocus={() => {
+                // onStart isn't working on android... so we have to do this
+                setEditing(true);
+              }}
+              onSubmitEditing={() => commitEdit(editableContent)}
+              ellipse
+              {...{
+                borderWidth: 0,
+                backgroundColor: "transparent",
+                minHeight: undefined,
+              }}
+              {...(!multiline
+                ? { enterKeyHint: "done", returnKeyType: "done" }
+                : {})}
+            />
+          )}
+        </XStack>
+      </GestureDetector>
+      {editing && (
+        <XStack gap="$1" position="absolute" right="$1.5" bottom="$2">
+          <StyledButton
+            onPress={(e) => {
+              commitEdit(null);
+              e.preventDefault();
+              e.stopPropagation();
             }}
-            onSubmitEditing={() => commitEdit(editableContent)}
-            paddingRight="$9"
-            // so dumb that android renders text vertically aligned in center
-            verticalAlign={Platform.OS === "android" ? "top" : undefined}
-            ellipse
-            // TODO: padding is weird here. It doesn't animate properly when it goes from full to 0 when there is no text, so we have to manually specify a smaller padding here..
-            {...{
-              borderWidth: "$.5",
-              padding: "$2.5",
-            }}
+            circular
+            theme="gray"
+            size="$xtiny"
+            icon={<Icon name="close" />}
           />
-        ) : (
-          <InputComponent
-            ref={inputRef}
-            value={editableContent}
-            placeholder={defaultText}
-            onChangeText={setEditableContent}
-            pointerEvents="none"
-            {...inputProps}
-            padding={0}
-            autogrow
-            onFocus={() => {
-              // onStart isn't working on android... so we have to do this
-              setEditing(true);
-            }}
-            onSubmitEditing={() => commitEdit(editableContent)}
-            ellipse
-            {...{
-              borderWidth: 0,
-              backgroundColor: "transparent",
-              minHeight: undefined,
-            }}
-          />
-        )}
-        {editing && (
-          <XStack gap="$1" position="absolute" right="$1.5" bottom="$1.5">
+          {multiline && (
             <StyledButton
-              onPress={(e) => {
-                commitEdit(null);
+              onPress={() => {
+                commitEdit(editableContent);
               }}
               circular
-              theme="gray"
-              size="$xtiny"
-              icon={<Icon name="close" />}
+              theme="green"
+              size="$tiny"
+              icon={<Icon name="checkmark" />}
+              disabled={disabled}
             />
-          </XStack>
-        )}
-      </XStack>
-    </GestureDetector>
+          )}
+        </XStack>
+      )}
+    </XStack>
   );
 }
 
@@ -719,26 +743,29 @@ export function ExternalLinkText({
 
 export function Collapsible({
   title,
-  content,
-}: {
+  children,
+  ...rest
+}: PropsWithChildren<{
   title: string;
-  content: React.ReactNode;
-}) {
+}> &
+  GetProps<typeof YStack>) {
   const [showContent, setShowContent] = useState(false);
   return (
-    <YStack>
-      <H3>
-        {title}
+    <YStack {...rest}>
+      <StyledText title alignItems="center" verticalAlign="middle">
+        {title}{" "}
         <StyledButton
           onPress={() => setShowContent(!showContent)}
           circular
-          size="$5"
+          // Accounts for weird vertical alignment
+          marginBottom={-3}
+          size="$4"
           theme="white"
           backgroundColor="$gray6"
           icon={<Icon name={showContent ? "chevron-up" : "chevron-down"} />}
         ></StyledButton>
-      </H3>
-      {showContent && <YStack gap="$2">{content}</YStack>}
+      </StyledText>
+      {showContent && <StyledView marginTop="$2">{children}</StyledView>}
     </YStack>
   );
 }

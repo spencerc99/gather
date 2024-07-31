@@ -234,7 +234,7 @@ export function TextForageView({
         // TODO: do this check after insert as text value and then do an update to make it super fast.
         if (isUrl(savedTextValue)) {
           const { title, description, images, url, favicon } =
-            await extractDataFromUrl(savedTextValue);
+            (await extractDataFromUrl(savedTextValue)) || {};
           blocksToInsert.push({
             createdBy: currentUser!.id,
             // TODO: try to capture a picture of the url always
@@ -306,7 +306,7 @@ export function TextForageView({
   }
 
   return isSearching ? null : ( // TODO: integrate the search directly into the chat box
-    <StyledView flex={1} paddingTop={insets.top}>
+    <StyledView flex={1}>
       <Animated.View style={[{ flex: 1 }, translateStyle]}>
         <BlockTexts
           collectionId={collectionId}

@@ -52,5 +52,5 @@ export function getRelativeDate(date: Date) {
   if (minutes > 0) {
     return pluralizeTime(minutes, "minute");
   }
-  return `< a minute ago`;
+  return `just now`;
 }
