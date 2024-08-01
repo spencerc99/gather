@@ -35,6 +35,7 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BlockInsertInfo } from "../utils/dataTypes";
 
 const Placeholders = [
   "Who do you love and why?",
@@ -203,7 +204,7 @@ export function TextForageView({
     const savedTextValue = textValue;
     setTextValue("");
     setMedias([]);
-    const blocksToInsert = [];
+    const blocksToInsert: BlockInsertInfo[] = [];
 
     try {
       if (savedMedias.length) {
@@ -241,14 +242,14 @@ export function TextForageView({
             description,
             source: url,
             type: BlockType.Link,
-            collectionsToConnect: collectionId ? [collectionId] : [],
+            collectionsToConnect: collectionId ? [{ collectionId }] : [],
           });
         } else {
           blocksToInsert.push({
             createdBy: currentUser!.id,
             content: savedTextValue,
             type: BlockType.Text,
-            collectionsToConnect: collectionId ? [collectionId] : [],
+            collectionsToConnect: collectionId ? [{ collectionId }] : [],
           });
         }
       }

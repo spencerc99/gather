@@ -1,8 +1,4 @@
-import {
-  BlockType,
-  isBlockContentVideo,
-  VideoFileExtensions,
-} from "../utils/mimeTypes";
+import { BlockType, isBlockContentVideo } from "../utils/mimeTypes";
 import {
   StyledView,
   StyledText,
@@ -116,10 +112,11 @@ export function MediaView({
         );
       case BlockType.Document:
         if (!mediaIsVideo) {
-          return <StyledText>Document of {media}</StyledText>;
+          return null;
         }
       case BlockType.Video:
         return (
+          // @ts-ignore
           <StyledView
             onPress={(e) => {
               e.preventDefault();

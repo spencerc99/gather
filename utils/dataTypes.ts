@@ -30,6 +30,12 @@ export interface ConnectionInsertInfo {
   createdBy: string;
 }
 
+export interface BlockConnectionInsertInfo {
+  collectionId: string;
+  remoteCreatedAt?: string;
+  createdBy?: string;
+}
+
 export interface Connection {
   blockId: string;
   collectionId: string;
@@ -109,7 +115,7 @@ export interface DatabaseBlockInsert {
 export type BlockEditInfo = Partial<DatabaseBlockInsert>;
 
 export interface BlockInsertInfo extends DatabaseBlockInsert {
-  collectionsToConnect?: string[]; // IDs of collections that this block is in
+  collectionsToConnect?: BlockConnectionInsertInfo[]; // IDs of collections that this block is in
 }
 
 export interface BlocksInsertInfo {

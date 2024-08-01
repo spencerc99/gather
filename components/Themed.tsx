@@ -592,9 +592,15 @@ export function AspectRatioImage({
     // TODO: this is big on performance bc it blocks loading everything until resolved if its not async... figure out better way to do this.
     // maybe store the aspect ratio in database with the content? or store a cache of the aspect ratios in memory?
     new Promise(() => {
-      Image.getSize(uri, (width, height) => {
-        setAspectRatio(width / height);
-      });
+      Image.getSize(
+        uri,
+        (width, height) => {
+          setAspectRatio(width / height);
+        },
+        (err) => {
+          console.error(err);
+        }
+      );
     });
   }, [uri]);
 

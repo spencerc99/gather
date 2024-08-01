@@ -19,6 +19,7 @@ import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
 import { CreateCollectionButton } from "./CreateCollectionButton";
 import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
+// @ts-ignore
 import { ModalView } from "react-native-ios-modal";
 
 setupNativeSheet("ios", ModalView);

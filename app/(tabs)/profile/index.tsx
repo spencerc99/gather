@@ -83,6 +83,7 @@ export default function ProfileScreen() {
         return (
           <Flower
             key={`${index}`}
+            // @ts-ignore
             style={{
               position: "absolute",
               zIndex: -1,

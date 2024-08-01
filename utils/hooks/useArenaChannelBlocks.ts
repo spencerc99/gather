@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getChannelContentsPaginated } from "../arena";
+import { getChannelItemsPaginated } from "../arena";
 import { useDebounce } from "tamagui";
 
 export function useArenaChannelBlocks(channelId: string) {
@@ -8,7 +8,7 @@ export function useArenaChannelBlocks(channelId: string) {
       queryKey: ["arenaBlocks", { channelId }],
       initialPageParam: 1,
       queryFn: async ({ pageParam }) => {
-        const contents = await getChannelContentsPaginated(channelId, {
+        const contents = await getChannelItemsPaginated(channelId, {
           page: pageParam,
           per: 20,
         });
@@ -18,7 +18,7 @@ export function useArenaChannelBlocks(channelId: string) {
             (c) => c.base_class === "Block" && c.class !== "Block"
           ),
           lastPage: pageParam > 1 ? pageParam - 1 : undefined,
-          nextPage: contents.length < 20 ? pageParam + 1 : undefined,
+          nextPage: contents.length === 20 ? pageParam + 1 : undefined,
         };
       },
       getPreviousPageParam: (firstPage) => firstPage.lastPage,

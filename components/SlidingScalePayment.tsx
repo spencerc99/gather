@@ -131,6 +131,7 @@ export function SlidingScalePayment({
       return (
         <Flower
           key={`${value[0]}-${index}`}
+          // @ts-ignore
           style={{
             position: "absolute",
             zIndex: -1,

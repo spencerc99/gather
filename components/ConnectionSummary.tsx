@@ -4,6 +4,8 @@ import { StyledParagraph, StyledView } from "./Themed";
 import { styles } from "./CollectionSummary";
 import { getRelativeDate } from "../utils/date";
 import { RemoteSourceLabel } from "./RemoteSourceLabel";
+import { useTime } from "../hooks/useTime";
+import { useMemo } from "react";
 
 export function ConnectionSummary({ connection }: { connection: Connection }) {
   const theme = useTheme();
@@ -14,6 +16,12 @@ export function ConnectionSummary({ connection }: { connection: Connection }) {
     remoteSourceType,
     remoteCreatedAt,
   } = connection;
+
+  const time = useTime(60 * 1000);
+  const connectedAt = useMemo(
+    () => getRelativeDate(remoteCreatedAt || createdTimestamp),
+    [time, remoteCreatedAt, createdTimestamp]
+  );
 
   return (
     <StyledView
@@ -43,7 +51,7 @@ export function ConnectionSummary({ connection }: { connection: Connection }) {
       <StyledView style={styles.metaContainer}>
         {/* <StyledParagraph metadata>{createdBy}</StyledParagraph> */}
         <StyledParagraph alignSelf="flex-end" metadata>
-          connected {getRelativeDate(remoteCreatedAt || createdTimestamp)}
+          connected {connectedAt}
         </StyledParagraph>
       </StyledView>
     </StyledView>

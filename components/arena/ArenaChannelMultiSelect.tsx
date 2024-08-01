@@ -183,6 +183,7 @@ export function ArenaChannelMultiSelect({
               type="single"
               disableDeactivation
               value={toggleValue}
+              // // @ts-ignore
               onValueChange={setToggleValue}
             >
               {Object.keys(ChannelScope).map((scope) => (

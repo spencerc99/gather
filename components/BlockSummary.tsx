@@ -225,6 +225,7 @@ export function BlockSummary({
       createdAt,
       remoteConnectedAt,
       source,
+      content,
       numConnections,
       remoteSourceInfo,
     } = block;
@@ -238,6 +239,13 @@ export function BlockSummary({
         metadata.push(
           <Fragment key={"link"}>
             from <ExternalLinkText href={source!}>{source}</ExternalLinkText>
+          </Fragment>
+        );
+        break;
+      case BlockType.Document:
+        metadata.push(
+          <Fragment key={"link"}>
+            from <ExternalLinkText href={content}>{content}</ExternalLinkText>
           </Fragment>
         );
         break;
@@ -348,7 +356,7 @@ export function BlockTextSummary({
   const { logError } = useContext(ErrorsContext);
   const mediaIsVideo = isBlockContentVideo(block.content, block.type);
   const showBackground =
-    [BlockType.Text, BlockType.Link].includes(type) ||
+    [BlockType.Text, BlockType.Link, BlockType.Document].includes(type) ||
     (([BlockType.Image, BlockType.Video].includes(type) || mediaIsVideo) &&
       Boolean(title));
 
@@ -397,19 +405,25 @@ export function BlockTextSummary({
         }}
       />
     );
-    switch (type) {
-      case BlockType.Link:
-        const inner = (
-          // TODO: don't render content for link without image (content === '')
-          <YStack>
-            {content}
-            <YStack
-              alignItems="flex-end"
-              maxWidth={widthProperty}
-              flexShrink={1}
-              paddingHorizontal="$2"
-              paddingVertical="$1"
-            >
+    if (
+      [
+        BlockType.Image,
+        BlockType.Video,
+        BlockType.Link,
+        BlockType.Document,
+      ].includes(type)
+    ) {
+      return (
+        <YStack>
+          {content}
+          <YStack
+            alignItems="flex-end"
+            maxWidth={widthProperty}
+            flexShrink={1}
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+          >
+            {title && (
               <StyledText
                 ellipse={true}
                 numberOfLines={2}
@@ -419,50 +433,25 @@ export function BlockTextSummary({
               >
                 {title}
               </StyledText>
-              <StyledText metadata ellipse={true}>
-                {source}
-              </StyledText>
-            </YStack>
-          </YStack>
-        );
-
-        return inner;
-      case BlockType.Document:
-        if (!mediaIsVideo) {
-          return content;
-        }
-      case BlockType.Video:
-      case BlockType.Image:
-        if (title) {
-          return (
-            <YStack>
-              {content}
-              <YStack
-                alignItems="flex-end"
-                maxWidth={widthProperty}
-                flexShrink={1}
-                paddingHorizontal="$2"
-                paddingVertical="$1"
-              >
-                <StyledText
-                  ellipse={true}
-                  numberOfLines={2}
-                  width="100%"
-                  wordWrap="break-word"
-                  whiteSpace="break-spaces"
-                >
-                  {title}
-                </StyledText>
+            )}
+            {[BlockType.Image, BlockType.Video].includes(type) ||
+            mediaIsVideo ? (
+              title && (
                 <StyledText metadata ellipse={true} numberOfLines={1}>
                   {description}
                 </StyledText>
-              </YStack>
-            </YStack>
-          );
-        }
-      default:
-        return content;
+              )
+            ) : (
+              <StyledText metadata ellipse={true}>
+                {source}
+              </StyledText>
+            )}
+          </YStack>
+        </YStack>
+      );
     }
+
+    return content;
   }, [block, isEditing, isOwner]);
 
   const renderedMetadata = useMemo(() => {

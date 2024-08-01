@@ -47,6 +47,7 @@ const { Navigator } = createStackNavigator();
 
 // This can be used like `<JsStack />`
 export const JsStack = withLayoutContext<
+  // @ts-ignore
   StackNavigationOptions,
   typeof Navigator
 >(Navigator);

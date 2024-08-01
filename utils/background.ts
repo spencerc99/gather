@@ -1,5 +1,7 @@
 // TODO: define background task for syncing remote data
+// @ts-ignore
 import * as BackgroundFetch from "expo-background-fetch";
+// @ts-ignore
 import * as TaskManager from "expo-task-manager";
 // @ts-ignore
 import { ArenaSyncManagerSingleton } from "./arena";

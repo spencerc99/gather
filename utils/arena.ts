@@ -30,6 +30,14 @@ enum ArenaVisibility {
   Private = "private",
 }
 
+interface ArenaConnection {
+  connected_at: string;
+  user: {
+    id: number;
+    slug: string;
+  };
+}
+
 export interface ArenaChannelInfo {
   id: number;
   title: string;
@@ -55,7 +63,6 @@ export interface ArenaChannelInfo {
 export interface RawArenaUser {
   created_at: string;
   slug: string;
-  username: string;
   first_name: string;
   last_name: string;
   full_name: string;
@@ -96,17 +103,18 @@ export type ArenaClass =
   | "Link"
   | "Media"
   | "Attachment"
+  | "Embed"
   | "Block";
 export interface RawArenaChannelItem {
   id: string;
   title: string;
   content: string;
-  content_html: string;
+  content_html?: string;
   created_at: string;
   updated_at: string;
-  description_html: string;
+  description_html?: string;
   description: string;
-  image: {
+  image?: {
     content_type: string;
     display: { url: string };
     square: { url: string };
@@ -123,9 +131,8 @@ export interface RawArenaChannelItem {
   class: ArenaClass;
   connected_at: string;
   connected_by_user_id: string;
-  connected_by_username: string;
   connected_by_user_slug: string;
-  embed: {
+  embed?: {
     url: null;
     type: string;
     title: null;
@@ -136,8 +143,8 @@ export interface RawArenaChannelItem {
     width: number;
     height: number;
     html: string;
-  } | null;
-  attachment: {
+  };
+  attachment?: {
     file_name: string;
     file_size: number;
     file_size_display: string;
@@ -303,38 +310,93 @@ export async function getChannelThumb(
   const respBody = await resp.json();
   return respBody.contents;
 }
-export async function getChannelContentsPaginated(
+
+function mapListChannelItemsResponseToItems(
+  result: ListChannelBlocksResult
+): RawArenaChannelItem[] {
+  return result.data.channel.blokks.map<RawArenaChannelItem>((block) => {
+    const { user, connection_to, __typename, url, id, ...rest } = block;
+    let blockInfo = {};
+    switch (__typename) {
+      case "Link":
+        blockInfo = {
+          content: block.image_url,
+        };
+        break;
+      case "Image":
+        blockInfo = {
+          image: {
+            content_type: block.content_type,
+            display: { url: block.display },
+          },
+        };
+        break;
+      case "Embed":
+        blockInfo = {
+          embed: {
+            url: block.embed_url,
+          },
+        };
+        break;
+      case "Attachment":
+        blockInfo = {
+          attachment: {
+            content_type: block.content_type,
+            url: block.file_url,
+          },
+        };
+        break;
+    }
+    return {
+      ...rest,
+      id: id.toString(),
+      connected_at: connection_to.connected_at,
+      connected_by_user_id: connection_to.user.id.toString(),
+      connected_by_user_slug: connection_to.user.slug,
+      class: __typename,
+      base_class: "Block",
+      // @ts-ignore
+      user: user as RawArenaUser,
+      url: `https://are.na/${url}`,
+      ...blockInfo,
+    } as RawArenaChannelItem;
+  });
+}
+
+const DefaultBlockPer = 30;
+export async function getChannelItemsPaginated(
   channelId: string,
   {
     accessToken,
-    page,
-    per,
+    page = 1,
+    per = DefaultBlockPer,
   }: { accessToken?: string | null; page?: number; per?: number } = {}
 ): Promise<RawArenaChannelItem[]> {
-  const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
-  const url = withQueryParams(baseUrl, { page, per });
-  const resp = await fetch(url, {
+  const baseQuery = listChannelBlocksQuery({ channelId, per, page });
+  const resp = await fetch(ArenaGraphqlApi, {
+    method: "POST",
     headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-APP-TOKEN": ArenaGraphqlKey,
     },
+    body: JSON.stringify({
+      query: baseQuery,
+    }),
   });
   const respBody = await resp.json();
-  if (!resp.ok) {
-    logError("failed to fetch channel contents", JSON.stringify(respBody));
-    throw new Error(
-      `failed to fetch channel contents: ${JSON.stringify(respBody)}`
-    );
-  }
-  return respBody.contents as RawArenaChannelItem[];
+  let contents: RawArenaChannelItem[] =
+    mapListChannelItemsResponseToItems(respBody);
+  return contents;
 }
 
-export async function getChannelContents(
+export async function getChannelItems(
   channelId: string,
   {
     accessToken,
     lastSyncedInfo,
   }: { accessToken?: string | null; lastSyncedInfo?: LastSyncedInfo | null }
-): Promise<RawArenaChannelItem[]> {
+) {
   console.log(
     "Fetching items for channel",
     channelId,
@@ -344,62 +406,50 @@ export async function getChannelContents(
   let fetchedItems: RawArenaChannelItem[] = [];
   let newItemsFound = lastSyncedInfo ? false : true;
   const lastSyncedBlockCreatedAt = lastSyncedInfo?.lastSyncedBlockCreatedAt;
-  // TODO: fix as with below
-  // const baseUrl = `${ArenaChannelsApi}/${channelId}/contents`;
-  // TODO: this needs an API that only gets blocks AFTER given date.
-  const baseUrl = `${ArenaChannelsApi}/${channelId}`;
   let numItemsFetched = 0;
-  try {
-    let nextUrl: string | undefined = baseUrl;
-    while (nextUrl) {
-      const resp = await fetch(nextUrl, {
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-      });
-      const respBody = await resp.json();
-      let contents: RawArenaChannelItem[] = respBody.contents;
-      // TODO: recursively traverse the sub-channels
-      contents = contents.filter(
-        // NOTE: class = block only if are.na has failed to process it
-        (c) => c.base_class === "Block" && c.class !== "Block"
-      );
-      numItemsFetched += contents.length;
+  let page = 1;
+  const per = DefaultBlockPer;
+  const baseQuery = listChannelBlocksQuery({ channelId, page });
 
-      if (
-        lastSyncedBlockCreatedAt &&
-        contents.some(
-          (c) =>
-            new Date(c.connected_at).getTime() >
-            new Date(lastSyncedBlockCreatedAt).getTime()
-        )
-      ) {
-        contents = contents.slice(
-          contents.findIndex(
+  function nextQueryFromResponse(
+    currentPage: number,
+    per: number,
+    items: RawArenaChannelItem[]
+  ) {
+    if (items.length === per) {
+      return listChannelBlocksQuery({ channelId, page: currentPage + 1 });
+    }
+  }
+  try {
+    let nextQuery: string | undefined = baseQuery;
+    while (nextQuery) {
+      let contents = await getChannelItemsPaginated(channelId, {
+        page,
+        per,
+        accessToken,
+      });
+      numItemsFetched += contents.length;
+      const stopIdx = lastSyncedBlockCreatedAt
+        ? contents.findIndex(
             (c) =>
-              new Date(c.connected_at).getTime() >
+              new Date(c.connected_at).getTime() <
               new Date(lastSyncedBlockCreatedAt).getTime()
           )
-        );
-        newItemsFound = true;
+        : null;
+      console.log("stopidx", stopIdx, lastSyncedBlockCreatedAt);
+
+      if (stopIdx && stopIdx > -1) {
+        contents = contents.slice(0, stopIdx);
       }
-      // Update storage with any new items
-      if (newItemsFound) {
-        fetchedItems.push(...contents);
+      fetchedItems.push(...contents);
+
+      if (stopIdx !== null && stopIdx > -1) {
+        // we finished fetching all the items we needed
+        break;
       }
-      // TODO: this is not working, debug and fix to reduce data fetched
-      // const urlParams = Object.fromEntries(
-      //   new URLSearchParams(nextUrl.split("?")[1])
-      // );
-      // console.log(urlParams);
-      // nextUrl = nextUrlFromArenaContentsResponse(
-      //   baseUrl,
-      //   "",
-      //   urlParams,
-      //   respBody
-      // );
-      // console.log(nextUrl);
-      nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
+
+      nextQuery = nextQueryFromResponse(page, per, contents);
+      page++;
     }
   } catch (e) {
     logError(e);
@@ -503,6 +553,7 @@ export function arenaClassToBlockType(
     case "Text":
       return BlockType.Text;
     case "Link":
+    case "Embed":
       return BlockType.Link;
     /**
  * "embed": {
@@ -740,9 +791,113 @@ async function getValueForBlock(
   }
 }
 
-const searchBlocksQuery = "";
+export interface ListChannelBlocksResult {
+  data: {
+    channel: {
+      blokks: ListChannelBlocksResultType[];
+    };
+  };
+}
 
-const createBlockMutation = `
+export interface ListChannelBlocksResultType {
+  __typename: ArenaClass;
+  id: number;
+  created_at: string;
+  updated_at: string;
+  title: string;
+  description: null | string;
+  source: { url: string };
+  url: string;
+  user: {
+    slug: string;
+    name: string;
+    avatar: string;
+    id: number;
+  };
+  connection_to: {
+    connected_at: string;
+    user: {
+      id: number;
+      slug: string;
+    };
+  };
+  image_url?: string;
+  display?: string;
+  embed_url?: string;
+  file_url?: string;
+  content_type?: string;
+  content?: string;
+}
+
+const listChannelBlocksQuery = ({
+  channelId,
+  per = 30,
+  page,
+}: {
+  channelId: string;
+  per?: number;
+  page: number;
+}) => `
+{
+  channel(
+    id:${channelId}
+    ) {
+      blokks(
+      sort_by:CREATED_AT
+      direction:DESC
+      per: ${per}
+      page: ${page}
+      type: BLOCK
+    ) {
+        __typename
+        ... on Model {
+          id
+          created_at(format: "%Y-%m-%dT%H:%M:%S.%LZ")
+          updated_at(format: "%Y-%m-%dT%H:%M:%S.%LZ")
+        }
+        ... on ConnectableInterface {
+          title
+          description
+          source {
+            url
+          }
+          url: href
+          user {
+            slug
+            name
+            avatar
+            id
+          }
+          connection_to(channel_id: ${channelId}) {
+            connected_at: created_at(format: "%Y-%m-%dT%H:%M:%S.%LZ")
+            user {
+              id
+              slug
+            }
+          }
+        }
+        ... on Link {
+          image_url
+        }
+        ... on Text {
+          content(format: PLAIN)
+        }
+        ... on Image {
+          display: image_url(size: DISPLAY)
+          content_type: file_content_type
+        }
+        ... on Embed {
+          embed_url: image_url
+        }
+        ... on Attachment {
+          file_url
+          content_type: file_content_type
+        }
+      }
+  }
+}`;
+
+const createBlockMutation = (channelIds: string[]) => `
   mutation createBlockMutation(
     $channel_ids: [ID]!
     $value: String
@@ -762,12 +917,26 @@ const createBlockMutation = `
         ... on Model {
           id
         }
+        ... on ConnectableInterface {
+          ${channelIds
+            .map(
+              (c) => `
+              channel${c}: connection_to(channel_id: ${c}) {
+                connected_at: created_at(format:"%Y-%m-%dT%H:%M:%S.%LZ")
+                user {
+                  id
+                  slug
+                }
+              }`
+            )
+            .join("\n")}
+        }
       }
     }
   }
 `;
 
-const createConnectionMutation = `
+const createConnectionMutation = (channelIds: string[]) => `
   mutation createConnectionMutation(
     $channel_ids: [ID]!
     $connectable_id: ID!
@@ -782,7 +951,19 @@ const createConnectionMutation = `
       }
     ) {
       __typename
-      konnectable {
+      connectable {
+       ${channelIds
+         .map(
+           (c) => `
+              channel${c}: connection_to(channel_id: ${c}) {
+                connected_at: created_at(format:"%Y-%m-%dT%H:%M:%S.%LZ")
+                user {
+                  id
+                  slug
+                }
+              }`
+         )
+         .join("\n")}
       }
     }
   }`;
@@ -795,9 +976,13 @@ export async function createBlock({
   block: Block;
   channelIds: string[];
   arenaToken: string;
-}): Promise<RawArenaBlock> {
+}): Promise<{
+  arenaBlock: RawArenaBlock;
+  connections: { [channelId: string]: ArenaConnection };
+}> {
   let resp: Response;
   let blockId = block.remoteSourceInfo?.arenaId;
+  let connections: { [channelId: string]: ArenaConnection } = {};
   if (block.remoteSourceInfo?.arenaId) {
     console.log(
       `adding existing arena block ${block.remoteSourceInfo.arenaId} to channel`,
@@ -811,7 +996,7 @@ export async function createBlock({
         "X-APP-TOKEN": ArenaGraphqlKey,
       },
       body: JSON.stringify({
-        query: createConnectionMutation,
+        query: createConnectionMutation(channelIds),
         variables: {
           channel_ids: channelIds,
           connectable_type: "BLOCK",
@@ -824,8 +1009,13 @@ export async function createBlock({
       logError(
         `failed to create connection in arena ${JSON.stringify(response)}`
       );
-      throw new Error(JSON.stringify(resp));
+      throw new Error(JSON.stringify(response));
     }
+    channelIds.forEach((c) => {
+      connections[c] = response.data.create_connection.connectable[
+        `channel${c}`
+      ] as ArenaConnection;
+    });
   } else {
     const value = await getValueForBlock(block, arenaToken);
     console.log("adding block to channel", channelIds, value, arenaToken);
@@ -839,7 +1029,7 @@ export async function createBlock({
         "X-APP-TOKEN": ArenaGraphqlKey,
       },
       body: JSON.stringify({
-        query: createBlockMutation,
+        query: createBlockMutation(channelIds),
         variables: {
           channel_ids: channelIds,
           value,
@@ -858,11 +1048,17 @@ export async function createBlock({
     }
 
     const response = await resp.json();
-
     if (response.errors?.length) {
       logError(`failed to create block in arena ${JSON.stringify(response)}`);
-      throw new Error(JSON.stringify(resp));
+      throw new Error(JSON.stringify(response));
     }
+
+    channelIds.forEach((c) => {
+      connections[c] = response.data.create_block.block[
+        `channel${c}`
+      ] as ArenaConnection;
+    });
+
     blockId = response.data.create_block.block.id!;
   }
 
@@ -871,84 +1067,11 @@ export async function createBlock({
     throw new Error("failed to get block id from response");
   }
 
-  return await getBlock(blockId, arenaToken);
-}
-
-export async function addBlockToChannel({
-  channelId,
-  block,
-  arenaToken,
-}: {
-  channelId: string;
-  block: Block;
-  arenaToken: string;
-}): Promise<RawArenaChannelItem> {
-  let resp: Response;
-  let response: RawArenaChannelItem;
-  if (block.remoteSourceInfo?.arenaId) {
-    // already exists in are.na just use a put
-    // not documented in api docs, see https://discord.com/channels/691439466224549898/821954408643952650/825013461872017468
-    const url = withQueryParams(
-      `${ArenaChannelsApi}/${channelId}/connections`,
-      {
-        connectable_type: "Block",
-        connectable_id: block.remoteSourceInfo.arenaId,
-      }
-    );
-    console.log(
-      `adding existing arena block ${block.remoteSourceInfo.arenaId} to channel`,
-      channelId
-    );
-    resp = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${arenaToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-    response = await resp.json();
-  } else {
-    const url = `${ArenaChannelsApi}/${channelId}/blocks`;
-    const body = await getBodyForBlock(block, arenaToken);
-    console.log("adding block to channel", channelId, body, arenaToken, url);
-    resp = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: `Bearer ${arenaToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-    if (!resp.ok) {
-      logError(
-        `failed to add block to arena channel ${resp.status}: ${JSON.stringify(
-          resp
-        )}`
-      );
-      throw new Error(JSON.stringify(resp));
-    }
-    response = await resp.json();
-    const { title, description: blockDescription } = block;
-    let description = blockDescription || GatherArenaAttribution;
-    if (title || description) {
-      updateArenaBlock({
-        blockId: response.id,
-        arenaToken,
-        title,
-        description,
-      });
-    }
-  }
-  if (!resp.ok) {
-    logError(
-      `failed to add block to arena channel ${resp.status}: ${JSON.stringify(
-        resp
-      )}`
-    );
-    throw new Error(JSON.stringify(response));
-  }
-
-  return response;
+  const blockInfo = await getBlock(blockId, arenaToken);
+  return {
+    arenaBlock: blockInfo,
+    connections,
+  };
 }
 
 export async function updateArenaBlock({
@@ -1228,6 +1351,26 @@ export function rawArenaBlocksToBlockInsertInfo(
 export function rawArenaBlockToBlockInsertInfo(
   block: RawArenaChannelItem
 ): DatabaseBlockInsert {
+  console.log(
+    "CONVERTING BLOCK",
+    block.id,
+    "TO",
+    block.connected_at,
+    block.connected_by_user_slug
+  );
+  if (
+    !(
+      block.attachment?.url ||
+      // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
+      // it only provides the html iframe code..
+      block.embed?.url ||
+      block.image?.display.url ||
+      block.content
+    )
+  ) {
+    console.error("MISSING CONTENT FOR ", block);
+    logError(`MISSING CONTENT FOR ${block}`);
+  }
   return {
     title: block.title,
     description: block.description,

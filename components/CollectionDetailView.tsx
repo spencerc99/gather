@@ -37,6 +37,7 @@ export function CollectionDetailView({
     remoteSourceType,
   } = collection;
   const {
+    syncAllRemoteItems,
     syncNewRemoteItems,
     deleteCollection,
     fullDeleteCollection,
@@ -62,7 +63,27 @@ export function CollectionDetailView({
   async function onClickSyncNewItems() {
     setIsLoading(true);
     try {
-      await syncNewRemoteItems(id);
+      const { itemsAdded = 0, collectionUpdated = false } =
+        (await syncNewRemoteItems(id)) || {};
+      alert(
+        `Added ${itemsAdded} new items to ${title}${
+          collectionUpdated ? " and we updated the collection title too" : ""
+        }.`
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  async function onClickResyncItems() {
+    setIsLoading(true);
+    try {
+      const { itemsAdded = 0, collectionUpdated = false } =
+        (await syncAllRemoteItems(id)) || {};
+      alert(
+        `Added ${itemsAdded} new items to ${title}${
+          collectionUpdated ? " and we updated the collection title too" : ""
+        }.`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -219,6 +240,7 @@ export function CollectionDetailView({
                     })
                 );
               }}
+              // @ts-ignore
               marginBottom="$2"
               inputProps={{
                 title: true,
@@ -249,6 +271,16 @@ export function CollectionDetailView({
                 Last connected at: {lastConnectedAt.toLocaleString()}
               </StyledParagraph>
             )}
+            {remoteSourceType && (
+              <StyledParagraph metadata>
+                Syncing to/from{" "}
+                <ExternalLinkText
+                  href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
+                >
+                  {remoteSourceType}
+                </ExternalLinkText>
+              </StyledParagraph>
+            )}
             {/* <StyledParagraph metadata>
               Collaborators: {collaborators}
             </StyledParagraph> */}
@@ -257,14 +289,6 @@ export function CollectionDetailView({
               <YStack gap="$2">
                 {remoteSourceType ? (
                   <>
-                    <StyledParagraph metadata>
-                      Syncing to/from{" "}
-                      <ExternalLinkText
-                        href={`https://are.na/channel/${remoteSourceInfo?.arenaId}`}
-                      >
-                        {remoteSourceType}
-                      </ExternalLinkText>
-                    </StyledParagraph>
                     {/* TODO: add a dev button to reset channel to start */}
                     <StyledButton
                       onPress={onClickSyncNewItems}
@@ -275,19 +299,31 @@ export function CollectionDetailView({
                       {`Sync new items from ${remoteSourceType}`}
                       <ArenaLogo style={{ marginLeft: -4 }} />
                     </StyledButton>
-                    <YStack>
-                      <StyledButton
-                        onPress={() => syncBlocksToRemote()}
-                        disabled={isLoading || !arenaAccessToken}
-                        icon={isLoading ? <Spinner size="small" /> : null}
-                      >
-                        {`Resync blocks to ${remoteSourceType}`}
-                        <ArenaLogo style={{ marginLeft: -4 }} />
-                      </StyledButton>
-                    </YStack>
+                    <StyledButton
+                      onPress={() => syncBlocksToRemote()}
+                      disabled={isLoading || !arenaAccessToken}
+                      icon={isLoading ? <Spinner size="small" /> : null}
+                    >
+                      {`Sync blocks to ${remoteSourceType}`}
+                      <ArenaLogo style={{ marginLeft: -4 }} />
+                    </StyledButton>
                     <StyledText metadata>
                       Both of these happen automatically every few hours when
                       you open Gather. Use if you want a faster update.
+                    </StyledText>
+                    <StyledButton
+                      onPress={onClickResyncItems}
+                      disabled={isLoading}
+                      icon={isLoading ? <Spinner size="small" /> : null}
+                      marginTop="$2"
+                    >
+                      {`Resync all items from ${remoteSourceType}`}
+                      <ArenaLogo style={{ marginLeft: -4 }} />
+                    </StyledButton>
+                    <StyledText metadata>
+                      Use this if blocks are missing from your are.na channel.
+                      Please submit some feedback in the Profile tab if this is
+                      happening because it's a bug!
                     </StyledText>
                     {/* TODO: add a button to "reset" channel from remote, which deletes items that it doesn't find */}
                     {/* <StyledButton
