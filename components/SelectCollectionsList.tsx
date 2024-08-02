@@ -96,7 +96,12 @@ export function SelectCollectionsList({
     [propSetSearchValue, internalSetSearchValue]
   );
 
-  const { collections, isLoading } = useCollections(searchValue);
+  const {
+    collections,
+    isLoading,
+    isFetchingNextPage,
+    debouncedFetchMoreCollections,
+  } = useCollections(searchValue);
 
   const sortedCollections = useMemo(() => {
     // sort selected collections to top
@@ -185,6 +190,20 @@ export function SelectCollectionsList({
           gap: horizontal ? 8 : 4,
         }}
         renderItem={renderCollection}
+        onEndReachedThreshold={0.3}
+        onEndReached={debouncedFetchMoreCollections}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <YStack
+              justifyContent="center"
+              alignSelf="center"
+              alignItems="center"
+              width="100%"
+            >
+              <Spinner size="small" color="$orange9" />
+            </YStack>
+          ) : null
+        }
       />
     );
   }

@@ -145,7 +145,12 @@ export function CollectionSelect({
   const { createCollection, deleteCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
   const { currentUser: user } = useContext(UserContext);
-  const { collections, isLoading } = useCollections(searchValue);
+  const {
+    collections,
+    isLoading,
+    debouncedFetchMoreCollections,
+    isFetchingNextPage,
+  } = useCollections(searchValue);
   const [open, setOpen] = useState(false);
 
   // TODO: collapse with SelectCollectionsList
@@ -176,6 +181,20 @@ export function CollectionSelect({
           gap: 4,
         }}
         renderItem={renderCollection}
+        onEndReachedThreshold={0.3}
+        onEndReached={debouncedFetchMoreCollections}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <YStack
+              justifyContent="center"
+              alignSelf="center"
+              alignItems="center"
+              width="100%"
+            >
+              <Spinner size="small" color="$orange9" />
+            </YStack>
+          ) : null
+        }
       />
     );
   }

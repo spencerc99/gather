@@ -1,6 +1,7 @@
 import { InteractionManager, Platform } from "react-native";
 import {
   InfiniteData,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -22,6 +23,7 @@ import {
 import {
   PropsWithChildren,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -76,6 +78,7 @@ import { filterItemsBySearchValue } from "./search";
 import { ensure, ensureUnreachable } from "./react";
 import { NetworkContext } from "./network";
 import { getCreatedByForRemote } from "./remote";
+import { getEscapedSearchString } from "./dbUtils";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -181,6 +184,7 @@ interface GetBlocksOptions {
   havingClause?: string;
   sortType?: SortType;
   seed?: number;
+  search?: string;
 }
 type GetCollectionsOptions = GetBlocksOptions;
 interface ArenaCollectionInfo {
@@ -1093,6 +1097,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               collections.created_by
             FROM collections
             LEFT JOIN block_connections ON block_connections.collection_id = collections.id
+            ${whereClause ? `WHERE ${whereClause}` : ""}
           )
           SELECT 
               annotated_collections.id,
@@ -1108,7 +1113,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               COUNT(connections.block_id) as num_blocks
           FROM      annotated_collections
           LEFT JOIN connections ON annotated_collections.id = connections.collection_id
-          ${whereClause ? `WHERE ${whereClause}` : ""}
           GROUP BY 1,2,3,4,5,6,7`;
 
   const SelectCollectionsSortTypeToClause = (
@@ -1133,8 +1137,22 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     whereClause,
     sortType = SortType.Created,
     seed,
-  }: GetCollectionsOptions = {}) => `
-          ${SelectCollectionInfoSql(whereClause)}
+    search,
+  }: GetCollectionsOptions = {}) => {
+    let whereConditions = [];
+    if (whereClause) {
+      whereConditions.push(whereClause);
+    }
+    if (search) {
+      const escapedSearch = getEscapedSearchString(search);
+      whereConditions.push(
+        `(collections.title LIKE ${escapedSearch} OR collections.description LIKE ${escapedSearch})`
+      );
+    }
+    const compositeWhereClause = whereConditions.join(" AND ");
+
+    return `
+          ${SelectCollectionInfoSql(compositeWhereClause)}
           ${SelectCollectionsSortTypeToClause(sortType, { seed })}
           ${
             page === null
@@ -1143,12 +1161,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   page * CollectionSelectLimit
                 }`
           };`;
+  };
 
   async function getCollections({
     page,
     whereClause,
     sortType,
     seed,
+    search,
   }: GetCollectionsOptions = {}): Promise<Collection[]> {
     try {
       const [result] = await db.execAsync(
@@ -1159,6 +1179,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               whereClause,
               sortType,
               seed,
+              search,
             })};`,
             args: [],
           },
@@ -2239,7 +2260,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const remoteCollectionsToRemoveConnection = await getCollections({
       page: null,
       whereClause: inParam(
-        `annotated_collections.id IN (?#) AND annotated_collections.remote_source_type IS NOT NULL AND annotated_collections.remote_source_info IS NOT NULL`,
+        `collections.id IN (?#) AND collections.remote_source_type IS NOT NULL AND collections.remote_source_info IS NOT NULL`,
         removedCollectionIds
       ),
     });
@@ -2535,27 +2556,55 @@ export function useCollections(searchValue?: string) {
   const { getCollections } = useContext(DatabaseContext);
   const debouncedSearch = useDebounceValue(searchValue, 300);
 
-  const { data: collections, isLoading } = useQuery({
-    queryKey: ["collections"],
-    queryFn: async () => {
-      return await getCollections({ page: null });
+  // TODO: toast the error
+  const {
+    data,
+    error,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["collections", { search: debouncedSearch }],
+    queryFn: async ({ pageParam: page, queryKey }) => {
+      const [_, { search }] = queryKey;
+
+      const collections = await getCollections({
+        page,
+        search: search as string,
+      });
+      return {
+        collections,
+        nextId: collections.length < CollectionSelectLimit ? null : page + 1,
+        previousId: page === 0 ? null : page - 1,
+      };
     },
+    initialPageParam: 0,
+    // TODO:
+    getPreviousPageParam: (firstPage) => firstPage?.previousId ?? undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextId ?? undefined,
   });
 
-  const filteredCollections = useMemo(
-    () =>
-      !debouncedSearch
-        ? collections
-        : filterItemsBySearchValue(collections || [], debouncedSearch, [
-            "title",
-            "description",
-          ]),
-    [collections, debouncedSearch]
+  const collections = useMemo(
+    () => data?.pages.flatMap((p) => p.collections),
+    [data]
   );
 
+  const fetchMoreCollections = useCallback(() => {
+    if (isFetchingNextPage || !hasNextPage) {
+      return;
+    }
+
+    fetchNextPage();
+  }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
+
+  const debouncedFetchMoreCollections = useDebounce(fetchMoreCollections, 300);
+
   return {
-    collections: filteredCollections,
+    collections,
     isLoading,
+    debouncedFetchMoreCollections,
+    isFetchingNextPage,
   };
 }
 

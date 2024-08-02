@@ -66,7 +66,13 @@ export function UncategorizedView() {
         if (index === events.length - 1) {
           carouselRef.current?.prev({ count: 1 });
         }
-        await addConnections(itemId, selectedCollections, currentUser!.id);
+        await addConnections({
+          blockId: itemId,
+          connections: selectedCollections.map((c) => ({
+            collectionId: c,
+            createdBy: currentUser!.id,
+          })),
+        });
       }
       Keyboard.dismiss();
     },
