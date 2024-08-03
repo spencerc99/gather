@@ -16,7 +16,7 @@ import {
   useRef,
 } from "react";
 import { GetProps } from "tamagui";
-import { StyleProps } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut, StyleProps } from "react-native-reanimated";
 import { ErrorsContext } from "../utils/errors";
 import { cleanUrl } from "../utils/url";
 
@@ -40,7 +40,9 @@ export function MediaView({
 
   const mediaIsVideo = isBlockContentVideo(media, blockType);
   const video = useRef<Video>(null);
-  const [hasClicked, setHasClicked] = useState(false);
+  const [hasClicked, setHasClicked] = useState(
+    videoProps?.shouldPlay ? true : false
+  );
 
   async function playSound() {
     console.log("play");
@@ -138,27 +140,35 @@ export function MediaView({
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
               isLooping
-              onPlaybackStatusUpdate={(status) => setHasClicked(true)}
               {...videoProps}
             />
-            <StyledView
-              display={hasClicked ? "none" : "flex"}
-              position="absolute"
-              alignItems="center"
-              justifyContent="center"
-              width="100%"
-              height="100%"
-            >
-              <StyledButton
-                circular
-                theme="gray"
-                size="$small"
-                icon={<Icon name="play" />}
-                onPress={() => {
-                  video.current?.playAsync();
+            {!hasClicked ? (
+              <Animated.View
+                entering={FadeIn}
+                exiting={FadeOut}
+                style={{
+                  position: "absolute",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  height: "100%",
                 }}
-              ></StyledButton>
-            </StyledView>
+              >
+                <StyledView>
+                  <StyledButton
+                    circular
+                    zIndex={10}
+                    theme="gray"
+                    size="$small"
+                    icon={<Icon name="play" />}
+                    onPress={() => {
+                      video.current?.playAsync();
+                      setHasClicked(true);
+                    }}
+                  ></StyledButton>
+                </StyledView>
+              </Animated.View>
+            ) : null}
           </StyledView>
         );
       case BlockType.Audio:
