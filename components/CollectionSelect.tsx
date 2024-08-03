@@ -1,4 +1,4 @@
-import { memo, useCallback, useContext, useState } from "react";
+import { memo, useCallback, useContext, useMemo, useState } from "react";
 import { Alert, FlatList, Keyboard } from "react-native";
 import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import {
@@ -168,32 +168,94 @@ export function CollectionSelect({
     [selectedCollection]
   );
 
+  const listHeader = useMemo(() => {
+    return (
+      <>
+        <XStack margin="$2" marginTop="$1" justifyContent="center">
+          {searchValue ? (
+            <StyledButton
+              onPress={async () => {
+                await createCollection({
+                  title: searchValue,
+                  createdBy: user!.id,
+                });
+                setSearchValue("");
+              }}
+              noTextWrap={true}
+              height="auto"
+              paddingVertical={16}
+            >
+              <SizableText
+                userSelect="none"
+                cursor="pointer"
+                color="$color"
+                size="$true"
+              >
+                New collection{" "}
+                <SizableText style={{ fontWeight: 700 }}>
+                  "{searchValue}"
+                </SizableText>
+              </SizableText>
+            </StyledButton>
+          ) : (
+            <CreateCollectionButton
+              onPress={() => {
+                setOpen(false);
+              }}
+            />
+          )}
+        </XStack>
+        {collectionPlaceholder.includes(searchValue) && (
+          <Select.Item
+            index={0}
+            // @ts-ignore
+            value={null}
+            key={"none"}
+            backgroundColor={
+              selectedCollection === null ? "$green4" : undefined
+            }
+          >
+            <Select.ItemText>
+              <StyledText>{collectionPlaceholder}</StyledText>
+            </Select.ItemText>
+          </Select.Item>
+        )}
+      </>
+    );
+  }, [searchValue, selectedCollection, user]);
+
   function renderCollections() {
-    if (isLoading) {
+    if (isLoading || !open) {
       return <Spinner color="$orange9" size="small" />;
     }
     return (
       <FlatList
-        scrollEnabled={false}
+        // @ts-ignore
+        renderScrollComponent={(props) => <Sheet.ScrollView {...props} />}
+        ListHeaderComponent={() => listHeader}
         keyboardShouldPersistTaps={"handled"}
         data={collections}
         contentContainerStyle={{
           gap: 4,
+          paddingBottom: 24,
         }}
         renderItem={renderCollection}
         onEndReachedThreshold={0.3}
-        onEndReached={debouncedFetchMoreCollections}
+        onEndReached={() => {
+          if (!open) {
+            return;
+          }
+          debouncedFetchMoreCollections();
+        }}
         ListFooterComponent={
-          isFetchingNextPage ? (
-            <YStack
-              justifyContent="center"
-              alignSelf="center"
-              alignItems="center"
-              width="100%"
-            >
-              <Spinner size="small" color="$orange9" />
-            </YStack>
-          ) : null
+          <YStack
+            justifyContent="center"
+            alignSelf="center"
+            alignItems="center"
+            width="100%"
+          >
+            {isFetchingNextPage && <Spinner size="small" color="$orange9" />}
+          </YStack>
         }
       />
     );
@@ -272,66 +334,8 @@ export function CollectionSelect({
               placeholder="Search a collection..."
             />
           </YStack>
-          <Sheet.ScrollView
-            contentContainerStyle={{
-              // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
-              paddingBottom: 24,
-            }}
-          >
-            <XStack margin="$2" marginTop="$1" justifyContent="center">
-              {searchValue ? (
-                <StyledButton
-                  onPress={async () => {
-                    await createCollection({
-                      title: searchValue,
-                      createdBy: user.id,
-                    });
-                    setSearchValue("");
-                  }}
-                  noTextWrap={true}
-                  height="auto"
-                  paddingVertical={16}
-                >
-                  <SizableText
-                    userSelect="none"
-                    cursor="pointer"
-                    color="$color"
-                    size="$true"
-                  >
-                    New collection{" "}
-                    <SizableText style={{ fontWeight: 700 }}>
-                      "{searchValue}"
-                    </SizableText>
-                  </SizableText>
-                </StyledButton>
-              ) : (
-                <CreateCollectionButton
-                  onPress={() => {
-                    setOpen(false);
-                  }}
-                />
-              )}
-            </XStack>
-            {/* TODO: add some preview about last message */}
-            <Select.Group>
-              {collectionPlaceholder.includes(searchValue) && (
-                <Select.Item
-                  index={0}
-                  // @ts-ignore
-                  value={null}
-                  key={"none"}
-                  backgroundColor={
-                    selectedCollection === null ? "$green4" : undefined
-                  }
-                >
-                  <Select.ItemText>
-                    <StyledText>{collectionPlaceholder}</StyledText>
-                  </Select.ItemText>
-                </Select.Item>
-              )}
-              {renderCollections()}
-            </Select.Group>
-          </Sheet.ScrollView>
+          {/* TODO: add some preview about last message */}
+          {renderCollections()}
         </Select.Viewport>
 
         <Select.ScrollDownButton

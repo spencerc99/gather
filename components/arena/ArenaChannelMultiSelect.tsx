@@ -227,39 +227,41 @@ export function ArenaChannelMultiSelect({
           {isLoading ? (
             <Spinner size="small" color="$orange9" />
           ) : (
-            <FlatList
-              // @ts-ignore
-              renderScrollComponent={(props) => <Sheet.ScrollView {...props} />}
-              contentContainerStyle={{
-                // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
-                paddingBottom: 24,
-              }}
-              onScroll={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              data={sortedAndAnnotatedChannels}
-              renderItem={renderChannel}
-              ListFooterComponent={
-                <YStack
-                  justifyContent="center"
-                  alignSelf="center"
-                  alignItems="center"
-                  width="100%"
-                >
-                  {isFetchingNextPage && (
-                    <Spinner size="small" color="$orange9" />
-                  )}
-                </YStack>
-              }
-              onEndReachedThreshold={0.3}
-              onEndReached={() => {
-                if (!open) {
-                  return;
+            <Sheet.ScrollView>
+              <FlatList
+                // @ts-ignore
+                scrollEnabled={false}
+                contentContainerStyle={{
+                  // TODO: must be a better way to have it actually scroll to the bottom and not get cut off...
+                  paddingBottom: 24,
+                }}
+                onScroll={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                data={sortedAndAnnotatedChannels}
+                renderItem={renderChannel}
+                ListFooterComponent={
+                  <YStack
+                    justifyContent="center"
+                    alignSelf="center"
+                    alignItems="center"
+                    width="100%"
+                  >
+                    {isFetchingNextPage && (
+                      <Spinner size="small" color="$orange9" />
+                    )}
+                  </YStack>
                 }
-                fetchMore();
-              }}
-            />
+                onEndReachedThreshold={0.3}
+                onEndReached={() => {
+                  if (!open) {
+                    return;
+                  }
+                  fetchMore();
+                }}
+              />
+            </Sheet.ScrollView>
           )}
           <StyledButton
             theme="green"
