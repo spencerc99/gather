@@ -36,6 +36,7 @@ export function MediaView({
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState<boolean | null>(null);
   const { logError } = useContext(ErrorsContext);
 
   const mediaIsVideo = isBlockContentVideo(media, blockType);
@@ -121,6 +122,9 @@ export function MediaView({
           // @ts-ignore
           <StyledView
             onPress={(e) => {
+              if (isMuted === null) {
+                setIsMuted(false);
+              }
               e.preventDefault();
               e.stopPropagation();
             }}
@@ -141,6 +145,7 @@ export function MediaView({
               resizeMode={ResizeMode.CONTAIN}
               isLooping
               shouldPlay
+              isMuted={isMuted === null ? true : isMuted}
               {...videoProps}
             />
             {/* TODO: bring back when adding setting about autoplaying videos */}
