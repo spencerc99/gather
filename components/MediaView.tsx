@@ -140,35 +140,43 @@ export function MediaView({
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
               isLooping
+              shouldPlay
               {...videoProps}
             />
-            {!hasClicked ? (
+            {/* TODO: bring back when adding setting about autoplaying videos */}
+            {/* {!hasClicked ? (
               <Animated.View
                 entering={FadeIn}
                 exiting={FadeOut}
                 style={{
-                  position: "absolute",
-                  alignItems: "center",
-                  justifyContent: "center",
                   width: "100%",
                   height: "100%",
+                  position: "absolute",
                 }}
               >
-                <StyledView>
+                <StyledView
+                  style={{
+                    position: "absolute",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  onPress={() => {
+                    video.current?.playAsync();
+                    setHasClicked(true);
+                  }}
+                >
                   <StyledButton
                     circular
                     zIndex={10}
                     theme="gray"
                     size="$small"
                     icon={<Icon name="play" />}
-                    onPress={() => {
-                      video.current?.playAsync();
-                      setHasClicked(true);
-                    }}
                   ></StyledButton>
                 </StyledView>
               </Animated.View>
-            ) : null}
+            ) : null} */}
           </StyledView>
         );
       case BlockType.Audio:
