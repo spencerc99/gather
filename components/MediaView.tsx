@@ -7,7 +7,13 @@ import {
   StyledButton,
 } from "./Themed";
 import { Pressable, Image } from "react-native";
-import { Audio, AVPlaybackStatus, ResizeMode, Video } from "expo-av";
+import {
+  Audio,
+  AVPlaybackStatus,
+  ResizeMode,
+  AVPlaybackStatusSuccess,
+  Video,
+} from "expo-av";
 import {
   useState,
   useEffect,
@@ -123,7 +129,7 @@ export function MediaView({
           <StyledView
             onPress={(e) => {
               if (isMuted === null) {
-                setIsMuted(false);
+                setHasClicked(true);
               }
               e.preventDefault();
               e.stopPropagation();
@@ -145,7 +151,12 @@ export function MediaView({
               resizeMode={ResizeMode.CONTAIN}
               isLooping
               shouldPlay
-              isMuted={isMuted === null ? true : isMuted}
+              // onPlaybackStatusUpdate={(status) => {
+              //   if (!("error" in status) && isMuted !== null) {
+              //     setIsMuted(!(status as AVPlaybackStatusSuccess).isPlaying);
+              //   }
+              // }}
+              isMuted={!hasClicked ? true : undefined}
               {...videoProps}
             />
             {/* TODO: bring back when adding setting about autoplaying videos */}
