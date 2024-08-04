@@ -4,6 +4,7 @@ import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import {
   Adapt,
   GetProps,
+  ListItemFrame,
   Select,
   SelectTriggerProps,
   Sheet,
@@ -23,6 +24,41 @@ import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
 import { ModalView } from "react-native-ios-modal";
 
 setupNativeSheet("ios", ModalView);
+
+const CollectionSelectableItem = memo(
+  ({
+    collection,
+    index,
+    selectedCollection,
+    otherProps,
+  }: {
+    collection: Collection;
+    index: number;
+    selectedCollection: string | null;
+    otherProps?: GetProps<typeof ListItemFrame>;
+  }) => (
+    <Select.Item
+      index={index + 1}
+      key={collection.id}
+      value={collection.id}
+      backgroundColor={
+        selectedCollection === collection.id ? "$green4" : undefined
+      }
+      {...otherProps}
+    >
+      <CollectionSummary
+        collection={collection}
+        viewProps={{
+          borderWidth: 0,
+          paddingHorizontal: 0,
+          paddingVertical: 0,
+          backgroundColor: "inherit",
+        }}
+      />
+      <Select.ItemText display="none">{collection.title}</Select.ItemText>
+    </Select.Item>
+  )
+);
 
 const CollectionSelectImpl = ({
   collection,
@@ -80,25 +116,11 @@ const CollectionSelectImpl = ({
       </YStack>
     )}
   >
-    <Select.Item
-      index={index + 1}
-      key={collection.id}
-      value={collection.id}
-      backgroundColor={
-        selectedCollection === collection.id ? "$green4" : undefined
-      }
-    >
-      <CollectionSummary
-        collection={collection}
-        viewProps={{
-          borderWidth: 0,
-          paddingHorizontal: 0,
-          paddingVertical: 0,
-          backgroundColor: "inherit",
-        }}
-      />
-      <Select.ItemText display="none">{collection.title}</Select.ItemText>
-    </Select.Item>
+    <CollectionSelectableItem
+      collection={collection}
+      index={index}
+      selectedCollection={selectedCollection}
+    />
   </Swipeable>
 );
 
@@ -150,7 +172,10 @@ export function CollectionSelect({
     isLoading,
     debouncedFetchMoreCollections,
     isFetchingNextPage,
-  } = useCollections(searchValue);
+  } = useCollections({
+    searchValue,
+    selectedCollectionId: selectedCollection || undefined,
+  });
   const [open, setOpen] = useState(false);
 
   // TODO: collapse with SelectCollectionsList
@@ -261,6 +286,20 @@ export function CollectionSelect({
     );
   }
 
+  // This is so there is data for the placeholder, display none to not show
+  const selectedCollectionItem = collections
+    ?.filter((c) => c.id === selectedCollection?.toString())
+    .map((c, index) => (
+      <CollectionSelectableItem
+        collection={c}
+        index={index}
+        selectedCollection={selectedCollection}
+        otherProps={{
+          display: "none",
+        }}
+      />
+    ))?.[0];
+
   if (!user) {
     return;
   }
@@ -335,6 +374,7 @@ export function CollectionSelect({
             />
           </YStack>
           {/* TODO: add some preview about last message */}
+          {selectedCollectionItem}
           {renderCollections()}
         </Select.Viewport>
 

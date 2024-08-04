@@ -14,7 +14,7 @@ export function CollectionChatsView() {
   const [searchValue, setSearchValue] = useState("");
   const { currentUser } = useContext(UserContext);
   const router = useRouter();
-  const { collections, isLoading } = useCollections(searchValue);
+  const { collections, isLoading } = useCollections({ searchValue });
 
   return (
     <YStack width="100%" height="100%">

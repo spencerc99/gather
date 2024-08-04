@@ -2412,7 +2412,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         syncAllRemoteItems,
         syncBlockToArena,
         tryImportArenaChannel,
-        selectedReviewCollection,
+        selectedReviewCollection: selectedReviewCollection?.toString() || null,
         setSelectedReviewCollection,
         getBlocks,
         getCollections,
@@ -2552,8 +2552,16 @@ export function useUncategorizedBlocks() {
   });
 }
 
-export function useCollections(searchValue?: string) {
-  const { getCollections } = useContext(DatabaseContext);
+export function useCollections({
+  searchValue,
+  selectedCollectionId,
+}: {
+  searchValue?: string;
+  selectedCollectionId?: string;
+}) {
+  const { getCollections, getCollection } = useContext(DatabaseContext);
+  const [selectedCollection, setSelectedCollection] =
+    useState<Collection | null>(null);
   const debouncedSearch = useDebounceValue(searchValue, 300);
 
   // TODO: toast the error
@@ -2590,6 +2598,34 @@ export function useCollections(searchValue?: string) {
     [data]
   );
 
+  useEffect(() => {
+    if (!selectedCollectionId) {
+      setSelectedCollection(null);
+      return;
+    }
+    void (async () => {
+      setSelectedCollection(await getCollection(selectedCollectionId));
+    })();
+  }, [selectedCollectionId]);
+
+  // NOTE: kinda jank because if it's not present in first page, it will disappear when it comes in a later page.. but
+  // feels a little better than always having it be on top? idk
+  const showSelectedCollection = useMemo(() => {
+    return selectedCollectionId &&
+      !collections?.some((c) => c.id === selectedCollectionId)
+      ? true
+      : false;
+  }, [selectedCollectionId, collections]);
+
+  const allCollections = useMemo(() => {
+    return [
+      ...(showSelectedCollection && selectedCollection
+        ? [selectedCollection]
+        : []),
+      ...(collections || []),
+    ];
+  }, [collections, selectedCollection, showSelectedCollection]);
+
   const fetchMoreCollections = useCallback(() => {
     if (isFetchingNextPage || !hasNextPage) {
       return;
@@ -2601,7 +2637,7 @@ export function useCollections(searchValue?: string) {
   const debouncedFetchMoreCollections = useDebounce(fetchMoreCollections, 300);
 
   return {
-    collections,
+    collections: allCollections,
     isLoading,
     debouncedFetchMoreCollections,
     isFetchingNextPage,

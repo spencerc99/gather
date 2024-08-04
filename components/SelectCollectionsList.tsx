@@ -107,7 +107,7 @@ export function SelectCollectionsList({
     isLoading,
     isFetchingNextPage,
     debouncedFetchMoreCollections,
-  } = useCollections(searchValue);
+  } = useCollections({ searchValue });
 
   const sortedCollections = useMemo(() => {
     // sort selected collections to top
@@ -182,7 +182,7 @@ export function SelectCollectionsList({
     [selectedCollections]
   );
 
-  function renderCollections() {
+  function renderCollections(headerComponent?: React.ReactNode) {
     // if (isLoading) {
     //   return <Spinner color="$orange9" size="small" />;
     // }
@@ -194,48 +194,7 @@ export function SelectCollectionsList({
         contentContainerStyle={{
           gap: horizontal ? 8 : 4,
         }}
-        ListHeaderComponent={() => {
-          return (
-            searchValue &&
-            !createdCollections.has(searchValue) && (
-              // Matches the height of CollectionThumbnail lol
-              <YStack height={140} width={100} justifyContent="center">
-                <YStack flex={1} backgroundColor="$gray7"></YStack>
-                <StyledButton
-                  onPress={async () => {
-                    try {
-                      setLoading(true);
-                      await onClickCreateCollection();
-                      createdCollections.add(searchValue);
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  icon={
-                    loading ? (
-                      <Spinner size="small" />
-                    ) : (
-                      <Icon name="add-circle" />
-                    )
-                  }
-                  height="auto"
-                  minHeight={40}
-                  disabled={loading}
-                >
-                  <SizableText
-                    userSelect="none"
-                    cursor="pointer"
-                    color="$color"
-                    size="$true"
-                    style={{ fontWeight: 700 }}
-                  >
-                    <SizableText>{searchValue}</SizableText>
-                  </SizableText>
-                </StyledButton>
-              </YStack>
-            )
-          );
-        }}
+        ListHeaderComponent={() => headerComponent}
         renderItem={renderCollection}
         onEndReachedThreshold={0.3}
         onEndReached={() => {
@@ -253,6 +212,72 @@ export function SelectCollectionsList({
       />
     );
   }
+
+  const headerComponent = useMemo(
+    () =>
+      horizontal
+        ? searchValue &&
+          !createdCollections.has(searchValue) && (
+            // Matches the height of CollectionThumbnail lol
+            <YStack height={140} width={100} justifyContent="center">
+              <YStack flex={1} backgroundColor="$gray7"></YStack>
+              <StyledButton
+                onPress={async () => {
+                  try {
+                    setLoading(true);
+                    await onClickCreateCollection();
+                    createdCollections.add(searchValue);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                icon={
+                  loading ? (
+                    <Spinner size="small" />
+                  ) : (
+                    <Icon name="add-circle" />
+                  )
+                }
+                height="auto"
+                minHeight={40}
+                disabled={loading}
+              >
+                <SizableText
+                  userSelect="none"
+                  cursor="pointer"
+                  color="$color"
+                  size="$true"
+                  style={{ fontWeight: 700 }}
+                >
+                  <SizableText>{searchValue}</SizableText>
+                </SizableText>
+              </StyledButton>
+            </YStack>
+          )
+        : searchValue && (
+            <StyledButton
+              onPress={async () => {
+                await onClickCreateCollection();
+              }}
+              noTextWrap={true}
+              height="auto"
+              paddingVertical={16}
+            >
+              <SizableText
+                userSelect="none"
+                cursor="pointer"
+                color="$color"
+                size="$true"
+              >
+                New collection{" "}
+                <SizableText style={{ fontWeight: 700 }}>
+                  {searchValue}
+                </SizableText>
+              </SizableText>
+            </StyledButton>
+          ),
+    [searchValue, createdCollections, loading, onClickCreateCollection]
+  );
 
   function renderCollectionsList() {
     return (
@@ -295,37 +320,11 @@ export function SelectCollectionsList({
                   </LinkButton>
                 </YStack>
               )}
-              {renderCollections()}
+              {renderCollections(headerComponent)}
             </XStack>
           </StyledView>
         ) : (
-          <ScrollView>
-            <YStack space="$1">
-              {searchValue && (
-                <StyledButton
-                  onPress={async () => {
-                    await onClickCreateCollection();
-                  }}
-                  noTextWrap={true}
-                  height="auto"
-                  paddingVertical={16}
-                >
-                  <SizableText
-                    userSelect="none"
-                    cursor="pointer"
-                    color="$color"
-                    size="$true"
-                  >
-                    New collection{" "}
-                    <SizableText style={{ fontWeight: 700 }}>
-                      {searchValue}
-                    </SizableText>
-                  </SizableText>
-                </StyledButton>
-              )}
-              {renderCollections()}
-            </YStack>
-          </ScrollView>
+          <YStack space="$1">{renderCollections(headerComponent)}</YStack>
         )}
       </Stack>
     );
