@@ -104,6 +104,7 @@ export function BlockContent({
               : style
           }
           alt={`Image ${title} ${description}`}
+          isVisible={isVisible}
         />
       );
       break;

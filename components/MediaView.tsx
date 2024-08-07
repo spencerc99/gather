@@ -33,7 +33,6 @@ export function MediaView({
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState<boolean | null>(null);
   const { logError } = useContext(ErrorsContext);
 
   const mediaIsVideo = isBlockContentVideo(media, blockType);
@@ -46,17 +45,23 @@ export function MediaView({
     }
 
     return () => {
-      // This runs when the screen is unfocused
+      setHasClicked(false);
       video.current?.pauseAsync();
     };
   }, []);
+
   useEffect(() => {
-    if (isVisible) {
-      video.current?.playAsync();
-    } else {
-      video.current?.pauseAsync();
+    if (!video.current) {
+      return;
     }
-  }, [isVisible]);
+    if (isVisible) {
+      video.current.playAsync();
+    }
+    if (isVisible === false) {
+      setHasClicked(false);
+      video.current.pauseAsync();
+    }
+  }, [isVisible, video.current]);
   useFocusEffect(pauseVideoOnNavigate);
 
   async function playSound() {
@@ -136,6 +141,10 @@ export function MediaView({
           // @ts-ignore
           <StyledView
             onPress={(e) => {
+              if (!hasClicked) {
+                // Unmute if it's the first time clicking
+                video.current?.setIsMutedAsync(false);
+              }
               setHasClicked(true);
               e.preventDefault();
               e.stopPropagation();
@@ -156,6 +165,7 @@ export function MediaView({
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
               isLooping
+              shouldPlay
               isMuted={!hasClicked ? true : undefined}
               {...videoProps}
             />

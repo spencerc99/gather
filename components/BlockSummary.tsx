@@ -156,6 +156,7 @@ export function BlockSummary({
   blockStyle,
   containerProps,
   editable,
+  isVisible,
 }: {
   block: Block;
   hideMetadata?: boolean;
@@ -165,6 +166,7 @@ export function BlockSummary({
   blockStyle?: object;
   containerProps?: GetProps<typeof YStack>;
   editable?: boolean;
+  isVisible?: boolean;
 }) {
   const { id, title, createdAt } = block;
   const { updateBlock } = useContext(DatabaseContext);
@@ -214,9 +216,10 @@ export function BlockSummary({
           borderRadius: "$2",
           ...blockStyle,
         }}
+        isVisible={isVisible}
       />
     ),
-    [block, isEditing]
+    [block, isEditing, isVisible]
   );
 
   function renderMetadata() {
@@ -455,7 +458,7 @@ export function BlockTextSummary({
     }
 
     return content;
-  }, [block, isEditing, isOwner]);
+  }, [block, isEditing, isOwner, isVisible]);
 
   const renderedMetadata = useMemo(() => {
     return (
@@ -527,6 +530,7 @@ export function BlockReviewSummary({
   blockStyle,
   isRemoteCollection,
   containerProps,
+  isVisible,
 }: {
   block: Block;
   shouldLink?: boolean;
@@ -535,6 +539,7 @@ export function BlockReviewSummary({
   blockStyle?: StyleProps;
   isRemoteCollection?: boolean;
   containerProps?: GetProps<typeof YStack>;
+  isVisible?: boolean;
 }) {
   const { id, type, source, title, description, createdBy, connectedBy } =
     block;
@@ -553,11 +558,8 @@ export function BlockReviewSummary({
 
   const { blockMenuItems } = useBlockMenuItems(block);
 
-  function renderContent() {
-    // if (!block.content && block.type === BlockType.Link) {
-    //   return null;
-    // }
-    const content = (
+  const content = useMemo(
+    () => (
       <BlockContent
         key={id}
         {...block}
@@ -576,14 +578,11 @@ export function BlockReviewSummary({
           padding: "$3",
           width: "100%",
         }}
+        isVisible={isVisible}
       />
-    );
-    switch (type) {
-      default:
-        // TODO: don't render content for link without image (content === '')
-        return content;
-    }
-  }
+    ),
+    [block, isVisible, widthProperty, style, blockStyle]
+  );
 
   const dateInfo = useMemo(
     () =>
@@ -604,7 +603,7 @@ export function BlockReviewSummary({
           </StyledParagraph>
         )}
         <HoldItem items={blockMenuItems} closeOnTap>
-          {renderContent()}
+          {content}
         </HoldItem>
         {source && (
           <StyledText metadata ellipse={true}>
@@ -627,7 +626,14 @@ export function BlockReviewSummary({
         {!hideMetadata && <BlockConnections block={block} />}
       </YStack>
     ),
-    [block, hideMetadata, isRemoteCollection, showBackground, blockMenuItems]
+    [
+      block,
+      hideMetadata,
+      isRemoteCollection,
+      showBackground,
+      blockMenuItems,
+      content,
+    ]
   );
   return shouldLink ? (
     <Link

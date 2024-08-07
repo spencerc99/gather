@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { useContext, useMemo, useRef, useState } from "react";
-import { FlatList, Keyboard } from "react-native";
+import {
+  memo,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { FlatList, Keyboard, ViewToken } from "react-native";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import {
   Adapt,
@@ -314,6 +321,28 @@ export function CarouselView({
   );
 }
 
+const BlockView = memo(
+  ({ block, isVisible }: { block: Block; isVisible: boolean }) => (
+    <BlockSummary
+      block={block}
+      containerProps={{
+        margin: "$3",
+        width: 170,
+        height: 170,
+      }}
+      blockStyle={{
+        objectFit: "contain",
+      }}
+      style={{
+        width: 170,
+        height: "100%",
+      }}
+      shouldLink
+      isVisible={isVisible}
+    />
+  )
+);
+
 export function FeedView({
   blocks,
   fetchMoreBlocks,
@@ -324,27 +353,20 @@ export function FeedView({
   isFetchingNextPage: boolean;
 }) {
   const debouncedFetchMoreBlocks = useDebounce(fetchMoreBlocks, 300);
+  const [visibleItems, setVisibleItems] = useState<string[]>([]);
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setVisibleItems(viewableItems.map((item) => item.key));
+    },
+    []
+  );
 
-  function renderBlock(block: Block) {
-    return (
-      <BlockSummary
-        block={block}
-        containerProps={{
-          margin: "$3",
-          width: 170,
-          height: 170,
-        }}
-        blockStyle={{
-          objectFit: "contain",
-        }}
-        style={{
-          width: 170,
-          height: "100%",
-        }}
-        shouldLink
-      />
-    );
-  }
+  const renderBlock = useCallback(
+    (block: Block) => (
+      <BlockView block={block} isVisible={visibleItems.includes(block.id)} />
+    ),
+    [visibleItems]
+  );
 
   // TODO: use tabs to render blocks + collections
   return (
@@ -373,6 +395,10 @@ export function FeedView({
             </YStack>
           ) : null
         }
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={{
+          itemVisiblePercentThreshold: 30,
+        }}
       ></FlatList>
     </YStack>
   );

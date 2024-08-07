@@ -6,7 +6,13 @@ import {
 } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import { Icon, StyledButton, StyledText } from "../components/Themed";
-import { Dimensions, Keyboard, Platform, SafeAreaView } from "react-native";
+import {
+  Dimensions,
+  Keyboard,
+  Platform,
+  SafeAreaView,
+  ViewToken,
+} from "react-native";
 import { BlockSummary } from "../components/BlockSummary";
 import {
   H3,
@@ -32,31 +38,36 @@ export function UncategorizedView() {
   const { data: totalBlocks } = useTotalBlockCount();
   const { data: events } = useUncategorizedBlocks();
   const bottomTabHeight = useBottomTabBarHeight();
+  const [currentIdx, setCurrentIdx] = useState(0);
 
-  const renderBlock = useCallback((block: Block) => {
-    return (
-      <BlockSummary
-        block={block}
-        key={block.id}
-        editable={true}
-        style={{
-          height: "100%",
-          width: "100%",
-        }}
-        containerProps={{
-          width: "90%",
-          maxHeight: "80%",
-          marginBottom: "$8",
-          justifyContent: "center",
-          marginVertical: "auto",
-          aspectRatio: 1,
-        }}
-        blockStyle={{
-          resizeMode: "contain",
-        }}
-      />
-    );
-  }, []);
+  const renderBlock = useCallback(
+    (block: Block, idx: number) => {
+      return (
+        <BlockSummary
+          block={block}
+          key={block.id}
+          editable={true}
+          style={{
+            height: "100%",
+            width: "100%",
+          }}
+          containerProps={{
+            width: "90%",
+            maxHeight: "80%",
+            marginBottom: "$8",
+            justifyContent: "center",
+            marginVertical: "auto",
+            aspectRatio: 1,
+          }}
+          blockStyle={{
+            resizeMode: "contain",
+          }}
+          isVisible={currentIdx === idx}
+        />
+      );
+    },
+    [currentIdx]
+  );
 
   const onClickConnect = useCallback(
     async (itemId: string, selectedCollections: string[], index: number) => {
@@ -134,7 +145,7 @@ export function UncategorizedView() {
           flexGrow={1}
           flex={1}
         >
-          {renderBlock(item)}
+          {renderBlock(item, index)}
           <XStack
             position="absolute"
             bottom={6}
@@ -248,6 +259,9 @@ export function UncategorizedView() {
               data={events}
               windowSize={5}
               renderItem={({ item, index }) => CarouselItem({ item, index })}
+              onSnapToItem={(index) => {
+                setCurrentIdx(index);
+              }}
             />
           </XStack>
           <Stack paddingHorizontal="$1">
