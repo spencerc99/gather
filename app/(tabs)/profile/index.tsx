@@ -144,7 +144,7 @@ export default function ProfileScreen() {
           </YStack>
         )}
         <H5 fontWeight="700">Are.na</H5>
-        <ArenaLogin path="internal" />
+        <ArenaLogin path="profile" />
         <ArenaChannelMultiSelect
           setSelectedChannels={setSelectedChannels}
           selectedChannels={selectedChannels}
