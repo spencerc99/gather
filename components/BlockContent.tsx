@@ -33,6 +33,7 @@ export function BlockContent({
   mediaStyle: style,
   textContainerProps = {},
   textProps = {},
+  isVisible,
 }: Pick<Block, "type" | "content" | "title" | "description"> & {
   isEditing?: boolean;
   commitEdit?: (newContent: string | null) => Promise<void>;
@@ -40,6 +41,7 @@ export function BlockContent({
   mediaStyle?: StyleProps;
   textContainerProps?: YStackProps;
   textProps?: ParagraphProps;
+  isVisible?: boolean;
 }) {
   const theme = useTheme();
   let renderedContent;
@@ -51,6 +53,7 @@ export function BlockContent({
         <ScrollView flexShrink={1} flexGrow={0}>
           <EditModeText
             text={content}
+            // @ts-ignore
             commitEdit={commitEdit}
             editing={Boolean(isEditing)}
             textProps={textProps}
@@ -82,6 +85,7 @@ export function BlockContent({
                 }
               : style
           }
+          isVisible={isVisible}
         />
       );
       break;

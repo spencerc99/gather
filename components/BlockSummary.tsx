@@ -332,6 +332,7 @@ export function BlockTextSummary({
   blockStyle,
   isRemoteCollection,
   containerProps,
+  isVisible,
 }: {
   block: Block;
   shouldLink?: boolean;
@@ -340,6 +341,7 @@ export function BlockTextSummary({
   blockStyle?: StyleProps;
   isRemoteCollection?: boolean;
   containerProps?: GetProps<typeof YStack>;
+  isVisible?: boolean;
 }) {
   // TODO: add connectedBy for getCollectionItems... maybe default this to createdBy or undefined for others
   const { id, type, source, title, description, connectedBy } = block;
@@ -403,6 +405,7 @@ export function BlockTextSummary({
           padding: "$2.5",
           width: "100%",
         }}
+        isVisible={isVisible}
       />
     );
     if (

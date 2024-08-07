@@ -13,7 +13,13 @@ import { Icon, IconType, StyledButton, StyledText } from "./Themed";
 import { BlockTextSummary } from "./BlockSummary";
 import { Swipeable } from "react-native-gesture-handler";
 import { router } from "expo-router";
-import { Dimensions, FlatList, Keyboard, ScrollView } from "react-native";
+import {
+  Dimensions,
+  FlatList,
+  Keyboard,
+  ScrollView,
+  ViewToken,
+} from "react-native";
 import { BlockContent } from "./BlockContent";
 import { BlockType } from "../utils/mimeTypes";
 import Carousel from "react-native-reanimated-carousel";
@@ -71,9 +77,11 @@ const RightActions = memo(() => (
 const BlockViewImpl = ({
   block,
   isRemoteCollection,
+  isVisible,
 }: {
   block: Block;
   isRemoteCollection: boolean;
+  isVisible: boolean;
 }) => (
   <Swipeable
     key={block.id}
@@ -106,6 +114,7 @@ const BlockViewImpl = ({
       }}
       shouldLink
       isRemoteCollection={isRemoteCollection}
+      isVisible={isVisible}
     />
   </Swipeable>
 );
@@ -115,11 +124,17 @@ const BlockView = memo(
   ({
     block,
     isRemoteCollection,
+    isVisible,
   }: {
     block: Block;
     isRemoteCollection: boolean;
+    isVisible: boolean;
   }) => (
-    <BlockViewWrapped block={block} isRemoteCollection={isRemoteCollection} />
+    <BlockViewWrapped
+      block={block}
+      isRemoteCollection={isRemoteCollection}
+      isVisible={isVisible}
+    />
   )
 );
 
@@ -166,12 +181,27 @@ export function BlockTexts({
   // );
 
   const isRemoteCollection = collection?.remoteSourceType !== undefined;
+  const [visibleItems, setVisibleItems] = useState<string[]>([]);
+
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setVisibleItems(viewableItems.map((item) => item.key));
+    },
+    []
+  );
 
   const renderBlock = useCallback(
     ({ item }: { item: Block }) => {
-      return <BlockView block={item} isRemoteCollection={isRemoteCollection} />;
+      return (
+        <BlockView
+          key={item.id}
+          block={item}
+          isRemoteCollection={isRemoteCollection}
+          isVisible={visibleItems.includes(item.id)}
+        />
+      );
     },
-    [isRemoteCollection]
+    [isRemoteCollection, visibleItems]
   );
 
   // TODO: paginate blocks by chunking
@@ -289,6 +319,10 @@ export function BlockTexts({
           width: "100%",
           // NOTE: this is handled in BlockTextSummary
           // alignItems: "flex-end",
+        }}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={{
+          itemVisiblePercentThreshold: 30,
         }}
       ></FlatList>
       {/* TODO: this shows weird if the text field is growing */}

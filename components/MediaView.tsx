@@ -1,30 +1,19 @@
 import { BlockType, isBlockContentVideo } from "../utils/mimeTypes";
-import {
-  StyledView,
-  StyledText,
-  Icon,
-  AspectRatioImage,
-  StyledButton,
-} from "./Themed";
-import { Pressable, Image } from "react-native";
-import {
-  Audio,
-  AVPlaybackStatus,
-  ResizeMode,
-  AVPlaybackStatusSuccess,
-  Video,
-} from "expo-av";
+import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
+import { Pressable } from "react-native";
+import { Audio, ResizeMode, Video } from "expo-av";
 import {
   useState,
   useEffect,
   PropsWithChildren,
   useContext,
   useRef,
+  useCallback,
 } from "react";
 import { GetProps } from "tamagui";
-import Animated, { FadeIn, FadeOut, StyleProps } from "react-native-reanimated";
+import { StyleProps } from "react-native-reanimated";
 import { ErrorsContext } from "../utils/errors";
-import { cleanUrl } from "../utils/url";
+import { useFocusEffect } from "expo-router";
 
 export function MediaView({
   media,
@@ -33,12 +22,14 @@ export function MediaView({
   style = {},
   videoProps,
   children,
+  isVisible = true,
 }: PropsWithChildren<{
   media: string;
   blockType: BlockType;
   alt?: string;
   style?: StyleProps;
   videoProps?: GetProps<typeof Video>;
+  isVisible?: boolean;
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -47,9 +38,26 @@ export function MediaView({
 
   const mediaIsVideo = isBlockContentVideo(media, blockType);
   const video = useRef<Video>(null);
-  const [hasClicked, setHasClicked] = useState(
-    videoProps?.shouldPlay ? true : false
-  );
+  const [hasClicked, setHasClicked] = useState(false);
+
+  const pauseVideoOnNavigate = useCallback(() => {
+    if (isVisible) {
+      video.current?.playAsync();
+    }
+
+    return () => {
+      // This runs when the screen is unfocused
+      video.current?.pauseAsync();
+    };
+  }, []);
+  useEffect(() => {
+    if (isVisible) {
+      video.current?.playAsync();
+    } else {
+      video.current?.pauseAsync();
+    }
+  }, [isVisible]);
+  useFocusEffect(pauseVideoOnNavigate);
 
   async function playSound() {
     console.log("play");
@@ -128,9 +136,7 @@ export function MediaView({
           // @ts-ignore
           <StyledView
             onPress={(e) => {
-              if (isMuted === null) {
-                setHasClicked(true);
-              }
+              setHasClicked(true);
               e.preventDefault();
               e.stopPropagation();
             }}
@@ -150,12 +156,6 @@ export function MediaView({
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
               isLooping
-              shouldPlay
-              // onPlaybackStatusUpdate={(status) => {
-              //   if (!("error" in status) && isMuted !== null) {
-              //     setIsMuted(!(status as AVPlaybackStatusSuccess).isPlaying);
-              //   }
-              // }}
               isMuted={!hasClicked ? true : undefined}
               {...videoProps}
             />
