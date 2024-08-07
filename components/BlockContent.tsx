@@ -12,7 +12,13 @@ import { StyleSheet } from "react-native";
 import { Block } from "../utils/dataTypes";
 import { BlockType } from "../utils/mimeTypes";
 import { MediaView } from "./MediaView";
-import { Icon, StyledButton, StyledTextArea } from "./Themed";
+import {
+  EditableTextOnClick,
+  EditModeText,
+  Icon,
+  StyledButton,
+  StyledTextArea,
+} from "./Themed";
 import { useState } from "react";
 import { StyleProps } from "react-native-reanimated";
 
@@ -38,37 +44,18 @@ export function BlockContent({
   const theme = useTheme();
   let renderedContent;
   let containerProps = {};
-  const [editableContent, setEditableContent] = useState(content);
 
   switch (type) {
     case BlockType.Text:
       renderedContent = (
         <ScrollView flexShrink={1} flexGrow={0}>
-          {!isEditing ? (
-            <Paragraph {...textProps}>{content}</Paragraph>
-          ) : (
-            <>
-              <StyledTextArea
-                value={editableContent}
-                onChangeText={setEditableContent}
-                minHeight={undefined}
-                flex={1}
-                enterKeyHint="done"
-              />
-              <StyledButton
-                onPress={() => {
-                  commitEdit?.(null);
-                }}
-                theme="gray"
-                position="absolute"
-                right="$1"
-                bottom="$1"
-                size="$xtiny"
-                circular
-                icon={<Icon name="close" />}
-              />
-            </>
-          )}
+          <EditModeText
+            text={content}
+            commitEdit={commitEdit}
+            editing={Boolean(isEditing)}
+            textProps={textProps}
+            multiline
+          />
         </ScrollView>
       );
       containerProps = {

@@ -178,7 +178,7 @@ export function EditModeText({
   inputProps,
   multiline,
   editing,
-  setText,
+  commitEdit,
 }: {
   text: string | undefined;
   defaultText: string;
@@ -186,22 +186,68 @@ export function EditModeText({
   textProps?: GetProps<typeof StyledParagraph>;
   multiline?: boolean;
   editing: boolean;
-  setText: (newText: string) => void;
+  commitEdit: (newText: string | null) => void;
 }) {
   const InputComponent = multiline ? StyledTextArea : StyledInput;
+  const [editableContent, setEditableContent] = useState(text || "");
+
+  const inputRef = useAnimatedRef<Input>();
 
   const paragraphProps = !text
     ? { placeholder: true, ...textProps }
     : { ...textProps };
 
   return editing ? (
-    <InputComponent
-      value={text}
-      placeholder={defaultText}
-      onChangeText={setText}
-      {...inputProps}
-      selectTextOnFocus
-    />
+    <>
+      {/* NOTE KEEP IN SYNC WITH EditableTextOnClick */}
+      <InputComponent
+        flex={1}
+        alignItems="flex-start"
+        justifyContent="flex-start"
+        ref={inputRef}
+        value={editableContent}
+        placeholder={defaultText}
+        onChangeText={setEditableContent}
+        pointerEvents={editing ? "auto" : "none"}
+        {...inputProps}
+        autogrow
+        onSubmitEditing={() => commitEdit(editableContent)}
+        paddingRight="$9"
+        // so dumb that android renders text vertically aligned in center
+        verticalAlign={Platform.OS === "android" ? "top" : undefined}
+        ellipse
+        // TODO: padding is weird here. It doesn't animate properly when it goes from full to 0 when there is no text, so we have to manually specify a smaller padding here..
+        {...{
+          borderWidth: "$.5",
+          padding: "$2.5",
+        }}
+        {...(!multiline ? { enterKeyHint: "done", returnKeyType: "done" } : {})}
+      />
+      <XStack gap="$1" position="absolute" right="$1.5" bottom="$2">
+        <StyledButton
+          onPress={(e) => {
+            commitEdit(null);
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          circular
+          theme="gray"
+          size="$xtiny"
+          icon={<Icon name="close" />}
+        />
+        {multiline && (
+          <StyledButton
+            onPress={() => {
+              commitEdit(editableContent);
+            }}
+            circular
+            theme="green"
+            size="$tiny"
+            icon={<Icon name="checkmark" />}
+          />
+        )}
+      </XStack>
+    </>
   ) : (
     <StyledParagraph {...paragraphProps}>{text || defaultText}</StyledParagraph>
   );
@@ -275,6 +321,7 @@ export function EditableTextOnClick({
     <XStack width="100%">
       <GestureDetector gesture={onDoubleTap}>
         <XStack gap="$2" width="100%" height="100%">
+          {/* NOTE KEEP IN SYNC WITH EditModeText */}
           {editing ? (
             <InputComponent
               flex={1}
