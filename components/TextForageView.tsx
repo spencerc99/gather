@@ -11,7 +11,7 @@ import {
   useState,
 } from "react";
 import { Dimensions, Platform, ScrollView } from "react-native";
-import { XStack, YStack } from "tamagui";
+import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { BlockSelectLimit, DatabaseContext } from "../utils/db";
 import { BlockType, MimeType } from "../utils/mimeTypes";
@@ -23,6 +23,7 @@ import {
   Icon,
   IconType,
   StyledButton,
+  StyledText,
   StyledTextArea,
   StyledView,
 } from "./Themed";
@@ -72,6 +73,7 @@ export function TextForageView({
 }) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false);
   const { createBlocks, shareIntent, getBlocks, getCollectionItems } =
     useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
@@ -165,13 +167,14 @@ export function TextForageView({
 
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
+    setIsLoadingAssets(true);
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       quality: 1,
       orderedSelection: true,
     });
-
+    setIsLoadingAssets(false);
     if (!result.canceled) {
       // TODO: preserve assetID in URI
       setMedias([
@@ -329,6 +332,17 @@ export function TextForageView({
           backgroundColor="$background"
         >
           <XStack gap="$1" width="100%">
+            {isLoadingAssets && (
+              <XStack
+                paddingTop="$2"
+                alignItems="center"
+                justifyContent="center"
+                width="100%"
+              >
+                <StyledText metadata>Loading images... </StyledText>
+                <Spinner size="small" color="$orange9" />
+              </XStack>
+            )}
             {medias.length > 0 && (
               <ScrollView horizontal={true}>
                 <XStack flexWrap="wrap" gap="$2" paddingTop="$1">
