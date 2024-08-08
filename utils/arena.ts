@@ -296,6 +296,13 @@ export function transformChannelUrlToApiUrl(url: string): string {
   return `${ArenaChannelsApi}/${channel}`;
 }
 
+function escapeArenaStrings(str?: string): string | undefined {
+  if (!str) {
+    return str;
+  }
+  return str.replaceAll("&amp;", "&");
+}
+
 export async function getChannelThumb(
   channelIdOrUrl: string,
   { accessToken }: { accessToken?: string | null } = {}
@@ -488,7 +495,6 @@ export async function getChannelInfo(
   return channelInfo as ArenaChannelInfo;
 }
 
-// TODO: this should use users access token if they added it
 export async function getChannelInfoFromUrl(
   url: string,
   accessToken?: string | null
@@ -519,6 +525,13 @@ export async function getChannelInfoFromUrl(
         // NOTE: class = block only if are.na has failed to process it
         (c) => c.base_class === "Block" && c.class !== "Block"
       );
+      // TODO: this should all migrate to the new block fetch...
+      contents = contents.map((c) => ({
+        ...c,
+        title: escapeArenaStrings(c.title),
+        description: escapeArenaStrings(c.description),
+        content: c.class === "Text" ? escapeArenaStrings(c.content) : c.content,
+      }));
       // Update storage with any new items
       fetchedItems.push(...contents);
       nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
@@ -726,40 +739,6 @@ export async function uploadFile({
   }
 }
 
-async function getBodyForBlock(
-  block: Block,
-  accessToken: string
-): Promise<any> {
-  const { type, title, content, source, contentType } = block;
-  switch (type) {
-    case BlockType.Text:
-      return {
-        content,
-      };
-    case BlockType.Image:
-    case BlockType.Video:
-      const uploadPolicy = await getUploadPolicy(accessToken);
-      const url = await uploadFile({
-        file: {
-          uri: content,
-          name: title || "",
-          type: contentType || "",
-        },
-        policy: uploadPolicy,
-        contentType: contentType || "image/jpeg",
-      });
-      console.log("Uploaded file to arena", url);
-
-      return {
-        source: url,
-      };
-    case BlockType.Link:
-      return { source: source! };
-    case BlockType.Audio:
-    case BlockType.Document:
-      throw new Error("unsupported type");
-  }
-}
 async function getValueForBlock(
   block: Block,
   accessToken: string
@@ -1351,13 +1330,6 @@ export function rawArenaBlocksToBlockInsertInfo(
 export function rawArenaBlockToBlockInsertInfo(
   block: RawArenaChannelItem
 ): DatabaseBlockInsert {
-  console.log(
-    "CONVERTING BLOCK",
-    block.id,
-    "TO",
-    block.connected_at,
-    block.connected_by_user_slug
-  );
   if (
     !(
       block.attachment?.url ||

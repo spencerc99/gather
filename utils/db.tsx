@@ -71,10 +71,9 @@ import {
   SortType,
 } from "./dataTypes";
 import { convertDbTimestampToDate } from "./date";
-import { Indices, Migrations, migrateCreatedBy } from "./db/migrations";
+import { Indices, Migrations, migrateAmpersandEscape } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { UserContext } from "./user";
-import { filterItemsBySearchValue } from "./search";
 import { ensure, ensureUnreachable } from "./react";
 import { NetworkContext } from "./network";
 import { getCreatedByForRemote } from "./remote";
@@ -446,10 +445,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   useEffect(() => {
     // TODO: change this to only when you go to the collection? or only for most recent collections? i think this is freezing up the app on start
-    if (currentUser) {
-      // TODO: remove after migration
-      void migrateCreatedBy(db, currentUser);
-    }
     if (!currentUser || !arenaAccessToken) {
       return;
     }
@@ -515,6 +510,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               FOREIGN KEY (collection_id) REFERENCES collections(id)
           );`
         );
+
+        await migrateAmpersandEscape(db);
 
         // Perform migrations
         for (const migration of Migrations) {

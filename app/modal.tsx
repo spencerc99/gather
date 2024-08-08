@@ -14,6 +14,7 @@ export default function ModalScreen() {
   // TODO: type the diff modals by the pathname?
 
   return (
+    // TODO: maybe add shouldAddRootHost ?
     <PortalProvider>
       <View style={styles.container}>
         <CreateCollectionModal />
