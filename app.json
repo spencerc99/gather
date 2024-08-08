@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "10",
+      "buildNumber": "12",
       "bundleIdentifier": "net.tiny-inter.gather",
       "config": {
         "usesNonExemptEncryption": false
@@ -35,7 +35,7 @@
     "android": {
       "permissions": ["android.permission.RECORD_AUDIO"],
       "package": "net.tiny_inter.gather",
-      "versionCode": 86
+      "versionCode": 87
     },
     "web": {
       "bundler": "metro",
