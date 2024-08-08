@@ -73,7 +73,7 @@ function CreateCollectionModal() {
         // TODO: this is jank, the select collections modal is still open after this
         <StyledText color="$gray9">
           <Link
-            href="/profile"
+            href="/(tabs)/profile"
             onPress={() => {
               router.push("..");
             }}

@@ -65,7 +65,6 @@ export function ArenaLogin({ path }: { path: string }) {
     discovery
   );
   const { arenaAccessToken, updateArenaAccessToken } = useContext(UserContext);
-  const colorScheme = useColorScheme();
 
   useEffect(() => {
     if (response?.type === "success") {

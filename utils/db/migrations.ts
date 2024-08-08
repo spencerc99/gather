@@ -1,9 +1,8 @@
 import { SQLiteDatabase } from "expo-sqlite";
 import { storage } from "../mmkv";
-import { UserInfo } from "../user";
-import { mapDbBlockToBlock } from "../db";
 import { BlockType } from "../mimeTypes";
 import { logError } from "../errors";
+import { mapDbBlockToBlock } from "../dbUtils";
 
 export const Migrations = [
   // // Added 2023-12-18

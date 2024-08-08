@@ -1,7 +1,7 @@
 import { GetProps, YStack } from "tamagui";
 import { ArenaChannelInfo } from "../../utils/arena";
 import { RemoteSourceType } from "../../utils/dataTypes";
-import { mapSnakeCaseToCamelCaseProperties } from "../../utils/db";
+import { mapSnakeCaseToCamelCaseProperties } from "../../utils/dbUtils";
 import { CollectionSummary } from "../CollectionSummary";
 import { StyledLabel, StyledView, UserAvatar } from "../Themed";
 import { getCreatedByForRemote } from "../../utils/remote";

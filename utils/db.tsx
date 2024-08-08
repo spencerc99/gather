@@ -77,7 +77,12 @@ import { UserContext } from "./user";
 import { ensure, ensureUnreachable } from "./react";
 import { NetworkContext } from "./network";
 import { getCreatedByForRemote } from "./remote";
-import { getEscapedSearchString } from "./dbUtils";
+import {
+  getEscapedSearchString,
+  mapBlockContentToPath,
+  mapDbBlockToBlock,
+  mapSnakeCaseToCamelCaseProperties,
+} from "./dbUtils";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -107,36 +112,6 @@ const db = openDatabase();
 function inParam(sql: string, arr: (string | number | null)[]) {
   // TODO: this needs to handle adding quotes if a string (also this doesn't handle null?)
   return sql.replace("?#", arr.join(","));
-}
-
-export function mapDbBlockToBlock(block: any): Block {
-  const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
-  return {
-    ...blockMappedToCamelCase,
-    // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
-    id: block.id.toString(),
-    content: mapBlockContentToPath(block.content, block.type),
-    // TODO: probably just make these null too
-    description: block.description === null ? undefined : block.description,
-    title: block.title === null ? undefined : block.title,
-    source: block.source === null ? undefined : block.source,
-    createdAt: convertDbTimestampToDate(block.created_timestamp),
-    updatedAt: convertDbTimestampToDate(block.updated_timestamp),
-    connectedAt: convertDbTimestampToDate(block.connected_at),
-    remoteConnectedAt: block.remote_connected_at
-      ? new Date(block.remote_connected_at)
-      : undefined,
-    remoteSourceType:
-      (block.remote_source_type as RemoteSourceType) || undefined,
-    remoteSourceInfo: block.remote_source_info
-      ? (JSON.parse(block.remote_source_info) as RemoteSourceInfo)
-      : undefined,
-    collectionIds: block.collection_ids
-      ? JSON.parse(block.collection_ids).map((c: number | string) =>
-          c.toString()
-        )
-      : [],
-  } as Block;
 }
 
 function mapDbCollectionToCollection(collection: any): Collection {
@@ -330,48 +305,6 @@ function camelCaseToSnakeCase(str: string) {
   return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
-export function mapSnakeCaseToCamelCaseProperties<
-  T extends { [column: string]: any }
->(obj: { [column: string]: any }): T {
-  const newObj = {};
-  for (const key in obj) {
-    const newKey = key.replace(/([-_][a-z])/gi, ($1) => {
-      return $1.toUpperCase().replace("-", "").replace("_", "");
-    });
-    // if (typeof T[newKey] === typeof Date) {
-    //   // @ts-ignore
-    //   newObj[newKey] = convertDbTimestampToDate(obj[key]);
-    //   continue;
-    // }
-
-    // @ts-ignore
-    newObj[newKey] = obj[key];
-  }
-  // @ts-ignore
-  return newObj;
-}
-
-export function mapBlockContentToPath(
-  rawBlockContent: string,
-  rawBlockType: BlockType
-): string {
-  if (
-    ![
-      BlockType.Image,
-      BlockType.Link,
-      BlockType.Audio,
-      BlockType.Document,
-      BlockType.Video,
-    ].includes(rawBlockType)
-  ) {
-    return rawBlockContent;
-  }
-
-  return rawBlockContent.startsWith(PHOTOS_FOLDER)
-    ? FileSystem.documentDirectory + rawBlockContent
-    : rawBlockContent;
-}
-
 function handleSqlErrors(
   results:
     | (SQLite.ResultSet | SQLite.ResultSetError)[]
@@ -511,7 +444,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           );`
         );
 
-        await migrateAmpersandEscape(db);
+        // await migrateAmpersandEscape(db);
 
         // Perform migrations
         for (const migration of Migrations) {
