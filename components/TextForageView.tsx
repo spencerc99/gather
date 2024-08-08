@@ -366,7 +366,7 @@ export function TextForageView({
                       <StyledButton
                         icon={<Icon name="remove" />}
                         size="$5"
-                        theme="red"
+                        theme="gray"
                         circular
                         position="absolute"
                         top={4}

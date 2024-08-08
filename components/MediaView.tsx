@@ -38,15 +38,16 @@ export function MediaView({
   const mediaIsVideo = isBlockContentVideo(media, blockType);
   const video = useRef<Video>(null);
   const [hasClicked, setHasClicked] = useState(false);
+  const [shouldPlay, setShouldPlay] = useState(false);
 
   const pauseVideoOnNavigate = useCallback(() => {
     if (isVisible) {
-      video.current?.playAsync();
+      setShouldPlay(true);
     }
 
     return () => {
       setHasClicked(false);
-      video.current?.pauseAsync();
+      setShouldPlay(false);
     };
   }, []);
 
@@ -55,11 +56,11 @@ export function MediaView({
       return;
     }
     if (isVisible) {
-      video.current.playAsync();
+      setShouldPlay(true);
     }
     if (isVisible === false) {
       setHasClicked(false);
-      video.current.pauseAsync();
+      setShouldPlay(false);
     }
   }, [isVisible, video.current]);
   useFocusEffect(pauseVideoOnNavigate);
@@ -165,7 +166,7 @@ export function MediaView({
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
               isLooping
-              shouldPlay
+              shouldPlay={shouldPlay}
               isMuted={!hasClicked ? true : undefined}
               {...videoProps}
             />
