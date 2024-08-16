@@ -2000,85 +2000,95 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
 
-    const { remoteSourceInfo, remoteSourceType, id: collectionId } = collection;
-    let itemsAdded = 0;
-    let collectionUpdated = false;
-    switch (remoteSourceType) {
-      case RemoteSourceType.Arena:
-        const { arenaId: channelId } = remoteSourceInfo;
-        let lastSyncedInfo = null;
-        if (!ignoreLastSynced) {
-          lastSyncedInfo = await getLastSyncedInfoForChannel(channelId);
-          if (!lastSyncedInfo) {
-            const lastRemoteItem = await getLastRemoteItemForCollection(
-              collectionId
-            );
-            if (lastRemoteItem?.remoteSourceInfo) {
-              lastSyncedInfo = {
-                lastSyncedBlockCreatedAt: lastRemoteItem.remoteConnectedAt,
-                lastSyncedBlockId: lastRemoteItem.remoteSourceInfo.arenaId,
-                // TODO: this is wrong but i dont want to deal with types rn
-                lastSyncedAt: new Date().toISOString(),
-              };
+    try {
+      const {
+        remoteSourceInfo,
+        remoteSourceType,
+        id: collectionId,
+      } = collection;
+      let itemsAdded = 0;
+      let collectionUpdated = false;
+      switch (remoteSourceType) {
+        case RemoteSourceType.Arena:
+          const { arenaId: channelId } = remoteSourceInfo;
+          let lastSyncedInfo = null;
+          if (!ignoreLastSynced) {
+            lastSyncedInfo = await getLastSyncedInfoForChannel(channelId);
+            if (!lastSyncedInfo) {
+              const lastRemoteItem = await getLastRemoteItemForCollection(
+                collectionId
+              );
+              if (lastRemoteItem?.remoteSourceInfo) {
+                lastSyncedInfo = {
+                  lastSyncedBlockCreatedAt: lastRemoteItem.remoteConnectedAt,
+                  lastSyncedBlockId: lastRemoteItem.remoteSourceInfo.arenaId,
+                  // TODO: this is wrong but i dont want to deal with types rn
+                  lastSyncedAt: new Date().toISOString(),
+                };
+              }
             }
           }
-        }
 
-        // TODO: a little ineficient bc this always fetches the 1st page of contents
-        const channelInfo = await getChannelInfo(channelId, arenaAccessToken);
-        console.log("Title:", channelInfo.title);
-        if (channelInfo.title !== collection.title) {
-          if (
-            channelInfo.updated_at.getTime() > collection.updatedAt.getTime()
-          ) {
-            console.log(
-              `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`
-            );
-            await updateCollection({
-              collectionId,
-              editInfo: { title: channelInfo.title },
-            });
-            collectionUpdated = true;
+          // TODO: a little ineficient bc this always fetches the 1st page of contents
+          const channelInfo = await getChannelInfo(channelId, arenaAccessToken);
+          console.log("Title:", channelInfo.title);
+          console.log(channelInfo);
+          if (channelInfo.title !== collection.title) {
+            if (
+              new Date(channelInfo.updated_at).getTime() >
+              collection.updatedAt.getTime()
+            ) {
+              console.log(
+                `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`
+              );
+              await updateCollection({
+                collectionId,
+                editInfo: { title: channelInfo.title },
+              });
+              collectionUpdated = true;
+            }
           }
-        }
 
-        const lastContents = await getChannelItems(channelId, {
-          accessToken: arenaAccessToken,
-          lastSyncedInfo,
-        });
-        // These get returned in descending order of connected, so reverse it
-        lastContents.reverse();
-        // TODO: handle deletions so pass in a list of blockIds that are in the collection already
-        console.log(
-          `Found ${lastContents.length} new items from remote to add to ${collection.title}`
-        );
-        if (lastContents.length > 0) {
+          const lastContents = await getChannelItems(channelId, {
+            accessToken: arenaAccessToken,
+            lastSyncedInfo,
+          });
+          // These get returned in descending order of connected, so reverse it
+          lastContents.reverse();
+          // TODO: handle deletions so pass in a list of blockIds that are in the collection already
           console.log(
-            "lastconnectedat",
-            lastContents[lastContents.length - 1].connected_at
+            `Found ${lastContents.length} new items from remote to add to ${collection.title}`
           );
-          const blockInfos = await createBlocks({
-            blocksToInsert: rawArenaBlocksToBlockInsertInfo(lastContents),
-            collectionId,
-          });
-          itemsAdded = blockInfos.filter((b) => b.created).length;
-          await updateLastSyncedInfoForChannel(channelId, {
-            lastSyncedAt: new Date().toISOString(),
-            lastSyncedBlockCreatedAt:
-              lastContents[lastContents.length - 1]?.connected_at,
-            lastSyncedBlockId: lastContents[lastContents.length - 1]?.id,
-          });
-        }
-        break;
-      default:
-        throw new Error(
-          `Remote source type ${collection.remoteSourceType} not supported`
-        );
+          if (lastContents.length > 0) {
+            console.log(
+              "lastconnectedat",
+              lastContents[lastContents.length - 1].connected_at
+            );
+            const blockInfos = await createBlocks({
+              blocksToInsert: rawArenaBlocksToBlockInsertInfo(lastContents),
+              collectionId,
+            });
+            itemsAdded = blockInfos.filter((b) => b.created).length;
+            await updateLastSyncedInfoForChannel(channelId, {
+              lastSyncedAt: new Date().toISOString(),
+              lastSyncedBlockCreatedAt:
+                lastContents[lastContents.length - 1]?.connected_at,
+              lastSyncedBlockId: lastContents[lastContents.length - 1]?.id,
+            });
+          }
+          break;
+        default:
+          throw new Error(
+            `Remote source type ${collection.remoteSourceType} not supported`
+          );
+      }
+      return {
+        itemsAdded,
+        collectionUpdated,
+      };
+    } catch (err) {
+      logError(err);
     }
-    return {
-      itemsAdded,
-      collectionUpdated,
-    };
   }
 
   async function syncNewRemoteItems(collectionId: string) {

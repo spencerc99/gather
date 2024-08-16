@@ -41,9 +41,9 @@ interface ArenaConnection {
 export interface ArenaChannelInfo {
   id: number;
   title: string;
-  created_at: Date;
-  updated_at: Date;
-  added_to_at: Date;
+  created_at: string;
+  updated_at: string;
+  added_to_at: string;
   published: boolean;
   open: boolean;
   collaboration: boolean;
