@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { rawArenaBlockToBlock } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 
-const ArenaChangelogChannel = "gather-changelog";
+const ArenaChangelogChannel = "2938095";
 
 export default function Changelog() {
   const { data, isLoading, isFetchingNextPage, fetchMore } =
