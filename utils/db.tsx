@@ -952,6 +952,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     switch (sortType) {
       case SortType.Created:
+        return `ORDER BY  MIN(COALESCE(${remoteConnectedAt}, blocks.created_timestamp), blocks.created_timestamp) DESC`;
+      case SortType.RemoteCreated:
         // NOTE: local timestamp are stored as HH:MM:SS and remote_created_at is ISO timestamp, so we convert it to local to compare.
         return `ORDER BY  CASE WHEN ${remoteConnectedAt} IS NOT NULL THEN ${remoteConnectedAt} ELSE COALESCE(${connectedAt}, blocks.created_timestamp) END DESC`;
       case SortType.Random:
@@ -1056,6 +1058,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     switch (sortType) {
       case SortType.Created:
         return "ORDER BY  MAX(COALESCE(MAX(connections.created_timestamp), annotated_collections.updated_timestamp), annotated_collections.updated_timestamp) DESC";
+      case SortType.RemoteCreated:
       case SortType.Random:
         // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
         // return `ORDER BY  SIN(annotated_collections.id + ${seed})`;
@@ -1456,7 +1459,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     {
       whereClause,
       page = 0,
-      sortType = SortType.Created,
+      sortType = SortType.RemoteCreated,
       seed,
     }: GetBlocksOptions = {}
   ): Promise<CollectionBlock[]> {

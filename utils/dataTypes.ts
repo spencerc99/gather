@@ -138,6 +138,7 @@ export interface ArenaImportInfo {
 export enum SortType {
   Random = "random",
   Created = "created",
+  RemoteCreated = "remote_created",
 }
 
 export function deriveContentTypeFromBlockType(type: BlockType): MimeType {
