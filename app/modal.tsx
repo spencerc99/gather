@@ -2,7 +2,13 @@ import { StatusBar } from "expo-status-bar";
 import { Link, router } from "expo-router";
 import { Platform, StyleSheet } from "react-native";
 import { H3, View, YStack } from "tamagui";
-import { StyledButton, StyledText, StyledInput } from "../components/Themed";
+import {
+  StyledButton,
+  StyledText,
+  StyledInput,
+  StyledParagraph,
+  ExternalLinkText,
+} from "../components/Themed";
 import { useContext, useState } from "react";
 import { DatabaseContext } from "../utils/db";
 import { PortalProvider } from "tamagui";
@@ -68,6 +74,14 @@ function CreateCollectionModal() {
       >
         Create
       </StyledButton>
+      {/* TODO: add button to fill it with a random one */}
+      <StyledParagraph>
+        If you need collection name ideas, get some inspiration from this{" "}
+        <ExternalLinkText href="https://www.are.na/spencer-chang/gather-good-channels-to-play-with">
+          are.na channel
+        </ExternalLinkText>
+        .
+      </StyledParagraph>
       <H3>or Import</H3>
       {!arenaAccessToken ? (
         // TODO: this is jank, the select collections modal is still open after this

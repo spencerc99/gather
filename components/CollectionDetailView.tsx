@@ -349,15 +349,7 @@ export function CollectionDetailView({
                     </StyledButton>
                   </>
                 ) : null}
-                <ButtonWithConfirm
-                  theme="red"
-                  onPress={() => onPressDelete()}
-                  disabled={isLoading}
-                  icon={isLoading ? <Spinner size="small" /> : null}
-                >
-                  Delete Collection
-                </ButtonWithConfirm>
-                {remoteSourceType && (
+                {remoteSourceType ? (
                   <>
                     <YStack>
                       <ButtonWithConfirm
@@ -370,10 +362,20 @@ export function CollectionDetailView({
                       </ButtonWithConfirm>
                       <StyledText metadata>
                         This will remove any blocks that are only in this
-                        collection and undo the channel import.
+                        collection and undo the channel import. The collection
+                        will still exist on {remoteSourceType}.
                       </StyledText>
                     </YStack>
                   </>
+                ) : (
+                  <ButtonWithConfirm
+                    theme="red"
+                    onPress={() => onPressDelete()}
+                    disabled={isLoading}
+                    icon={isLoading ? <Spinner size="small" /> : null}
+                  >
+                    Delete Collection
+                  </ButtonWithConfirm>
                 )}
               </YStack>
             </Collapsible>
