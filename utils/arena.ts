@@ -14,8 +14,9 @@ import {
   ArenaUpdatedChannelsKey,
   getItem,
   setItem,
-} from "./asyncStorage";
+} from "./mmkv";
 import { getCreatedByForRemote } from "./remote";
+import { mapSnakeCaseToCamelCaseProperties } from "./dbUtils";
 
 export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
@@ -520,7 +521,6 @@ export async function getChannelInfoFromUrl(
         isFirstFetch = false;
       }
       let contents: RawArenaChannelItem[] = respBody.contents;
-      // TODO: recursively traverse the sub-channels
       contents = contents.filter(
         // NOTE: class = block only if are.na has failed to process it
         (c) => c.base_class === "Block" && c.class !== "Block"
@@ -1378,6 +1378,23 @@ export function rawArenaBlockToBlock(block: RawArenaChannelItem): Block {
     remoteConnectedAt: block.connected_at ? new Date(block.connected_at) : null,
     numConnections: 1,
     collectionIds: [],
+  };
+}
+export function rawArenaChannelToCollection(
+  channel: ArenaChannelInfo
+): Collection {
+  return {
+    ...mapSnakeCaseToCamelCaseProperties(channel),
+    description: channel.metadata?.description || undefined,
+    thumbnail: channel.contents?.find((c) => Boolean(c.image?.thumb.url))?.image
+      ?.thumb.url,
+    remoteSourceType: RemoteSourceType.Arena,
+    numBlocks: channel.length,
+    createdAt: new Date(channel.created_at),
+    updatedAt: new Date(channel.updated_at),
+    lastConnectedAt: new Date(channel.added_to_at),
+    createdBy: getCreatedByForRemote(RemoteSourceType.Arena, channel.user.slug),
+    title: channel.title,
   };
 }
 

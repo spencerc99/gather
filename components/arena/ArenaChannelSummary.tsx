@@ -1,10 +1,10 @@
 import { GetProps, YStack } from "tamagui";
-import { ArenaChannelInfo } from "../../utils/arena";
-import { RemoteSourceType } from "../../utils/dataTypes";
-import { mapSnakeCaseToCamelCaseProperties } from "../../utils/dbUtils";
+import {
+  ArenaChannelInfo,
+  rawArenaChannelToCollection,
+} from "../../utils/arena";
 import { CollectionSummary } from "../CollectionSummary";
 import { StyledLabel, StyledView, UserAvatar } from "../Themed";
-import { getCreatedByForRemote } from "../../utils/remote";
 
 export function ArenaChannelSummary({
   channel,
@@ -45,23 +45,7 @@ export function ArenaChannelSummary({
         </YStack>
       )}
       <CollectionSummary
-        // TODO: extract this into a rawArenaChannelToCollection function
-        collection={{
-          ...mapSnakeCaseToCamelCaseProperties(channel),
-          description: channel.metadata?.description || undefined,
-          thumbnail: channel.contents?.find((c) => Boolean(c.image?.thumb.url))
-            ?.image?.thumb.url,
-          remoteSourceType: RemoteSourceType.Arena,
-          numBlocks: channel.length,
-          createdAt: new Date(channel.created_at),
-          updatedAt: new Date(channel.updated_at),
-          lastConnectedAt: new Date(channel.added_to_at),
-          createdBy: getCreatedByForRemote(
-            RemoteSourceType.Arena,
-            channel.user.slug
-          ),
-          title: channel.title,
-        }}
+        collection={rawArenaChannelToCollection(channel)}
         viewProps={{
           borderWidth: 0,
           backgroundColor: "inherit",

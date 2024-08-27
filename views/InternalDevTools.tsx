@@ -12,7 +12,7 @@ import {
   LastSyncedAtKey,
   useStickyValue,
   ContributionsKey,
-} from "../utils/asyncStorage";
+} from "../utils/mmkv";
 import { UserContext, UserInfoId } from "../utils/user";
 import { useContext, useEffect, useState } from "react";
 import { DatabaseContext } from "../utils/db";

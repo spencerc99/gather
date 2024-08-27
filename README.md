@@ -1,6 +1,6 @@
 # gather
 
-a client for the forage protocol and a local-first Are.na client.
+an app companion for your curiosity, a local-first Are.na client.
 
 ## Development
 
@@ -15,6 +15,10 @@ if you add any native plugins, make sure to run
 npm run prebuild
 npm run ios
 ```
+
+### Are.na
+
+To develop with Are.na syncing, you must set up a proper .env file with your own Are.na keys. Please message me if you want this, and I can help you set it up
 
 ### Release
 

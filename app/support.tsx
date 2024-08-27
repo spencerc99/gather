@@ -12,7 +12,7 @@ import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { useQueryClient } from "@tanstack/react-query";
 import { H3, Theme, YStack } from "tamagui";
 import { StyledButton, StyledText, StyledView } from "../components/Themed";
-import { ContributionsKey } from "../utils/asyncStorage";
+import { ContributionsKey } from "../utils/mmkv";
 import { ContributionsList } from "../components/ContributionsList";
 import { UserContext } from "../utils/user";
 import { UsageInfo } from "../components/UsageInfo";

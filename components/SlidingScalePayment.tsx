@@ -3,7 +3,7 @@ import { Image } from "react-native";
 import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
 import { H3, Slider, XStack, XStackProps, YStack } from "tamagui";
 import { StyledText } from "./Themed";
-import { ContributionsKey, getItem, setItem } from "../utils/asyncStorage";
+import { ContributionsKey, getItem, setItem } from "../utils/mmkv";
 import { UserInfo } from "../utils/user";
 import { withQueryParams } from "../utils/url";
 

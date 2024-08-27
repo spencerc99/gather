@@ -16,24 +16,6 @@ export function CollectionDetailsHeaderLink({ id }: { id: string }) {
   );
 }
 
-export function CollectionGearHeaderLink({
-  id,
-  tintColor,
-}: {
-  id: string;
-  tintColor?: string;
-}) {
-  return (
-    <HeaderIcon
-      href={{
-        pathname: "/collection/[id]/settings",
-        params: { id: id.toString() },
-      }}
-      icon="gear"
-    />
-  );
-}
-
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams();
 

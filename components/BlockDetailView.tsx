@@ -21,7 +21,7 @@ import {
 } from "./Themed";
 import { UserContext, extractCreatorFromCreatedBy } from "../utils/user";
 import { ensureUnreachable } from "../utils/react";
-import { useStickyValue } from "../utils/asyncStorage";
+import { useStickyValue } from "../utils/mmkv";
 import { RawArenaUser } from "../utils/arena";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

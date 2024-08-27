@@ -103,7 +103,6 @@ export interface DatabaseBlockInsert {
 
   localAssetId?: string;
 
-  //   TODO: add type
   remoteSourceType?: RemoteSourceType; // map to explicit list of external providers? This can also be used to make the ID mappers, sync methods, etc. Maybe take some inspiration from Wildcard’s site adapters for typing here?
   remoteSourceInfo?: ArenaChannelBlockInfo;
   remoteConnectedAt?: string; // timestamp of when this block was connected to a collection — used to populate the connection info

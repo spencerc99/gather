@@ -1,5 +1,5 @@
 import { usePathname } from "expo-router";
-import { getItem, setItem } from "./asyncStorage";
+import { getItem, setItem } from "./mmkv";
 import { createContext } from "react";
 
 const ErrorStorageKey = "errors";

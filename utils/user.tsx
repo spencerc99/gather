@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
-import { getItem, setItem } from "./asyncStorage";
+import { getItem, setItem } from "./mmkv";
 import { Block, RemoteSourceType } from "./dataTypes";
 import { randomUUID } from "expo-crypto";
 import {
@@ -112,11 +112,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     let user = getItem<UserDbInfo>(UserInfoId);
     if (!user) {
       return;
-    }
-    // TODO: REMOVE AFTER EVERYONE MIGRATED
-    if (!user.id) {
-      user = { ...user, id: randomUUID() };
-      setItem(UserInfoId, user);
     }
 
     const deserializedUser: UserInfo = {

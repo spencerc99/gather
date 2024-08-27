@@ -239,7 +239,7 @@ export function UncategorizedView() {
     >
       <Animated.View style={{ ...translateStyle }}>
         <Stack minHeight="100%">
-          <XStack flex={1} flexGrow={1} onTouchStart={() => Keyboard.dismiss()}>
+          <XStack flex={1} flexGrow={1} onTouchMove={() => Keyboard.dismiss()}>
             <Carousel
               ref={carouselRef}
               loop={false}

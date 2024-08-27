@@ -64,13 +64,7 @@ interface PickedMedia {
   assetId?: string | null;
 }
 
-export function TextForageView({
-  collectionId,
-  isSearching,
-}: {
-  collectionId?: string;
-  isSearching?: boolean;
-}) {
+export function TextForageView({ collectionId }: { collectionId?: string }) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
   const [isLoadingAssets, setIsLoadingAssets] = useState(false);
@@ -131,7 +125,6 @@ export function TextForageView({
         };
       },
       initialPageParam: 0,
-      // TODO:
       getPreviousPageParam: (firstPage) => firstPage?.previousId ?? undefined,
       getNextPageParam: (lastPage) => lastPage?.nextId ?? undefined,
     });
@@ -168,6 +161,7 @@ export function TextForageView({
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     setIsLoadingAssets(true);
+    // TODO: this needs to filer out ones where we've already added using assetID
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
@@ -188,10 +182,6 @@ export function TextForageView({
         })),
       ]);
     }
-  };
-
-  const pickFile = async () => {
-    // TODO: do DocumentPicker here
   };
 
   function removeMedia(idx: number) {
@@ -307,7 +297,7 @@ export function TextForageView({
     ]);
   }
 
-  return isSearching ? null : ( // TODO: integrate the search directly into the chat box
+  return (
     <StyledView flex={1}>
       <Animated.View style={[{ flex: 1 }, translateStyle]}>
         <BlockTexts

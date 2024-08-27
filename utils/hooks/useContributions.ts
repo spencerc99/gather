@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Contribution } from "../../components/SlidingScalePayment";
-import { ContributionsKey, getItem } from "../asyncStorage";
+import { ContributionsKey, getItem } from "../mmkv";
 
 export function useContributions() {
   const { data: contributions } = useQuery<Contribution[]>({

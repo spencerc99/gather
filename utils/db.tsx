@@ -49,7 +49,7 @@ import {
   updateLastSyncedInfoForChannel,
   updateLastSyncedRemoteInfo,
   useStickyValue,
-} from "./asyncStorage";
+} from "./mmkv";
 import { PHOTOS_FOLDER, intializeFilesystemFolder } from "./blobs";
 import {
   ArenaImportInfo,
@@ -2565,7 +2565,6 @@ export function useCollections({
       };
     },
     initialPageParam: 0,
-    // TODO:
     getPreviousPageParam: (firstPage) => firstPage?.previousId ?? undefined,
     getNextPageParam: (lastPage) => lastPage?.nextId ?? undefined,
   });

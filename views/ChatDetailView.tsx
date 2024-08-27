@@ -14,7 +14,6 @@ export function ChatDetailView({
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     initialCollectionId
   );
-  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     setSelectedCollection(initialCollectionId);
@@ -24,37 +23,6 @@ export function ChatDetailView({
     <>
       <Tabs.Screen
         options={{
-          // TODO: this is too jank, bring back when actually working
-          // TODO: maybe instead make this like gallery icon and then you can
-          // headerLeft: () => (
-          //   <XStack
-          //     space="$4"
-          //     paddingLeft="$3"
-          //     alignItems="center"
-          //     height="100%"
-          //     marginBottom="$2"
-          //   >
-          //     <Pressable
-          //       onPress={() => {
-          //         setIsSearching(!isSearching);
-          //       }}
-          //     >
-          //       {({ pressed }) => (
-          //         <FontAwesome
-          //           name="search"
-          //           size={22}
-          //           color={
-          //             isSearching
-          //               ? Colors[colorScheme ?? "light"].tint
-          //               : theme.color?.get()
-          //           }
-          //           style={{ opacity: pressed ? 0.5 : 1 }}
-          //           active={isSearching}
-          //         />
-          //       )}
-          //     </Pressable>
-          //   </XStack>
-          // ),
           headerTitleContainerStyle: {
             alignItems: "center",
             justifyContent: "center",
@@ -94,10 +62,7 @@ export function ChatDetailView({
             },
           }}
         />
-        <TextForageView
-          collectionId={selectedCollection || undefined}
-          isSearching={isSearching}
-        />
+        <TextForageView collectionId={selectedCollection || undefined} />
       </YStack>
     </>
   );

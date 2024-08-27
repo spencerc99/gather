@@ -50,7 +50,7 @@ import {
   getChannelThumb,
   rawArenaBlockToBlock,
 } from "../utils/arena";
-import { setBoolean, useStickyValue } from "../utils/asyncStorage";
+import { setBoolean, useStickyValue } from "../utils/mmkv";
 import { DatabaseContext } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { ArenaLogin } from "../views/ArenaLogin";

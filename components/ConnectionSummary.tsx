@@ -40,7 +40,6 @@ export function ConnectionSummary({ connection }: { connection: Connection }) {
                 paddingRight: "$2",
               }
             : {})}
-          // TODO: this doesnt work idk why
           wordWrap="break-word"
           flexGrow={1}
         >

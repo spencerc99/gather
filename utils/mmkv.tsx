@@ -1,6 +1,8 @@
 import { LastSyncedInfo } from "./dataTypes";
 import { useCallback, useEffect, useState } from "react";
-import { storage } from "./mmkv";
+import { MMKV } from "react-native-mmkv";
+
+export const storage = new MMKV();
 
 export const LastSyncedAtKey = "lastSyncedAt";
 interface LastSyncedRemoteInfo {

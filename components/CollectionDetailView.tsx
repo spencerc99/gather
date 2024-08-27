@@ -17,7 +17,7 @@ import { createBlock, createChannel } from "../utils/arena";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { UserContext } from "../utils/user";
 import { ErrorsContext } from "../utils/errors";
-import { useStickyValue } from "../utils/asyncStorage";
+import { useStickyValue } from "../utils/mmkv";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function CollectionDetailView({
@@ -227,7 +227,6 @@ export function CollectionDetailView({
       <ScrollView>
         <YStack padding="10%">
           <YStack flex={1} gap="$1">
-            {/* TODO: change all these to labels and make them editable with a save */}
             <EditableTextOnClick
               text={title}
               disabled={isLoading}

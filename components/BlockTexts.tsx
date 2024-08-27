@@ -204,7 +204,6 @@ export function BlockTexts({
     [isRemoteCollection, visibleItems]
   );
 
-  // TODO: paginate blocks by chunking
   return !blocks ? (
     <YStack justifyContent="center" alignItems="center" flexGrow={1}>
       <Spinner size="large" color="$orange9" />
