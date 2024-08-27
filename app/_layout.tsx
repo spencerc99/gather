@@ -242,6 +242,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="settings"
+        options={{
+          presentation: "card",
+          title: "App Settings",
+        }}
+      />
+      <Stack.Screen
         name="collection/[id]/index"
         options={{
           presentation: "card",
