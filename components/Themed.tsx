@@ -30,7 +30,11 @@ import { PHOTOS_FOLDER } from "../utils/blobs";
 import { ensure } from "../utils/react";
 import { ExternalLink } from "./ExternalLink";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { runOnJS, useAnimatedRef } from "react-native-reanimated";
+import {
+  runOnJS,
+  useAnimatedRef,
+  useSharedValue,
+} from "react-native-reanimated";
 
 export type LinkButtonProps = Optional<ButtonProps, "onPress"> &
   Pick<LinkProps<any>, "href">;
@@ -278,13 +282,18 @@ export function EditableTextOnClick({
   );
 
   const [editingInternal, setEditingInternal] = useState(false);
-  const editing = isEditing ?? editingInternal;
+  const editing = useMemo(
+    () => isEditing ?? editingInternal,
+    [isEditing, editingInternal]
+  );
   const setEditing = setIsEditing ?? setEditingInternal;
 
   const [editableContent, setEditableContent] = useState(text);
   const InputComponent = multiline ? StyledTextArea : StyledInput;
 
   const inputRef = useAnimatedRef<Input>();
+
+  const [isBlurring, setIsBlurring] = useState(false);
 
   function commitEdit(newContent?: string | null) {
     setEditing(false);
@@ -306,21 +315,17 @@ export function EditableTextOnClick({
     .numberOfTaps(!text ? 1 : 2)
     .onStart(() => {
       "worklet";
-      if (editing) {
-        return;
-      }
-
       runOnJS(setEditing)(true);
     });
-
   useEffect(() => {
     if (editing) inputRef.current?.focus();
   }, [editing]);
 
   return (
     <XStack width="100%">
-      <GestureDetector gesture={onDoubleTap}>
+      <GestureDetector gesture={onDoubleTap.enabled(!editing)}>
         <XStack gap="$2" width="100%" height="100%">
+          {/* TODO: consolidate */}
           {/* NOTE KEEP IN SYNC WITH EditModeText */}
           {editing ? (
             <InputComponent
@@ -335,7 +340,18 @@ export function EditableTextOnClick({
               {...inputProps}
               autogrow
               onBlur={() => {
-                setEditing(false);
+                if (!isBlurring) {
+                  setEditing(false);
+                }
+              }}
+              onFocus={() => {
+                setIsBlurring(false);
+              }}
+              onTouchStart={() => {
+                setIsBlurring(true);
+              }}
+              onTouchEnd={() => {
+                setIsBlurring(false);
               }}
               onSubmitEditing={() => commitEdit(editableContent)}
               paddingRight="$9"
@@ -553,7 +569,6 @@ export function ButtonWithConfirm({
   cancelText?: string;
   confirmText?: string;
 }) {
-  // TODO: not working why
   return (
     <AlertDialog native>
       <AlertDialog.Trigger asChild>
@@ -698,58 +713,6 @@ export function AspectRatioImage({
     </Stack>
   );
 }
-
-// export function AspectRatioImage({
-//   uri: initUri,
-//   otherProps,
-// }: {
-//   uri?: string;
-//   otherProps?: ImageProps["style"];
-// }) {
-//   let styleProps = otherProps || {};
-
-//   const uri = useMemo(
-//     () =>
-//       initUri && initUri.startsWith(PHOTOS_FOLDER)
-//         ? FileSystem.documentDirectory + initUri
-//         : initUri,
-//     [initUri]
-//   );
-//   const [aspectRatio, setAspectRatio] = useState(styleProps?.aspectRatio);
-
-//   useEffect(() => {
-//     if (!uri) {
-//       setAspectRatio(1);
-//       return;
-//     }
-//     if (styleProps?.aspectRatio) {
-//       return;
-//     }
-
-//     Image.getSize(uri, (width, height) => {
-//       setAspectRatio(width / height);
-//     });
-//   }, [uri]);
-
-//   return (
-//     <ExpoImage
-//       source={uri ? uri : "../assets/images/placeholder-image.jpg"}
-//       contentFit="contain"
-//       // TODO: neither of these are working fix...
-//       // esp. that images have no width/height initially
-//       // defaultSource={require("../assets/images/loading-image.gif")}
-//       placeholder={require("../assets/images/loading-image.gif")}
-//       aspectRatio={aspectRatio}
-//       // TODO: dont know why this keep throwing a warning in console... seems to be a valid value and
-//       // things break if i dont have it. Seems to be a thing with tamagui not updating the error handling
-//       // to the latest react-native image handling undefined width / height for the source
-//       style={{
-//         width: "100%",
-//       }}
-//       {...styleProps}
-//     />
-//   );
-// }
 
 export function ArenaLogo({
   size = 18,
