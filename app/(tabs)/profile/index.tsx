@@ -175,17 +175,29 @@ export default function ProfileScreen() {
 
         <H5 fontWeight="700">Gather</H5>
         <UsageInfo />
-        <LinkButton
-          flex={1}
-          width="100%"
-          href="/about"
-          icon={<Icon name="egg" color="$orange9" />}
-          theme="orange"
-          backgroundColor={colorScheme === "light" ? "#FFDBB2" : undefined}
-          justifyContent="flex-start"
-        >
-          Origins
-        </LinkButton>
+        <XStack gap="$2">
+          <LinkButton
+            flex={1}
+            width="100%"
+            href="/about"
+            icon={<Icon name="egg" color="$orange9" />}
+            theme="orange"
+            backgroundColor={colorScheme === "light" ? "#FFDBB2" : undefined}
+            justifyContent="flex-start"
+          >
+            Origins
+          </LinkButton>
+          <LinkButton
+            flex={1}
+            width="100%"
+            href="/settings"
+            theme="gray"
+            icon={<Icon name="settings" />}
+            justifyContent="flex-start"
+          >
+            Settings
+          </LinkButton>
+        </XStack>
         <XStack gap="$2">
           <LinkButton
             flex={1}

@@ -2,14 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Dimensions, Platform, ScrollView } from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
@@ -27,11 +20,10 @@ import {
   StyledTextArea,
   StyledView,
 } from "./Themed";
-import { useFocusEffect, useNavigation } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { ErrorsContext } from "../utils/errors";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import Animated, {
-  KeyboardState,
   useAnimatedKeyboard,
   useAnimatedStyle,
 } from "react-native-reanimated";

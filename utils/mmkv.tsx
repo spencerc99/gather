@@ -68,7 +68,7 @@ export function useStickyValue<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(initialValue);
   useEffect(() => {
     const data = getItem<T>(key);
-    if (data) {
+    if (data !== null) {
       setValue(data);
     }
   }, [key]);
