@@ -16,7 +16,7 @@ interface AppSettingConfig<T extends AppSettingType> {
 }
 
 const AppSettingPrefix = "appSetting_";
-enum AppSettingType {
+export enum AppSettingType {
   ShowCameraInTextingView = "ShowCameraInTextingView",
   PromptsCollection = "PromptsCollection", // for a collection of text prompts that replace the default ones
 }
@@ -65,7 +65,7 @@ const AppSettings: Record<AppSettingType, AppSettingConfig<any>> = {
   [AppSettingType.ShowCameraInTextingView]: {
     type: AppSettingType.ShowCameraInTextingView,
     label: "Show camera in texting view",
-    defaultValue: true,
+    defaultValue: false,
     renderPicker: (
       config: AppSettingConfig<AppSettingType.ShowCameraInTextingView>
     ) => {

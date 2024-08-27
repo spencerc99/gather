@@ -3,7 +3,7 @@ import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Dimensions, Platform, ScrollView } from "react-native";
+import { Dimensions, Linking, Platform, ScrollView } from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { BlockSelectLimit, DatabaseContext } from "../utils/db";
@@ -29,8 +29,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlockInsertInfo } from "../utils/dataTypes";
+import { AppSettingType, getAppSetting } from "../app/settings";
 
-const Placeholders = [
+const DefaultPlaceholders = [
   "Who do you love and why?",
   "What was the last link you sent?",
   "What was the last interesting thing you overhead?",
@@ -48,6 +49,7 @@ const Placeholders = [
   "What's on repeat in your head?",
   "What's resonating for you?",
 ];
+const MaxPlaceholderLength = 80;
 
 interface PickedMedia {
   uri: string;
@@ -64,13 +66,13 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
-  const [textPlaceholder, setTextPlaceholder] = useState(
-    Placeholders[Math.floor(Math.random() * Placeholders.length)]
-  );
+  const [textPlaceholder, setTextPlaceholder] = useState("");
   const [cameraPermission, requestCameraPermission] =
     ImagePicker.useCameraPermissions();
   const queryKey = ["blocks", { collectionId }] as const;
   const { logError } = useContext(ErrorsContext);
+  const [placeholders, setPlaceholders] =
+    useState<string[]>(DefaultPlaceholders);
   const insets = useSafeAreaInsets();
   const bottomTabHeight = useBottomTabBarHeight();
   const keyboard = useAnimatedKeyboard({
@@ -78,6 +80,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
   });
   const [messageBarKeyboardPadding, setMessageBarKeyboardPadding] = useState(0);
   const [textFocused, setTextFocused] = useState(false);
+  const showCamera = getAppSetting(AppSettingType.ShowCameraInTextingView);
   const translateStyle = useAnimatedStyle(() => {
     return {
       paddingBottom: textFocused
@@ -93,8 +96,39 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
-      Placeholders[Math.floor(Math.random() * Placeholders.length)]
+      placeholders[Math.floor(Math.random() * placeholders.length)]
     );
+  }, []);
+
+  const fetchPlaceholders = useCallback(async () => {
+    const promptCollection = getAppSetting(AppSettingType.PromptsCollection);
+    if (promptCollection) {
+      console.log("promptCollection", promptCollection);
+      const collectionItems = await getCollectionItems(promptCollection, {
+        page: 0,
+        whereClause: `type = '${BlockType.Text}'`,
+      });
+
+      const collectionItemsText = collectionItems.map((item) =>
+        item.content.length > MaxPlaceholderLength
+          ? item.content.slice(0, MaxPlaceholderLength) + "..."
+          : item.content
+      );
+      console.log("collectionItemsText", collectionItemsText);
+      if (collectionItemsText.length) {
+        return collectionItemsText;
+      }
+    }
+    return DefaultPlaceholders;
+  }, []);
+
+  useEffect(() => {
+    void fetchPlaceholders().then((newPlaceholders) => {
+      setPlaceholders(newPlaceholders);
+      setTextPlaceholder(
+        newPlaceholders[Math.floor(Math.random() * newPlaceholders.length)]
+      );
+    });
   }, []);
 
   useFocusEffect(updatePlaceholder);
@@ -367,17 +401,6 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           backgroundColor="$background"
         >
           <XStack gap="$1" width="100%">
-            {isLoadingAssets && (
-              <XStack
-                paddingTop="$2"
-                alignItems="center"
-                justifyContent="center"
-                width="100%"
-              >
-                <StyledText metadata>Loading images... </StyledText>
-                <Spinner size="small" color="$orange9" />
-              </XStack>
-            )}
             {medias.length > 0 && (
               <ScrollView horizontal={true}>
                 <XStack flexWrap="wrap" gap="$2" paddingTop="$1">
@@ -412,26 +435,21 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                       />
                     </YStack>
                   ))}
+                  {isLoadingAssets && (
+                    <XStack
+                      paddingTop="$2"
+                      alignItems="center"
+                      justifyContent="center"
+                      width="100%"
+                    >
+                      <StyledText metadata>Loading images... </StyledText>
+                      <Spinner size="small" color="$orange9" />
+                    </XStack>
+                  )}
                 </XStack>
               </ScrollView>
             )}
           </XStack>
-          {/* <XStack alignItems="flex-start" gap={4} width="100%" marginBottom={8}> */}
-          {/* radial menu? */}
-          {/* <StyledButton
-              icon={<Icon name="photo" />}
-              onPress={pickImage}
-              theme="orange"
-            /> */}
-          {/* TODO: access camera */}
-          {/* <StyledButton
-              icon={
-                recording ? <Icon name="stop" /> : <Icon name="microphone" />
-              }
-              theme="green"
-              onPress={recording ? stopRecording : startRecording}
-            /> */}
-          {/* </XStack> */}
           <XStack
             alignItems="center"
             justifyContent="center"
@@ -439,7 +457,14 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             gap="$2"
             position="relative"
           >
-            {/* <YStack gap="0"> */}
+            {/* TODO: radial menu? */}
+            {/* <StyledButton
+              icon={
+                recording ? <Icon name="stop" /> : <Icon name="microphone" />
+              }
+              theme="green"
+              onPress={recording ? stopRecording : startRecording}
+            /> */}
             <StyledButton
               icon={<Icon size={24} name="images" />}
               onPress={pickImage}
@@ -448,14 +473,16 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               chromeless
               paddingVertical={0}
             />
-            <StyledButton
-              icon={<Icon size={24} name="camera" />}
-              onPress={() => toggleCamera()}
-              theme="grey"
-              chromeless
-              paddingVertical={0}
-              paddingHorizontal="$1"
-            ></StyledButton>
+            {showCamera && (
+              <StyledButton
+                icon={<Icon size={24} name="camera" />}
+                onPress={() => toggleCamera()}
+                theme="grey"
+                chromeless
+                paddingVertical={0}
+                paddingHorizontal="$1"
+              ></StyledButton>
+            )}
             {/* </YStack> */}
             <YStack position="absolute" zIndex={1} right="$1.5" bottom="$2">
               <StyledButton
