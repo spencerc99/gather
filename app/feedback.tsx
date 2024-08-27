@@ -1,4 +1,5 @@
 import { H3, Spinner, XStack, YStack } from "tamagui";
+import * as Application from "expo-application";
 import {
   StyledButton,
   StyledText,
@@ -21,7 +22,15 @@ export default function Feedback() {
     mutationFn: async () => {
       await fetch("https://coda.io/form/Z66kdxh0_y/submit", {
         method: "POST",
-        body: JSON.stringify({ row: { email: currentUser?.email, feedback } }),
+        body: JSON.stringify({
+          row: {
+            email: currentUser?.email,
+            feedback,
+            platform: Platform.OS,
+            version: `${Application.nativeApplicationVersion} (
+            ${Application.nativeBuildVersion})`,
+          },
+        }),
         headers: {
           "Content-Type": "application/json",
         },
