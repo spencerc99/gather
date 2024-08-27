@@ -67,6 +67,8 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
   const [textPlaceholder, setTextPlaceholder] = useState(
     Placeholders[Math.floor(Math.random() * Placeholders.length)]
   );
+  const [cameraPermission, requestCameraPermission] =
+    ImagePicker.useCameraPermissions();
   const queryKey = ["blocks", { collectionId }] as const;
   const { logError } = useContext(ErrorsContext);
   const insets = useSafeAreaInsets();
@@ -289,6 +291,57 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     ]);
   }
 
+  async function toggleCamera() {
+    if (cameraPermission) {
+      if (
+        cameraPermission.status === ImagePicker.PermissionStatus.UNDETERMINED ||
+        (cameraPermission.status === ImagePicker.PermissionStatus.DENIED &&
+          cameraPermission.canAskAgain)
+      ) {
+        const permission = await requestCameraPermission();
+        if (permission.granted) {
+          await handleLaunchCamera();
+        }
+      } else if (
+        cameraPermission.status === ImagePicker.PermissionStatus.DENIED
+      ) {
+        await Linking.openSettings();
+      } else {
+        await handleLaunchCamera();
+      }
+      if (!cameraPermission) {
+        const resp = await requestCameraPermission();
+        if (!resp.granted) {
+          alert("we need your permission to use the camera!");
+          return;
+        }
+      }
+    }
+  }
+  async function handleLaunchCamera() {
+    setIsLoadingAssets(true);
+    let result = await ImagePicker.launchCameraAsync({
+      allowsMultipleSelection: true,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      orderedSelection: true,
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+    });
+    setIsLoadingAssets(false);
+    if (!result.canceled) {
+      // TODO: preserve assetID in URI
+      setMedias([
+        ...medias,
+        ...result.assets.map((asset) => ({
+          uri: asset.uri,
+          // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+          type: asset.type === "image" ? BlockType.Image : BlockType.Video,
+          contentType: asset.mimeType as MimeType,
+          assetId: asset.assetId,
+        })),
+      ]);
+    }
+  }
+
   return (
     <StyledView flex={1}>
       <Animated.View style={[{ flex: 1 }, translateStyle]}>
@@ -383,17 +436,27 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             alignItems="center"
             justifyContent="center"
             padding="$2"
-            gap="$"
+            gap="$2"
             position="relative"
           >
+            {/* <YStack gap="0"> */}
             <StyledButton
               icon={<Icon size={24} name="images" />}
               onPress={pickImage}
-              paddingHorizontal="$2"
+              paddingHorizontal="$1"
               theme="grey"
               chromeless
-              alignSelf="flex-end"
+              paddingVertical={0}
             />
+            <StyledButton
+              icon={<Icon size={24} name="camera" />}
+              onPress={() => toggleCamera()}
+              theme="grey"
+              chromeless
+              paddingVertical={0}
+              paddingHorizontal="$1"
+            ></StyledButton>
+            {/* </YStack> */}
             <YStack position="absolute" zIndex={1} right="$1.5" bottom="$2">
               <StyledButton
                 onPress={async () => {
