@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "15",
+      "buildNumber": "17",
       "bundleIdentifier": "net.tiny-inter.gather",
       "config": {
         "usesNonExemptEncryption": false
@@ -47,7 +47,10 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you upload it to the app."
+          "photosPermission": "The app accesses your photos to let you upload it to the app.",
+          "cameraPermission": "Allow Gather to access your camera",
+          "microphonePermission": "Allow Gather to access your microphone",
+          "recordAudioAndroid": true
         }
       ],
       [

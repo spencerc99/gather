@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Separator } from "tamagui";
 import { StyledText } from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
+import Icons from "./icons";
 
 interface AppSettingConfig<T extends AppSettingType> {
   type: T;
@@ -16,7 +17,7 @@ interface AppSettingConfig<T extends AppSettingType> {
 }
 
 const AppSettingPrefix = "appSetting_";
-enum AppSettingType {
+export enum AppSettingType {
   ShowCameraInTextingView = "ShowCameraInTextingView",
   PromptsCollection = "PromptsCollection", // for a collection of text prompts that replace the default ones
 }
@@ -65,7 +66,7 @@ const AppSettings: Record<AppSettingType, AppSettingConfig<any>> = {
   [AppSettingType.ShowCameraInTextingView]: {
     type: AppSettingType.ShowCameraInTextingView,
     label: "Show camera in texting view",
-    defaultValue: true,
+    defaultValue: false,
     renderPicker: (
       config: AppSettingConfig<AppSettingType.ShowCameraInTextingView>
     ) => {
@@ -151,6 +152,9 @@ export default function Settings() {
             </YStack>
           );
         })}
+      </YStack>
+      <YStack marginTop="$4">
+        <Icons />
       </YStack>
     </ScrollView>
   );
