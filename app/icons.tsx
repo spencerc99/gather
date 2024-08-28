@@ -1,6 +1,6 @@
 import { getAppIcon, setAppIcon } from "expo-dynamic-app-icon";
 import { useState } from "react";
-import { H3, H4, Stack, XStack, YStack } from "tamagui";
+import { H3, H4, Label, Stack, XStack, YStack } from "tamagui";
 import { Image, SafeAreaView } from "react-native";
 import { StyledText } from "../components/Themed";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
@@ -57,8 +57,8 @@ function AppIconSelect({
   onSelectIcon: (iconName: string) => void;
 }) {
   return (
-    <YStack gap="$4" padding="10%">
-      <H3>Choose Your Icon</H3>
+    <YStack gap="$2" paddingHorizontal="5%">
+      <H4 fontSize="$5">Choose your icon</H4>
       <XStack gap="$2" justifyContent="center">
         {AppIcons.map(({ iconName, source }) => {
           const selected =
@@ -86,7 +86,7 @@ function AppIconSelect({
         })}
       </XStack>
       {/* TODO: add open channel for adding to it? */}
-      <StyledText>
+      <StyledText metadata fontSize="$small" marginTop="$2">
         I took these photos between 2020-2023. They capture snapshot moments of
         life that I want to hold onto. I revisit them to remind me to pay
         attention attention to the motion of the world. I hope Gather can be a

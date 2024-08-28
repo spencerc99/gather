@@ -187,6 +187,8 @@ export default function ProfileScreen() {
           >
             Origins
           </LinkButton>
+        </XStack>
+        <XStack gap="$2">
           <LinkButton
             flex={1}
             width="100%"
@@ -197,25 +199,14 @@ export default function ProfileScreen() {
           >
             Settings
           </LinkButton>
-        </XStack>
-        <XStack gap="$2">
           <LinkButton
             flex={1}
-            width="100%"
-            href={HelpGuideUrl}
-            theme="gray"
-            icon={<Icon name="document-text" />}
-            justifyContent="flex-start"
-          >
-            Guide
-          </LinkButton>
-          <LinkButton
             href="/feedback"
             justifyContent="flex-start"
             theme="gray"
             icon={<Icon name="mail" />}
           >
-            Give feedback
+            Feedback
           </LinkButton>
         </XStack>
         <XStack gap="$2">
@@ -231,21 +222,12 @@ export default function ProfileScreen() {
           <LinkButton
             flex={1}
             width="100%"
-            href="/icons"
-            justifyContent="flex-start"
-            icon={
-              <Image
-                source={appIconSource}
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: 4,
-                }}
-              />
-            }
+            href={HelpGuideUrl}
             theme="gray"
+            icon={<Icon name="document-text" />}
+            justifyContent="flex-start"
           >
-            App icons
+            Guide
           </LinkButton>
         </XStack>
         <Animated.View

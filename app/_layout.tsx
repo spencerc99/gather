@@ -186,15 +186,6 @@ function RootLayoutNav() {
           headerShown: false,
         }}
       />
-      <JsStack.Screen
-        name="icons"
-        options={{
-          presentation: "modal",
-          headerShown: false,
-          ...TransitionPresets.ModalPresentationIOS,
-          gestureEnabled: true,
-        }}
-      />
       <Stack.Screen
         name="support"
         options={{

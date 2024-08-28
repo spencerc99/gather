@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Separator } from "tamagui";
 import { StyledText } from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
+import Icons from "./icons";
 
 interface AppSettingConfig<T extends AppSettingType> {
   type: T;
@@ -151,6 +152,9 @@ export default function Settings() {
             </YStack>
           );
         })}
+      </YStack>
+      <YStack marginTop="$4">
+        <Icons />
       </YStack>
     </ScrollView>
   );
