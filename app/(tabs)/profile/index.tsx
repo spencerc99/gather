@@ -2,7 +2,15 @@ import dayjs from "dayjs";
 import * as Application from "expo-application";
 import { useContext, useMemo, useState } from "react";
 import { Animated, Image, useColorScheme } from "react-native";
-import { Avatar, H5, ScrollView, Spinner, XStack, YStack } from "tamagui";
+import {
+  Avatar,
+  GetProps,
+  H5,
+  ScrollView,
+  Spinner,
+  XStack,
+  YStack,
+} from "tamagui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Icon,
@@ -25,6 +33,8 @@ import { ErrorsContext } from "../../../utils/errors";
 import { HelpGuideUrl } from "../../../utils/constants";
 import { useContributions } from "../../../utils/hooks/useContributions";
 import { UsageInfo } from "../../../components/UsageInfo";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 
 const DefaultAppSrc = require(`../../../assets/images/icon.png`);
 
@@ -314,17 +324,72 @@ export default function ProfileScreen() {
             {Application.nativeBuildVersion})
           </StyledText>
         </YStack>
-        <LinkButton
-          marginTop="$8"
-          alignSelf="center"
-          href="/dev"
-          size="$medium"
-          theme="gray"
-          icon={<Icon name="code" />}
-        >
-          Internal Developer Tools
-        </LinkButton>
+        <YStack gap="$2" marginTop="$8">
+          <DownloadButton size="$medium" theme="gray" alignSelf="center" />
+          <LinkButton
+            href="/dev"
+            size="$medium"
+            theme="gray"
+            alignSelf="center"
+            icon={<Icon name="code" />}
+          >
+            Internal Developer Tools
+          </LinkButton>
+        </YStack>
       </YStack>
     </ScrollView>
+  );
+}
+
+function DownloadButton({ ...buttonProps }: GetProps<typeof StyledButton>) {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportData = async () => {
+    setIsExporting(true);
+    try {
+      // Get the database file path
+      const dbPath = FileSystem.documentDirectory + "SQLite/db.db";
+
+      // Create a temporary file for sharing
+      const tempFilePath =
+        FileSystem.cacheDirectory +
+        `gather_export_${dayjs().format("YYYY-MM-DD")}.db`;
+
+      // Copy the database file to the temporary location
+      await FileSystem.copyAsync({
+        from: dbPath,
+        to: tempFilePath,
+      });
+
+      // Check if sharing is available on the device
+      const isSharingAvailable = await Sharing.isAvailableAsync();
+
+      if (isSharingAvailable) {
+        // Open the sharing dialog
+        await Sharing.shareAsync(tempFilePath, {
+          mimeType: "application/x-sqlite3",
+          dialogTitle: "Export Gather Data",
+          UTI: "public.database", // Uniform Type Identifier for macOS
+        });
+      } else {
+        alert("Sharing is not available on this device");
+      }
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      alert("Failed to export data. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <StyledButton
+      icon={isExporting ? <Spinner size="small" /> : <Icon name="download" />}
+      onPress={exportData}
+      disabled={isExporting}
+      {...buttonProps}
+    >
+      {isExporting ? "Exporting..." : "Export Data"}
+    </StyledButton>
   );
 }
