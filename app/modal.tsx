@@ -5,16 +5,14 @@ import { H3, View, YStack } from "tamagui";
 import {
   StyledButton,
   StyledText,
-  StyledInput,
   StyledParagraph,
   ExternalLinkText,
 } from "../components/Themed";
 import { useContext, useState } from "react";
-import { DatabaseContext } from "../utils/db";
 import { PortalProvider } from "tamagui";
 import { ImportArenaChannelSelect } from "../components/ImportArenaChannelSelect";
 import { UserContext } from "../utils/user";
-import { logError } from "../utils/errors";
+import { RapidCreateCollection } from "../components/RapidCreateCollection";
 
 export default function ModalScreen() {
   // TODO: type the diff modals by the pathname?
@@ -34,46 +32,14 @@ export default function ModalScreen() {
 
 // TODO: rename file to createCollection
 function CreateCollectionModal() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { createCollection } = useContext(DatabaseContext);
-  const { currentUser: user, arenaAccessToken } = useContext(UserContext);
+  const { arenaAccessToken } = useContext(UserContext);
 
   return (
     <YStack style={styles.createCollection}>
       <H3>Create Collection</H3>
-      <StyledInput
-        placeholder="I want to remember this"
-        value={title}
-        onChangeText={(text) => setTitle(text)}
-        returnKeyType="done"
-      />
-      {/* <StyledTextArea
-        placeholder="a channel for remembering"
-        value={description}
-        minHeight={100}
-        onChangeText={(text) => setDescription(text)}
-      /> */}
-      <StyledButton
-        onPress={async () => {
-          setIsLoading(true);
-          try {
-            await createCollection({ title, description, createdBy: user!.id });
-          } catch (err) {
-            logError(err);
-            alert("Failed to create collection. Please try again later.");
-          } finally {
-            router.replace("..");
-            setIsLoading(false);
-          }
-        }}
-        disabled={!title || isLoading}
-        // style={{ marginLeft: "auto" }}
-      >
-        Create
-      </StyledButton>
+      <RapidCreateCollection />
       {/* TODO: add button to fill it with a random one */}
       <StyledParagraph>
         If you need collection name ideas, get some inspiration from this{" "}
@@ -128,6 +94,14 @@ function CreateCollectionModal() {
           />
         </>
       )}
+      <StyledButton
+        onPress={async () => {
+          router.replace("..");
+        }}
+        disabled={isLoading}
+      >
+        Done
+      </StyledButton>
     </YStack>
   );
 }

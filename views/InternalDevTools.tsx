@@ -22,6 +22,7 @@ import {
   ArenaClientSecret,
   ArenaGraphqlKey,
 } from "../utils/arena";
+import { MilestoneKey } from "../utils/celebrations";
 
 export function InternalDevTools({}: {}) {
   const {
@@ -131,6 +132,18 @@ export function InternalDevTools({}: {}) {
         >
           Reset intro seen
         </StyledButton>
+        {__DEV__ && (
+          <StyledButton
+            onPress={() => {
+              removeItem(MilestoneKey);
+            }}
+            disabled={isLoading}
+            icon={isLoading ? <Spinner size="small" /> : null}
+            theme="purple"
+          >
+            Reset milestones
+          </StyledButton>
+        )}
         {__DEV__ && (
           <StyledButton
             onPress={() => {

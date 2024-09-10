@@ -41,6 +41,7 @@ import {
   IconType,
   StyledButton,
   StyledInput,
+  StyledParagraph,
   StyledText,
 } from "../components/Themed";
 import { ArenaChannelMultiSelect } from "../components/arena/ArenaChannelMultiSelect";
@@ -59,6 +60,7 @@ import { ErrorsContext } from "../utils/errors";
 import { useQuery } from "@tanstack/react-query";
 import { HelpGuideUrl } from "../utils/constants";
 import { NetworkContext } from "../utils/network";
+import { RapidCreateCollection } from "../components/RapidCreateCollection";
 
 interface ExampleCollectionType {
   name: string;
@@ -72,15 +74,33 @@ const ExampleCollections: ExampleCollectionType[] = [
       "https://www.are.na/spencer-chang/moments-people-made-you-smile-example",
   },
   {
-    name: "times you said wow",
+    name: "glad i walked",
+    arenaChannelUrl: "https://www.are.na/spencer-chang/glad-i-walked",
+  },
+  {
+    name: "phrases",
+    arenaChannelUrl:
+      "https://www.are.na/spencer-chang/terms-words-provocations",
+  },
+  {
+    name: "i've felt that",
+    arenaChannelUrl:
+      "https://www.are.na/julia-ernst-epcb2hzdr8c/i-ve-felt-that",
+  },
+  {
+    name: "moved",
+    arenaChannelUrl: "https://www.are.na/tay-lore/moved-kyyx5dshdj8",
+  },
+  {
+    name: "times i said wow",
     arenaChannelUrl: "https://www.are.na/spencer-chang/wow-geoi3s6ev74",
   },
   {
-    name: "what's in your bag",
+    name: "what's in my bag",
     arenaChannelUrl: "https://www.are.na/laurel-schwulst/four-things-in-my-bag",
   },
   {
-    name: "a gratitude journal",
+    name: "gratitude journal",
     arenaChannelUrl: "https://www.are.na/laura-houlberg/gratitude-journal",
   },
   {
@@ -324,15 +344,25 @@ export default function IntroScreen() {
               you want to cultivate.
             </StyledText>
             <StyledText size="$4">
-              In addition to the below examples, we wrote{" "}
-              <ExternalLinkText href={HelpGuideUrl}>a guide</ExternalLinkText>{" "}
-              to help give some ideas.
+              You'll connect blocks (text, images, videos, links, etc.) of the
+              things you encounter in your life to these collections to build a
+              personal archive.
+            </StyledText>
+            <StyledText size="$4">
+              Check out our{" "}
+              <ExternalLinkText href={HelpGuideUrl}>guide</ExternalLinkText> for
+              more inspiration.
             </StyledText>
             <YStack gap="$3">
               {/* TODO: change these to collapsible lists and show the examples of things, maybe just take 3 or so for each */}
               {ExampleCollections.map((collection, idx) => (
                 <ExampleCollection key={idx} {...collection} />
               ))}
+              <StyledParagraph>
+                Have other collections that come to mind now? Here's your chance
+                to make them! :)
+              </StyledParagraph>
+              <RapidCreateCollection />
             </YStack>
             <NextStepButton text="I think I get it" marginTop="$2" />
           </>
@@ -536,6 +566,9 @@ export default function IntroScreen() {
 
 function ExampleCollection({ name, arenaChannelUrl }: ExampleCollectionType) {
   const { isConnected } = useContext(NetworkContext);
+  const { createCollection } = useContext(DatabaseContext);
+  const { currentUser } = useContext(UserContext);
+  const [isCreated, setIsCreated] = useState(false);
   const { data: items } = useQuery({
     queryKey: [arenaChannelUrl],
     queryFn: async () => {
@@ -547,19 +580,55 @@ function ExampleCollection({ name, arenaChannelUrl }: ExampleCollectionType) {
     },
   });
 
+  const handleCreateCollection = async () => {
+    try {
+      await createCollection({
+        title: name,
+        createdBy: currentUser?.id || "Gather",
+      });
+      setIsCreated(true);
+    } catch (error) {
+      console.error("Failed to create collection:", error);
+      // Optionally, show an error message to the user
+    }
+  };
+
   return (
     <YStack gap="$1.5">
-      {arenaChannelUrl ? (
-        <ExternalLinkText href={arenaChannelUrl}>
-          <StyledText size="$4" bold link>
+      <XStack
+        justifyContent="space-between"
+        alignItems="center"
+        gap="$2"
+        width="100%"
+      >
+        {arenaChannelUrl ? (
+          <ExternalLinkText href={arenaChannelUrl}>
+            <StyledText size="$4" bold link>
+              {name}
+            </StyledText>
+          </ExternalLinkText>
+        ) : (
+          <StyledText size="$4" bold>
             {name}
           </StyledText>
-        </ExternalLinkText>
-      ) : (
-        <StyledText size="$4" bold>
-          {name}
-        </StyledText>
-      )}
+        )}
+        <StyledButton
+          size="$small"
+          alignSelf="flex-end"
+          onPress={handleCreateCollection}
+          disabled={isCreated}
+          backgroundColor={isCreated ? "$green6" : undefined}
+          opacity={isCreated ? 0.8 : undefined}
+          icon={
+            <Icon
+              name={isCreated ? "check" : "plus"}
+              type={IconType.FontAwesomeIcon}
+            />
+          }
+        >
+          {isCreated ? "Added" : "Add"}
+        </StyledButton>
+      </XStack>
       {isConnected && Boolean(items?.length) ? (
         <ScrollView horizontal flex={1}>
           <XStack gap="$2" height={140}>

@@ -39,6 +39,7 @@ import { config } from "../tamagui.config";
 import { DatabaseContext, DatabaseProvider } from "../utils/db";
 import { UserProvider } from "../utils/user";
 import { ErrorsProvider } from "../utils/errors";
+import { useMilestoneCheck } from "../utils/celebrations";
 
 const client = new QueryClient();
 
@@ -147,6 +148,8 @@ export default function RootLayout() {
   );
 }
 
+const ParentStackComponent = Platform.OS === "android" ? JsStack : Stack;
+
 function RootLayoutNav() {
   const { shareIntent, resetShareIntent } = useShareIntent();
   const { setShareIntent } = useContext(DatabaseContext);
@@ -157,9 +160,10 @@ function RootLayoutNav() {
       resetShareIntent();
     }
   }, [shareIntent]);
+  useMilestoneCheck();
 
   return (
-    <JsStack>
+    <ParentStackComponent>
       <Stack.Screen
         name="(tabs)"
         options={{
@@ -273,6 +277,6 @@ function RootLayoutNav() {
           }}
         />
       )}
-    </JsStack>
+    </ParentStackComponent>
   );
 }

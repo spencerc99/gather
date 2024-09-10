@@ -35,6 +35,7 @@ import { useContributions } from "../../../utils/hooks/useContributions";
 import { UsageInfo } from "../../../components/UsageInfo";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
+import { promptForReview } from "../../../utils/celebrations";
 
 const DefaultAppSrc = require(`../../../assets/images/icon.png`);
 
@@ -298,6 +299,27 @@ export default function ProfileScreen() {
             </>
           )}
         </Animated.View>
+        <XStack gap="$2">
+          <StyledButton
+            theme="blue"
+            justifyContent="flex-start"
+            icon={<Icon name="gift" color="$yellow11" />}
+            flex={1}
+            width="100%"
+            onPress={async () => {
+              await promptForReview();
+            }}
+          >
+            Review
+          </StyledButton>
+          <DownloadButton
+            justifyContent="flex-start"
+            theme="gray"
+            flex={1}
+            width="100%"
+          />
+        </XStack>
+
         {/* TODO: select a channel to send? */}
         {/* <StyledButton justifyContent="flex-start">
           Gift a collection
@@ -325,7 +347,6 @@ export default function ProfileScreen() {
           </StyledText>
         </YStack>
         <YStack gap="$2" marginTop="$8">
-          <DownloadButton size="$medium" theme="gray" alignSelf="center" />
           <LinkButton
             href="/dev"
             size="$medium"
@@ -389,7 +410,7 @@ function DownloadButton({ ...buttonProps }: GetProps<typeof StyledButton>) {
       disabled={isExporting}
       {...buttonProps}
     >
-      {isExporting ? "Exporting..." : "Export Data"}
+      {isExporting ? "Exporting..." : "Export data"}
     </StyledButton>
   );
 }
