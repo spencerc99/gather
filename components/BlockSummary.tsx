@@ -336,6 +336,7 @@ export function BlockTextSummary({
   isRemoteCollection,
   containerProps,
   isVisible,
+  setTextFocused,
 }: {
   block: Block;
   shouldLink?: boolean;
@@ -345,6 +346,7 @@ export function BlockTextSummary({
   isRemoteCollection?: boolean;
   containerProps?: GetProps<typeof YStack>;
   isVisible?: boolean;
+  setTextFocused?: (textFocused: boolean) => void;
 }) {
   // TODO: add connectedBy for getCollectionItems... maybe default this to createdBy or undefined for others
   const { id, type, source, title, description, connectedBy } = block;
@@ -375,12 +377,14 @@ export function BlockTextSummary({
       // TODO: toast with error;
     } finally {
       setIsEditing(false);
+      setTextFocused?.(false);
     }
   }
 
   const { blockMenuItems } = useBlockMenuItems(block, {
     onClickEdit: () => {
       setIsEditing(true);
+      setTextFocused?.(true);
     },
     isOwner: isOwner || undefined,
   });

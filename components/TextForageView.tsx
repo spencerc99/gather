@@ -385,6 +385,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
           blocks={blocks ? blocks : null}
           fetchMoreBlocks={fetchMoreBlocks}
           isFetchingNextPage={isFetchingNextPage}
+          setTextFocused={setTextFocused}
         />
         <YStack
           height="auto"

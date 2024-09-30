@@ -78,10 +78,12 @@ const BlockViewImpl = ({
   block,
   isRemoteCollection,
   isVisible,
+  setTextFocused,
 }: {
   block: Block;
   isRemoteCollection: boolean;
   isVisible: boolean;
+  setTextFocused?: (textFocused: boolean) => void;
 }) => (
   <Swipeable
     key={block.id}
@@ -115,6 +117,7 @@ const BlockViewImpl = ({
       shouldLink
       isRemoteCollection={isRemoteCollection}
       isVisible={isVisible}
+      setTextFocused={setTextFocused}
     />
   </Swipeable>
 );
@@ -125,15 +128,18 @@ const BlockView = memo(
     block,
     isRemoteCollection,
     isVisible,
+    setTextFocused,
   }: {
     block: Block;
     isRemoteCollection: boolean;
     isVisible: boolean;
+    setTextFocused?: (textFocused: boolean) => void;
   }) => (
     <BlockViewWrapped
       block={block}
       isRemoteCollection={isRemoteCollection}
       isVisible={isVisible}
+      setTextFocused={setTextFocused}
     />
   )
 );
@@ -143,11 +149,13 @@ export function BlockTexts({
   collectionId,
   fetchMoreBlocks,
   isFetchingNextPage,
+  setTextFocused,
 }: {
   blocks: CollectionBlock[] | null;
   collectionId?: string;
   fetchMoreBlocks: () => void;
   isFetchingNextPage: boolean;
+  setTextFocused?: (textFocused: boolean) => void;
 }) {
   const { getCollection } = useContext(DatabaseContext);
   const [collection, setCollection] = useState<undefined | Collection>(
@@ -198,6 +206,7 @@ export function BlockTexts({
           block={item}
           isRemoteCollection={isRemoteCollection}
           isVisible={visibleItems.includes(item.id)}
+          setTextFocused={setTextFocused}
         />
       );
     },

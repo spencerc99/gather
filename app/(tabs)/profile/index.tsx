@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { zip } from "react-native-zip-archive";
 import * as Application from "expo-application";
 import { useContext, useMemo, useState } from "react";
 import { Animated, Image, useColorScheme } from "react-native";
@@ -36,6 +37,7 @@ import { UsageInfo } from "../../../components/UsageInfo";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { promptForReview } from "../../../utils/celebrations";
+import { PHOTOS_FOLDER } from "../../../utils/blobs";
 
 const DefaultAppSrc = require(`../../../assets/images/icon.png`);
 
@@ -368,29 +370,53 @@ function DownloadButton({ ...buttonProps }: GetProps<typeof StyledButton>) {
   const exportData = async () => {
     setIsExporting(true);
     try {
+      const timestamp = dayjs().format("YYYY-MM-DD_HHmmss");
+      const zipFileName = `gather_export_${timestamp}.zip`;
+      const zipFilePath = `${FileSystem.cacheDirectory}${zipFileName}`;
+
       // Get the database file path
-      const dbPath = FileSystem.documentDirectory + "SQLite/db.db";
+      const dbPath = `${FileSystem.documentDirectory}SQLite/db.db`;
 
-      // Create a temporary file for sharing
-      const tempFilePath =
-        FileSystem.cacheDirectory +
-        `gather_export_${dayjs().format("YYYY-MM-DD")}.db`;
+      // Get the media files directory
+      const mediaDir = `${FileSystem.documentDirectory}${PHOTOS_FOLDER}`;
 
-      // Copy the database file to the temporary location
+      // Create a temporary directory for export
+      const tempExportDir = `${FileSystem.cacheDirectory}export_temp/`;
+      await FileSystem.makeDirectoryAsync(tempExportDir, {
+        intermediates: true,
+      });
+
+      // Copy database to temp directory
       await FileSystem.copyAsync({
         from: dbPath,
-        to: tempFilePath,
+        to: `${tempExportDir}db.db`,
       });
+
+      // Copy media files to temp directory (if they exist)
+      try {
+        await FileSystem.copyAsync({
+          from: mediaDir,
+          to: `${tempExportDir}media/`,
+        });
+      } catch (error) {
+        console.log("No media files found or error copying media:", error);
+      }
+
+      // Create zip file
+      await zip(tempExportDir, zipFilePath);
+
+      // Clean up temp directory
+      await FileSystem.deleteAsync(tempExportDir, { idempotent: true });
 
       // Check if sharing is available on the device
       const isSharingAvailable = await Sharing.isAvailableAsync();
 
       if (isSharingAvailable) {
         // Open the sharing dialog
-        await Sharing.shareAsync(tempFilePath, {
-          mimeType: "application/x-sqlite3",
+        await Sharing.shareAsync(zipFilePath, {
+          mimeType: "application/zip",
           dialogTitle: "Export Gather Data",
-          UTI: "public.database", // Uniform Type Identifier for macOS
+          UTI: "public.zip-archive", // Uniform Type Identifier for macOS
         });
       } else {
         alert("Sharing is not available on this device");
