@@ -314,12 +314,16 @@ export default function ProfileScreen() {
           >
             Review
           </StyledButton>
-          <DownloadButton
+          <LinkButton
+            href="/export"
             justifyContent="flex-start"
             theme="gray"
             flex={1}
             width="100%"
-          />
+            icon={<Icon name="folder" />}
+          >
+            Export Data
+          </LinkButton>
         </XStack>
 
         {/* TODO: select a channel to send? */}
@@ -361,82 +365,5 @@ export default function ProfileScreen() {
         </YStack>
       </YStack>
     </ScrollView>
-  );
-}
-
-function DownloadButton({ ...buttonProps }: GetProps<typeof StyledButton>) {
-  const [isExporting, setIsExporting] = useState(false);
-
-  const exportData = async () => {
-    setIsExporting(true);
-    try {
-      const timestamp = dayjs().format("YYYY-MM-DD_HHmmss");
-      const zipFileName = `gather_export_${timestamp}.zip`;
-      const zipFilePath = `${FileSystem.cacheDirectory}${zipFileName}`;
-
-      // Get the database file path
-      const dbPath = `${FileSystem.documentDirectory}SQLite/db.db`;
-
-      // Get the media files directory
-      const mediaDir = `${FileSystem.documentDirectory}${PHOTOS_FOLDER}`;
-
-      // Create a temporary directory for export
-      const tempExportDir = `${FileSystem.cacheDirectory}export_temp/`;
-      await FileSystem.makeDirectoryAsync(tempExportDir, {
-        intermediates: true,
-      });
-
-      // Copy database to temp directory
-      await FileSystem.copyAsync({
-        from: dbPath,
-        to: `${tempExportDir}db.db`,
-      });
-
-      // Copy media files to temp directory (if they exist)
-      try {
-        await FileSystem.copyAsync({
-          from: mediaDir,
-          to: `${tempExportDir}media/`,
-        });
-      } catch (error) {
-        console.log("No media files found or error copying media:", error);
-      }
-
-      // Create zip file
-      await zip(tempExportDir, zipFilePath);
-
-      // Clean up temp directory
-      await FileSystem.deleteAsync(tempExportDir, { idempotent: true });
-
-      // Check if sharing is available on the device
-      const isSharingAvailable = await Sharing.isAvailableAsync();
-
-      if (isSharingAvailable) {
-        // Open the sharing dialog
-        await Sharing.shareAsync(zipFilePath, {
-          mimeType: "application/zip",
-          dialogTitle: "Export Gather Data",
-          UTI: "public.zip-archive", // Uniform Type Identifier for macOS
-        });
-      } else {
-        alert("Sharing is not available on this device");
-      }
-    } catch (error) {
-      console.error("Error exporting data:", error);
-      alert("Failed to export data. Please try again.");
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  return (
-    <StyledButton
-      icon={isExporting ? <Spinner size="small" /> : <Icon name="download" />}
-      onPress={exportData}
-      disabled={isExporting}
-      {...buttonProps}
-    >
-      {isExporting ? "Exporting..." : "Export data"}
-    </StyledButton>
   );
 }

@@ -244,6 +244,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="export"
+        options={{
+          presentation: "card",
+          title: "Export Data",
+        }}
+      />
+      <Stack.Screen
         name="collection/[id]/index"
         options={{
           presentation: "card",
