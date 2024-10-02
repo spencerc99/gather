@@ -111,7 +111,14 @@ const db = openDatabase();
 
 function inParam(sql: string, arr: (string | number | null)[]) {
   // TODO: this needs to handle adding quotes if a string (also this doesn't handle null?)
-  return sql.replace("?#", arr.join(","));
+  // if arr == string[], then surround with single quotes
+  const transformedArr = arr.map((item) => {
+    if (typeof item === "string") {
+      return `'${item}'`;
+    }
+    return item;
+  });
+  return sql.replace("?#", transformedArr.join(","));
 }
 
 function mapDbCollectionToCollection(collection: any): Collection {
@@ -234,6 +241,9 @@ interface DatabaseContextProps {
   getPendingArenaBlocks: () => any;
   selectedReviewCollection: string | null;
   setSelectedReviewCollection: (collectionId: string | null) => void;
+  getExistingAssetIds: (
+    assetIds: (string | null | undefined)[]
+  ) => Promise<string[]>;
 }
 
 export const DatabaseContext = createContext<DatabaseContextProps>({
@@ -298,6 +308,9 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   },
   getArenaCollectionIds: () => {
     throw new Error("Function not implemented.");
+  },
+  getExistingAssetIds: async () => {
+    return [];
   },
 });
 
@@ -557,7 +570,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const createBlocksMutation = useMutation({
     mutationFn: createBlocksBase,
     onSuccess: (blockInfos, { collectionId, blocksToInsert }) => {
-      console.log("success!!");
       // queryClient.setQueryData<InfiniteData<Block[]>>(
       //   ["blocks", { collectionId }],
       //   // @ts-ignore
@@ -2354,6 +2366,40 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     return { title, size: contents.length };
   }
 
+  async function getExistingAssetIds(
+    assetIds: (string | null | undefined)[]
+  ): Promise<string[]> {
+    try {
+      const validAssetIds = assetIds.filter((id): id is string => !!id);
+      if (validAssetIds.length === 0) {
+        return [];
+      }
+
+      const [result] = await db.execAsync(
+        [
+          {
+            sql: inParam(
+              `SELECT DISTINCT local_asset_id 
+             FROM blocks 
+             WHERE local_asset_id IN (?#) 
+             AND deletion_timestamp IS NULL;`,
+              validAssetIds
+            ),
+            args: [],
+          },
+        ],
+        true
+      );
+
+      handleSqlErrors(result);
+
+      return result.rows.map((row) => row.local_asset_id);
+    } catch (err) {
+      logError(err);
+      return [];
+    }
+  }
+
   return (
     <DatabaseContext.Provider
       value={{
@@ -2393,6 +2439,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         setSelectedReviewCollection,
         getBlocks,
         getCollections,
+        getExistingAssetIds,
         // internal
         db,
         initDatabases,

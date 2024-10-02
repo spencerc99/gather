@@ -3,7 +3,7 @@ import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Dimensions, Linking, Platform, ScrollView } from "react-native";
+import { Alert, Dimensions, Linking, Platform, ScrollView } from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { BlockSelectLimit, DatabaseContext } from "../utils/db";
@@ -62,8 +62,13 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
   const [isLoadingAssets, setIsLoadingAssets] = useState(false);
-  const { createBlocks, shareIntent, getBlocks, getCollectionItems } =
-    useContext(DatabaseContext);
+  const {
+    createBlocks,
+    shareIntent,
+    getBlocks,
+    getCollectionItems,
+    getExistingAssetIds,
+  } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
   const [textPlaceholder, setTextPlaceholder] = useState("");
@@ -181,11 +186,6 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     }
     fetchNextPage();
   }
-
-  if (!currentUser) {
-    return null;
-  }
-
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     setIsLoadingAssets(true);
@@ -376,6 +376,24 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     }
   }
 
+  const [existingMedias, setExistingMedias] = useState<Set<string>>(new Set());
+
+  async function checkExistingMedias(): Promise<Set<string>> {
+    const existingMedias = await getExistingAssetIds(
+      medias.map(({ assetId }) => assetId)
+    );
+
+    return new Set(existingMedias);
+  }
+
+  useEffect(() => {
+    void checkExistingMedias().then(setExistingMedias);
+  }, [medias]);
+
+  if (!currentUser) {
+    return null;
+  }
+
   return (
     <StyledView flex={1}>
       <Animated.View style={[{ flex: 1 }, translateStyle]}>
@@ -405,37 +423,61 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             {medias.length > 0 && (
               <ScrollView horizontal={true}>
                 <XStack flexWrap="wrap" gap="$2" paddingTop="$1">
-                  {medias.map(({ uri, type }, idx) => (
-                    <YStack width={150} height={150} key={uri} borderRadius={8}>
-                      <MediaView
-                        media={uri}
-                        blockType={type}
-                        style={{
-                          aspectRatio: 1,
-                          resizeMode: "cover",
-                          // @ts-ignore
-                          borderRadius: "$2",
-                        }}
-                        videoProps={{
-                          isMuted: true,
-                          shouldPlay: true,
-                          isLooping: true,
-                        }}
-                      />
-                      <StyledButton
-                        icon={<Icon name="remove" />}
-                        size="$5"
-                        theme="gray"
-                        circular
-                        position="absolute"
-                        top={4}
-                        right={2}
-                        onPress={() => {
-                          removeMedia(idx);
-                        }}
-                      />
-                    </YStack>
-                  ))}
+                  {medias.map(({ uri, type, assetId }, idx) => {
+                    const isExisting = existingMedias.has(assetId || "");
+                    return (
+                      <YStack
+                        width={150}
+                        height={150}
+                        key={uri}
+                        borderRadius={8}
+                        overflow="hidden" // Add this to ensure the overlay stays within bounds
+                      >
+                        <MediaView
+                          media={uri}
+                          blockType={type}
+                          style={{
+                            aspectRatio: 1,
+                            resizeMode: "cover",
+                            // @ts-ignore
+                            borderRadius: "$2",
+                          }}
+                          videoProps={{
+                            isMuted: true,
+                            shouldPlay: true,
+                            isLooping: true,
+                          }}
+                        />
+                        {isExisting && (
+                          <YStack
+                            position="absolute"
+                            top={0}
+                            left={0}
+                            right={0}
+                            bottom={0}
+                            backgroundColor="$gray5"
+                            opacity={0.7}
+                            justifyContent="center"
+                            alignItems="center"
+                          >
+                            <StyledText>duplicate asset!</StyledText>
+                          </YStack>
+                        )}
+                        <StyledButton
+                          icon={<Icon name="remove" />}
+                          size="$5"
+                          theme="gray"
+                          circular
+                          position="absolute"
+                          top={4}
+                          right={2}
+                          onPress={() => {
+                            removeMedia(idx);
+                          }}
+                        />
+                      </YStack>
+                    );
+                  })}
                   {isLoadingAssets && (
                     <XStack
                       paddingTop="$2"
@@ -488,7 +530,22 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             <YStack position="absolute" zIndex={1} right="$1.5" bottom="$2">
               <StyledButton
                 onPress={async () => {
-                  void onSaveResult();
+                  if (existingMedias.size > 0) {
+                    Alert.alert(
+                      "Duplicate Media",
+                      "You've already added some of this media. Are you sure you want to add it again?",
+                      [
+                        {
+                          text: "Cancel",
+                          style: "cancel",
+                        },
+                        {
+                          text: "Add Anyway",
+                          onPress: () => onSaveResult(),
+                        },
+                      ]
+                    );
+                  }
                 }}
                 chromeless
                 marginHorizontal="$2"
