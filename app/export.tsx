@@ -42,8 +42,15 @@ export async function exportData() {
   // Get the media files directory
   const mediaDir = `${FileSystem.documentDirectory}${PHOTOS_FOLDER}`;
 
-  // Create zip file directly from the database and media folder
-  await zip([dbPath, mediaDir], zipFilePath);
+  // Create a temporary zip for media files
+  const mediaZipPath = `${FileSystem.cacheDirectory}temp_media.zip`;
+  await zip(mediaDir, mediaZipPath);
+
+  // Create final zip file with the database and media zip
+  await zip([dbPath, mediaZipPath], zipFilePath);
+
+  // Clean up the temporary media zip
+  await FileSystem.deleteAsync(mediaZipPath, { idempotent: true });
 
   // Get file info
   const fileInfo = await FileSystem.getInfoAsync(zipFilePath, {
