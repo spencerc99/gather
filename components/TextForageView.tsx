@@ -545,6 +545,8 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                         },
                       ]
                     );
+                  } else {
+                    onSaveResult();
                   }
                 }}
                 chromeless
