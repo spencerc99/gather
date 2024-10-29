@@ -158,10 +158,9 @@ export function AboutSection({
           handmade software
         </ExternalLinkText>{" "}
         is how I <StyledText bold>make my living</StyledText> as an indie
-        engineer-artist. Gather doesn't have ads or require a subscription, so
-        your contribution gives you{" "}
-        <StyledText bold>lifetime access</StyledText> and supports continued
-        development.
+        engineer-artist. Gather is free without ads or a subscription, but you
+        can support my work on it with a gift. A contribution over $3 entitles
+        you to a mailed thank you note if you email me.
       </StyledText>
       <StyledText>
         I appreciate your support and hope you enjoy Gather 🧡
