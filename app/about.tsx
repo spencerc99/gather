@@ -159,8 +159,9 @@ export function AboutSection({
         </ExternalLinkText>{" "}
         is how I <StyledText bold>make my living</StyledText> as an indie
         engineer-artist. Gather is free without ads or a subscription, but you
-        can support my work on it with a gift. A contribution over $3 entitles
-        you to a mailed thank you note if you email me.
+        can support my creative practice with a gift. This gift doesn't affect
+        your in-app experience, but you will receive the warm and fuzzy feeling
+        of supporting an independent creative.
       </StyledText>
       <StyledText>
         I appreciate your support and hope you enjoy Gather 🧡
