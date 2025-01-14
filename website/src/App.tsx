@@ -102,8 +102,12 @@ function App() {
             and{" "}
             <a href="https://play.google.com/store/apps/details?id=net.tiny_inter.gather">
               Android
+            </a>{" "}
+            (sign up{" "}
+            <a href="https://coda.io/form/Untitled-Form_dwglAPFKR8v?fromWebsite=true">
+              email for updates
             </a>
-            .
+            ) .
           </p>
         </div>
         <div className="description">
