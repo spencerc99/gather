@@ -7,7 +7,7 @@ import { ContributionsKey, getItem, setItem } from "../utils/mmkv";
 import { UserInfo } from "../utils/user";
 import { withQueryParams } from "../utils/url";
 
-export const SlidingPrice = [3, 6, 9, 13, 21, 33, 60];
+export const SlidingPrice = [3, 6, 9, 13, 33, 60, 100];
 export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
 
 const PriceMessages = [
@@ -25,9 +25,9 @@ const PaymentLinks = [
   "https://buy.stripe.com/00gdThfIL1bq9Ow9AG", // $6
   "https://buy.stripe.com/8wMg1p8gjf2g2m4bIN", // $9
   "https://buy.stripe.com/fZe9D14031bq6CkeV4", // $13
-  "https://buy.stripe.com/14kg1peEH1bqd0I7sz", // $21
   "https://buy.stripe.com/bIY16vgMPf2g8KsfZ6", // $33
   "https://buy.stripe.com/9AQ2az40307m9OwaEN", // $60
+  "https://buy.stripe.com/14kg1peEH1bqd0I7sz", // $100
 ];
 
 export function getSlidingPriceMoneyValue(value: number) {

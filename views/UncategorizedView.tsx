@@ -39,6 +39,9 @@ export function UncategorizedView() {
   const { data: events } = useUncategorizedBlocks();
   const bottomTabHeight = useBottomTabBarHeight();
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [lastSwipeDirection, setLastSwipeDirection] = useState<"next" | "prev">(
+    "next"
+  );
 
   const renderBlock = useCallback(
     (block: Block, idx: number) => {
@@ -74,9 +77,13 @@ export function UncategorizedView() {
       if (!events) {
         return;
       } else {
-        if (index === events.length - 1) {
+        if (
+          index === events.length - 1 ||
+          (lastSwipeDirection === "prev" && index > 0)
+        ) {
           carouselRef.current?.prev({ count: 1 });
         }
+
         await addConnections({
           blockId: itemId,
           connections: selectedCollections.map((c) => ({
@@ -87,7 +94,7 @@ export function UncategorizedView() {
       }
       Keyboard.dismiss();
     },
-    [events]
+    [events, lastSwipeDirection]
   );
 
   const width = Dimensions.get("window").width;
@@ -260,6 +267,11 @@ export function UncategorizedView() {
               windowSize={5}
               renderItem={({ item, index }) => CarouselItem({ item, index })}
               onSnapToItem={(index) => {
+                if (index > currentIdx) {
+                  setLastSwipeDirection("next");
+                } else if (index < currentIdx) {
+                  setLastSwipeDirection("prev");
+                }
                 setCurrentIdx(index);
               }}
             />

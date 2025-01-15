@@ -9,7 +9,7 @@ import { Alert } from "react-native";
 import { useContributions } from "./hooks/useContributions";
 
 const BlockMilestones = [250, 200, 150, 80, 25];
-const CollectionMilestones = [25, 10];
+const CollectionMilestones = [25, 10, 5];
 const SupportMessage = `If you're enjoying Gather, I'd really appreciate you contributing to support development and giving it a positive review to help share it with others! As an indie app made by one person, your support means the world to me and makes continued maintenance possible.`;
 
 interface MilestoneState {
@@ -132,19 +132,30 @@ ${SupportMessage}`;
     };
 
     if (message) {
+      // TODO: this should push a full-screen modal instead of an alert, same styling as AboutSection
       Alert.alert(
         title,
         message,
         [
-          {
-            text: "yay!",
-            style: "default",
-            onPress: async () => {
-              await onDismiss();
-            },
-          },
-          ...(!hasContributed
+          ...(hasContributed
             ? [
+                {
+                  text: "yay!",
+                  style: "default" as const,
+                  onPress: async () => {
+                    await onDismiss();
+                  },
+                },
+                {
+                  text: "i'd like to contribute again!",
+                  onPress: async () => {
+                    router.push("/support");
+                    await onDismiss();
+                  },
+                  style: "cancel" as const,
+                },
+              ]
+            : [
                 {
                   text: "i can contribute!",
                   onPress: async () => {
@@ -153,8 +164,44 @@ ${SupportMessage}`;
                   },
                   style: "cancel" as const,
                 },
-              ]
-            : []),
+                {
+                  text: "sorry i can't",
+                  style: "default" as const,
+                  onPress: async () => {
+                    Alert.alert(
+                      "pretty please?",
+                      "This work, like all handmade software, only happens because of people like you contributing a few dollars. Together, we can make it possible to create software with data that's entirely yours and not subject to ads or adverse incentives.",
+                      [
+                        {
+                          text: "Sorry I really can't",
+                          onPress: async () => {
+                            Alert.alert(
+                              "That's okay",
+                              "I hope you enjoy Gather and find it useful. If you change your mind, you can always contribute later in the profile tab.",
+                              [
+                                {
+                                  text: "Thanks! I'll contribute later if I like it",
+                                },
+                              ],
+                              { cancelable: true }
+                            );
+                            await onDismiss();
+                          },
+                          style: "default",
+                        },
+                        {
+                          text: "Ok you've convinced me",
+                          onPress: async () => {
+                            router.push("/support");
+                            await onDismiss();
+                          },
+                          style: "cancel",
+                        },
+                      ]
+                    );
+                  },
+                },
+              ]),
         ],
         {
           cancelable: true,
@@ -164,18 +211,22 @@ ${SupportMessage}`;
   }, [currentUser, blockCount, collectionCount, contributions]);
 
   useEffect(() => {
+    if (
+      blockCount === undefined ||
+      collectionCount === undefined ||
+      contributions === undefined
+    )
+      return;
     checkMilestones();
-  }, [checkMilestones]);
+  }, [checkMilestones, blockCount, collectionCount, contributions]);
 
   return { checkMilestones };
 }
 
 export async function promptForReview(savePromptedState: boolean = true) {
   const state = getMilestoneState();
-  console.log("prompting!");
   const isAvailable = await StoreReview.isAvailableAsync();
   if (isAvailable) {
-    console.log("requesting!");
     await StoreReview.requestReview();
     if (savePromptedState) {
       state.hasPromptedForReview = true;

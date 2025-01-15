@@ -20,11 +20,13 @@ const AppSettingPrefix = "appSetting_";
 export enum AppSettingType {
   ShowCameraInTextingView = "ShowCameraInTextingView",
   PromptsCollection = "PromptsCollection", // for a collection of text prompts that replace the default ones
+  DefaultCollection = "DefaultCollection", // for the default collection to open
 }
 
 interface AppSettingTypeToValueType {
   [AppSettingType.ShowCameraInTextingView]: boolean;
   [AppSettingType.PromptsCollection]: string | null;
+  [AppSettingType.DefaultCollection]: string | null;
 }
 
 export function getAppSetting<T extends AppSettingType>(
@@ -110,6 +112,29 @@ const AppSettings: Record<AppSettingType, AppSettingConfig<any>> = {
             width: "100%",
           }}
         ></CollectionSelect>
+      );
+    },
+  },
+  [AppSettingType.DefaultCollection]: {
+    type: AppSettingType.DefaultCollection,
+    label: "Default Collection",
+    description:
+      "Specify a collection to open to when you first launch the app.",
+    defaultValue: null,
+    renderPicker: (config) => {
+      const [value, setValue] = useAppSetting(
+        AppSettingType.DefaultCollection,
+        config.defaultValue
+      );
+      return (
+        <CollectionSelect
+          selectedCollection={value}
+          setSelectedCollection={setValue}
+          collectionPlaceholder="All Collections"
+          triggerProps={{
+            width: "100%",
+          }}
+        />
       );
     },
   },

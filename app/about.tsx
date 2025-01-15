@@ -59,7 +59,7 @@ export default function About() {
             paddingHorizontal="10%"
             gap="$3"
           >
-            <AboutSection
+            <AboutSectionWithDonation
               value={value}
               setValue={setValue}
               onSlideStart={onSlideStart}
@@ -89,7 +89,7 @@ export default function About() {
   );
 }
 
-export function AboutSection({
+export function AboutSectionWithDonation({
   value,
   setValue,
   onSlideStart,
@@ -102,6 +102,24 @@ export function AboutSection({
   onSlideEnd: () => void;
   shortened?: boolean;
 }) {
+  return (
+    <>
+      <AboutSpencer shortened={shortened} />
+      {!shortened && <UsageInfo />}
+      {!shortened && <ContributionsList />}
+      <YStack marginTop="$2">
+        <SlidingScalePayment
+          val={value}
+          setVal={setValue}
+          onSlideStart={onSlideStart}
+          onSlideEnd={onSlideEnd}
+        ></SlidingScalePayment>
+      </YStack>
+    </>
+  );
+}
+
+export function AboutSpencer({ shortened }: { shortened?: boolean }) {
   return (
     <>
       <XStack>
@@ -157,25 +175,15 @@ export function AboutSection({
         <ExternalLinkText href="https://spencerchang.substack.com/p/ti-10-make-small-web-tools">
           handmade software
         </ExternalLinkText>{" "}
-        is how I <StyledText bold>make my living</StyledText> as an indie
-        engineer-artist. Gather is free without ads or a subscription, but you
-        can support my creative practice with a gift. This gift doesn't affect
-        your in-app experience, but you will receive the warm and fuzzy feeling
-        of supporting an independent creative.
+        like this is what I <StyledText bold>do for a living</StyledText> as an
+        indie engineer-artist. Gather is free without ads or a subscription, but
+        you can support my creative practice by sharing it with your friends or
+        giving a small contribution for the warm and fuzzy feeling of supporting
+        an independent creative.
       </StyledText>
       <StyledText>
         I appreciate your support and hope you enjoy Gather 🧡
       </StyledText>
-      {!shortened && <UsageInfo />}
-      {!shortened && <ContributionsList />}
-      <YStack marginTop="$2">
-        <SlidingScalePayment
-          val={value}
-          setVal={setValue}
-          onSlideStart={onSlideStart}
-          onSlideEnd={onSlideEnd}
-        ></SlidingScalePayment>
-      </YStack>
     </>
   );
 }

@@ -983,10 +983,20 @@ export async function createBlock({
         },
       }),
     });
+    if (!resp.ok) {
+      logError(
+        `failed to create connection for existing arena block ${
+          resp.status
+        }: ${JSON.stringify(resp)}`
+      );
+      throw new Error(JSON.stringify(resp));
+    }
     const response = await resp.json();
     if (response.errors?.length) {
       logError(
-        `failed to create connection in arena ${JSON.stringify(response)}`
+        `failed to create connection for existing arena block ${JSON.stringify(
+          response
+        )}`
       );
       throw new Error(JSON.stringify(response));
     }

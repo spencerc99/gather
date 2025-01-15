@@ -199,6 +199,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     setIsLoadingAssets(false);
     if (!result.canceled) {
       // TODO: preserve assetID in URI
+      console.log("assets", result.assets);
       setMedias([
         ...medias,
         ...result.assets.map((asset) => ({
@@ -478,19 +479,27 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                       </YStack>
                     );
                   })}
-                  {isLoadingAssets && (
-                    <XStack
-                      paddingTop="$2"
-                      alignItems="center"
-                      justifyContent="center"
-                      width="100%"
-                    >
-                      <StyledText metadata>Loading images... </StyledText>
-                      <Spinner size="small" color="$orange9" />
-                    </XStack>
-                  )}
                 </XStack>
               </ScrollView>
+            )}
+            {isLoadingAssets && (
+              <XStack
+                paddingTop="$2"
+                alignItems="center"
+                justifyContent="center"
+                width="100%"
+                {...(medias.length > 0
+                  ? {
+                      position: "absolute",
+                      top: -4,
+                    }
+                  : {})}
+              >
+                <XStack backgroundColor="$gray4" padding="$2" borderRadius="$2">
+                  <StyledText metadata>Loading images... </StyledText>
+                  <Spinner size="small" color="$orange9" />
+                </XStack>
+              </XStack>
             )}
           </XStack>
           <XStack

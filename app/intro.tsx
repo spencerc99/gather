@@ -55,7 +55,7 @@ import { setBoolean, useStickyValue } from "../utils/mmkv";
 import { DatabaseContext } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { ArenaLogin } from "../views/ArenaLogin";
-import { AboutSection } from "./about";
+import { AboutSectionWithDonation, AboutSpencer } from "./about";
 import { ErrorsContext } from "../utils/errors";
 import { useQuery } from "@tanstack/react-query";
 import { HelpGuideUrl } from "../utils/constants";
@@ -324,7 +324,7 @@ export default function IntroScreen() {
               text="Next"
               disabled={!email || !EmailRegex.test(email)}
               onPress={async () => {
-                if (currentUser) {
+                if (currentUser && currentUser?.id) {
                   return;
                 }
                 await setupUser({ email });
@@ -432,16 +432,24 @@ export default function IntroScreen() {
           </>
         );
       case 3:
-        return (
+        return Platform.OS === "ios" ? (
           <>
-            <AboutSection
+            <AboutSpencer shortened />
+
+            <YStack gap="$2" marginTop="auto">
+              <NextStepButton
+                text={<StyledText>Ok, I'm ready to try</StyledText>}
+              />
+            </YStack>
+          </>
+        ) : (
+          <>
+            <AboutSectionWithDonation
               value={value}
               setValue={setValue}
               onSlideStart={onSlideStart}
               onSlideEnd={onSlideEnd}
-              shortened
             />
-
             <YStack gap="$2" marginTop="auto">
               <NextStepButton
                 text={
