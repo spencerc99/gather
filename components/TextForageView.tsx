@@ -28,8 +28,9 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BlockInsertInfo } from "../utils/dataTypes";
+import { BlockInsertInfo, LocationMetadata } from "../utils/dataTypes";
 import { AppSettingType, getAppSetting } from "../app/settings";
+import * as Location from "expo-location";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -56,7 +57,87 @@ interface PickedMedia {
   type: BlockType;
   contentType?: MimeType;
   assetId?: string | null;
+  captureTime?: number;
+  location?: LocationMetadata;
 }
+
+const getLocationMetadata = async (
+  latitude: number,
+  longitude: number
+): Promise<LocationMetadata> => {
+  try {
+    const results = await Location.reverseGeocodeAsync({ latitude, longitude });
+    const location = results[0];
+
+    return {
+      latitude,
+      longitude,
+      name: location.name || undefined,
+      street: location.street || undefined,
+      city: location.city || undefined,
+      region: location.region || undefined,
+      country: location.country || undefined,
+    };
+  } catch (error) {
+    console.warn("Error getting location metadata:", error);
+    return { latitude, longitude };
+  }
+};
+
+const getCurrentLocationMetadata = async (): Promise<
+  LocationMetadata | undefined
+> => {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      return undefined;
+    }
+
+    const location = await Location.getCurrentPositionAsync({});
+    const { latitude, longitude } = location.coords;
+
+    return await getLocationMetadata(latitude, longitude);
+  } catch (error) {
+    console.warn("Error getting current location:", error);
+    return undefined;
+  }
+};
+const parseExifDate = (dateString?: string): number | undefined => {
+  if (!dateString) return undefined;
+  return new Date(
+    dateString.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3")
+  ).getTime();
+};
+
+const processMediaAsset = async (
+  asset: ImagePicker.ImagePickerAsset
+): Promise<PickedMedia> => {
+  let metadata = null;
+  if (asset.exif) {
+    const { GPSLatitude, GPSLongitude, DateTimeOriginal } = asset.exif;
+
+    let locationMetadata;
+    if (GPSLatitude && GPSLongitude) {
+      locationMetadata = await getLocationMetadata(GPSLatitude, GPSLongitude);
+    }
+
+    metadata = {
+      captureTime: parseExifDate(DateTimeOriginal),
+      location: locationMetadata,
+    } as {
+      captureTime: number;
+      location: LocationMetadata;
+    };
+  }
+
+  return {
+    uri: asset.uri,
+    type: asset.type === "image" ? BlockType.Image : BlockType.Video,
+    contentType: asset.mimeType as MimeType,
+    assetId: asset.assetId,
+    ...metadata,
+  };
+};
 
 export function TextForageView({ collectionId }: { collectionId?: string }) {
   const [textValue, setTextValue] = useState("");
@@ -186,31 +267,25 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     }
     fetchNextPage();
   }
+
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     setIsLoadingAssets(true);
-    // TODO: this needs to filer out ones where we've already added using assetID
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       quality: 1,
       orderedSelection: true,
+      exif: true,
     });
-    setIsLoadingAssets(false);
+
     if (!result.canceled) {
-      // TODO: preserve assetID in URI
-      console.log("assets", result.assets);
-      setMedias([
-        ...medias,
-        ...result.assets.map((asset) => ({
-          uri: asset.uri,
-          // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
-          type: asset.type === "image" ? BlockType.Image : BlockType.Video,
-          contentType: asset.mimeType as MimeType,
-          assetId: asset.assetId,
-        })),
-      ]);
+      const mediaWithMetadata = await Promise.all(
+        result.assets.map(processMediaAsset)
+      );
+
+      setMedias([...medias, ...mediaWithMetadata]);
     }
+    setIsLoadingAssets(false);
   };
 
   function removeMedia(idx: number) {
@@ -231,28 +306,40 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     try {
       if (savedMedias.length) {
         const mediaToInsert = await Promise.all(
-          savedMedias.map(async ({ uri, type, assetId, contentType }) => {
-            // TODO: this is only accounting for iphone.
-            const fileUri = await getFsPathForMediaResult(
+          savedMedias.map(
+            async ({
               uri,
-              type === BlockType.Image ? "jpg" : "mp4",
-              assetId
-            );
-            return {
-              createdBy: currentUser!.id,
-              content: fileUri,
               type,
-              // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
-              localAssetId: assetId || undefined,
+              assetId,
               contentType,
-            };
-          })
+              captureTime,
+              location,
+            }) => {
+              // TODO: this is only accounting for iphone.
+              const fileUri = await getFsPathForMediaResult(
+                uri,
+                type === BlockType.Image ? "jpg" : "mp4",
+                assetId
+              );
+              return {
+                createdBy: currentUser!.id,
+                content: fileUri,
+                type,
+                // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
+                localAssetId: assetId || undefined,
+                contentType,
+                captureTime,
+                location,
+              };
+            }
+          )
         );
         blocksToInsert.push(...mediaToInsert);
       }
 
       if (savedTextValue) {
         // TODO: do this check after insert as text value and then do an update to make it super fast.
+        const locationMetadata = await getCurrentLocationMetadata();
         if (isUrl(savedTextValue)) {
           const { title, description, images, url, favicon } =
             (await extractDataFromUrl(savedTextValue)) || {};
@@ -265,6 +352,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             source: url,
             type: BlockType.Link,
             collectionsToConnect: collectionId ? [{ collectionId }] : [],
+            location: locationMetadata,
           });
         } else {
           blocksToInsert.push({
@@ -272,6 +360,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             content: savedTextValue,
             type: BlockType.Text,
             collectionsToConnect: collectionId ? [{ collectionId }] : [],
+            location: locationMetadata,
           });
         }
       }
@@ -360,21 +449,17 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       orderedSelection: true,
       presentationStyle: ImagePicker.UIImagePickerPresentationStyle.PAGE_SHEET,
+      exif: true,
     });
-    setIsLoadingAssets(false);
+
     if (!result.canceled) {
-      // TODO: preserve assetID in URI
-      setMedias([
-        ...medias,
-        ...result.assets.map((asset) => ({
-          uri: asset.uri,
-          // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
-          type: asset.type === "image" ? BlockType.Image : BlockType.Video,
-          contentType: asset.mimeType as MimeType,
-          assetId: asset.assetId,
-        })),
-      ]);
+      const mediaWithMetadata = await Promise.all(
+        result.assets.map(processMediaAsset)
+      );
+
+      setMedias([...medias, ...mediaWithMetadata]);
     }
+    setIsLoadingAssets(false);
   }
 
   const [existingMedias, setExistingMedias] = useState<Set<string>>(new Set());

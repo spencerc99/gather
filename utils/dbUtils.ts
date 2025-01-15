@@ -1,6 +1,11 @@
 import { PHOTOS_FOLDER } from "./blobs";
 import * as FileSystem from "expo-file-system";
-import { Block, RemoteSourceType, RemoteSourceInfo } from "./dataTypes";
+import {
+  Block,
+  RemoteSourceType,
+  RemoteSourceInfo,
+  LocationMetadata,
+} from "./dataTypes";
 import { convertDbTimestampToDate } from "./date";
 import { BlockType } from "./mimeTypes";
 
@@ -36,6 +41,10 @@ export function mapDbBlockToBlock(block: any): Block {
           c.toString()
         )
       : [],
+    captureTime: block.capture_time,
+    location: block.location_data
+      ? (JSON.parse(block.location_data) as LocationMetadata)
+      : undefined,
   } as Block;
 }
 

@@ -217,23 +217,54 @@ export function BlockDetailView({ block }: { block: Block }) {
                 </StyledText>
               )}
               <StyledParagraph metadata>
-                Created: {createdAt.toLocaleDateString()}
+                Added: {createdAt.toLocaleDateString()}
               </StyledParagraph>
               <StyledParagraph metadata>
                 Updated: {updatedAt.toLocaleDateString()}
               </StyledParagraph>
+              {block.captureTime && (
+                <StyledParagraph metadata>
+                  Captured: {new Date(block.captureTime).toLocaleDateString()}{" "}
+                  {new Date(block.captureTime).toLocaleTimeString()}
+                </StyledParagraph>
+              )}
               {(__DEV__ || devModeEnabled) && (
                 <>
-                  <StyledParagraph metadata>ID: {id}</StyledParagraph>
+                  <StyledParagraph metadata color="$purple8">
+                    ID: {id}
+                  </StyledParagraph>
                   {contentType && (
-                    <StyledParagraph metadata>{contentType}</StyledParagraph>
+                    <StyledParagraph metadata color="$purple8">
+                      {contentType}
+                    </StyledParagraph>
                   )}
                   {localAssetId && (
-                    <StyledParagraph metadata>
+                    <StyledParagraph metadata color="$purple8">
                       asset ID: {localAssetId}
                     </StyledParagraph>
                   )}
                 </>
+              )}
+              {block.location && (
+                <StyledParagraph metadata>
+                  Location:{" "}
+                  {[
+                    block.location.name,
+                    block.location.street,
+                    block.location.city,
+                    block.location.region,
+                    block.location.country,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                  {(__DEV__ || devModeEnabled) && (
+                    <StyledText metadata color="$purple8">
+                      {" "}
+                      ({block.location.latitude.toFixed(6)},{" "}
+                      {block.location.longitude.toFixed(6)})
+                    </StyledText>
+                  )}
+                </StyledParagraph>
               )}
             </StyledView>
             <StyledButton

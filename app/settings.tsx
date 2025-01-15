@@ -7,6 +7,8 @@ import { Separator } from "tamagui";
 import { StyledText } from "../components/Themed";
 import { CollectionSelect } from "../components/CollectionSelect";
 import Icons from "./icons";
+import * as Location from "expo-location";
+import { Linking } from "react-native";
 
 interface AppSettingConfig<T extends AppSettingType> {
   type: T;
@@ -21,6 +23,7 @@ export enum AppSettingType {
   ShowCameraInTextingView = "ShowCameraInTextingView",
   PromptsCollection = "PromptsCollection", // for a collection of text prompts that replace the default ones
   DefaultCollection = "DefaultCollection", // for the default collection to open
+  LocationEnabled = "LocationEnabled",
 }
 
 interface AppSettingTypeToValueType {
@@ -135,6 +138,56 @@ const AppSettings: Record<AppSettingType, AppSettingConfig<any>> = {
             width: "100%",
           }}
         />
+      );
+    },
+  },
+  [AppSettingType.LocationEnabled]: {
+    type: AppSettingType.LocationEnabled,
+    label: "Record Location",
+    description:
+      "Save location data with your blocks to remember where they were created. You can change this at any time in your device settings.",
+    defaultValue: false,
+    renderPicker: () => {
+      const [permissionStatus, setPermissionStatus] =
+        useState<Location.PermissionStatus>();
+
+      useEffect(() => {
+        checkPermission();
+      }, []);
+
+      const checkPermission = async () => {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        setPermissionStatus(status);
+      };
+
+      const handleToggle = async (newValue: boolean) => {
+        if (newValue) {
+          const { status: currentStatus } =
+            await Location.getForegroundPermissionsAsync();
+          if (currentStatus === "denied") {
+            await Linking.openSettings();
+          } else {
+            await Location.requestForegroundPermissionsAsync();
+          }
+        } else {
+          await Linking.openSettings();
+        }
+        // Re-check permission after action
+        checkPermission();
+      };
+
+      return (
+        <XStack alignItems="center" gap="$3">
+          <Switch
+            theme="blue"
+            checked={permissionStatus === "granted"}
+            size="$1"
+            onCheckedChange={handleToggle}
+            native
+          >
+            <Switch.Thumb />
+          </Switch>
+        </XStack>
       );
     },
   },

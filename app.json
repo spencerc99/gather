@@ -54,6 +54,12 @@
         }
       ],
       [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Gather to use your location to add location metadata to your items."
+        }
+      ],
+      [
         "expo-config-plugin-ios-share-extension",
         {
           "activationRules": {

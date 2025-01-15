@@ -532,6 +532,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   //               ? JSON.stringify(block.remoteSourceInfo)
   //               : null,
   //             block.localAssetId,
+  //          block.captureTime || null,
+  //           block.location ? JSON.stringify(block.location) : null,
   //           ]),
   //         ]
   //       );
@@ -693,8 +695,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 remote_source_type,
                 created_by,
                 remote_source_info,
-                local_asset_id
+                local_asset_id,
+                capture_time,
+                location_data
               ) VALUES (
+                  ?,
+                  ?,
                   ?,
                   ?,
                   ?,
@@ -721,6 +727,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               ? JSON.stringify(block.remoteSourceInfo)
               : null,
             block.localAssetId || null,
+            block.captureTime || null,
+            block.location ? JSON.stringify(block.location) : null,
           ],
         },
       ],

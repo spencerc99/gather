@@ -1010,6 +1010,14 @@ export async function createBlock({
     console.log("adding block to channel", channelIds, value, arenaToken);
     const { title, description: blockDescription } = block;
     let description = blockDescription || GatherArenaAttribution;
+    // TODO: allow customization of the default description
+    if (block.captureTime) {
+      description += `\n\nCaptured: ${new Date(
+        block.captureTime
+      ).toLocaleDateString()} ${new Date(
+        block.captureTime
+      ).toLocaleTimeString()}`;
+    }
     resp = await fetch(ArenaGraphqlApi, {
       method: "POST",
       headers: {

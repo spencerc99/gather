@@ -109,6 +109,18 @@ export interface DatabaseBlockInsert {
   connectedBy?: string;
 
   createdBy: string; // DID of the person who made it?
+
+  captureTime?: number; // unix timestamp of when the block was captured for external media
+  location?: LocationMetadata;
+}
+export interface LocationMetadata {
+  latitude: number;
+  longitude: number;
+  name?: string;
+  street?: string;
+  city?: string;
+  region?: string;
+  country?: string;
 }
 
 export type BlockEditInfo = Partial<DatabaseBlockInsert>;
