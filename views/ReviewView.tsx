@@ -32,6 +32,11 @@ import { Block, SortType } from "../utils/dataTypes";
 import { DatabaseContext } from "../utils/db";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  BlockFiltersSheet,
+  BlockFilterType,
+  getBlockFilter,
+} from "../components/BlockFilters";
 
 enum ViewType {
   Carousel = "carousel",
@@ -53,7 +58,15 @@ export function ReviewView() {
       prev === ViewType.Carousel ? ViewType.Feed : ViewType.Carousel
     );
   }
-  const queryKey = ["blocks", selectedReviewCollection, { sortType }] as const;
+  const filters = {
+    location: getBlockFilter(BlockFilterType.Location),
+    dateRange: getBlockFilter(BlockFilterType.DateRange),
+  };
+  const queryKey = [
+    "blocks",
+    selectedReviewCollection,
+    { sortType, filters },
+  ] as const;
   const carouselRef = useRef<ICarouselInstance>(null);
 
   const generateSeed = () =>
@@ -61,14 +74,22 @@ export function ReviewView() {
   const { data: tempBlocks, isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
-      const [_, collectionId] = queryKey;
+      const [_, collectionId, { filters }] = queryKey;
 
       const blocks = !collectionId
-        ? await getBlocks({ page: null, sortType, seed })
+        ? await getBlocks({
+            page: null,
+            sortType,
+            seed,
+            // location: filters.location,
+            // dateRange: filters.dateRange,
+          })
         : await getCollectionItems(collectionId, {
             page: null,
             sortType,
             seed,
+            // location: filters.location,
+            // dateRange: filters.dateRange,
           });
 
       return blocks;
@@ -172,8 +193,7 @@ export function ReviewView() {
             </YStack>
           </XStack>
           <XStack gap="$1">
-            {/* square */}
-            {/* <SortSelect /> */}
+            <BlockFiltersSheet />
             <StyledButton
               size="$small"
               onPress={() => {
