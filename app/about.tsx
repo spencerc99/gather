@@ -1,4 +1,3 @@
-import * as WebBrowser from "expo-web-browser";
 import { useContext, useState } from "react";
 import { Image, Platform } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -7,8 +6,7 @@ import {
   SlidingScalePayment,
   StartingSlidingScaleValue,
   getSlidingPriceMoneyValue,
-  getSlidingPricePaymentLink,
-  recordContribution,
+  handlePayment,
 } from "../components/SlidingScalePayment";
 import {
   ExternalLinkText,
@@ -34,7 +32,6 @@ export default function About() {
   const onSlideEnd = () => setScrollEnabled(true);
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
-  const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
   useFixExpoRouter3NavigationTitle();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -70,8 +67,7 @@ export default function About() {
                 marginTop="$7"
                 backgroundColor="$blue8"
                 onPress={async () => {
-                  await WebBrowser.openBrowserAsync(paymentLink);
-                  recordContribution(moneyValue);
+                  await handlePayment(value[0], currentUser);
                   queryClient.invalidateQueries({
                     queryKey: [ContributionsKey],
                   });

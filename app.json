@@ -44,6 +44,7 @@
     },
     "plugins": [
       "expo-router",
+      "react-native-iap",
       [
         "expo-image-picker",
         {

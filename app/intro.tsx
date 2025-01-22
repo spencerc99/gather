@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import * as NavigationBar from "expo-navigation-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as WebBrowser from "expo-web-browser";
 import { useContext, useEffect, useState } from "react";
 import {
   SafeAreaView,
@@ -31,8 +30,7 @@ import { InspoBlocks } from "../components/BlockTexts";
 import {
   StartingSlidingScaleValue,
   getSlidingPriceMoneyValue,
-  getSlidingPricePaymentLink,
-  recordContribution,
+  handlePayment,
 } from "../components/SlidingScalePayment";
 import {
   ArenaLogo,
@@ -142,7 +140,6 @@ export default function IntroScreen() {
   const onSlideEnd = () => setScrollEnabled(true);
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
-  const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
   const colorScheme = useColorScheme();
 
   useEffect(() => {
@@ -458,8 +455,7 @@ export default function IntroScreen() {
                   </StyledText>
                 }
                 onPress={async () => {
-                  await WebBrowser.openBrowserAsync(paymentLink);
-                  recordContribution(moneyValue);
+                  await handlePayment(value[0], currentUser);
                 }}
                 marginBottom={0}
               />

@@ -1,12 +1,10 @@
 import { useContext, useState } from "react";
-import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   SlidingScalePayment,
   StartingSlidingScaleValue,
   getSlidingPriceMoneyValue,
-  getSlidingPricePaymentLink,
-  recordContribution,
+  handlePayment,
 } from "../components/SlidingScalePayment";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,7 +19,6 @@ export default function Support() {
   const [value, setValue] = useState([StartingSlidingScaleValue]);
   const { currentUser } = useContext(UserContext);
   const moneyValue = getSlidingPriceMoneyValue(value[0]);
-  const paymentLink = getSlidingPricePaymentLink(value[0], currentUser);
   useFixExpoRouter3NavigationTitle();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -55,8 +52,7 @@ export default function Support() {
             <StyledButton
               backgroundColor="$blue8"
               onPress={async () => {
-                await WebBrowser.openBrowserAsync(paymentLink);
-                recordContribution(moneyValue);
+                await handlePayment(value[0], currentUser);
                 queryClient.invalidateQueries({
                   queryKey: [ContributionsKey],
                 });

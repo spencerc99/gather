@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Image } from "react-native";
+import { Image, Platform, Alert } from "react-native";
 import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
 import { H3, Slider, XStack, XStackProps, YStack } from "tamagui";
 import { StyledText } from "./Themed";
 import { ContributionsKey, getItem, setItem } from "../utils/mmkv";
 import { UserInfo } from "../utils/user";
 import { withQueryParams } from "../utils/url";
+import * as WebBrowser from "expo-web-browser";
+import * as RNIap from "react-native-iap";
 
 export const SlidingPrice = [3, 6, 9, 13, 33, 60, 100];
 export const StartingSlidingScaleValue = Math.ceil(SlidingPrice.length / 2);
@@ -202,4 +204,78 @@ export function SlidingScalePayment({
       </YStack>
     </YStack>
   );
+}
+
+const IAPProductIdPrefix = "SUPPORT";
+
+export async function handlePayment(
+  value: number,
+  user?: UserInfo | null,
+  onSuccess?: () => void,
+  onError?: (error: Error) => void
+): Promise<void> {
+  const moneyValue = getSlidingPriceMoneyValue(value);
+  if (Platform.OS === "ios") {
+    try {
+      // Initialize the IAP module
+      await RNIap.initConnection();
+
+      // Get the product ID for this price point
+      const productId = `${IAPProductIdPrefix}${moneyValue}`;
+      console.log("Requesting product:", productId, moneyValue);
+      // Get the products
+      const products = await RNIap.getProducts({ skus: [productId] });
+      if (products.length === 0) {
+        throw new Error("No products available");
+      }
+      console.log("Products", products);
+
+      // Purchase the product
+      const purchase = await RNIap.requestPurchase({ sku: productId });
+      console.log("Purchase", purchase);
+
+      // Finish the transaction
+      if (purchase) {
+        await RNIap.finishTransaction({
+          purchase: Array.isArray(purchase) ? purchase[0] : purchase,
+        });
+
+        // Record the contribution locally
+        recordContribution(moneyValue);
+
+        // Show success message
+        Alert.alert(
+          "Thank you!",
+          "Your contribution means a lot. It helps keep Gather ad-free and focused on what matters."
+        );
+
+        onSuccess?.();
+      }
+    } catch (error) {
+      // Handle user cancellation gracefully
+      if ((error as any)?.code === "E_USER_CANCELLED") {
+        return;
+      }
+
+      // Handle other errors
+      const errorMessage = (error as Error).message || "Purchase failed";
+      Alert.alert(
+        "Purchase Failed",
+        `There was an error processing your purchase. Please try again and make sure you have stable internet. ${errorMessage}`
+      );
+
+      onError?.(error as Error);
+    } finally {
+      try {
+        await RNIap.endConnection();
+      } catch (err) {
+        console.error("Failed to end IAP connection:", err);
+      }
+    }
+  } else {
+    // For Android, use the existing Stripe link flow
+    const paymentLink = getSlidingPricePaymentLink(value, user);
+    recordContribution(moneyValue);
+    await WebBrowser.openBrowserAsync(paymentLink);
+  }
 }
