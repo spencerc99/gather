@@ -95,9 +95,9 @@ function App() {
           }}
         >
           <p>
-            Available on{" "}
-            <a href="https://testflight.apple.com/join/dnskzBf8">
-              iOS (in beta)
+            Now available on{" "}
+            <a href="https://apps.apple.com/us/app/gather-handheld-curiosity/id6468843059">
+              iOS
             </a>{" "}
             and{" "}
             <a href="https://play.google.com/store/apps/details?id=net.tiny_inter.gather">
