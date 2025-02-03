@@ -3,7 +3,7 @@
     "name": "Gather",
     "slug": "gather",
     "privacy": "unlisted",
-    "version": "1.1.46",
+    "version": "1.1.47",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "net.tiny-inter.gather",
@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "30",
+      "buildNumber": "0",
       "bundleIdentifier": "net.tiny-inter.gather",
       "config": {
         "usesNonExemptEncryption": false
@@ -35,7 +35,7 @@
     "android": {
       "permissions": ["android.permission.RECORD_AUDIO"],
       "package": "net.tiny_inter.gather",
-      "versionCode": 97
+      "versionCode": 0
     },
     "web": {
       "bundler": "metro",
