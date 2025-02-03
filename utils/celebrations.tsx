@@ -3,7 +3,7 @@ import * as StoreReview from "expo-store-review";
 import { useTotalBlockCount, useTotalCollectionCount } from "./db";
 import { getItem, setItem } from "./mmkv";
 import { UserContext } from "./user";
-import { useCallback, useContext, useEffect, useMemo } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import dayjs from "dayjs";
 import { Alert } from "react-native";
 import { useContributions } from "./hooks/useContributions";
@@ -44,18 +44,27 @@ export function useMilestoneCheck() {
   const { data: blockCount } = useTotalBlockCount();
   const { data: collectionCount } = useTotalCollectionCount();
   const contributions = useContributions();
+  const hasShownAlert = useRef(false);
+
   const hasContributed = useMemo(
     () => (contributions?.length || 0) > 0,
     [contributions]
   );
 
   const checkMilestones = useCallback(async () => {
+    console.log("checking milestone 1");
     if (
       blockCount === undefined ||
       collectionCount === undefined ||
       contributions === undefined
     )
       return;
+
+    // Add check to prevent multiple alerts
+    if (hasShownAlert.current) return;
+    hasShownAlert.current = true;
+
+    console.log("checking milestone / showing alert!");
 
     const today = dayjs();
     const started = currentUser?.createdAt
