@@ -482,67 +482,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }, false);
   }
 
-  // TODO:
-  // async function insertBlocks(blocksToInsert: DatabaseBlockInsert[]) {
-  //   await db.transactionAsync(async (tx) => {
-  //     const insertChunks = chunkArray(blocksToInsert, BlockInsertChunkSize);
-  //     for (const chunk of insertChunks) {
-  //       const result = await tx.executeSqlAsync(
-  //         `
-  //       INSERT INTO blocks (
-  //           title,
-  //           description,
-  //           content,
-  //           type,
-  //           content_type,
-  //           source,
-  //           remote_source_type,
-  //           created_by,
-  //           remote_source_info,
-  //           local_asset_id
-  //       ) VALUES ${chunk
-  //         .map(
-  //           (c) => `(
-  //           ?,
-  //           ?,
-  //           ?,
-  //           ?,
-  //           ?,
-  //           ?,
-  //           ?,
-  //           ?,
-  //           ?,
-  //           ?
-  //       )`
-  //         )
-  //         .join(",\n")}
-  //       RETURNING *;`,
-  //         // @ts-ignore
-  //         [
-  //           ...chunk.flatMap((block) => [
-  //             block.title || null,
-  //             block.description || null,
-  //             block.content,
-  //             block.type,
-  //             block.contentType,
-  //             block.source || null,
-  //             block.remoteSourceType || null,
-  //             block.createdBy,
-  //             block.remoteSourceInfo
-  //               ? JSON.stringify(block.remoteSourceInfo)
-  //               : null,
-  //             block.localAssetId,
-  //          block.captureTime || null,
-  //           block.location ? JSON.stringify(block.location) : null,
-  //           ]),
-  //         ]
-  //       );
-  //       handleSqlErrors(result);
-  //       // TODO: figure out how to get the ids from all of the inserts.
-  //     }
-  //   });
-  // }
-
   const createBlocksBase = async ({
     blocksToInsert,
     collectionId,
@@ -1484,27 +1423,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         queryKey: ["blocks"],
       });
     },
-    // onMutate: async ({ blockId, editInfo }) => {
-    //   // Cancel any outgoing refetches
-    //   // (so they don't overwrite our optimistic update)
-    //   await queryClient.cancelQueries({
-    //     queryKey: ["blocks"],
-    //   });
-
-    //   // Snapshot the previous value
-    //   const previousBlocks = queryClient.getQueryData(["blocks"]);
-
-    //   // Optimistically update to the new value
-    //   queryClient.setQueryData<Block[]>(["blocks"], (old) =>
-    //     old?.map((b) => (b.id === blockId ? { ...b, ...editInfo } : b))
-    //   );
-
-    //   // Return a context object with the snapshotted value
-    //   return { previousBlocks };
-    // },
-    // onError: (_err, _data, context) => {
-    //   queryClient.setQueryData(["blocks"], context?.previousBlocks);
-    // },
   });
   const updateBlock = updateBlockMutation.mutateAsync;
 
