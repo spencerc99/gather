@@ -173,9 +173,9 @@ function App() {
             </a>{" "}
             <br />
             <span style={{ fontSize: "18px" }}>
-              (sign up{" "}
+              (or sign up for{" "}
               <a href="https://coda.io/form/Untitled-Form_dwglAPFKR8v?fromWebsite=true">
-                email for updates
+                email updates
               </a>
               ).
             </span>
