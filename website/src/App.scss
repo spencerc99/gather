@@ -29,6 +29,10 @@ main {
   h3 {
     backdrop-filter: blur(2px);
   }
+  p {
+    line-height: 1;
+    margin-bottom: 0.5em;
+  }
 }
 h3 {
   margin-bottom: 0.5em;
@@ -98,9 +102,11 @@ h3 {
   display: flex;
   gap: 3em;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   @media screen and (max-width: 800px) {
-    gap: 0.2em;
-    margin-left: -1em;
+    gap: 0;
+    width: calc(100% + 2em);
   }
 }
 
@@ -135,9 +141,12 @@ h3 {
   align-items: center;
   width: calc(100% + 5em);
   justify-content: start;
+  padding-top: 0;
+
   img {
     max-width: 400px;
-    height: 100%;
+    height: auto;
+    // object-fit: contain;
   }
   .testimonial {
     width: 400px;
@@ -145,6 +154,15 @@ h3 {
     padding: 0.2em;
     border-radius: 8px;
     background: #dadada;
+  }
+  @media screen and (max-width: 800px) {
+    img {
+      max-width: 300px;
+    }
+    .testimonial {
+      width: 300px;
+      height: 300px;
+    }
   }
 }
 

@@ -196,7 +196,18 @@ function App() {
           <img src="/gather-title-sticky-3.png" className="sticky" />
           <img src="/gather-title-sticky-4.png" className="sticky" />
         </div>
-        <h3>some words from users :)</h3>
+        <p
+          style={{
+            fontSize: "2em",
+            marginTop: "1em",
+            marginBottom: 0,
+            fontStyle: "italic",
+          }}
+        >
+          <a href="https://www.are.na/spencer-chang/gather-testimonials">
+            testimonials
+          </a>
+        </p>
         <div className="carousel testimonials">
           {isLoading && <div>Loading...</div>}
           {shuffledTestimonials.map((testimonial) => (
