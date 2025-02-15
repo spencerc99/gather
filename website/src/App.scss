@@ -1,8 +1,8 @@
 html,
 body {
   background: rgb(239, 239, 239);
-  background: url("./assets/cardboard.png") repeat;
   font-family: "EB Garamond";
+  background: url("./assets/cardboard.png") repeat;
   background-size: 600px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -23,8 +23,15 @@ main {
   padding: 0 2em;
 
   @media screen and (max-width: 800px) {
-    padding: 0 1em;
+    padding: 0 1.5em;
   }
+  p,
+  h3 {
+    backdrop-filter: blur(2px);
+  }
+}
+h3 {
+  margin-bottom: 0.5em;
 }
 
 .logo {
@@ -68,39 +75,40 @@ main {
 .cta {
   font-size: 1.5em;
   background: #fed15d;
-  padding: 2em 2em;
+  padding: 1em;
   width: 100%;
   max-width: 800px;
   border-radius: 16px;
   box-shadow: 0px 0px 8px 4px #fed15d;
-
-  @media screen and (max-width: 800px) {
-    padding: 1em 1em;
-  }
 }
 
 .cover {
   position: absolute;
   z-index: -1;
   min-width: 1500px;
+  opacity: 0.7;
 
   @media screen and (max-width: 520px) {
-    margin-top: 60%;
+    margin-top: 30%;
   }
 }
 
 .stickies {
   display: flex;
   gap: 3em;
+  flex-wrap: wrap;
+  @media screen and (max-width: 800px) {
+    gap: 0.2em;
+    margin-left: -1em;
+  }
 }
 
 .carousel {
   display: flex;
   overflow-x: auto;
   gap: 1em;
-  margin: 2em 0;
   background-size: contain;
-  padding: 4em;
+  padding: 2em;
   margin-bottom: 0;
   padding-bottom: 0;
   justify-content: center;
@@ -112,12 +120,30 @@ main {
     box-shadow: 0px 0px 16px 6px rgba(41, 41, 41, 0.3);
   }
   @media screen and (max-width: 1280px) {
-    padding: 4em;
+    padding-top: 2em;
+    padding-bottom: 1em;
     padding-left: 1em;
     padding-right: 1em;
     // margin-left: -1em;
     width: calc(100% + 5em);
     justify-content: start;
+  }
+}
+
+.testimonials {
+  align-items: center;
+  width: calc(100% + 5em);
+  justify-content: start;
+  img {
+    max-width: 400px;
+    height: 100%;
+  }
+  .testimonial {
+    width: 400px;
+    height: 400px;
+    padding: 0.2em;
+    border-radius: 8px;
+    background: #dadada;
   }
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.scss";
 import { ImageZoom } from "./components/ImageZoom";
 
@@ -8,9 +8,94 @@ const Icons = [
   "gather-app-icon-clouds.png",
   "gather-app-icon-water.png",
 ];
+interface RawArenaChannelItem {
+  id: string;
+  title: string;
+  content: string;
+  content_html?: string;
+  created_at: string;
+  updated_at: string;
+  description_html?: string;
+  description: string;
+  image?: {
+    content_type: string;
+    display: { url: string };
+    square: { url: string };
+    thumb: { url: string };
+    original: {
+      url: string;
+    };
+  } | null;
+  source: {
+    url: string;
+  } | null;
+  url: string;
+  base_class: "Block" | "Channel";
+  connected_at: string;
+  connected_by_user_id: string;
+  connected_by_user_slug: string;
+  embed?: {
+    url: null;
+    type: string;
+    title: null;
+    author_name: string;
+    author_url: string;
+    source_url: null;
+    thumbnail_url: null;
+    width: number;
+    height: number;
+    html: string;
+  };
+  attachment?: {
+    file_name: string;
+    file_size: number;
+    file_size_display: string;
+    content_type: string;
+    extension: string;
+    url: string;
+  };
+}
+
+function useArenaChannelBlocks(channelId: string): {
+  data: RawArenaChannelItem[];
+  error: Error | null;
+  loading: boolean;
+} {
+  const [data, setData] = useState<RawArenaChannelItem[]>([]);
+  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBlocks = async () => {
+      try {
+        const response = await fetch(
+          `https://api.are.na/v2/channels/${channelId}/contents`
+        );
+        const json = await response.json();
+        setData(json.contents);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to fetch blocks")
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlocks();
+  }, [channelId]);
+
+  return { data, error, loading };
+}
 
 function App() {
   const [iconSrc, setIconSrc] = useState(Icons[0]);
+  const { data: testimonials, loading: isLoading } = useArenaChannelBlocks(
+    "gather-testimonials"
+  );
+  const shuffledTestimonials = useMemo(() => {
+    return testimonials.sort(() => Math.random() - 0.5);
+  }, [testimonials]);
   const logoRef = useRef<HTMLImageElement>(null);
   const rerollIcon = (finalIconIdx?: number) => {
     let currentIndex = Icons.indexOf(iconSrc);
@@ -60,15 +145,40 @@ function App() {
         </h1>
         <div className="description oneliner">
           <h3>
-            Gather is a local-first app for archiving, cultivating, and curating
-            multimedia data collections.
+            Local-first app for archiving, cultivating, and curating multimedia
+            data collections.
           </h3>
           <p>
-            <i>
-              works completely offline, all data stored on-device, and
-              optionally syncs to external data sources (like{" "}
-              <a href="https://are.na">Are.na</a>)
-            </i>
+            featuring full offline functionality, multimedia support, and
+            optionally syncs to external data sources (like{" "}
+            <a href="https://are.na">Are.na</a>). No ads, no logins no tracking,
+            and all data is stored on device.
+          </p>
+        </div>
+        <div
+          id="cta"
+          className="cta"
+          style={{
+            textAlign: "center",
+          }}
+        >
+          <p>
+            Now available on{" "}
+            <a href="https://apps.apple.com/us/app/gather-handheld-curiosity/id6468843059">
+              iOS
+            </a>{" "}
+            and{" "}
+            <a href="https://play.google.com/store/apps/details?id=net.tiny_inter.gather">
+              Android
+            </a>{" "}
+            <br />
+            <span style={{ fontSize: "18px" }}>
+              (sign up{" "}
+              <a href="https://coda.io/form/Untitled-Form_dwglAPFKR8v?fromWebsite=true">
+                email for updates
+              </a>
+              ).
+            </span>
           </p>
         </div>
         <img src="/cover-no-bg.png" className="cover" />
@@ -86,29 +196,20 @@ function App() {
           <img src="/gather-title-sticky-3.png" className="sticky" />
           <img src="/gather-title-sticky-4.png" className="sticky" />
         </div>
-
-        <div
-          id="cta"
-          className="cta"
-          style={{
-            textAlign: "center",
-          }}
-        >
-          <p>
-            Now available on{" "}
-            <a href="https://apps.apple.com/us/app/gather-handheld-curiosity/id6468843059">
-              iOS
-            </a>{" "}
-            and{" "}
-            <a href="https://play.google.com/store/apps/details?id=net.tiny_inter.gather">
-              Android
-            </a>{" "}
-            (sign up{" "}
-            <a href="https://coda.io/form/Untitled-Form_dwglAPFKR8v?fromWebsite=true">
-              email for updates
-            </a>
-            ) .
-          </p>
+        <h3>some words from users :)</h3>
+        <div className="carousel testimonials">
+          {isLoading && <div>Loading...</div>}
+          {shuffledTestimonials.map((testimonial) => (
+            <>
+              {testimonial.image?.display.url ? (
+                <ImageZoom src={testimonial.image.display.url} />
+              ) : (
+                <div key={testimonial.id} className="testimonial">
+                  <p>{testimonial.content}</p>
+                </div>
+              )}
+            </>
+          ))}
         </div>
         <div className="description">
           {/* TODO: make these all telescopic that swap between and have a button that allows you to randomize */}
