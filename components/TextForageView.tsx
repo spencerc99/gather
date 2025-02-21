@@ -93,7 +93,7 @@ const getCurrentLocationMetadata = async (): Promise<
       return undefined;
     }
 
-    const location = await Location.getCurrentPositionAsync({});
+    const location = await Location.getCurrentPositionAsync();
     const { latitude, longitude } = location.coords;
 
     return await getLocationMetadata(latitude, longitude);
@@ -114,11 +114,19 @@ const processMediaAsset = async (
 ): Promise<PickedMedia> => {
   let metadata = null;
   if (asset.exif) {
-    const { GPSLatitude, GPSLongitude, DateTimeOriginal } = asset.exif;
-
+    const {
+      GPSLatitude,
+      GPSLongitude,
+      GPSLatitudeRef,
+      GPSLongitudeRef,
+      DateTimeOriginal,
+    } = asset.exif;
     let locationMetadata;
     if (GPSLatitude && GPSLongitude) {
-      locationMetadata = await getLocationMetadata(GPSLatitude, GPSLongitude);
+      // Apply negative values for South and West references
+      const latitude = GPSLatitudeRef === "S" ? -GPSLatitude : GPSLatitude;
+      const longitude = GPSLongitudeRef === "W" ? -GPSLongitude : GPSLongitude;
+      locationMetadata = await getLocationMetadata(latitude, longitude);
     }
 
     metadata = {
