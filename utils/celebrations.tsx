@@ -1,16 +1,21 @@
 import { Link, router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import * as StoreReview from "expo-store-review";
 import { useTotalBlockCount, useTotalCollectionCount } from "./db";
 import { getItem, setItem } from "./mmkv";
 import { UserContext } from "./user";
 import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import dayjs from "dayjs";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { useContributions } from "./hooks/useContributions";
 
 const BlockMilestones = [250, 200, 150, 80, 25];
 const CollectionMilestones = [25, 10, 5];
 const SupportMessage = `If you're enjoying Gather, I'd really appreciate you contributing to support development and giving it a positive review to help share it with others! As an indie app made by one person, your support means the world to me and makes continued maintenance possible.`;
+const AppStoreLink =
+  Platform.OS === "ios"
+    ? "https://apps.apple.com/us/app/gather-handheld-curiosity/id6468843059?platform=iphone"
+    : " https://play.google.com/store/apps/details?id=net.tiny_inter.gather";
 
 interface MilestoneState {
   lastPromptDate: string | null;
@@ -233,18 +238,19 @@ ${SupportMessage}`;
 }
 
 export async function promptForReview(savePromptedState: boolean = true) {
-  const state = getMilestoneState();
   const isAvailable = await StoreReview.isAvailableAsync();
   if (isAvailable) {
     await StoreReview.requestReview();
     if (savePromptedState) {
+      const state = getMilestoneState();
       state.hasPromptedForReview = true;
       setMilestoneState(state);
-    } else {
+      return;
     }
-
-    // Fallback for when StoreReview is not available
-    // You might want to open the app store page manually here
-    console.log("Store review not available");
   }
+
+  // Fallback for when StoreReview is not available
+  // You might want to open the app store page manually here
+  console.log("Store review not available");
+  WebBrowser.openBrowserAsync(AppStoreLink);
 }
