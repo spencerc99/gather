@@ -1,11 +1,20 @@
-# gather
+# Gather
 
-an app companion for your curiosity, a local-first Are.na client.
+
+https://github.com/user-attachments/assets/66c510f4-7d62-43cc-8b61-f7432d42cb9b
+
+
+a handheld companion for your curiosity, a local-first client for collecting, curating, and cultivating multimedia collections.
+
+Available on the [App Store]([url](https://apps.apple.com/us/app/gather-handheld-curiosity/id6468843059?platform=iphone)) and [Google Play Store](https://play.google.com/store/apps/details?id=net.tiny_inter.gather&hl=en_US )
 
 ## Development
 
 - run `npm install` to install dependencies
 - `npx expo start` starts development servers cross-platform
+
+### Adding Data Sources
+I still have to do some setup work to make this really easy, but you can refer to all the Are.na code for adapters to making this work. See `arena.ts` for syncing data and arena logic in `db.ts`.
 
 ### IOS
 
