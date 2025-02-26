@@ -78,11 +78,18 @@ h3 {
 }
 
 .cta {
-  font-size: 1.5em;
+  font-size: 2em;
   background: #fed15d;
   padding: 1em 2em;
   border-radius: 16px;
   box-shadow: 0px 0px 8px 4px #fed15d;
+
+  p {
+    margin: 0;
+  }
+  &.small {
+    font-size: 1.5em;
+  }
 }
 
 .cover {

@@ -156,7 +156,6 @@ function App() {
           </p>
         </div>
         <div
-          id="cta"
           className="cta"
           style={{
             textAlign: "center",
@@ -164,10 +163,10 @@ function App() {
         >
           <p>
             Now available on{" "}
-            <a href="https://apps.apple.com/us/app/gather-handheld-curiosity/id6468843059">
+            <a href="https://apps.apple.com/us/app/gather-handheld-curiosity/id6468843059?platform=iphone">
               iOS
             </a>{" "}
-            and{" "}
+            &{" "}
             <a href="https://play.google.com/store/apps/details?id=net.tiny_inter.gather">
               Android
             </a>{" "}
@@ -222,6 +221,15 @@ function App() {
             </>
           ))}
         </div>
+        <br />
+        <div className="cta small">
+          <p>
+            Thank you to the{" "}
+            <a href="https://github.com/sponsors/spencerc99">sponsors</a> who
+            make this work possible.
+          </p>
+        </div>
+        <br />
         <div className="description">
           {/* TODO: make these all telescopic that swap between and have a button that allows you to randomize */}
           <p>
