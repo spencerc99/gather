@@ -2,8 +2,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Alert, Dimensions, Linking, Platform, ScrollView } from "react-native";
+import { useCallback, useContext, useEffect, useMemo, useState, useRef } from "react";
+import { Alert, Dimensions, Linking, Platform, ScrollView, Keyboard, SafeAreaView, ViewToken } from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { BlockSelectLimit, DatabaseContext } from "../utils/db";
@@ -31,6 +31,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlockInsertInfo, LocationMetadata } from "../utils/dataTypes";
 import { AppSettingType, getAppSetting } from "../app/settings";
 import * as Location from "expo-location";
+import { Block, CollectionBlock } from "../utils/dataTypes";
+import { BlockSummary } from "./BlockSummary";
+import {
+  H3,
+  SizableText,
+  Stack,
+} from "tamagui";
+import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
+import { SelectCollectionsList } from "./SelectCollectionsList";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -157,6 +166,8 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     getBlocks,
     getCollectionItems,
     getExistingAssetIds,
+    addConnections,
+    getCollection,
   } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
@@ -187,6 +198,9 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
         : 0,
     };
   }, [keyboard.height, textFocused]);
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyCollections, setReplyCollections] = useState<string[]>([]);
+  const [replyCollectionTitles, setReplyCollectionTitles] = useState<Record<string, string>>({});
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
@@ -484,6 +498,54 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     void checkExistingMedias().then(setExistingMedias);
   }, [medias]);
 
+  const onReply = (block: Block) => {
+    setIsReplying(true);
+    setReplyCollections(block.collectionIds || []);
+    
+    // Fetch collection titles
+    (block.collectionIds || []).forEach(async (collectionId) => {
+      const collection = await getCollection(collectionId);
+      if (collection?.title) {
+        setReplyCollectionTitles(prev => ({
+          ...prev,
+          [collectionId]: collection.title
+        }));
+      }
+    });
+  };
+
+  const onSend = async () => {
+    if (!textValue.trim()) {
+      return;
+    }
+
+    if (!currentUser) {
+      return;
+    }
+
+    const [newBlock] = await createBlocks({
+      blocksToInsert: [{
+        content: textValue,
+        type: BlockType.Text,
+        createdBy: currentUser.id,
+      }],
+    });
+
+    if (isReplying && replyCollections.length > 0) {
+      await addConnections({
+        blockId: newBlock.blockId,
+        connections: replyCollections.map((collectionId) => ({
+          collectionId,
+          createdBy: currentUser.id,
+        })),
+      });
+    }
+
+    setTextValue("");
+    setIsReplying(false);
+    setReplyCollections([]);
+  };
+
   if (!currentUser) {
     return null;
   }
@@ -493,12 +555,52 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       <Animated.View style={[{ flex: 1 }, translateStyle]}>
         <BlockTexts
           collectionId={collectionId}
-          // TODO: types
-          blocks={blocks ? blocks : null}
+          blocks={blocks as CollectionBlock[] | null}
           fetchMoreBlocks={fetchMoreBlocks}
           isFetchingNextPage={isFetchingNextPage}
           setTextFocused={setTextFocused}
+          onReply={onReply}
         />
+        {isReplying && replyCollections.length > 0 && (
+          <YStack
+            padding="$2"
+            backgroundColor="$orange3"
+            borderBottomWidth={1}
+            borderBottomColor="$orange5"
+          >
+            <StyledText>Adding to collections:</StyledText>
+            <XStack flexWrap="wrap" gap="$1">
+              {replyCollections.map((collectionId) => (
+                <XStack
+                  key={collectionId}
+                  backgroundColor="$orange5"
+                  padding="$1"
+                  borderRadius="$2"
+                  alignItems="center"
+                  gap="$1"
+                >
+                  <StyledText color="$orange9">
+                    {replyCollectionTitles[collectionId] || collectionId}
+                  </StyledText>
+                  <StyledButton
+                    circular
+                    size="$3"
+                    theme="orange"
+                    icon={<Icon name="close" type={IconType.Ionicons} />}
+                    onPress={() => {
+                      setReplyCollections(replyCollections.filter(id => id !== collectionId));
+                      setReplyCollectionTitles(prev => {
+                        const newTitles = { ...prev };
+                        delete newTitles[collectionId];
+                        return newTitles;
+                      });
+                    }}
+                  />
+                </XStack>
+              ))}
+            </XStack>
+          </YStack>
+        )}
         <YStack
           height="auto"
           borderTopEndRadius={4}
@@ -631,26 +733,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
             {/* </YStack> */}
             <YStack position="absolute" zIndex={1} right="$1.5" bottom="$2">
               <StyledButton
-                onPress={async () => {
-                  if (existingMedias.size > 0) {
-                    Alert.alert(
-                      "Duplicate Media",
-                      "You've already added some of this media. Are you sure you want to add it again?",
-                      [
-                        {
-                          text: "Cancel",
-                          style: "cancel",
-                        },
-                        {
-                          text: "Add Anyway",
-                          onPress: () => onSaveResult(),
-                        },
-                      ]
-                    );
-                  } else {
-                    onSaveResult();
-                  }
-                }}
+                onPress={onSend}
                 chromeless
                 marginHorizontal="$2"
                 paddingVertical={0}

@@ -26,6 +26,7 @@ import Carousel from "react-native-reanimated-carousel";
 import { RawAnimations } from "../animations";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { gestureHandlerRootHOC } from "react-native-gesture-handler";
+import { UserContext } from "../utils/user";
 
 export const InspoBlocks = [
   {
@@ -59,7 +60,7 @@ export const InspoBlocks = [
   },
   // {
   //   content:
-  //     "Collagist’s Note: New York is a swarm of signs and unholy advertisements. I encounter haphazard phrases daily like dropped pennies; I pick them up to store in my pocketbook (iPhone Notes App), safekeeping these found letters that have gone on a walk (Walking is reading. Writing is walking): cruel embankments, necrologists of the newspapers, pompous rivers, sozzled, jealous spaghetti",
+  //     "Collagist's Note: New York is a swarm of signs and unholy advertisements. I encounter haphazard phrases daily like dropped pennies; I pick them up to store in my pocketbook (iPhone Notes App), safekeeping these found letters that have gone on a walk (Walking is reading. Writing is walking): cruel embankments, necrologists of the newspapers, pompous rivers, sozzled, jealous spaghetti",
   //   type: BlockType.Text,
   // },
 ];
@@ -79,48 +80,79 @@ const BlockViewImpl = ({
   isRemoteCollection,
   isVisible,
   setTextFocused,
+  onReply,
 }: {
   block: Block;
   isRemoteCollection: boolean;
   isVisible: boolean;
   setTextFocused?: (textFocused: boolean) => void;
-}) => (
-  <Swipeable
-    key={block.id}
-    containerStyle={
-      {
-        // overflow: "visible",
+  onReply?: (block: Block) => void;
+}) => {
+  const { currentUser } = useContext(UserContext);
+  const [isReplying, setIsReplying] = useState(false);
+
+  const onSwipeableOpen = (direction: 'left' | 'right') => {
+    if (direction === 'left') {
+      setIsReplying(true);
+      if (onReply) {
+        onReply(block);
       }
     }
-    friction={2}
-    renderRightActions={() => <RightActions />}
-    onSwipeableOpen={(direction, swipeable) => {
-      if (direction === "left") {
-        return;
-      }
-      router.push({
-        pathname: "/block/[id]/connect",
-        params: { id: block.id },
-      });
-      swipeable.close();
-    }}
-  >
-    <BlockTextSummary
-      block={block}
-      style={{ maxHeight: 320 }}
-      blockStyle={{
-        maxHeight: 320,
-      }}
-      containerProps={{
-        maxWidth: "85%",
-      }}
-      shouldLink
-      isRemoteCollection={isRemoteCollection}
-      isVisible={isVisible}
-      setTextFocused={setTextFocused}
-    />
-  </Swipeable>
-);
+  };
+
+  return (
+    <Swipeable
+      friction={2}
+      renderLeftActions={(_progress, _drag) => (
+        <YStack
+          alignItems="center"
+          padding="$2"
+          paddingLeft={0}
+          justifyContent="center"
+        >
+          <StyledButton
+            circular
+            theme="orange"
+            size="$6"
+            icon={<Icon name="arrow-undo" type={IconType.Ionicons} />}
+            onPress={() => {
+              onSwipeableOpen('left');
+            }}
+          />
+        </YStack>
+      )}
+      renderRightActions={(_progress, _drag) => (
+        <YStack
+          alignItems="center"
+          padding="$2"
+          paddingLeft={0}
+          justifyContent="center"
+        >
+          <StyledButton
+            circular
+            size="$6"
+            icon={<Icon name="link" type={IconType.FontAwesome6Icon} />}
+            onPress={() => {
+              router.push({
+                pathname: "/block/[id]/connect",
+                params: { id: block.id },
+              });
+            }}
+          />
+        </YStack>
+      )}
+      onSwipeableOpen={onSwipeableOpen}
+    >
+      <BlockTextSummary
+        block={block}
+        isRemoteCollection={isRemoteCollection}
+        isVisible={isVisible}
+        setTextFocused={setTextFocused}
+        onReply={onReply}
+      />
+    </Swipeable>
+  );
+};
 const BlockViewWrapped = gestureHandlerRootHOC(BlockViewImpl);
 
 const BlockView = memo(
@@ -129,17 +161,20 @@ const BlockView = memo(
     isRemoteCollection,
     isVisible,
     setTextFocused,
+    onReply,
   }: {
     block: Block;
     isRemoteCollection: boolean;
     isVisible: boolean;
     setTextFocused?: (textFocused: boolean) => void;
+    onReply?: (block: Block) => void;
   }) => (
     <BlockViewWrapped
       block={block}
       isRemoteCollection={isRemoteCollection}
       isVisible={isVisible}
       setTextFocused={setTextFocused}
+      onReply={onReply}
     />
   )
 );
@@ -150,12 +185,14 @@ export function BlockTexts({
   fetchMoreBlocks,
   isFetchingNextPage,
   setTextFocused,
+  onReply,
 }: {
   blocks: CollectionBlock[] | null;
   collectionId?: string;
   fetchMoreBlocks: () => void;
   isFetchingNextPage: boolean;
   setTextFocused?: (textFocused: boolean) => void;
+  onReply?: (block: Block) => void;
 }) {
   const { getCollection } = useContext(DatabaseContext);
   const [collection, setCollection] = useState<undefined | Collection>(
@@ -207,10 +244,11 @@ export function BlockTexts({
           isRemoteCollection={isRemoteCollection}
           isVisible={visibleItems.includes(item.id)}
           setTextFocused={setTextFocused}
+          onReply={onReply}
         />
       );
     },
-    [isRemoteCollection, visibleItems]
+    [isRemoteCollection, visibleItems, onReply]
   );
 
   return !blocks ? (
