@@ -40,7 +40,7 @@ const MaxMenuTitleLength = 50;
 
 function useBlockMenuItems(
   block: Block,
-  { onClickEdit, isOwner }: { onClickEdit?: () => void; isOwner?: boolean } = {}
+  { onClickEdit, isOwner, onReply }: { onClickEdit?: () => void; isOwner?: boolean; onReply?: (block: Block) => void } = {}
 ): {
   blockMenuItems: MenuItemProps[];
 } {
@@ -122,6 +122,15 @@ function useBlockMenuItems(
           ]
         : []),
       {
+        text: "Reply",
+        icon: () => <Icon name="arrow-undo" type={IconType.Ionicons} />,
+        onPress: () => {
+          if (onReply) {
+            onReply(block);
+          }
+        },
+      },
+      {
         text: "Connect",
         icon: () => <Icon name="link" type={IconType.FontAwesome6Icon} />,
         onPress: () => {
@@ -141,7 +150,7 @@ function useBlockMenuItems(
         },
       },
     ],
-    [id, source, content, type, title, deleteBlock]
+    [id, source, content, type, title, deleteBlock, onReply]
   );
 
   return { blockMenuItems };
@@ -157,6 +166,7 @@ export function BlockSummary({
   containerProps,
   editable,
   isVisible,
+  onReply,
 }: {
   block: Block;
   hideMetadata?: boolean;
@@ -167,6 +177,7 @@ export function BlockSummary({
   containerProps?: GetProps<typeof YStack>;
   editable?: boolean;
   isVisible?: boolean;
+  onReply?: (block: Block) => void;
 }) {
   const { id, title, createdAt } = block;
   const { updateBlock } = useContext(DatabaseContext);
@@ -198,6 +209,7 @@ export function BlockSummary({
 
   const { blockMenuItems } = useBlockMenuItems(block, {
     onClickEdit: () => setIsEditing(true),
+    onReply,
   });
 
   const renderedBlockContent = useMemo(
@@ -337,6 +349,7 @@ export function BlockTextSummary({
   containerProps,
   isVisible,
   setTextFocused,
+  onReply,
 }: {
   block: Block;
   shouldLink?: boolean;
@@ -347,6 +360,7 @@ export function BlockTextSummary({
   containerProps?: GetProps<typeof YStack>;
   isVisible?: boolean;
   setTextFocused?: (textFocused: boolean) => void;
+  onReply?: (block: Block) => void;
 }) {
   // TODO: add connectedBy for getCollectionItems... maybe default this to createdBy or undefined for others
   const { id, type, source, title, description, connectedBy } = block;
@@ -387,6 +401,7 @@ export function BlockTextSummary({
       setTextFocused?.(true);
     },
     isOwner: isOwner || undefined,
+    onReply,
   });
 
   const content = useMemo(() => {
@@ -535,6 +550,7 @@ export function BlockReviewSummary({
   isRemoteCollection,
   containerProps,
   isVisible,
+  onReply,
 }: {
   block: Block;
   shouldLink?: boolean;
@@ -544,6 +560,7 @@ export function BlockReviewSummary({
   isRemoteCollection?: boolean;
   containerProps?: GetProps<typeof YStack>;
   isVisible?: boolean;
+  onReply?: (block: Block) => void;
 }) {
   const { id, type, source, title, description, createdBy, connectedBy } =
     block;
@@ -560,7 +577,9 @@ export function BlockReviewSummary({
     [BlockType.Link].includes(type) ||
     ([BlockType.Image].includes(type) && Boolean(title));
 
-  const { blockMenuItems } = useBlockMenuItems(block);
+  const { blockMenuItems } = useBlockMenuItems(block, {
+    onReply,
+  });
 
   const content = useMemo(
     () => (
