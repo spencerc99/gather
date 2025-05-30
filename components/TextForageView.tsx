@@ -431,10 +431,23 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
           });
       }
 
-      await createBlocks({
+      const [newBlock] = await createBlocks({
         blocksToInsert,
         collectionId,
       });
+
+      if (isReplying && replyCollections.length > 0) {
+        await addConnections({
+          blockId: newBlock.blockId,
+          connections: replyCollections.map((collectionId) => ({
+            collectionId,
+            createdBy: currentUser!.id,
+          })),
+        });
+      }
+
+      setIsReplying(false);
+      setReplyCollections([]);
     } catch (err) {
       logError(err);
     }
@@ -546,7 +559,6 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
     setIsReplying(true);
     setReplyCollections(block.collectionIds || []);
 
-    // Fetch collection titles
     (block.collectionIds || []).forEach(async (collectionId) => {
       const collection = await getCollection(collectionId);
       if (collection?.title) {
@@ -556,40 +568,6 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
         }));
       }
     });
-  };
-
-  const onSend = async () => {
-    if (!textValue.trim()) {
-      return;
-    }
-
-    if (!currentUser) {
-      return;
-    }
-
-    const [newBlock] = await createBlocks({
-      blocksToInsert: [
-        {
-          content: textValue,
-          type: BlockType.Text,
-          createdBy: currentUser.id,
-        },
-      ],
-    });
-
-    if (isReplying && replyCollections.length > 0) {
-      await addConnections({
-        blockId: newBlock.blockId,
-        connections: replyCollections.map((collectionId) => ({
-          collectionId,
-          createdBy: currentUser.id,
-        })),
-      });
-    }
-
-    setTextValue("");
-    setIsReplying(false);
-    setReplyCollections([]);
   };
 
   if (!currentUser) {
@@ -781,7 +759,26 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
             {/* </YStack> */}
             <YStack position="absolute" zIndex={1} right="$1.5" bottom="$2">
               <StyledButton
-                onPress={onSend}
+                onPress={async () => {
+                  if (existingMedias.size > 0) {
+                    Alert.alert(
+                      "Duplicate Media",
+                      "You've already added some of this media. Are you sure you want to add it again?",
+                      [
+                        {
+                          text: "Cancel",
+                          style: "cancel",
+                        },
+                        {
+                          text: "Add Anyway",
+                          onPress: () => onSaveResult(),
+                        },
+                      ]
+                    );
+                  } else {
+                    onSaveResult();
+                  }
+                }}
                 chromeless
                 marginHorizontal="$2"
                 paddingVertical={0}
