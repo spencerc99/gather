@@ -111,7 +111,7 @@ export interface DatabaseBlockInsert {
   createdBy: string; // DID of the person who made it?
 
   captureTime?: number; // unix timestamp of when the block was captured for external media
-  location?: LocationMetadata;
+  locationData?: LocationMetadata;
 }
 export interface LocationMetadata {
   latitude: number;

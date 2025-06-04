@@ -245,23 +245,23 @@ export function BlockDetailView({ block }: { block: Block }) {
                   )}
                 </>
               )}
-              {block.location && (
+              {block.locationData && (
                 <StyledParagraph metadata>
                   Location:{" "}
                   {[
-                    block.location.name,
-                    block.location.street,
-                    block.location.city,
-                    block.location.region,
-                    block.location.country,
+                    block.locationData.name,
+                    block.locationData.street,
+                    block.locationData.city,
+                    block.locationData.region,
+                    block.locationData.country,
                   ]
                     .filter(Boolean)
                     .join(", ")}
                   {(__DEV__ || devModeEnabled) && (
                     <StyledText metadata color="$purple8">
                       {" "}
-                      ({block.location.latitude.toFixed(6)},{" "}
-                      {block.location.longitude.toFixed(6)})
+                      ({block.locationData.latitude.toFixed(6)},{" "}
+                      {block.locationData.longitude.toFixed(6)})
                     </StyledText>
                   )}
                 </StyledParagraph>

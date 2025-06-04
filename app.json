@@ -3,7 +3,7 @@
     "name": "Gather",
     "slug": "gather",
     "privacy": "unlisted",
-    "version": "1.1.47",
+    "version": "1.1.48",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "net.tiny-inter.gather",
@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "3",
+      "buildNumber": "1",
       "bundleIdentifier": "net.tiny-inter.gather",
       "config": {
         "usesNonExemptEncryption": false

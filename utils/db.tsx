@@ -667,7 +667,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               : null,
             block.localAssetId || null,
             block.captureTime || null,
-            block.location ? JSON.stringify(block.location) : null,
+            block.locationData ? JSON.stringify(block.locationData) : null,
           ],
         },
       ],
@@ -991,8 +991,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ],
       true
     );
-    handleSqlErrors(result);
-    return result.rows.map((block) => mapDbBlockToBlock(block));
+    try {
+      handleSqlErrors(result);
+      return result.rows.map((block) => mapDbBlockToBlock(block));
+    } catch (err) {
+      console.log("error", err);
+      throw err;
+    }
   }
 
   const SelectCollectionInfoSql = (

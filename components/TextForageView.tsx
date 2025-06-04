@@ -28,9 +28,14 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BlockInsertInfo, LocationMetadata } from "../utils/dataTypes";
+import {
+  BlockInsertInfo,
+  LocationMetadata,
+  BlockEditInfo,
+} from "../utils/dataTypes";
 import { AppSettingType, getAppSetting } from "../app/settings";
 import * as Location from "expo-location";
+import { useLocation, LocationProvider } from "../utils/location";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -58,7 +63,7 @@ interface PickedMedia {
   contentType?: MimeType;
   assetId?: string | null;
   captureTime?: number;
-  location?: LocationMetadata;
+  locationData?: LocationMetadata;
 }
 
 const getLocationMetadata = async (
@@ -131,10 +136,10 @@ const processMediaAsset = async (
 
     metadata = {
       captureTime: parseExifDate(DateTimeOriginal),
-      location: locationMetadata,
+      locationData: locationMetadata,
     } as {
       captureTime: number;
-      location: LocationMetadata;
+      locationData: LocationMetadata;
     };
   }
 
@@ -148,6 +153,15 @@ const processMediaAsset = async (
 };
 
 export function TextForageView({ collectionId }: { collectionId?: string }) {
+  return (
+    <LocationProvider>
+      <TextForageViewContent collectionId={collectionId} />
+    </LocationProvider>
+  );
+}
+
+function TextForageViewContent({ collectionId }: { collectionId?: string }) {
+  const { getLocationMetadata } = useLocation();
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
   const [isLoadingAssets, setIsLoadingAssets] = useState(false);
@@ -157,6 +171,7 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
     getBlocks,
     getCollectionItems,
     getExistingAssetIds,
+    updateBlock,
   } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
@@ -321,9 +336,8 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
               assetId,
               contentType,
               captureTime,
-              location,
+              locationData: mediaLocationData,
             }) => {
-              // TODO: this is only accounting for iphone.
               const fileUri = await getFsPathForMediaResult(
                 uri,
                 type === BlockType.Image ? "jpg" : "mp4",
@@ -333,11 +347,10 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
                 createdBy: currentUser!.id,
                 content: fileUri,
                 type,
-                // TODO: if web, need to use the file extension to determine mime type and probably add to private origin file system.
                 localAssetId: assetId || undefined,
                 contentType,
                 captureTime,
-                location,
+                locationData: mediaLocationData || undefined,
               };
             }
           )
@@ -346,31 +359,52 @@ export function TextForageView({ collectionId }: { collectionId?: string }) {
       }
 
       if (savedTextValue) {
-        // TODO: do this check after insert as text value and then do an update to make it super fast.
-        const locationMetadata = await getCurrentLocationMetadata();
-        if (isUrl(savedTextValue)) {
-          const { title, description, images, url, favicon } =
-            (await extractDataFromUrl(savedTextValue)) || {};
-          blocksToInsert.push({
-            createdBy: currentUser!.id,
-            // TODO: try to capture a picture of the url always
-            content: images?.[0] || favicon || "",
-            title,
-            description,
-            source: url,
-            type: BlockType.Link,
-            collectionsToConnect: collectionId ? [{ collectionId }] : [],
-            location: locationMetadata,
+        // Get location only when saving text (not for media)
+        const locationData = savedTextValue
+          ? await getLocationMetadata()
+          : null;
+
+        // Save the text block immediately
+        const initialBlock = {
+          createdBy: currentUser!.id,
+          content: savedTextValue,
+          type: BlockType.Text,
+          collectionsToConnect: collectionId ? [{ collectionId }] : [],
+          locationData: locationData || undefined,
+        };
+
+        const { blockId } = await createBlocks({
+          blocksToInsert: [initialBlock],
+        }).then((results) => results[0]);
+
+        // After saving, enrich with metadata asynchronously
+        Promise.all([
+          isUrl(savedTextValue) ? extractDataFromUrl(savedTextValue) : null,
+        ])
+          .then(async ([urlData]) => {
+            if (!urlData) return;
+
+            const updateInfo: BlockEditInfo = {};
+            if (urlData) {
+              const { title, description, images, url, favicon } = urlData;
+              updateInfo.type = BlockType.Link;
+              updateInfo.content = images?.[0] || favicon || "";
+              updateInfo.title = title;
+              updateInfo.description = description;
+              updateInfo.source = url;
+            }
+
+            if (Object.keys(updateInfo).length > 0) {
+              await updateBlock({
+                blockId,
+                editInfo: updateInfo,
+              });
+            }
+          })
+          .catch((err) => {
+            // Log error but don't affect the user experience
+            console.warn("Error enriching block metadata:", err);
           });
-        } else {
-          blocksToInsert.push({
-            createdBy: currentUser!.id,
-            content: savedTextValue,
-            type: BlockType.Text,
-            collectionsToConnect: collectionId ? [{ collectionId }] : [],
-            location: locationMetadata,
-          });
-        }
       }
 
       await createBlocks({

@@ -16,6 +16,17 @@ export function getEscapedSearchString(searchString: string): string {
 
 export function mapDbBlockToBlock(block: any): Block {
   const blockMappedToCamelCase = mapSnakeCaseToCamelCaseProperties(block);
+
+  let parsedLocationData: LocationMetadata | undefined;
+  try {
+    parsedLocationData = block.location_data
+      ? (JSON.parse(block.location_data) as LocationMetadata)
+      : undefined;
+  } catch (err) {
+    console.log("error", err);
+    parsedLocationData = undefined;
+  }
+
   return {
     ...blockMappedToCamelCase,
     // TODO: resolve schema so you dont have to do this because its leading to a lot of confusing errors downstraem from types
@@ -42,9 +53,7 @@ export function mapDbBlockToBlock(block: any): Block {
         )
       : [],
     captureTime: block.capture_time,
-    location: block.location_data
-      ? (JSON.parse(block.location_data) as LocationMetadata)
-      : undefined,
+    locationData: parsedLocationData,
   } as Block;
 }
 
