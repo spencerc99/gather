@@ -60,7 +60,7 @@ export const InspoBlocks = [
   },
   // {
   //   content:
-  //     "Collagist’s Note: New York is a swarm of signs and unholy advertisements. I encounter haphazard phrases daily like dropped pennies; I pick them up to store in my pocketbook (iPhone Notes App), safekeeping these found letters that have gone on a walk (Walking is reading. Writing is walking): cruel embankments, necrologists of the newspapers, pompous rivers, sozzled, jealous spaghetti",
+  //     "Collagist's Note: New York is a swarm of signs and unholy advertisements. I encounter haphazard phrases daily like dropped pennies; I pick them up to store in my pocketbook (iPhone Notes App), safekeeping these found letters that have gone on a walk (Walking is reading. Writing is walking): cruel embankments, necrologists of the newspapers, pompous rivers, sozzled, jealous spaghetti",
   //   type: BlockType.Text,
   // },
 ];
@@ -91,48 +91,60 @@ const BlockViewImpl = ({
   isVisible,
   setTextFocused,
   onReply,
+  collectionId,
 }: {
   block: Block;
   isRemoteCollection: boolean;
   isVisible: boolean;
   setTextFocused?: (textFocused: boolean) => void;
   onReply: (block: Block) => void;
-  }) => (
-  <Swipeable
-    key={block.id}
-    containerStyle={{}}
-    friction={2}
-    renderRightActions={() => <RightActions />}
-    renderLeftActions={() => <LeftActions />}
-    onSwipeableOpen={(direction, swipeable) => {
-      if (direction === "left") {
-        onReply(block);
-      } else {
-        router.push({
-          pathname: "/block/[id]/connect",
-          params: { id: block.id },
-        });
+  collectionId?: string;
+}) => {
+  // Only enable reply swipe if block has collections other than current one
+  const hasCollections = block.collectionIds && block.collectionIds.length > 0;
+  const shouldEnableReplySwipe = collectionId
+    ? hasCollections && block.collectionIds!.some((id) => id !== collectionId)
+    : hasCollections;
+
+  return (
+    <Swipeable
+      key={block.id}
+      containerStyle={{}}
+      friction={2}
+      renderRightActions={() => <RightActions />}
+      renderLeftActions={() =>
+        shouldEnableReplySwipe ? <LeftActions /> : null
       }
-      swipeable.close();
-    }}
-  >
-    <BlockTextSummary
-      block={block}
-      style={{ maxHeight: 320 }}
-      blockStyle={{
-        maxHeight: 320,
+      onSwipeableOpen={(direction, swipeable) => {
+        if (direction === "left" && shouldEnableReplySwipe) {
+          onReply(block);
+        } else if (direction === "right") {
+          router.push({
+            pathname: "/block/[id]/connect",
+            params: { id: block.id },
+          });
+        }
+        swipeable.close();
       }}
-      containerProps={{
-        maxWidth: "85%",
-      }}
-      shouldLink
-      isRemoteCollection={isRemoteCollection}
-      isVisible={isVisible}
-      setTextFocused={setTextFocused}
-      onReply={onReply}
-    />
-  </Swipeable>
-);
+    >
+      <BlockTextSummary
+        block={block}
+        style={{ maxHeight: 320 }}
+        blockStyle={{
+          maxHeight: 320,
+        }}
+        containerProps={{
+          maxWidth: "85%",
+        }}
+        shouldLink
+        isRemoteCollection={isRemoteCollection}
+        isVisible={isVisible}
+        setTextFocused={setTextFocused}
+        onReply={onReply}
+      />
+    </Swipeable>
+  );
+};
 
 const BlockViewWrapped = gestureHandlerRootHOC(BlockViewImpl);
 
@@ -143,12 +155,14 @@ const BlockView = memo(
     isVisible,
     setTextFocused,
     onReply,
+    collectionId,
   }: {
     block: Block;
     isRemoteCollection: boolean;
     isVisible: boolean;
     setTextFocused?: (textFocused: boolean) => void;
     onReply: (block: Block) => void;
+    collectionId?: string;
   }) => (
     <BlockViewWrapped
       block={block}
@@ -156,6 +170,7 @@ const BlockView = memo(
       isVisible={isVisible}
       setTextFocused={setTextFocused}
       onReply={onReply}
+      collectionId={collectionId}
     />
   )
 );
@@ -226,10 +241,11 @@ export function BlockTexts({
           isVisible={visibleItems.includes(item.id)}
           setTextFocused={setTextFocused}
           onReply={onReply}
+          collectionId={collectionId}
         />
       );
     },
-    [isRemoteCollection, visibleItems, onReply]
+    [isRemoteCollection, visibleItems, onReply, collectionId]
   );
 
   return !blocks ? (

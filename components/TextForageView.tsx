@@ -227,6 +227,13 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
     Record<string, string>
   >({});
 
+  // Add effect to clear reply state when collection changes
+  useEffect(() => {
+    setIsReplying(false);
+    setReplyCollections([]);
+    setReplyCollectionTitles({});
+  }, [collectionId]);
+
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
       placeholders[Math.floor(Math.random() * placeholders.length)]
@@ -346,8 +353,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
 
     const savedMedias = medias;
     const savedTextValue = textValue;
+    const savedReplyCollections = isReplying ? replyCollections : [];
     setTextValue("");
     setMedias([]);
+    setIsReplying(false);
+    setReplyCollections([]);
+    setReplyCollectionTitles({});
     const blocksToInsert: BlockInsertInfo[] = [];
 
     try {
@@ -382,6 +393,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
         blocksToInsert.push(...mediaToInsert);
       }
 
+      const collectionIds = isReplying
+        ? savedReplyCollections
+        : collectionId
+        ? [collectionId]
+        : [];
+
       if (savedTextValue) {
         // Get location only when saving text (not for media)
         const locationData = savedTextValue
@@ -393,12 +410,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
           createdBy: currentUser!.id,
           content: savedTextValue,
           type: BlockType.Text,
-          collectionsToConnect: collectionId ? [{ collectionId }] : [],
           locationData: locationData || undefined,
         };
 
         const { blockId } = await createBlocks({
           blocksToInsert: [initialBlock],
+          collectionIds,
         }).then((results) => results[0]);
 
         // After saving, enrich with metadata asynchronously
@@ -431,23 +448,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
           });
       }
 
-      const [newBlock] = await createBlocks({
-        blocksToInsert,
-        collectionId,
-      });
-
-      if (isReplying && replyCollections.length > 0) {
-        await addConnections({
-          blockId: newBlock.blockId,
-          connections: replyCollections.map((collectionId) => ({
-            collectionId,
-            createdBy: currentUser!.id,
-          })),
+      if (blocksToInsert.length > 0) {
+        await createBlocks({
+          blocksToInsert,
+          collectionIds,
         });
       }
-
-      setIsReplying(false);
-      setReplyCollections([]);
     } catch (err) {
       logError(err);
     }
@@ -592,38 +598,65 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
             borderBottomWidth={1}
             borderBottomColor="$orange5"
           >
-            <StyledText>Adding to collections:</StyledText>
-            <XStack flexWrap="wrap" gap="$1">
-              {replyCollections.map((collectionId) => (
+            <XStack flexWrap="wrap" gap="$1" alignItems="center">
+              <StyledText metadata>Adding to:</StyledText>
+              {collectionId && replyCollections.includes(collectionId) && (
                 <XStack
-                  key={collectionId}
                   backgroundColor="$orange5"
-                  padding="$1"
+                  paddingHorizontal="$1.5"
+                  paddingVertical="$1"
                   borderRadius="$2"
                   alignItems="center"
                   gap="$1"
                 >
-                  <StyledText color="$orange9">
+                  <StyledText>
                     {replyCollectionTitles[collectionId] || collectionId}
                   </StyledText>
+                </XStack>
+              )}
+              {replyCollections
+                .filter((id) => id !== collectionId)
+                .map((replyCollectionId) => (
                   <StyledButton
-                    circular
-                    size="$3"
-                    theme="orange"
-                    icon={<Icon name="close" type={IconType.Ionicons} />}
+                    asChild
+                    key={replyCollectionId}
                     onPress={() => {
                       setReplyCollections(
-                        replyCollections.filter((id) => id !== collectionId)
+                        replyCollections.filter(
+                          (id) => id !== replyCollectionId
+                        )
                       );
                       setReplyCollectionTitles((prev) => {
                         const newTitles = { ...prev };
-                        delete newTitles[collectionId];
+                        delete newTitles[replyCollectionId];
                         return newTitles;
                       });
                     }}
-                  />
-                </XStack>
-              ))}
+                  >
+                    <XStack
+                      backgroundColor="$orange5"
+                      paddingHorizontal="$1.5"
+                      paddingVertical="$1"
+                      borderRadius="$2"
+                      alignItems="center"
+                      gap="$1"
+                    >
+                      <StyledText>
+                        {replyCollectionTitles[replyCollectionId] ||
+                          replyCollectionId}
+                      </StyledText>
+                      <XStack>
+                        <Icon
+                          name="close"
+                          type={IconType.Ionicons}
+                          color="$red10"
+                          size={14}
+                        />
+                      </XStack>
+                    </XStack>
+                  </StyledButton>
+                ))}
+              {/* TODO: add a button to add more collections? using freeform select? */}
             </XStack>
           </YStack>
         )}
