@@ -322,11 +322,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
 
     const savedMedias = medias;
     const savedTextValue = textValue;
-    setTextValue("");
-    setMedias([]);
     const blocksToInsert: BlockInsertInfo[] = [];
 
     try {
+      // Get location upfront if we have text to save
+      const locationData = savedTextValue ? await getLocationMetadata() : null;
+
       if (savedMedias.length) {
         const mediaToInsert = await Promise.all(
           savedMedias.map(
@@ -359,60 +360,67 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
       }
 
       if (savedTextValue) {
-        // Get location only when saving text (not for media)
-        const locationData = savedTextValue
-          ? await getLocationMetadata()
-          : null;
-
-        // Save the text block immediately
-        const initialBlock = {
+        // Create text block data
+        const textBlock = {
           createdBy: currentUser!.id,
           content: savedTextValue,
           type: BlockType.Text,
           collectionsToConnect: collectionId ? [{ collectionId }] : [],
           locationData: locationData || undefined,
         };
-
-        const { blockId } = await createBlocks({
-          blocksToInsert: [initialBlock],
-        }).then((results) => results[0]);
-
-        // After saving, enrich with metadata asynchronously
-        Promise.all([
-          isUrl(savedTextValue) ? extractDataFromUrl(savedTextValue) : null,
-        ])
-          .then(async ([urlData]) => {
-            if (!urlData) return;
-
-            const updateInfo: BlockEditInfo = {};
-            if (urlData) {
-              const { title, description, images, url, favicon } = urlData;
-              updateInfo.type = BlockType.Link;
-              updateInfo.content = images?.[0] || favicon || "";
-              updateInfo.title = title;
-              updateInfo.description = description;
-              updateInfo.source = url;
-            }
-
-            if (Object.keys(updateInfo).length > 0) {
-              await updateBlock({
-                blockId,
-                editInfo: updateInfo,
-              });
-            }
-          })
-          .catch((err) => {
-            // Log error but don't affect the user experience
-            console.warn("Error enriching block metadata:", err);
-          });
+        blocksToInsert.push(textBlock);
       }
 
-      await createBlocks({
+      // Save all blocks at once
+      const blockInfos = await createBlocks({
         blocksToInsert,
-        collectionId,
+        collectionId: collectionId || undefined,
       });
+
+      // Only clear the UI after successful save
+      setTextValue("");
+      setMedias([]);
+
+      // Handle URL enrichment asynchronously for text blocks
+      if (savedTextValue) {
+        const textBlockInfo = blockInfos.find((info, index) => {
+          const block = blocksToInsert[index];
+          return (
+            block.type === BlockType.Text && block.content === savedTextValue
+          );
+        });
+
+        if (textBlockInfo && isUrl(savedTextValue)) {
+          // Do URL enrichment asynchronously without blocking
+          Promise.resolve()
+            .then(() => extractDataFromUrl(savedTextValue))
+            .then(async (urlData) => {
+              if (!urlData) return;
+
+              const { title, description, images, url, favicon } = urlData;
+              const updateInfo: BlockEditInfo = {
+                type: BlockType.Link,
+                content: images?.[0] || favicon || "",
+                title,
+                description,
+                source: url,
+              };
+
+              await updateBlock({
+                blockId: textBlockInfo.blockId,
+                editInfo: updateInfo,
+              });
+            })
+            .catch((err) => {
+              console.warn("Error enriching URL metadata:", err);
+            });
+        }
+      }
     } catch (err) {
+      // Don't clear UI on error - keep the content so user doesn't lose it
       logError(err);
+      console.error("Failed to save blocks:", err);
+      // TODO: Show user-friendly error message
     }
   }
 

@@ -511,106 +511,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const createBlocksMutation = useMutation({
     mutationFn: createBlocksBase,
     onSuccess: (blockInfos, { collectionId, blocksToInsert }) => {
-      // queryClient.setQueryData<InfiniteData<Block[]>>(
-      //   ["blocks", { collectionId }],
-      //   // @ts-ignore
-      //   (old) => {
-      //     if (!old) {
-      //       return;
-      //     }
-      //     let blockIdx = 0;
-      //     if ("pages" in old) {
-      //       console.log("updating!");
-      //       // format {"pageParams": [0], "pages": [{"blocks": [Array], "nextId": 1, "previousId": undefined}]}
-      //       return {
-      //         ...old,
-      //         pages: old.pages.map((page) => ({
-      //           // @ts-ignore
-      //           blocks: page.blocks.map((b) =>
-      //             b.id !== "..."
-      //               ? b
-      //               : { ...b, id: blockInfos[blockIdx++].blockId }
-      //           ),
-      //           ...page,
-      //         })),
-      //       };
-      //     } else if (Array.isArray(old)) {
-      //       // @ts-ignore
-      //       return (old || []).map((b) =>
-      //         b.id !== "..." ? b : { ...b, id: blockInfos[blockIdx++].blockId }
-      //       );
-      //     }
-      //   }
-      // );
-
       queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
       queryClient.invalidateQueries({ queryKey: ["blocks"] });
     },
-    // onMutate: async ({ blocksToInsert, collectionId }) => {
-    //   // Cancel any outgoing refetches
-    //   // (so they don't overwrite our optimistic update)
-    //   await queryClient.cancelQueries({
-    //     queryKey: ["blocks", { collectionId }],
-    //   });
-
-    //   // Snapshot the previous value
-    //   const previousBlocks = queryClient.getQueryData([
-    //     "blocks",
-    //     { collectionId },
-    //   ]);
-
-    //   // Optimistically update to the new value
-    //   queryClient.setQueryData<InfiniteData<Block[]>>(
-    //     ["blocks", { collectionId }],
-    //     // @ts-ignore
-    //     (old) => {
-    //       const optimisticBlocks = blocksToInsert.map((block) => ({
-    //         id: "...",
-    //         ...block,
-    //         collectionIds: collectionId ? [collectionId] : [],
-    //         createdAt: new Date(),
-    //         updatedAt: new Date(),
-    //         numConnections: collectionId ? 1 : 0,
-    //         remoteConnectedAt: block.remoteConnectedAt
-    //           ? new Date(block.remoteConnectedAt)
-    //           : undefined,
-    //       }));
-    //       if (!old) {
-    //         return {
-    //           pages: [
-    //             { blocks: optimisticBlocks, nextId: 1, previousId: undefined },
-    //           ],
-    //           pageParams: [0],
-    //         };
-    //       }
-    //       if ("pages" in old) {
-    //         // format {"pageParams": [0], "pages": [{"blocks": [Array], "nextId": 1, "previousId": undefined}]}
-    //         return {
-    //           ...old,
-    //           pages: old.pages.map((page, idx) =>
-    //             idx > 0
-    //               ? page
-    //               : {
-    //                   // @ts-ignore
-    //                   blocks: [...optimisticBlocks, page.blocks],
-    //                   ...page,
-    //                 }
-    //           ),
-    //         };
-    //       }
-
-    //       return [...(old || []), ...optimisticBlocks];
-    //     }
-    //   );
-
-    //   // Return a context object with the snapshotted value
-    //   return { previousBlocks };
-    // },
-    onError: (_err, { collectionId }, context) => {
-      queryClient.setQueryData(
-        ["blocks", { collectionId }],
-        context?.previousBlocks
-      );
+    onError: (err, { collectionId }, context) => {
+      console.error("Error creating blocks:", err);
+      // If we had optimistic updates, we would roll them back here
+      // For now, just invalidate to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
+      queryClient.invalidateQueries({ queryKey: ["blocks"] });
     },
   });
   const createBlocks = createBlocksMutation.mutateAsync;
@@ -620,88 +529,100 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     collectionsToConnect: connections,
     ...block
   }: BlockInsertInfo): Promise<{ blockId: string; created: boolean }> => {
-    const [result] = await db.execAsync(
-      [
-        {
-          sql: `
-              INSERT INTO blocks (
-                title,
-                description,
-                content,
-                type,
-                content_type,
-                source,
-                remote_source_type,
-                created_by,
-                remote_source_info,
-                local_asset_id,
-                capture_time,
-                location_data
-              ) VALUES (
-                  ?,
-                  ?,
-                  ?,
-                  ?,
-                  ?,
-                  ?,
-                  ?,
-                  ?,
-                  ?,
-                  ?,
-                  ?,
-                  ?
-              )
-              ON CONFLICT(arena_id) DO NOTHING
-              RETURNING *;`,
-          args: [
-            block.title || null,
-            block.description || null,
-            block.content,
-            block.type,
-            block.contentType,
-            block.source || null,
-            block.remoteSourceType || null,
-            block.createdBy,
-            block.remoteSourceInfo
-              ? JSON.stringify(block.remoteSourceInfo)
-              : null,
-            block.localAssetId || null,
-            block.captureTime || null,
-            block.locationData ? JSON.stringify(block.locationData) : null,
-          ],
-        },
-      ],
-      false
-    );
+    let insertId: number | undefined;
+    let blockCreated = false;
 
-    handleSqlErrors(result);
-
-    let insertId = result.insertId;
-    let blockCreated = Boolean(insertId);
-    if (!insertId) {
-      // means conflicted so find by arenaId
-      const [result] = await db.execAsync(
+    await db.transactionAsync(async (tx) => {
+      const result = await tx.executeSqlAsync(
+        `
+        INSERT INTO blocks (
+          title,
+          description,
+          content,
+          type,
+          content_type,
+          source,
+          remote_source_type,
+          created_by,
+          remote_source_info,
+          local_asset_id,
+          capture_time,
+          location_data
+        ) VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
+        )
+        ON CONFLICT(arena_id) DO NOTHING
+        RETURNING *;`,
         [
-          {
-            sql: `
-              SELECT id FROM blocks WHERE arena_id = ?;`,
-            args: [block.remoteSourceInfo?.arenaId.toString()],
-          },
-        ],
-        true
+          block.title || null,
+          block.description || null,
+          block.content,
+          block.type,
+          block.contentType || null,
+          block.source || null,
+          block.remoteSourceType || null,
+          block.createdBy,
+          block.remoteSourceInfo
+            ? JSON.stringify(block.remoteSourceInfo)
+            : null,
+          block.localAssetId || null,
+          block.captureTime || null,
+          block.locationData ? JSON.stringify(block.locationData) : null,
+        ]
       );
+
       handleSqlErrors(result);
-      insertId = result.rows[0].id;
+
+      insertId = result.insertId;
+      blockCreated = Boolean(insertId);
+
+      if (!insertId && block.remoteSourceInfo?.arenaId) {
+        // means conflicted so find by arenaId
+        const conflictResult = await tx.executeSqlAsync(
+          `SELECT id FROM blocks WHERE arena_id = ?;`,
+          [block.remoteSourceInfo.arenaId.toString()]
+        );
+        handleSqlErrors(conflictResult);
+        insertId = conflictResult.rows[0]?.id;
+      }
+
+      if (connections?.length && insertId) {
+        // Create all connections within the same transaction
+        for (const connection of connections) {
+          await tx.executeSqlAsync(
+            `INSERT INTO connections (
+              block_id,
+              collection_id,
+              created_by,
+              remote_created_at
+            ) VALUES (?, ?, ?, ?);`,
+            [
+              insertId,
+              connection.collectionId,
+              block.createdBy,
+              connection.remoteCreatedAt || null,
+            ]
+          );
+        }
+      }
+    }, false);
+
+    if (!insertId) {
+      throw new Error("Failed to create block - no ID returned");
     }
 
-    if (connections?.length) {
-      await addConnections({
-        blockId: String(insertId),
-        connections,
-      });
-    }
-
-    return { blockId: insertId!.toString(), created: blockCreated };
+    return { blockId: insertId.toString(), created: blockCreated };
   };
 
   const deleteBlocksById = async (ids: string[], ignoreRemote?: boolean) => {
