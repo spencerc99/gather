@@ -314,16 +314,6 @@ export default function ProfileScreen() {
           >
             Review
           </StyledButton>
-          <LinkButton
-            href="/export"
-            justifyContent="flex-start"
-            theme="gray"
-            flex={1}
-            width="100%"
-            icon={<Icon name="folder" />}
-          >
-            Export Data
-          </LinkButton>
         </XStack>
 
         {/* TODO: select a channel to send? */}

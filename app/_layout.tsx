@@ -251,6 +251,20 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="restoreBackup"
+        options={{
+          presentation: "card",
+          title: "Restore Backup",
+        }}
+      />
+      <Stack.Screen
+        name="cloudBackupSubscription"
+        options={{
+          presentation: "card",
+          title: "Cloud Backup",
+        }}
+      />
+      <Stack.Screen
         name="collection/[id]/index"
         options={{
           presentation: "card",
