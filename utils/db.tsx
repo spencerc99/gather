@@ -484,133 +484,51 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   const createBlocksBase = async ({
     blocksToInsert,
-    collectionId,
+    collectionIds,
   }: BlocksInsertInfo): Promise<
     Array<{ blockId: string; created: boolean }>
   > => {
-    // TODO: change to use insertBlocks
+    // Create all blocks first
     const blockInfos = await Promise.all(
       blocksToInsert.map(async (block) => createBlock(block))
     );
     const blockIds = blockInfos.map(({ blockId }) => blockId);
 
-    if (collectionId) {
-      const blockConnections = blockIds.map((blockId, idx) => ({
-        blockId: blockId,
-        // TODO: this is kinda jank, should really be using directly from arena item
-        // but because we are doing the logic to extract that into this its effectively
-        // the same info
-        remoteCreatedAt: blocksToInsert[idx].remoteConnectedAt,
-        createdBy: blocksToInsert[idx].connectedBy || currentUser!.id,
-      }));
-      await addConnectionsToCollection({ collectionId, blockConnections });
+    // If collections are specified, add connections for each collection
+    if (collectionIds?.length) {
+      for (const collectionId of collectionIds) {
+        const blockConnections = blockIds.map((blockId, idx) => ({
+          blockId: blockId,
+          remoteCreatedAt: blocksToInsert[idx].remoteConnectedAt,
+          createdBy: blocksToInsert[idx].connectedBy || currentUser!.id,
+        }));
+        await addConnectionsToCollection({ collectionId, blockConnections });
+      }
     }
     return blockInfos;
   };
 
   const createBlocksMutation = useMutation({
     mutationFn: createBlocksBase,
-    onSuccess: (blockInfos, { collectionId, blocksToInsert }) => {
-      // queryClient.setQueryData<InfiniteData<Block[]>>(
-      //   ["blocks", { collectionId }],
-      //   // @ts-ignore
-      //   (old) => {
-      //     if (!old) {
-      //       return;
-      //     }
-      //     let blockIdx = 0;
-      //     if ("pages" in old) {
-      //       console.log("updating!");
-      //       // format {"pageParams": [0], "pages": [{"blocks": [Array], "nextId": 1, "previousId": undefined}]}
-      //       return {
-      //         ...old,
-      //         pages: old.pages.map((page) => ({
-      //           // @ts-ignore
-      //           blocks: page.blocks.map((b) =>
-      //             b.id !== "..."
-      //               ? b
-      //               : { ...b, id: blockInfos[blockIdx++].blockId }
-      //           ),
-      //           ...page,
-      //         })),
-      //       };
-      //     } else if (Array.isArray(old)) {
-      //       // @ts-ignore
-      //       return (old || []).map((b) =>
-      //         b.id !== "..." ? b : { ...b, id: blockInfos[blockIdx++].blockId }
-      //       );
-      //     }
-      //   }
-      // );
-
-      queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
+    onSuccess: (blockInfos, { collectionIds }) => {
+      // Invalidate queries for all affected collections
+      if (collectionIds?.length) {
+        for (const collectionId of collectionIds) {
+          queryClient.invalidateQueries({
+            queryKey: ["blocks", { collectionId }],
+          });
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["blocks"] });
     },
-    // onMutate: async ({ blocksToInsert, collectionId }) => {
-    //   // Cancel any outgoing refetches
-    //   // (so they don't overwrite our optimistic update)
-    //   await queryClient.cancelQueries({
-    //     queryKey: ["blocks", { collectionId }],
-    //   });
-
-    //   // Snapshot the previous value
-    //   const previousBlocks = queryClient.getQueryData([
-    //     "blocks",
-    //     { collectionId },
-    //   ]);
-
-    //   // Optimistically update to the new value
-    //   queryClient.setQueryData<InfiniteData<Block[]>>(
-    //     ["blocks", { collectionId }],
-    //     // @ts-ignore
-    //     (old) => {
-    //       const optimisticBlocks = blocksToInsert.map((block) => ({
-    //         id: "...",
-    //         ...block,
-    //         collectionIds: collectionId ? [collectionId] : [],
-    //         createdAt: new Date(),
-    //         updatedAt: new Date(),
-    //         numConnections: collectionId ? 1 : 0,
-    //         remoteConnectedAt: block.remoteConnectedAt
-    //           ? new Date(block.remoteConnectedAt)
-    //           : undefined,
-    //       }));
-    //       if (!old) {
-    //         return {
-    //           pages: [
-    //             { blocks: optimisticBlocks, nextId: 1, previousId: undefined },
-    //           ],
-    //           pageParams: [0],
-    //         };
-    //       }
-    //       if ("pages" in old) {
-    //         // format {"pageParams": [0], "pages": [{"blocks": [Array], "nextId": 1, "previousId": undefined}]}
-    //         return {
-    //           ...old,
-    //           pages: old.pages.map((page, idx) =>
-    //             idx > 0
-    //               ? page
-    //               : {
-    //                   // @ts-ignore
-    //                   blocks: [...optimisticBlocks, page.blocks],
-    //                   ...page,
-    //                 }
-    //           ),
-    //         };
-    //       }
-
-    //       return [...(old || []), ...optimisticBlocks];
-    //     }
-    //   );
-
-    //   // Return a context object with the snapshotted value
-    //   return { previousBlocks };
-    // },
-    onError: (_err, { collectionId }, context) => {
-      queryClient.setQueryData(
-        ["blocks", { collectionId }],
-        context?.previousBlocks
-      );
+    onError: (_err, { collectionIds }) => {
+      if (collectionIds?.length) {
+        for (const collectionId of collectionIds) {
+          queryClient.invalidateQueries({
+            queryKey: ["blocks", { collectionId }],
+          });
+        }
+      }
     },
   });
   const createBlocks = createBlocksMutation.mutateAsync;
@@ -1484,8 +1402,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
     handleSqlErrors(result);
 
-    // TODO: types
-    return result.rows.map((block) => mapDbBlockToBlock(block));
+    // Map the results to ensure remoteConnectedAt is never undefined
+    return result.rows.map((block) => {
+      const mappedBlock = mapDbBlockToBlock(block);
+      return {
+        ...mappedBlock,
+        remoteConnectedAt: mappedBlock.remoteConnectedAt || null,
+      } as CollectionBlock;
+    });
   }
 
   async function updateCollectionBase({
@@ -2046,7 +1970,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             );
             const blockInfos = await createBlocks({
               blocksToInsert: rawArenaBlocksToBlockInsertInfo(lastContents),
-              collectionId,
+              collectionIds: [collectionId!],
             });
             itemsAdded = blockInfos.filter((b) => b.created).length;
             await updateLastSyncedInfoForChannel(channelId, {
@@ -2287,7 +2211,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     console.log(`found ${contents.length} items`);
     await createBlocks({
       blocksToInsert: rawArenaBlocksToBlockInsertInfo(contents),
-      collectionId: collectionId!,
+      collectionIds: [collectionId!],
     });
     await updateLastSyncedInfoForChannel(channelId, {
       lastSyncedAt: new Date().toISOString(),

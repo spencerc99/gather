@@ -2,8 +2,24 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Alert, Dimensions, Linking, Platform, ScrollView } from "react-native";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
+import {
+  Alert,
+  Dimensions,
+  Linking,
+  Platform,
+  ScrollView,
+  Keyboard,
+  SafeAreaView,
+  ViewToken,
+} from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
 import { BlockSelectLimit, DatabaseContext } from "../utils/db";
@@ -36,6 +52,7 @@ import {
 import { AppSettingType, getAppSetting } from "../app/settings";
 import * as Location from "expo-location";
 import { useLocation, LocationProvider } from "../utils/location";
+import { Block, CollectionBlock } from "../utils/dataTypes";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -172,6 +189,8 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
     getCollectionItems,
     getExistingAssetIds,
     updateBlock,
+    addConnections,
+    getCollection,
   } = useContext(DatabaseContext);
   const [recording, setRecording] = useState<undefined | Recording>();
   const { currentUser } = useContext(UserContext);
@@ -202,6 +221,18 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
         : 0,
     };
   }, [keyboard.height, textFocused]);
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyCollections, setReplyCollections] = useState<string[]>([]);
+  const [replyCollectionTitles, setReplyCollectionTitles] = useState<
+    Record<string, string>
+  >({});
+
+  // Add effect to clear reply state when collection changes
+  useEffect(() => {
+    setIsReplying(false);
+    setReplyCollections([]);
+    setReplyCollectionTitles({});
+  }, [collectionId]);
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
@@ -322,8 +353,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
 
     const savedMedias = medias;
     const savedTextValue = textValue;
+    const savedReplyCollections = isReplying ? replyCollections : [];
     setTextValue("");
     setMedias([]);
+    setIsReplying(false);
+    setReplyCollections([]);
+    setReplyCollectionTitles({});
     const blocksToInsert: BlockInsertInfo[] = [];
 
     try {
@@ -358,6 +393,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
         blocksToInsert.push(...mediaToInsert);
       }
 
+      const collectionIds = isReplying
+        ? savedReplyCollections
+        : collectionId
+        ? [collectionId]
+        : [];
+
       if (savedTextValue) {
         // Get location only when saving text (not for media)
         const locationData = savedTextValue
@@ -369,12 +410,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
           createdBy: currentUser!.id,
           content: savedTextValue,
           type: BlockType.Text,
-          collectionsToConnect: collectionId ? [{ collectionId }] : [],
           locationData: locationData || undefined,
         };
 
         const { blockId } = await createBlocks({
           blocksToInsert: [initialBlock],
+          collectionIds,
         }).then((results) => results[0]);
 
         // After saving, enrich with metadata asynchronously
@@ -407,10 +448,12 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
           });
       }
 
-      await createBlocks({
-        blocksToInsert,
-        collectionId,
-      });
+      if (blocksToInsert.length > 0) {
+        await createBlocks({
+          blocksToInsert,
+          collectionIds,
+        });
+      }
     } catch (err) {
       logError(err);
     }
@@ -518,6 +561,21 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
     void checkExistingMedias().then(setExistingMedias);
   }, [medias]);
 
+  const onReply = (block: Block) => {
+    setIsReplying(true);
+    setReplyCollections(block.collectionIds || []);
+
+    (block.collectionIds || []).forEach(async (collectionId) => {
+      const collection = await getCollection(collectionId);
+      if (collection?.title) {
+        setReplyCollectionTitles((prev) => ({
+          ...prev,
+          [collectionId]: collection.title,
+        }));
+      }
+    });
+  };
+
   if (!currentUser) {
     return null;
   }
@@ -527,12 +585,81 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
       <Animated.View style={[{ flex: 1 }, translateStyle]}>
         <BlockTexts
           collectionId={collectionId}
-          // TODO: types
-          blocks={blocks ? blocks : null}
+          blocks={blocks as CollectionBlock[] | null}
           fetchMoreBlocks={fetchMoreBlocks}
           isFetchingNextPage={isFetchingNextPage}
           setTextFocused={setTextFocused}
+          onReply={onReply}
         />
+        {isReplying && replyCollections.length > 0 && (
+          <YStack
+            padding="$2"
+            backgroundColor="$orange3"
+            borderBottomWidth={1}
+            borderBottomColor="$orange5"
+          >
+            <XStack flexWrap="wrap" gap="$1" alignItems="center">
+              <StyledText metadata>Adding to:</StyledText>
+              {collectionId && replyCollections.includes(collectionId) && (
+                <XStack
+                  backgroundColor="$orange5"
+                  paddingHorizontal="$1.5"
+                  paddingVertical="$1"
+                  borderRadius="$2"
+                  alignItems="center"
+                  gap="$1"
+                >
+                  <StyledText>
+                    {replyCollectionTitles[collectionId] || collectionId}
+                  </StyledText>
+                </XStack>
+              )}
+              {replyCollections
+                .filter((id) => id !== collectionId)
+                .map((replyCollectionId) => (
+                  <StyledButton
+                    asChild
+                    key={replyCollectionId}
+                    onPress={() => {
+                      setReplyCollections(
+                        replyCollections.filter(
+                          (id) => id !== replyCollectionId
+                        )
+                      );
+                      setReplyCollectionTitles((prev) => {
+                        const newTitles = { ...prev };
+                        delete newTitles[replyCollectionId];
+                        return newTitles;
+                      });
+                    }}
+                  >
+                    <XStack
+                      backgroundColor="$orange5"
+                      paddingHorizontal="$1.5"
+                      paddingVertical="$1"
+                      borderRadius="$2"
+                      alignItems="center"
+                      gap="$1"
+                    >
+                      <StyledText>
+                        {replyCollectionTitles[replyCollectionId] ||
+                          replyCollectionId}
+                      </StyledText>
+                      <XStack>
+                        <Icon
+                          name="close"
+                          type={IconType.Ionicons}
+                          color="$red10"
+                          size={14}
+                        />
+                      </XStack>
+                    </XStack>
+                  </StyledButton>
+                ))}
+              {/* TODO: add a button to add more collections? using freeform select? */}
+            </XStack>
+          </YStack>
+        )}
         <YStack
           height="auto"
           borderTopEndRadius={4}

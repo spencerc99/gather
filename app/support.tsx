@@ -42,8 +42,8 @@ export default function Support() {
           <StyledText>
             Gather doesn't have ads or require a subscription, so your
             contribution gives you <StyledText bold>lifetime access</StyledText>{" "}
-            and supports continued development. Thank you for contributing what
-            you can to support my work 🧡
+            and supports continued development. Thank you for keeping Gather
+            user-supported and long-term sustainable 🧡
           </StyledText>
           <UsageInfo />
           <ContributionsList />
