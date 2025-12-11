@@ -324,10 +324,11 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
     const savedTextValue = textValue;
     const blocksToInsert: BlockInsertInfo[] = [];
 
-    try {
-      // Get location upfront if we have text to save
-      const locationData = savedTextValue ? await getLocationMetadata() : null;
+    // If there is exactly one media file and text, use the text as the media's title
+    const useTextAsMediaTitle =
+      savedMedias.length === 1 && savedTextValue.trim();
 
+    try {
       if (savedMedias.length) {
         const mediaToInsert = await Promise.all(
           savedMedias.map(
@@ -352,6 +353,8 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
                 contentType,
                 captureTime,
                 locationData: mediaLocationData || undefined,
+                // Use text as title when there's exactly one media file and text
+                title: useTextAsMediaTitle ? savedTextValue.trim() : undefined,
               };
             }
           )
@@ -359,16 +362,22 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
         blocksToInsert.push(...mediaToInsert);
       }
 
-      if (savedTextValue) {
-        // Create text block data
-        const textBlock = {
+      // Only create a separate text block if we're not using text as media title
+      if (savedTextValue && !useTextAsMediaTitle) {
+        // Get location only when saving text (not for media)
+        const locationData = savedTextValue
+          ? await getLocationMetadata()
+          : null;
+
+        // Save the text block immediately
+        const initialBlock = {
           createdBy: currentUser!.id,
           content: savedTextValue,
           type: BlockType.Text,
           collectionsToConnect: collectionId ? [{ collectionId }] : [],
           locationData: locationData || undefined,
         };
-        blocksToInsert.push(textBlock);
+        blocksToInsert.push(initialBlock);
       }
 
       // Save all blocks at once
