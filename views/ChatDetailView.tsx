@@ -1,10 +1,8 @@
 import { Tabs, Stack } from "expo-router";
 import { YStack } from "tamagui";
 import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
-import { CollectionSelect } from "../components/CollectionSelect";
 import { TextForageView } from "../components/TextForageView";
 import { useEffect, useState } from "react";
-import { Keyboard } from "react-native";
 
 export function ChatDetailView({
   initialCollectionId,
@@ -28,28 +26,7 @@ export function ChatDetailView({
             justifyContent: "center",
             maxWidth: "70%",
           },
-          headerTitle: () => (
-            <YStack
-              justifyContent="center"
-              alignItems="center"
-              height="100%"
-              width="100%"
-              marginBottom="$2"
-            >
-              <CollectionSelect
-                onTriggerSelect={() => {
-                  Keyboard.dismiss();
-                }}
-                selectedCollection={selectedCollection}
-                setSelectedCollection={setSelectedCollection}
-                collectionPlaceholder="All collections"
-                triggerProps={{
-                  theme: "orange",
-                  backgroundColor: "$orange6",
-                }}
-              />
-            </YStack>
-          ),
+          headerTitle: () => null,
         }}
       />
       <YStack height="100%" overflow="hidden">
@@ -62,7 +39,10 @@ export function ChatDetailView({
             },
           }}
         />
-        <TextForageView collectionId={selectedCollection || undefined} />
+        <TextForageView
+          collectionId={selectedCollection || undefined}
+          onCollectionChange={setSelectedCollection}
+        />
       </YStack>
     </>
   );

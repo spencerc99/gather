@@ -23,7 +23,12 @@ import {
 } from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
-import { BlockSelectLimit, DatabaseContext, useCollections } from "../utils/db";
+import {
+  BlockSelectLimit,
+  DatabaseContext,
+  useCollection,
+  useCollections,
+} from "../utils/db";
 import { BlockType, MimeType } from "../utils/mimeTypes";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { UserContext } from "../utils/user";
@@ -55,6 +60,7 @@ import { AppSettingType, getAppSetting } from "../app/settings";
 import * as Location from "expo-location";
 import { useLocation, LocationProvider } from "../utils/location";
 import { CollectionSummary } from "./CollectionSummary";
+import { CollectionSelect } from "./CollectionSelect";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -171,15 +177,29 @@ const processMediaAsset = async (
   };
 };
 
-export function TextForageView({ collectionId }: { collectionId?: string }) {
+interface TextForageViewProps {
+  collectionId?: string;
+  onCollectionChange?: (collectionId: string | null) => void;
+}
+
+export function TextForageView({
+  collectionId,
+  onCollectionChange,
+}: TextForageViewProps) {
   return (
     <LocationProvider>
-      <TextForageViewContent collectionId={collectionId} />
+      <TextForageViewContent
+        collectionId={collectionId}
+        onCollectionChange={onCollectionChange}
+      />
     </LocationProvider>
   );
 }
 
-function TextForageViewContent({ collectionId }: { collectionId?: string }) {
+function TextForageViewContent({
+  collectionId,
+  onCollectionChange,
+}: TextForageViewProps) {
   const { getLocationMetadata } = useLocation();
   const [textValue, setTextValue] = useState("");
   const [medias, setMedias] = useState<PickedMedia[]>([]);
@@ -232,6 +252,10 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
     const selectedIds = new Set(selectedCollections.map((c) => c.id));
     return mentionCollections.filter((c) => !selectedIds.has(c.id));
   }, [mentionCollections, selectedCollections]);
+
+  // Get current collection info for "In:" indicator
+  const { data: currentCollection } = useCollection(collectionId || "");
+
   const translateStyle = useAnimatedStyle(() => {
     return {
       paddingBottom: textFocused
@@ -819,29 +843,72 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
             </YStack>
           )}
 
-          {/* Selected Collections Chips */}
-          {selectedCollections.length > 0 && (
+          {/* Collection Context Row: "In:" indicator + @ mention chips */}
+          {(onCollectionChange || selectedCollections.length > 0) && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <XStack gap="$1.5" padding="$2" paddingTop="$1">
-                {selectedCollections.map((collection) => (
+              <XStack
+                gap="$2"
+                padding="$2"
+                paddingTop="$1"
+                alignItems="center"
+              >
+                {/* "In:" Collection Context Indicator */}
+                {onCollectionChange && (
+                  <CollectionSelect
+                    selectedCollection={collectionId || null}
+                    setSelectedCollection={onCollectionChange}
+                    collectionPlaceholder="All collections"
+                    triggerProps={{
+                      backgroundColor: "$gray3",
+                      borderWidth: 1,
+                      borderColor: "$gray6",
+                      paddingHorizontal: "$2.5",
+                      paddingVertical: "$1.5",
+                      borderRadius: "$3",
+                      elevation: "$1",
+                    }}
+                    triggerIcon={<Icon name="folder-open" size={16} />}
+                    triggerPrefix="In:"
+                  />
+                )}
+
+                {/* Divider between "In:" and @ chips */}
+                {onCollectionChange && selectedCollections.length > 0 && (
                   <XStack
-                    key={collection.id}
-                    backgroundColor="$green4"
-                    paddingHorizontal="$2"
-                    paddingVertical="$1"
-                    borderRadius="$4"
-                    alignItems="center"
-                    gap="$1"
-                  >
-                    <StyledText size="$2">{collection.title}</StyledText>
-                    <Pressable
-                      onPress={() => handleRemoveCollection(collection.id)}
-                      hitSlop={8}
-                    >
-                      <Icon name="close" size={14} />
-                    </Pressable>
-                  </XStack>
-                ))}
+                    width={1}
+                    height={20}
+                    backgroundColor="$gray6"
+                    marginHorizontal="$1"
+                  />
+                )}
+
+                {/* @ Mentioned Collections (destinations) */}
+                {selectedCollections.length > 0 && (
+                  <>
+                    <StyledText size="$1" color="$gray10">
+                      +
+                    </StyledText>
+                    {selectedCollections.map((collection) => (
+                      <XStack
+                        key={collection.id}
+                        backgroundColor="$green4"
+                        paddingHorizontal="$2"
+                        paddingVertical="$1"
+                        borderRadius="$4"
+                        alignItems="center"
+                        gap="$1"
+                      >
+                        <StyledText size="$2">{collection.title}</StyledText>
+                        <Pressable
+                          onPress={() => handleRemoveCollection(collection.id)}
+                          hitSlop={8}
+                        >
+                          <Icon name="close" size={14} />
+                        </Pressable>
+                      </XStack>
+                    ))}
+                  </>
+                )}
               </XStack>
             </ScrollView>
           )}

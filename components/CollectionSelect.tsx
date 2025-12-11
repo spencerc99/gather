@@ -161,6 +161,8 @@ export function CollectionSelect({
   onTriggerSelect,
   selectProps,
   hideChevron,
+  triggerIcon,
+  triggerPrefix,
 }: {
   selectedCollection: string | null;
   setSelectedCollection: (selectedCollection: string | null) => void;
@@ -169,6 +171,8 @@ export function CollectionSelect({
   onTriggerSelect?: () => void;
   selectProps?: GetProps<typeof Select>;
   hideChevron?: boolean;
+  triggerIcon?: React.ReactNode;
+  triggerPrefix?: string;
 }) {
   const { createCollection, deleteCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
@@ -327,16 +331,16 @@ export function CollectionSelect({
       {...selectProps}
     >
       <Select.Trigger elevation="$3" {...triggerProps}>
-        <Select.Value placeholder={collectionPlaceholder} />{" "}
-        {!hideChevron && (
-          <Icon
-            name="chevron-down"
-            size={12}
-            position="absolute"
-            right={7}
-            top="68%"
-          />
-        )}
+        <XStack alignItems="center" gap="$1.5">
+          {triggerIcon}
+          {triggerPrefix && (
+            <StyledText size="$2" color="$gray11">
+              {triggerPrefix}
+            </StyledText>
+          )}
+          <Select.Value placeholder={collectionPlaceholder} />
+          {!hideChevron && <Icon name="chevron-down" size={12} />}
+        </XStack>
       </Select.Trigger>
 
       <Adapt platform="touch">
