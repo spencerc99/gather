@@ -2,11 +2,28 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Alert, Dimensions, Linking, Platform, ScrollView } from "react-native";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Alert,
+  Dimensions,
+  FlatList,
+  Keyboard,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+} from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
-import { BlockSelectLimit, DatabaseContext } from "../utils/db";
+import { BlockSelectLimit, DatabaseContext, useCollections } from "../utils/db";
 import { BlockType, MimeType } from "../utils/mimeTypes";
 import { extractDataFromUrl, isUrl } from "../utils/url";
 import { UserContext } from "../utils/user";
@@ -30,12 +47,14 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BlockInsertInfo,
+  Collection,
   LocationMetadata,
   BlockEditInfo,
 } from "../utils/dataTypes";
 import { AppSettingType, getAppSetting } from "../app/settings";
 import * as Location from "expo-location";
 import { useLocation, LocationProvider } from "../utils/location";
+import { CollectionSummary } from "./CollectionSummary";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -190,6 +209,29 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
   const [messageBarKeyboardPadding, setMessageBarKeyboardPadding] = useState(0);
   const [textFocused, setTextFocused] = useState(false);
   const showCamera = getAppSetting(AppSettingType.ShowCameraInTextingView);
+
+  // @ mention autocomplete state
+  const [selectedCollections, setSelectedCollections] = useState<Collection[]>(
+    []
+  );
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionStartIndex, setMentionStartIndex] = useState<number | null>(
+    null
+  );
+  const textInputRef = useRef<TextInput>(null);
+
+  // Use collections hook for @ autocomplete
+  const { collections: mentionCollections, isLoading: isMentionLoading } =
+    useCollections({
+      searchValue: mentionQuery || "",
+    });
+
+  // Filter out already selected collections from autocomplete
+  const filteredMentionCollections = useMemo(() => {
+    if (!mentionCollections) return [];
+    const selectedIds = new Set(selectedCollections.map((c) => c.id));
+    return mentionCollections.filter((c) => !selectedIds.has(c.id));
+  }, [mentionCollections, selectedCollections]);
   const translateStyle = useAnimatedStyle(() => {
     return {
       paddingBottom: textFocused
@@ -241,6 +283,73 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
   }, []);
 
   useFocusEffect(updatePlaceholder);
+
+  // Handle text changes to detect @ mentions
+  const handleTextChange = useCallback(
+    (text: string) => {
+      setTextValue(text);
+
+      // Find the last @ that could be a mention trigger
+      const lastAtIndex = text.lastIndexOf("@");
+
+      if (lastAtIndex === -1) {
+        // No @ found, clear mention state
+        setMentionQuery(null);
+        setMentionStartIndex(null);
+        return;
+      }
+
+      // Check if @ is at start or preceded by whitespace (valid mention start)
+      const charBefore = lastAtIndex > 0 ? text[lastAtIndex - 1] : " ";
+      if (charBefore !== " " && charBefore !== "\n" && lastAtIndex !== 0) {
+        // @ is part of a word, not a mention trigger
+        setMentionQuery(null);
+        setMentionStartIndex(null);
+        return;
+      }
+
+      // Extract the query after @
+      const query = text.slice(lastAtIndex + 1);
+
+      // Check if query contains whitespace (mention ended)
+      if (query.includes(" ") || query.includes("\n")) {
+        setMentionQuery(null);
+        setMentionStartIndex(null);
+        return;
+      }
+
+      // Valid mention in progress
+      setMentionStartIndex(lastAtIndex);
+      setMentionQuery(query);
+    },
+    [setTextValue]
+  );
+
+  // Handle selecting a collection from autocomplete
+  const handleSelectMentionCollection = useCallback(
+    (collection: Collection) => {
+      // Add collection to selected list
+      setSelectedCollections((prev) => [...prev, collection]);
+
+      // Remove the @query from text
+      if (mentionStartIndex !== null) {
+        const newText =
+          textValue.slice(0, mentionStartIndex) +
+          textValue.slice(mentionStartIndex + (mentionQuery?.length || 0) + 1);
+        setTextValue(newText.trimEnd());
+      }
+
+      // Clear mention state
+      setMentionQuery(null);
+      setMentionStartIndex(null);
+    },
+    [mentionStartIndex, mentionQuery, textValue]
+  );
+
+  // Handle removing a selected collection
+  const handleRemoveCollection = useCallback((collectionId: string) => {
+    setSelectedCollections((prev) => prev.filter((c) => c.id !== collectionId));
+  }, []);
 
   // TODO: toast the error
   const { data, error, isFetchingNextPage, fetchNextPage, hasNextPage } =
@@ -322,7 +431,14 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
 
     const savedMedias = medias;
     const savedTextValue = textValue;
+    const savedSelectedCollections = selectedCollections;
     const blocksToInsert: BlockInsertInfo[] = [];
+
+    // Build collections to connect from both collectionId prop and selected collections
+    const collectionsToConnect = [
+      ...(collectionId ? [{ collectionId }] : []),
+      ...savedSelectedCollections.map((c) => ({ collectionId: c.id })),
+    ];
 
     // If there is exactly one media file and text, use the text as the media's title
     const useTextAsMediaTitle =
@@ -355,6 +471,7 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
                 locationData: mediaLocationData || undefined,
                 // Use text as title when there's exactly one media file and text
                 title: useTextAsMediaTitle ? savedTextValue.trim() : undefined,
+                collectionsToConnect,
               };
             }
           )
@@ -374,7 +491,7 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
           createdBy: currentUser!.id,
           content: savedTextValue,
           type: BlockType.Text,
-          collectionsToConnect: collectionId ? [{ collectionId }] : [],
+          collectionsToConnect,
           locationData: locationData || undefined,
         };
         blocksToInsert.push(initialBlock);
@@ -389,6 +506,9 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
       // Only clear the UI after successful save
       setTextValue("");
       setMedias([]);
+      setSelectedCollections([]);
+      setMentionQuery(null);
+      setMentionStartIndex(null);
 
       // Handle URL enrichment asynchronously for text blocks
       if (savedTextValue) {
@@ -646,6 +766,86 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
               </XStack>
             )}
           </XStack>
+
+          {/* @ Mention Autocomplete Dropdown */}
+          {mentionQuery !== null && (
+            <YStack
+              backgroundColor="$background"
+              borderTopWidth={1}
+              borderColor="$gray6"
+              maxHeight={200}
+            >
+              {isMentionLoading ? (
+                <XStack padding="$2" justifyContent="center">
+                  <Spinner size="small" color="$orange9" />
+                </XStack>
+              ) : filteredMentionCollections.length === 0 ? (
+                <XStack padding="$2" justifyContent="center">
+                  <StyledText metadata>
+                    {mentionQuery
+                      ? "No collections found"
+                      : "Type to search collections"}
+                  </StyledText>
+                </XStack>
+              ) : (
+                <FlatList
+                  data={filteredMentionCollections.slice(0, 5)}
+                  keyExtractor={(item) => item.id}
+                  keyboardShouldPersistTaps="handled"
+                  renderItem={({ item: collection }) => (
+                    <Pressable
+                      onPress={() => handleSelectMentionCollection(collection)}
+                    >
+                      <XStack
+                        padding="$2"
+                        paddingVertical="$1.5"
+                        backgroundColor="$background"
+                        hoverStyle={{ backgroundColor: "$gray4" }}
+                        pressStyle={{ backgroundColor: "$gray5" }}
+                        borderBottomWidth={1}
+                        borderColor="$gray4"
+                      >
+                        <StyledText numberOfLines={1} flex={1}>
+                          {collection.title}
+                        </StyledText>
+                        <StyledText metadata>
+                          {collection.itemCount} items
+                        </StyledText>
+                      </XStack>
+                    </Pressable>
+                  )}
+                />
+              )}
+            </YStack>
+          )}
+
+          {/* Selected Collections Chips */}
+          {selectedCollections.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <XStack gap="$1.5" padding="$2" paddingTop="$1">
+                {selectedCollections.map((collection) => (
+                  <XStack
+                    key={collection.id}
+                    backgroundColor="$green4"
+                    paddingHorizontal="$2"
+                    paddingVertical="$1"
+                    borderRadius="$4"
+                    alignItems="center"
+                    gap="$1"
+                  >
+                    <StyledText size="$2">{collection.title}</StyledText>
+                    <Pressable
+                      onPress={() => handleRemoveCollection(collection.id)}
+                      hitSlop={8}
+                    >
+                      <Icon name="close" size={14} />
+                    </Pressable>
+                  </XStack>
+                ))}
+              </XStack>
+            </ScrollView>
+          )}
+
           <XStack
             alignItems="center"
             justifyContent="center"
@@ -727,9 +927,7 @@ function TextForageViewContent({ collectionId }: { collectionId?: string }) {
               minHeight={undefined}
               flex={1}
               maxLength={2000}
-              onChangeText={(text) => {
-                setTextValue(text);
-              }}
+              onChangeText={handleTextChange}
               maxHeight={Dimensions.get("window").height / 2}
               value={textValue}
               enablesReturnKeyAutomatically

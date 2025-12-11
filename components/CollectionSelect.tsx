@@ -18,8 +18,14 @@ import { Collection } from "../utils/dataTypes";
 import { DatabaseContext, useCollections } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
-import { CreateCollectionButton } from "./CreateCollectionButton";
-import { Icon, SearchBarInput, StyledButton, StyledText } from "./Themed";
+import {
+  Icon,
+  IconType,
+  LinkButton,
+  SearchBarInput,
+  StyledButton,
+  StyledText,
+} from "./Themed";
 // @ts-ignore
 import { ModalView } from "react-native-ios-modal";
 
@@ -196,8 +202,8 @@ export function CollectionSelect({
   const listHeader = useMemo(() => {
     return (
       <>
-        <XStack margin="$2" marginTop="$1" justifyContent="center">
-          {searchValue ? (
+        {searchValue ? (
+          <XStack margin="$2" marginTop="$1" justifyContent="center">
             <StyledButton
               onPress={async () => {
                 await createCollection({
@@ -222,14 +228,8 @@ export function CollectionSelect({
                 </SizableText>
               </SizableText>
             </StyledButton>
-          ) : (
-            <CreateCollectionButton
-              onPress={() => {
-                setOpen(false);
-              }}
-            />
-          )}
-        </XStack>
+          </XStack>
+        ) : null}
         {collectionPlaceholder.includes(searchValue) && (
           <Select.Item
             index={0}
@@ -365,14 +365,25 @@ export function CollectionSelect({
 
       <Select.Content>
         <Select.Viewport minWidth={200}>
-          <YStack margin="$2" marginTop="$3">
+          <XStack margin="$2" marginTop="$3" gap="$2" alignItems="center">
             <SearchBarInput
               backgroundColor="$gray4"
               searchValue={searchValue}
               setSearchValue={setSearchValue}
               placeholder="Search a collection..."
+              containerProps={{ flex: 1 }}
             />
-          </YStack>
+            <LinkButton
+              href="/modal"
+              circular
+              size="$4"
+              theme="green"
+              onPress={() => setOpen(false)}
+              icon={
+                <Icon name="plus" size={20} type={IconType.FontAwesomeIcon} />
+              }
+            />
+          </XStack>
           {/* TODO: add some preview about last message */}
           {selectedCollectionItem}
           {renderCollections()}
