@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useContext, useEffect, useState } from "react";
 import {
   SafeAreaView,
-  Alert,
   Dimensions,
   Image,
   Platform,
@@ -28,11 +27,6 @@ import { RawAnimations } from "../animations";
 import { BlockContent } from "../components/BlockContent";
 import { InspoBlocks } from "../components/BlockTexts";
 import {
-  StartingSlidingScaleValue,
-  getSlidingPriceMoneyValue,
-  handlePayment,
-} from "../components/SlidingScalePayment";
-import {
   ArenaLogo,
   ExternalLinkText,
   Icon,
@@ -53,7 +47,7 @@ import { setBoolean, useStickyValue } from "../utils/mmkv";
 import { DatabaseContext } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { ArenaLogin } from "../views/ArenaLogin";
-import { AboutSectionWithDonation, AboutSpencer } from "./about";
+import { AboutSpencer } from "./about";
 import { ErrorsContext } from "../utils/errors";
 import { useQuery } from "@tanstack/react-query";
 import { HelpGuideUrl } from "../utils/constants";
@@ -135,11 +129,6 @@ export default function IntroScreen() {
   );
   const [checked, setChecked] = useStickyValue("subscribeEmail", false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
-  const onSlideStart = () => setScrollEnabled(false);
-  const onSlideEnd = () => setScrollEnabled(true);
-  const [value, setValue] = useState([StartingSlidingScaleValue]);
-  const moneyValue = getSlidingPriceMoneyValue(value[0]);
   const colorScheme = useColorScheme();
 
   useEffect(() => {
@@ -429,7 +418,7 @@ export default function IntroScreen() {
           </>
         );
       case 3:
-        return Platform.OS === "ios" ? (
+        return (
           <>
             <AboutSpencer shortened />
 
@@ -437,65 +426,6 @@ export default function IntroScreen() {
               <NextStepButton
                 text={<StyledText>Ok, I'm ready to try</StyledText>}
               />
-            </YStack>
-          </>
-        ) : (
-          <>
-            <AboutSectionWithDonation
-              value={value}
-              setValue={setValue}
-              onSlideStart={onSlideStart}
-              onSlideEnd={onSlideEnd}
-            />
-            <YStack gap="$2" marginTop="auto">
-              <NextStepButton
-                text={
-                  <StyledText>
-                    Contribute <StyledText bold>${moneyValue}</StyledText>
-                  </StyledText>
-                }
-                onPress={async () => {
-                  await handlePayment(value[0], currentUser);
-                }}
-                marginBottom={0}
-              />
-              <StyledText
-                metadata
-                fontSize="$small"
-                textAlign="center"
-                onPress={() => {
-                  Alert.alert(
-                    "pretty please?",
-                    "This work, like all handmade software, only happens because of people like you contributing a few dollars. Together, we can make it possible to create software with data that's entirely yours and not subject to ads or adverse incentives.",
-                    [
-                      {
-                        text: "Sorry I really can't",
-                        onPress: () => {
-                          Alert.alert(
-                            "That's okay",
-                            "I hope you enjoy Gather and find it useful. If you change your mind, you can always contribute later in the profile tab.",
-                            [
-                              {
-                                text: "Thanks! I'll contribute later if I like it",
-                              },
-                            ],
-                            { cancelable: true }
-                          );
-                          nextStep();
-                        },
-                        style: "default",
-                      },
-                      {
-                        text: "Ok you've convinced me",
-                        onPress: () => {},
-                        style: "cancel",
-                      },
-                    ]
-                  );
-                }}
-              >
-                I'm sorry I can't support you right now
-              </StyledText>
             </YStack>
           </>
         );
@@ -513,7 +443,6 @@ export default function IntroScreen() {
         <KeyboardAwareScrollView
           style={{ flex: 1, height: visibleScreenHeight }}
           extraScrollHeight={70}
-          scrollEnabled={scrollEnabled}
         >
           <YStack
             backgroundColor="#FFDBB2"
