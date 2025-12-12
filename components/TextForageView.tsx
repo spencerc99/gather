@@ -712,64 +712,52 @@ function TextForageViewContent({
           {(onCollectionChange || selectedCollections.length > 0) && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <XStack
-                gap="$2"
+                gap="$1.5"
                 padding="$2"
                 paddingBottom="$1"
                 alignItems="center"
               >
-                {/* "In:" Collection Context Indicator */}
+                {/* "In:" Collection Context Indicator - styled like a chip */}
                 {onCollectionChange && (
                   <CollectionSelect
                     selectedCollection={collectionId || null}
                     setSelectedCollection={onCollectionChange}
-                    collectionPlaceholder="All collections"
+                    collectionPlaceholder="All"
                     triggerProps={{
                       backgroundColor: "$orange6",
-                      paddingHorizontal: "$2.5",
-                      paddingVertical: "$1.5",
-                      borderRadius: "$3",
+                      paddingHorizontal: "$2",
+                      paddingVertical: "$1",
+                      borderRadius: "$4",
+                      maxWidth: 140,
                     }}
-                    triggerIcon={<Icon name="folder-open" size={16} />}
-                  />
-                )}
-
-                {/* Divider between "In:" and @ chips */}
-                {onCollectionChange && selectedCollections.length > 0 && (
-                  <XStack
-                    width={1}
-                    height={20}
-                    backgroundColor="$gray6"
-                    marginHorizontal="$1"
+                    triggerIcon={<Icon name="folder-open" size={14} />}
+                    hideChevron
                   />
                 )}
 
                 {/* @ Mentioned Collections (destinations) */}
-                {selectedCollections.length > 0 && (
-                  <>
-                    <StyledText size="$1" color="$gray10">
-                      +
+                {selectedCollections.map((collection) => (
+                  <XStack
+                    key={collection.id}
+                    backgroundColor="$green4"
+                    paddingHorizontal="$2"
+                    paddingVertical="$1"
+                    borderRadius="$4"
+                    alignItems="center"
+                    gap="$1"
+                    maxWidth={140}
+                  >
+                    <StyledText size="$2" numberOfLines={1}>
+                      {collection.title}
                     </StyledText>
-                    {selectedCollections.map((collection) => (
-                      <XStack
-                        key={collection.id}
-                        backgroundColor="$green4"
-                        paddingHorizontal="$2"
-                        paddingVertical="$1"
-                        borderRadius="$4"
-                        alignItems="center"
-                        gap="$1"
-                      >
-                        <StyledText size="$2">{collection.title}</StyledText>
-                        <TouchableOpacity
-                          onPress={() => handleRemoveCollection(collection.id)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          <Icon name="close" size={14} />
-                        </TouchableOpacity>
-                      </XStack>
-                    ))}
-                  </>
-                )}
+                    <TouchableOpacity
+                      onPress={() => handleRemoveCollection(collection.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Icon name="close" size={14} />
+                    </TouchableOpacity>
+                  </XStack>
+                ))}
               </XStack>
             </ScrollView>
           )}
