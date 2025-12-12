@@ -815,7 +815,7 @@ function TextForageViewContent({
                 <FlatList
                   data={filteredMentionCollections.slice(0, 5)}
                   keyExtractor={(item) => item.id}
-                  keyboardShouldPersistTaps="handled"
+                  keyboardShouldPersistTaps="always"
                   renderItem={({ item: collection }) => (
                     <Pressable
                       onPress={() => handleSelectMentionCollection(collection)}
@@ -859,16 +859,12 @@ function TextForageViewContent({
                     setSelectedCollection={onCollectionChange}
                     collectionPlaceholder="All collections"
                     triggerProps={{
-                      backgroundColor: "$gray3",
-                      borderWidth: 1,
-                      borderColor: "$gray6",
+                      backgroundColor: "$orange6",
                       paddingHorizontal: "$2.5",
                       paddingVertical: "$1.5",
                       borderRadius: "$3",
-                      elevation: "$1",
                     }}
                     triggerIcon={<Icon name="folder-open" size={16} />}
-                    triggerPrefix="In:"
                   />
                 )}
 

@@ -38,6 +38,7 @@ export default function TabLayout() {
         name="home"
         options={{
           tabBarLabel: "",
+          headerShown: false,
           tabBarIcon: ({ color }) => <TabBarIcon name="create" color={color} />,
           headerRight: () => headerIcons,
         }}
