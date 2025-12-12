@@ -53,3 +53,6 @@ android-builds/*.aab
 # credentials
 ./utils/credentials.ts
 eas.json
+
+.cursormemory.md
+cursor/*
