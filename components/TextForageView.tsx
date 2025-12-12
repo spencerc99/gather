@@ -17,9 +17,9 @@ import {
   Keyboard,
   Linking,
   Platform,
-  Pressable,
   ScrollView,
   TextInput,
+  TouchableOpacity,
 } from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { getFsPathForMediaResult } from "../utils/blobs";
@@ -708,10 +708,77 @@ function TextForageViewContent({
           }}
           backgroundColor="$background"
         >
+          {/* Collection Context Row: "In:" indicator + @ mention chips */}
+          {(onCollectionChange || selectedCollections.length > 0) && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <XStack
+                gap="$2"
+                padding="$2"
+                paddingBottom="$1"
+                alignItems="center"
+              >
+                {/* "In:" Collection Context Indicator */}
+                {onCollectionChange && (
+                  <CollectionSelect
+                    selectedCollection={collectionId || null}
+                    setSelectedCollection={onCollectionChange}
+                    collectionPlaceholder="All collections"
+                    triggerProps={{
+                      backgroundColor: "$orange6",
+                      paddingHorizontal: "$2.5",
+                      paddingVertical: "$1.5",
+                      borderRadius: "$3",
+                    }}
+                    triggerIcon={<Icon name="folder-open" size={16} />}
+                  />
+                )}
+
+                {/* Divider between "In:" and @ chips */}
+                {onCollectionChange && selectedCollections.length > 0 && (
+                  <XStack
+                    width={1}
+                    height={20}
+                    backgroundColor="$gray6"
+                    marginHorizontal="$1"
+                  />
+                )}
+
+                {/* @ Mentioned Collections (destinations) */}
+                {selectedCollections.length > 0 && (
+                  <>
+                    <StyledText size="$1" color="$gray10">
+                      +
+                    </StyledText>
+                    {selectedCollections.map((collection) => (
+                      <XStack
+                        key={collection.id}
+                        backgroundColor="$green4"
+                        paddingHorizontal="$2"
+                        paddingVertical="$1"
+                        borderRadius="$4"
+                        alignItems="center"
+                        gap="$1"
+                      >
+                        <StyledText size="$2">{collection.title}</StyledText>
+                        <TouchableOpacity
+                          onPress={() => handleRemoveCollection(collection.id)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Icon name="close" size={14} />
+                        </TouchableOpacity>
+                      </XStack>
+                    ))}
+                  </>
+                )}
+              </XStack>
+            </ScrollView>
+          )}
+
+          {/* Media Assets Preview */}
           <XStack gap="$1" width="100%">
             {medias.length > 0 && (
               <ScrollView horizontal={true}>
-                <XStack flexWrap="wrap" gap="$2" paddingTop="$1">
+                <XStack flexWrap="wrap" gap="$2" paddingHorizontal="$2">
                   {medias.map(({ uri, type, assetId }, idx) => {
                     const isExisting = existingMedias.has(assetId || "");
                     return (
@@ -720,7 +787,7 @@ function TextForageViewContent({
                         height={150}
                         key={uri}
                         borderRadius={8}
-                        overflow="hidden" // Add this to ensure the overlay stays within bounds
+                        overflow="hidden"
                       >
                         <MediaView
                           media={uri}
@@ -817,15 +884,14 @@ function TextForageViewContent({
                   keyExtractor={(item) => item.id}
                   keyboardShouldPersistTaps="always"
                   renderItem={({ item: collection }) => (
-                    <Pressable
+                    <TouchableOpacity
+                      activeOpacity={0.7}
                       onPress={() => handleSelectMentionCollection(collection)}
                     >
                       <XStack
                         padding="$2"
                         paddingVertical="$1.5"
                         backgroundColor="$background"
-                        hoverStyle={{ backgroundColor: "$gray4" }}
-                        pressStyle={{ backgroundColor: "$gray5" }}
                         borderBottomWidth={1}
                         borderColor="$gray4"
                       >
@@ -836,77 +902,11 @@ function TextForageViewContent({
                           {collection.itemCount} items
                         </StyledText>
                       </XStack>
-                    </Pressable>
+                    </TouchableOpacity>
                   )}
                 />
               )}
             </YStack>
-          )}
-
-          {/* Collection Context Row: "In:" indicator + @ mention chips */}
-          {(onCollectionChange || selectedCollections.length > 0) && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <XStack
-                gap="$2"
-                padding="$2"
-                paddingTop="$1"
-                alignItems="center"
-              >
-                {/* "In:" Collection Context Indicator */}
-                {onCollectionChange && (
-                  <CollectionSelect
-                    selectedCollection={collectionId || null}
-                    setSelectedCollection={onCollectionChange}
-                    collectionPlaceholder="All collections"
-                    triggerProps={{
-                      backgroundColor: "$orange6",
-                      paddingHorizontal: "$2.5",
-                      paddingVertical: "$1.5",
-                      borderRadius: "$3",
-                    }}
-                    triggerIcon={<Icon name="folder-open" size={16} />}
-                  />
-                )}
-
-                {/* Divider between "In:" and @ chips */}
-                {onCollectionChange && selectedCollections.length > 0 && (
-                  <XStack
-                    width={1}
-                    height={20}
-                    backgroundColor="$gray6"
-                    marginHorizontal="$1"
-                  />
-                )}
-
-                {/* @ Mentioned Collections (destinations) */}
-                {selectedCollections.length > 0 && (
-                  <>
-                    <StyledText size="$1" color="$gray10">
-                      +
-                    </StyledText>
-                    {selectedCollections.map((collection) => (
-                      <XStack
-                        key={collection.id}
-                        backgroundColor="$green4"
-                        paddingHorizontal="$2"
-                        paddingVertical="$1"
-                        borderRadius="$4"
-                        alignItems="center"
-                        gap="$1"
-                      >
-                        <StyledText size="$2">{collection.title}</StyledText>
-                        <Pressable
-                          onPress={() => handleRemoveCollection(collection.id)}
-                          hitSlop={8}
-                        >
-                          <Icon name="close" size={14} />
-                        </Pressable>
-                      </XStack>
-                    ))}
-                  </>
-                )}
-              </XStack>
-            </ScrollView>
           )}
 
           <XStack
