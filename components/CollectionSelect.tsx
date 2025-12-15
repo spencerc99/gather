@@ -330,8 +330,8 @@ export function CollectionSelect({
       }}
       {...selectProps}
     >
-      <Select.Trigger elevation="$3" {...triggerProps}>
-        <XStack alignItems="center" gap="$1" flexShrink={1}>
+      <Select.Trigger unstyled {...triggerProps}>
+        <XStack alignItems="center" gap={4} flexShrink={1}>
           {triggerIcon}
           {triggerPrefix && (
             <StyledText size="$2" color="$gray11">
@@ -341,7 +341,7 @@ export function CollectionSelect({
           <StyledText size="$2" numberOfLines={1} flexShrink={1}>
             <Select.Value placeholder={collectionPlaceholder} />
           </StyledText>
-          {!hideChevron && <Icon name="chevron-down" size={12} />}
+          {!hideChevron && <Icon name="chevron-down" size={10} />}
         </XStack>
       </Select.Trigger>
 

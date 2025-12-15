@@ -724,13 +724,16 @@ function TextForageViewContent({
                     setSelectedCollection={onCollectionChange}
                     collectionPlaceholder="All"
                     triggerProps={{
-                      backgroundColor: "$orange6",
-                      paddingHorizontal: "$2",
-                      paddingVertical: "$1",
-                      borderRadius: "$4",
-                      maxWidth: 140,
+                      backgroundColor: "$orange4",
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 12,
+                      maxWidth: 120,
+                      elevation: 0,
+                      height: "auto",
+                      minHeight: 0,
                     }}
-                    triggerIcon={<Icon name="folder-open" size={14} />}
+                    triggerIcon={<Icon name="folder-open" size={12} />}
                     hideChevron
                   />
                 )}
@@ -740,12 +743,12 @@ function TextForageViewContent({
                   <XStack
                     key={collection.id}
                     backgroundColor="$green4"
-                    paddingHorizontal="$2"
-                    paddingVertical="$1"
-                    borderRadius="$4"
+                    paddingHorizontal={8}
+                    paddingVertical={4}
+                    borderRadius={12}
                     alignItems="center"
-                    gap="$1"
-                    maxWidth={140}
+                    gap={4}
+                    maxWidth={120}
                   >
                     <StyledText size="$2" numberOfLines={1}>
                       {collection.title}
@@ -754,7 +757,7 @@ function TextForageViewContent({
                       onPress={() => handleRemoveCollection(collection.id)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Icon name="close" size={14} />
+                      <Icon name="close" size={12} />
                     </TouchableOpacity>
                   </XStack>
                 ))}
