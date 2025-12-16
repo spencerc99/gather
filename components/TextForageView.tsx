@@ -246,12 +246,23 @@ function TextForageViewContent({
       searchValue: mentionQuery || "",
     });
 
-  // Filter out already selected collections from autocomplete
+  // Filter out already selected collections AND the current "In:" collection from autocomplete
   const filteredMentionCollections = useMemo(() => {
     if (!mentionCollections) return [];
     const selectedIds = new Set(selectedCollections.map((c) => c.id));
-    return mentionCollections.filter((c) => !selectedIds.has(c.id));
-  }, [mentionCollections, selectedCollections]);
+    return mentionCollections.filter(
+      (c) => !selectedIds.has(c.id) && c.id !== collectionId
+    );
+  }, [mentionCollections, selectedCollections, collectionId]);
+
+  // Remove @ chip if the "In:" collection changes to one that's already selected
+  useEffect(() => {
+    if (collectionId && selectedCollections.some((c) => c.id === collectionId)) {
+      setSelectedCollections((prev) =>
+        prev.filter((c) => c.id !== collectionId)
+      );
+    }
+  }, [collectionId]);
 
   // Get current collection info for "In:" indicator
   const { data: currentCollection } = useCollection(collectionId || "");
@@ -729,9 +740,9 @@ function TextForageViewContent({
                       paddingVertical: 4,
                       borderRadius: 12,
                       maxWidth: 120,
-                      elevation: 0,
-                      height: "auto",
-                      minHeight: 0,
+                      alignSelf: "flex-start",
+                      flexGrow: 0,
+                      flexShrink: 0,
                     }}
                     triggerIcon={<Icon name="folder-open" size={12} />}
                     hideChevron
