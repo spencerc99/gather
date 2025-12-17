@@ -257,7 +257,10 @@ function TextForageViewContent({
 
   // Remove @ chip if the "In:" collection changes to one that's already selected
   useEffect(() => {
-    if (collectionId && selectedCollections.some((c) => c.id === collectionId)) {
+    if (
+      collectionId &&
+      selectedCollections.some((c) => c.id === collectionId)
+    ) {
       setSelectedCollections((prev) =>
         prev.filter((c) => c.id !== collectionId)
       );
@@ -733,13 +736,13 @@ function TextForageViewContent({
                   <CollectionSelect
                     selectedCollection={collectionId || null}
                     setSelectedCollection={onCollectionChange}
-                    collectionPlaceholder="All"
+                    collectionPlaceholder="All collections"
                     triggerProps={{
                       backgroundColor: "$orange4",
                       paddingHorizontal: 8,
                       paddingVertical: 4,
                       borderRadius: 12,
-                      maxWidth: 120,
+                      maxWidth: 140,
                       alignSelf: "flex-start",
                       flexGrow: 0,
                       flexShrink: 0,
