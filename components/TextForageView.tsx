@@ -744,8 +744,11 @@ function TextForageViewContent({
                       borderRadius: 12,
                       maxWidth: 140,
                       alignSelf: "flex-start",
+                      width: "auto",
                       flexGrow: 0,
                       flexShrink: 0,
+                      minHeight: 0,
+                      minWidth: 0,
                     }}
                     triggerIcon={<Icon name="folder-open" size={12} />}
                     hideChevron
