@@ -823,6 +823,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               FROM blocks
               LEFT JOIN connections ON connections.block_id = blocks.id
               WHERE blocks.deletion_timestamp IS NULL
+                AND blocks.remote_source_type IS NOT NULL
               GROUP BY blocks.id
               HAVING COUNT(connections.collection_id) = 0
             );`,
@@ -844,6 +845,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             FROM blocks
             LEFT JOIN connections ON connections.block_id = blocks.id
             WHERE blocks.deletion_timestamp IS NULL
+              AND blocks.remote_source_type IS NOT NULL
             GROUP BY blocks.id
             HAVING COUNT(connections.collection_id) = 0;`,
           args: [],

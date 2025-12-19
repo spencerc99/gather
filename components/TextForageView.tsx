@@ -742,13 +742,13 @@ function TextForageViewContent({
                       paddingHorizontal: 8,
                       paddingVertical: 4,
                       borderRadius: 12,
-                      maxWidth: 140,
                       alignSelf: "flex-start",
                       width: "auto",
                       flexGrow: 0,
                       flexShrink: 0,
                       minHeight: 0,
                       minWidth: 0,
+                      maxWidth: 240,
                     }}
                     triggerIcon={<Icon name="folder-open" size={12} />}
                     hideChevron
@@ -765,7 +765,8 @@ function TextForageViewContent({
                     borderRadius={12}
                     alignItems="center"
                     gap={4}
-                    maxWidth={120}
+                    width="auto"
+                    maxWidth={240}
                   >
                     <StyledText size="$2" numberOfLines={1}>
                       {collection.title}
