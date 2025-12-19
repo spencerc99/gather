@@ -163,6 +163,7 @@ export function CollectionSelect({
   hideChevron,
   triggerIcon,
   triggerPrefix,
+  excludeCollectionIds = [],
 }: {
   selectedCollection: string | null;
   setSelectedCollection: (selectedCollection: string | null) => void;
@@ -173,12 +174,13 @@ export function CollectionSelect({
   hideChevron?: boolean;
   triggerIcon?: React.ReactNode;
   triggerPrefix?: string;
+  excludeCollectionIds?: string[];
 }) {
   const { createCollection, deleteCollection } = useContext(DatabaseContext);
   const [searchValue, setSearchValue] = useState("");
   const { currentUser: user } = useContext(UserContext);
   const {
-    collections,
+    collections: allCollections,
     isLoading,
     debouncedFetchMoreCollections,
     isFetchingNextPage,
@@ -187,6 +189,14 @@ export function CollectionSelect({
     selectedCollectionId: selectedCollection || undefined,
   });
   const [open, setOpen] = useState(false);
+
+  // Filter out excluded collections
+  const collections = useMemo(() => {
+    if (!allCollections || excludeCollectionIds.length === 0)
+      return allCollections;
+    const excludeSet = new Set(excludeCollectionIds);
+    return allCollections.filter((c) => !excludeSet.has(c.id.toString()));
+  }, [allCollections, excludeCollectionIds]);
 
   // TODO: collapse with SelectCollectionsList
   const renderCollection = useCallback(

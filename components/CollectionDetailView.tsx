@@ -229,9 +229,21 @@ export function CollectionDetailView({
       setSelectedMergeCollectionId(null);
       setMergeDirection(true);
 
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+
       if (!mergeDirection) {
         // Current collection was deleted, navigate to the target
+        queryClient.invalidateQueries({
+          queryKey: ["collection", { collectionId: selectedMergeCollectionId }],
+        });
         router.replace(`/collection/${selectedMergeCollectionId}`);
+      } else {
+        // Staying on current collection, refresh it
+        queryClient.invalidateQueries({
+          queryKey: ["collection", { collectionId: id.toString() }],
+        });
       }
     } catch (err) {
       logError(err);
@@ -494,12 +506,8 @@ export function CollectionDetailView({
                       </StyledText>
                       <CollectionSelect
                         selectedCollection={selectedMergeCollectionId}
-                        setSelectedCollection={(collectionId) => {
-                          if (collectionId === id.toString()) {
-                            return;
-                          }
-                          setSelectedMergeCollectionId(collectionId);
-                        }}
+                        setSelectedCollection={setSelectedMergeCollectionId}
+                        excludeCollectionIds={[id.toString()]}
                         collectionPlaceholder="Select..."
                         triggerProps={{
                           backgroundColor: "transparent",
