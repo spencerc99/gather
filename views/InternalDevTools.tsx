@@ -1,6 +1,7 @@
 import { YStack, H3, XStack, Spinner, Checkbox } from "tamagui";
 import {
   StyledButton,
+  ButtonWithConfirm,
   Icon,
   StyledText,
   StyledParagraph,
@@ -29,10 +30,13 @@ export function InternalDevTools({}: {}) {
     trySyncPendingArenaBlocks,
     trySyncNewArenaBlocks,
     getPendingArenaBlocks,
+    getUnconnectedBlockCount,
+    deleteUnconnectedBlocks,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { currentUser, arenaAccessToken } = useContext(UserContext);
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
+  const [unconnectedBlockCount, setUnconnectedBlockCount] = useState<number>(0);
 
   const [devModeEnabled, setDevModeEnabled] = useStickyValue(
     "devModeEnabled",
@@ -43,6 +47,7 @@ export function InternalDevTools({}: {}) {
     getPendingArenaBlocks().then((result: any) =>
       setPendingArenaBlocks(result.rows)
     );
+    getUnconnectedBlockCount().then(setUnconnectedBlockCount);
   }, []);
 
   return (
@@ -123,6 +128,31 @@ export function InternalDevTools({}: {}) {
         >
           Reset Arena Sync Timeline
         </StyledButton>
+        <YStack>
+          <ButtonWithConfirm
+            theme="red"
+            disabled={isLoading || unconnectedBlockCount === 0}
+            icon={isLoading ? <Spinner size="small" /> : null}
+            confirmationTitle={`Delete ${unconnectedBlockCount} unconnected blocks?`}
+            confirmationDescription="This will permanently delete all blocks that are not connected to any collection. This cannot be undone."
+            onPress={async () => {
+              setIsLoading(true);
+              try {
+                const count = await deleteUnconnectedBlocks();
+                alert(`Deleted ${count} unconnected blocks.`);
+                setUnconnectedBlockCount(0);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+          >
+            Delete unconnected blocks ({unconnectedBlockCount})
+          </ButtonWithConfirm>
+          <StyledText metadata>
+            Removes orphaned blocks left behind when remote collections are
+            unlinked.
+          </StyledText>
+        </YStack>
         <StyledButton
           onPress={() => {
             setBoolean("seenIntro", false);
