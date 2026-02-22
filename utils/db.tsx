@@ -2718,17 +2718,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         );
         if (!hasGatherBlock) continue;
 
-        found += blocks.length - 1;
-
-        // Keep the first block (earliest created), delete the rest that
-        // have the Gather attribution description
-        const [keep, ...rest] = blocks;
-        for (const dup of rest) {
-          if (dup.description?.startsWith(GatherArenaAttribution)) {
+        // Delete ALL blocks with the Gather attribution description.
+        // The local original never has this description — it's only added
+        // when uploading to Arena. So every block with it is a re-pulled
+        // duplicate that should be removed.
+        for (const block of blocks) {
+          if (block.description?.startsWith(GatherArenaAttribution)) {
+            found++;
             blocksToDelete.push({
-              id: dup.id,
-              arenaId: dup.arenaId,
-              channelId: dup.channelId,
+              id: block.id,
+              arenaId: block.arenaId,
+              channelId: block.channelId,
             });
           }
         }
