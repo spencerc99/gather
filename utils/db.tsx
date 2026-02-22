@@ -10,6 +10,7 @@ import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { ErrorsContext } from "./errors";
 import {
+  GatherArenaAttribution,
   getBlock as getArenaBlock,
   getChannelItems,
   getPendingCollectionUpdates,
@@ -252,6 +253,12 @@ interface DatabaseContextProps {
   trySyncPendingArenaBlocks: () => void;
   trySyncNewArenaBlocks: () => void;
   getPendingArenaBlocks: () => any;
+  findAndCleanDuplicates: () => Promise<{
+    found: number;
+    deletedLocal: number;
+    deletedRemote: number;
+    errors: string[];
+  }>;
   selectedReviewCollection: string | null;
   setSelectedReviewCollection: (collectionId: string | null) => void;
   getExistingAssetIds: (
@@ -316,6 +323,12 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   trySyncPendingArenaBlocks: () => {},
   trySyncNewArenaBlocks: () => {},
   getPendingArenaBlocks: () => {},
+  findAndCleanDuplicates: async () => ({
+    found: 0,
+    deletedLocal: 0,
+    deletedRemote: 0,
+    errors: [],
+  }),
   selectedReviewCollection: null,
   setSelectedReviewCollection: () => {},
   getBlocks: async (opts) => {
@@ -2251,20 +2264,78 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           });
           // These get returned in descending order of connected, so reverse it
           lastContents.reverse();
+
+          // Filter out blocks that Gather itself uploaded but hasn't linked
+          // locally yet (the race condition). We detect these by checking if
+          // the description starts with the Gather attribution AND the block's
+          // arena_id doesn't already exist locally. If it does exist locally,
+          // ON CONFLICT(arena_id) handles dedup, so we let those through.
+          const existingArenaIds = new Set<string>();
+          if (lastContents.length > 0) {
+            const arenaIds = lastContents
+              .map((b) => b.id?.toString())
+              .filter(Boolean);
+            if (arenaIds.length > 0) {
+              const [existingResult] = await db.execAsync(
+                [
+                  {
+                    sql: inParam(
+                      `SELECT arena_id FROM blocks WHERE arena_id IN (?#) AND deletion_timestamp IS NULL`,
+                      arenaIds
+                    ),
+                    args: [],
+                  },
+                ],
+                true
+              );
+              handleSqlErrors(existingResult);
+              existingResult.rows.forEach((row: any) =>
+                existingArenaIds.add(row.arena_id)
+              );
+            }
+          }
+
+          const filteredContents = lastContents.filter((block) => {
+            const isGatherUploaded =
+              block.description?.startsWith(GatherArenaAttribution);
+            const alreadyLinkedLocally = existingArenaIds.has(
+              block.id?.toString()
+            );
+            if (isGatherUploaded && !alreadyLinkedLocally) {
+              logError(
+                `[Arena Sync Guard] Skipping re-pull of Gather-uploaded block ` +
+                  `arena_id=${block.id} title="${block.title}" ` +
+                  `channel=${channelId} collection=${collectionId} ` +
+                  `connected_at=${block.connected_at}`
+              );
+              return false;
+            }
+            return true;
+          });
+
           // TODO: handle deletions so pass in a list of blockIds that are in the collection already
           console.log(
-            `Found ${lastContents.length} new items from remote to add to ${collection.title}`
+            `Found ${lastContents.length} new items from remote` +
+              (lastContents.length !== filteredContents.length
+                ? ` (${lastContents.length - filteredContents.length} skipped as Gather-uploaded duplicates)`
+                : "") +
+              ` to add to ${collection.title}`
           );
-          if (lastContents.length > 0) {
+          if (filteredContents.length > 0) {
             console.log(
               "lastconnectedat",
-              lastContents[lastContents.length - 1].connected_at
+              filteredContents[filteredContents.length - 1].connected_at
             );
             const blockInfos = await createBlocks({
-              blocksToInsert: rawArenaBlocksToBlockInsertInfo(lastContents),
+              blocksToInsert: rawArenaBlocksToBlockInsertInfo(filteredContents),
               collectionId,
             });
             itemsAdded = blockInfos.filter((b) => b.created).length;
+          }
+          // Always advance the sync cursor based on the original unfiltered
+          // list, even if all items were filtered out. Otherwise filtered
+          // (skipped) blocks would be re-fetched on every sync cycle.
+          if (lastContents.length > 0) {
             await updateLastSyncedInfoForChannel(channelId, {
               lastSyncedAt: new Date().toISOString(),
               lastSyncedBlockCreatedAt:
@@ -2547,6 +2618,187 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
   }
 
+  // Find and delete duplicate blocks caused by the sync race condition.
+  // Duplicates are identified as blocks in the same collection with the same
+  // content where one copy has the Gather attribution description (meaning
+  // it was re-pulled from Arena). For each group of duplicates, keeps the
+  // earliest block and deletes the rest both locally and from Arena.
+  async function findAndCleanDuplicates(): Promise<{
+    found: number;
+    deletedLocal: number;
+    deletedRemote: number;
+    errors: string[];
+  }> {
+    const errors: string[] = [];
+    let found = 0;
+    let deletedLocal = 0;
+    let deletedRemote = 0;
+
+    try {
+      // Find duplicate blocks: same content in the same collection,
+      // where at least one has the Gather attribution description.
+      const [result] = await db.execAsync(
+        [
+          {
+            sql: `
+              SELECT
+                b.id,
+                b.content,
+                b.title,
+                b.description,
+                b.arena_id,
+                b.remote_source_info,
+                b.created_timestamp,
+                c.collection_id,
+                col.remote_source_info as collection_remote_source_info
+              FROM blocks b
+              INNER JOIN connections c ON c.block_id = b.id
+              INNER JOIN collections col ON col.id = c.collection_id
+              WHERE b.deletion_timestamp IS NULL
+                AND b.remote_source_type IS NOT NULL
+                AND col.remote_source_type IS NOT NULL
+              ORDER BY b.content, c.collection_id, b.created_timestamp ASC
+            `,
+            args: [],
+          },
+        ],
+        true
+      );
+      handleSqlErrors(result);
+
+      // Group by (content, collection_id) to find duplicates
+      const groups = new Map<
+        string,
+        Array<{
+          id: string;
+          content: string;
+          title: string;
+          description: string;
+          arenaId: string | null;
+          collectionId: string;
+          channelId: string | null;
+          createdTimestamp: string;
+        }>
+      >();
+
+      for (const row of result.rows) {
+        const key = `${row.content}:::${row.collection_id}`;
+        const channelId = row.collection_remote_source_info
+          ? JSON.parse(row.collection_remote_source_info)?.arenaId
+          : null;
+        if (!groups.has(key)) {
+          groups.set(key, []);
+        }
+        groups.get(key)!.push({
+          id: row.id.toString(),
+          content: row.content,
+          title: row.title,
+          description: row.description,
+          arenaId: row.arena_id,
+          collectionId: row.collection_id.toString(),
+          channelId,
+          createdTimestamp: row.created_timestamp,
+        });
+      }
+
+      // For each group with duplicates, keep the first (earliest) and
+      // delete the rest if they have the Gather attribution
+      const blocksToDelete: Array<{
+        id: string;
+        arenaId: string | null;
+        channelId: string | null;
+      }> = [];
+
+      for (const [key, blocks] of groups) {
+        if (blocks.length <= 1) continue;
+
+        // Check if any block in this group has the Gather attribution
+        const hasGatherBlock = blocks.some((b) =>
+          b.description?.startsWith(GatherArenaAttribution)
+        );
+        if (!hasGatherBlock) continue;
+
+        found += blocks.length - 1;
+
+        // Keep the first block (earliest created), delete the rest that
+        // have the Gather attribution description
+        const [keep, ...rest] = blocks;
+        for (const dup of rest) {
+          if (dup.description?.startsWith(GatherArenaAttribution)) {
+            blocksToDelete.push({
+              id: dup.id,
+              arenaId: dup.arenaId,
+              channelId: dup.channelId,
+            });
+          }
+        }
+      }
+
+      console.log(
+        `[Dedup] Found ${found} duplicates across ${groups.size} content groups. ` +
+          `${blocksToDelete.length} blocks to delete.`
+      );
+
+      // Delete from Arena first, then locally
+      for (const block of blocksToDelete) {
+        try {
+          // Remove from Arena channel if we have both IDs
+          if (block.arenaId && block.channelId && arenaAccessToken) {
+            await removeBlockFromChannel({
+              blockId: block.arenaId,
+              channelId: block.channelId,
+              arenaToken: arenaAccessToken,
+            });
+            deletedRemote++;
+          }
+        } catch (err) {
+          const msg = `Failed to delete arena block ${block.arenaId} from channel ${block.channelId}: ${err}`;
+          errors.push(msg);
+          logError(msg);
+        }
+
+        try {
+          // Delete locally (hard delete since these are duplicates)
+          await db.execAsync(
+            [
+              {
+                sql: `DELETE FROM connections WHERE block_id = ?;`,
+                args: [block.id],
+              },
+              {
+                sql: `DELETE FROM blocks WHERE id = ?;`,
+                args: [block.id],
+              },
+            ],
+            false
+          );
+          deletedLocal++;
+        } catch (err) {
+          const msg = `Failed to delete local block ${block.id}: ${err}`;
+          errors.push(msg);
+          logError(msg);
+        }
+      }
+
+      // Invalidate all queries after cleanup
+      if (deletedLocal > 0) {
+        queryClient.invalidateQueries({ queryKey: ["blocks"] });
+        queryClient.invalidateQueries({ queryKey: ["collections"] });
+        queryClient.invalidateQueries({ queryKey: ["connections"] });
+      }
+
+      console.log(
+        `[Dedup] Complete. Deleted ${deletedLocal} local, ${deletedRemote} remote. ${errors.length} errors.`
+      );
+    } catch (err) {
+      const msg = `Dedup failed: ${err}`;
+      errors.push(msg);
+      logError(msg);
+    }
+
+    return { found, deletedLocal, deletedRemote, errors };
+  }
+
   return (
     <DatabaseContext.Provider
       value={{
@@ -2598,6 +2850,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         trySyncPendingArenaBlocks,
         getPendingArenaBlocks: getPendingArenaConnections,
         trySyncNewArenaBlocks,
+        findAndCleanDuplicates,
       }}
     >
       {children}

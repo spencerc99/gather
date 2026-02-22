@@ -22,7 +22,7 @@ export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
 export const ArenaGraphqlKey = process.env.EXPO_PUBLIC_ARENA_GRAPHQL_KEY!;
 export const ArenaTokenStorageKey = "arena-token";
-const GatherArenaAttribution =
+export const GatherArenaAttribution =
   "created with [Gather](https://gather.directory/)";
 
 enum ArenaVisibility {
