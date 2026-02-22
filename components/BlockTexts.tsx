@@ -341,7 +341,7 @@ export function BlockTexts({
           style={{
             position: "absolute",
             bottom: 85,
-            left: 10,
+            right: 10,
             zIndex: 10,
           }}
         >
