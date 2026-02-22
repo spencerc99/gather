@@ -3,7 +3,7 @@
     "name": "Gather",
     "slug": "gather",
     "privacy": "unlisted",
-    "version": "1.1.49",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "net.tiny-inter.gather",
@@ -35,7 +35,7 @@
     "android": {
       "permissions": ["android.permission.RECORD_AUDIO"],
       "package": "net.tiny_inter.gather",
-      "versionCode": 112
+      "versionCode": 114
     },
     "web": {
       "bundler": "metro",
