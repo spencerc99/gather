@@ -259,6 +259,7 @@ interface DatabaseContextProps {
     deletedRemote: number;
     errors: string[];
   }>;
+  countDuplicates: () => Promise<number>;
   selectedReviewCollection: string | null;
   setSelectedReviewCollection: (collectionId: string | null) => void;
   getExistingAssetIds: (
@@ -329,6 +330,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
     deletedRemote: 0,
     errors: [],
   }),
+  countDuplicates: async () => 0,
   selectedReviewCollection: null,
   setSelectedReviewCollection: () => {},
   getBlocks: async (opts) => {
@@ -2618,10 +2620,37 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
   }
 
+  // Count duplicate blocks (Gather-attributed) without deleting.
+  async function countDuplicates(): Promise<number> {
+    try {
+      const [result] = await db.execAsync(
+        [
+          {
+            sql: `
+              SELECT COUNT(*) as count
+              FROM blocks
+              WHERE deletion_timestamp IS NULL
+                AND description LIKE ? || '%'
+            `,
+            args: [GatherArenaAttribution],
+          },
+        ],
+        true
+      );
+      handleSqlErrors(result);
+      return result.rows[0]?.count ?? 0;
+    } catch (err) {
+      logError(err);
+      return 0;
+    }
+  }
+
   // Find and delete duplicate blocks caused by the sync race condition.
   // Any block with the Gather attribution description is a re-pulled copy
   // from Arena — the local original never has it. So we simply find and
   // delete every block with that description, both locally and from Arena.
+  // If Arena deletion fails for a block, its local copy is kept to ensure
+  // they stay in sync.
   async function findAndCleanDuplicates(): Promise<{
     found: number;
     deletedLocal: number;
@@ -2633,9 +2662,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     let deletedRemote = 0;
 
     try {
-      // Find all blocks whose description starts with the Gather attribution.
-      // Join with connections/collections to get the Arena channel ID needed
-      // for remote deletion.
       const [result] = await db.execAsync(
         [
           {
@@ -2670,21 +2696,23 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       const found = blocksToDelete.length;
       console.log(`[Dedup] Found ${found} Gather-attributed blocks to delete.`);
 
-      // Delete from Arena first, then locally
       for (const block of blocksToDelete) {
-        try {
-          if (block.arenaId && block.channelId && arenaAccessToken) {
+        // Delete from Arena first. If this fails, skip local deletion
+        // so the block isn't removed from only one side.
+        if (block.arenaId && block.channelId && arenaAccessToken) {
+          try {
             await removeBlockFromChannel({
               blockId: block.arenaId,
               channelId: block.channelId,
               arenaToken: arenaAccessToken,
             });
             deletedRemote++;
+          } catch (err) {
+            const msg = `Failed to delete arena block ${block.arenaId} from channel ${block.channelId}, skipping local delete: ${err}`;
+            errors.push(msg);
+            logError(msg);
+            continue;
           }
-        } catch (err) {
-          const msg = `Failed to delete arena block ${block.arenaId} from channel ${block.channelId}: ${err}`;
-          errors.push(msg);
-          logError(msg);
         }
 
         try {
@@ -2779,6 +2807,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         getPendingArenaBlocks: getPendingArenaConnections,
         trySyncNewArenaBlocks,
         findAndCleanDuplicates,
+        countDuplicates,
       }}
     >
       {children}

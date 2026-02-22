@@ -34,6 +34,7 @@ export function InternalDevTools({}: {}) {
     getUnconnectedBlockCount,
     deleteUnconnectedBlocks,
     findAndCleanDuplicates,
+    countDuplicates,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { currentUser, arenaAccessToken } = useContext(UserContext);
@@ -125,37 +126,48 @@ export function InternalDevTools({}: {}) {
           theme="red"
           disabled={isLoading}
           icon={isLoading ? <Spinner size="small" /> : null}
-          onPress={() => {
-            Alert.alert(
-              "Clean Duplicate Blocks",
-              "This will find blocks duplicated by the sync bug (matching Gather attribution) and delete them both locally and from Arena. Keep going?",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Clean Duplicates",
-                  style: "destructive",
-                  onPress: async () => {
-                    setIsLoading(true);
-                    try {
-                      const result = await findAndCleanDuplicates();
-                      Alert.alert(
-                        "Dedup Complete",
-                        `Found: ${result.found} duplicates\n` +
+          onPress={async () => {
+            setIsLoading(true);
+            try {
+              const count = await countDuplicates();
+              if (count === 0) {
+                Alert.alert("No Duplicates", "No duplicate blocks found.");
+                return;
+              }
+              Alert.alert(
+                "Clean Duplicate Blocks",
+                `Found ${count} duplicate block${count === 1 ? "" : "s"} with Gather attribution. Delete them from both Arena and local?`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: `Delete ${count}`,
+                    style: "destructive",
+                    onPress: async () => {
+                      setIsLoading(true);
+                      try {
+                        const result = await findAndCleanDuplicates();
+                        Alert.alert(
+                          "Dedup Complete",
                           `Deleted locally: ${result.deletedLocal}\n` +
-                          `Deleted from Arena: ${result.deletedRemote}\n` +
-                          (result.errors.length > 0
-                            ? `\nErrors (${result.errors.length}):\n${result.errors.slice(0, 3).join("\n")}`
-                            : "")
-                      );
-                    } catch (err) {
-                      Alert.alert("Dedup Failed", String(err));
-                    } finally {
-                      setIsLoading(false);
-                    }
+                            `Deleted from Arena: ${result.deletedRemote}\n` +
+                            (result.errors.length > 0
+                              ? `\nErrors (${result.errors.length}):\n${result.errors.slice(0, 3).join("\n")}`
+                              : "")
+                        );
+                      } catch (err) {
+                        Alert.alert("Dedup Failed", String(err));
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    },
                   },
-                },
-              ]
-            );
+                ]
+              );
+            } catch (err) {
+              Alert.alert("Error", String(err));
+            } finally {
+              setIsLoading(false);
+            }
           }}
         >
           <StyledParagraph>Clean Duplicate Blocks</StyledParagraph>
