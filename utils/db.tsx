@@ -2619,10 +2619,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   // Find and delete duplicate blocks caused by the sync race condition.
-  // Duplicates are identified as blocks in the same collection with the same
-  // content where one copy has the Gather attribution description (meaning
-  // it was re-pulled from Arena). For each group of duplicates, keeps the
-  // earliest block and deletes the rest both locally and from Arena.
+  // Any block with the Gather attribution description is a re-pulled copy
+  // from Arena — the local original never has it. So we simply find and
+  // delete every block with that description, both locally and from Arena.
   async function findAndCleanDuplicates(): Promise<{
     found: number;
     deletedLocal: number;
@@ -2630,119 +2629,50 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     errors: string[];
   }> {
     const errors: string[] = [];
-    let found = 0;
     let deletedLocal = 0;
     let deletedRemote = 0;
 
     try {
-      // Find duplicate blocks: same content in the same collection,
-      // where at least one has the Gather attribution description.
+      // Find all blocks whose description starts with the Gather attribution.
+      // Join with connections/collections to get the Arena channel ID needed
+      // for remote deletion.
       const [result] = await db.execAsync(
         [
           {
             sql: `
               SELECT
                 b.id,
-                b.content,
                 b.title,
-                b.description,
                 b.arena_id,
-                b.remote_source_info,
-                b.created_timestamp,
                 c.collection_id,
                 col.remote_source_info as collection_remote_source_info
               FROM blocks b
               INNER JOIN connections c ON c.block_id = b.id
               INNER JOIN collections col ON col.id = c.collection_id
               WHERE b.deletion_timestamp IS NULL
-                AND b.remote_source_type IS NOT NULL
-                AND col.remote_source_type IS NOT NULL
-              ORDER BY b.content, c.collection_id, b.created_timestamp ASC
+                AND b.description LIKE ? || '%'
             `,
-            args: [],
+            args: [GatherArenaAttribution],
           },
         ],
         true
       );
       handleSqlErrors(result);
 
-      // Group by (content, collection_id) to find duplicates
-      const groups = new Map<
-        string,
-        Array<{
-          id: string;
-          content: string;
-          title: string;
-          description: string;
-          arenaId: string | null;
-          collectionId: string;
-          channelId: string | null;
-          createdTimestamp: string;
-        }>
-      >();
+      const blocksToDelete = result.rows.map((row: any) => ({
+        id: row.id.toString(),
+        arenaId: row.arena_id as string | null,
+        channelId: row.collection_remote_source_info
+          ? JSON.parse(row.collection_remote_source_info)?.arenaId ?? null
+          : null,
+      }));
 
-      for (const row of result.rows) {
-        const key = `${row.content}:::${row.collection_id}`;
-        const channelId = row.collection_remote_source_info
-          ? JSON.parse(row.collection_remote_source_info)?.arenaId
-          : null;
-        if (!groups.has(key)) {
-          groups.set(key, []);
-        }
-        groups.get(key)!.push({
-          id: row.id.toString(),
-          content: row.content,
-          title: row.title,
-          description: row.description,
-          arenaId: row.arena_id,
-          collectionId: row.collection_id.toString(),
-          channelId,
-          createdTimestamp: row.created_timestamp,
-        });
-      }
-
-      // For each group with duplicates, keep the first (earliest) and
-      // delete the rest if they have the Gather attribution
-      const blocksToDelete: Array<{
-        id: string;
-        arenaId: string | null;
-        channelId: string | null;
-      }> = [];
-
-      for (const [key, blocks] of groups) {
-        if (blocks.length <= 1) continue;
-
-        // Check if any block in this group has the Gather attribution
-        const hasGatherBlock = blocks.some((b) =>
-          b.description?.startsWith(GatherArenaAttribution)
-        );
-        if (!hasGatherBlock) continue;
-
-        // Delete ALL blocks with the Gather attribution description.
-        // The local original never has this description — it's only added
-        // when uploading to Arena. So every block with it is a re-pulled
-        // duplicate that should be removed.
-        for (const block of blocks) {
-          if (block.description?.startsWith(GatherArenaAttribution)) {
-            found++;
-            blocksToDelete.push({
-              id: block.id,
-              arenaId: block.arenaId,
-              channelId: block.channelId,
-            });
-          }
-        }
-      }
-
-      console.log(
-        `[Dedup] Found ${found} duplicates across ${groups.size} content groups. ` +
-          `${blocksToDelete.length} blocks to delete.`
-      );
+      const found = blocksToDelete.length;
+      console.log(`[Dedup] Found ${found} Gather-attributed blocks to delete.`);
 
       // Delete from Arena first, then locally
       for (const block of blocksToDelete) {
         try {
-          // Remove from Arena channel if we have both IDs
           if (block.arenaId && block.channelId && arenaAccessToken) {
             await removeBlockFromChannel({
               blockId: block.arenaId,
@@ -2758,7 +2688,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         }
 
         try {
-          // Delete locally (hard delete since these are duplicates)
           await db.execAsync(
             [
               {
@@ -2780,7 +2709,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         }
       }
 
-      // Invalidate all queries after cleanup
       if (deletedLocal > 0) {
         queryClient.invalidateQueries({ queryKey: ["blocks"] });
         queryClient.invalidateQueries({ queryKey: ["collections"] });
@@ -2796,7 +2724,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       logError(msg);
     }
 
-    return { found, deletedLocal, deletedRemote, errors };
+    return { found: deletedLocal + deletedRemote, deletedLocal, deletedRemote, errors };
   }
 
   return (
