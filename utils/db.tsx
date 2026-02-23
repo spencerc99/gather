@@ -908,7 +908,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
         // Update the block's content to the remote URL
         const oldContent = block.content;
-        await db.execAsync(
+        const [updateResult] = await db.execAsync(
           [
             {
               sql: `UPDATE blocks SET content = ? WHERE id = ?;`,
@@ -917,6 +917,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ],
           false
         );
+        handleSqlErrors(updateResult);
 
         // Delete the local file
         try {
@@ -991,7 +992,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           continue;
         }
 
-        await tx.executeSqlAsync(
+        const insertResult = await tx.executeSqlAsync(
           `INSERT INTO connections (block_id, collection_id, created_timestamp, created_by, remote_created_at)
            VALUES (?, ?, ?, ?, ?);`,
           [
@@ -1002,6 +1003,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             conn.remote_created_at,
           ]
         );
+        handleSqlErrors(insertResult);
         mergedCount++;
       }
 
