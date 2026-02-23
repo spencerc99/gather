@@ -20,7 +20,7 @@ export function ChatDetailView({
   }, [initialCollectionId]);
 
   const { data: totalBlocks = 0 } = useTotalBlockCount();
-  const { data: collection } = useCollection(selectedCollection || "");
+  const { data: collection } = useCollection(selectedCollection ?? undefined);
 
   const itemCount = selectedCollection ? collection?.numBlocks : totalBlocks;
 

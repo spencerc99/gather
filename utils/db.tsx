@@ -867,7 +867,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const offloadCollectionBlocks = async (
     collectionId: string
   ): Promise<{ offloadedCount: number; failedCount: number }> => {
-    const blocks = await getCollectionItems(collectionId);
+    const blocks = await getCollectionItems(collectionId, null);
     let offloadedCount = 0;
     let failedCount = 0;
 

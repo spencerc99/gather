@@ -217,7 +217,7 @@ export function CollectionDetailView({
 
       const targetName = mergeDirection
         ? title
-        : selectedMergeCollection?.title;
+        : selectedMergeCollection?.title ?? selectedMergeCollectionId;
       alert(
         `Merged ${mergedCount} items into "${targetName}".${
           skippedDuplicates > 0
