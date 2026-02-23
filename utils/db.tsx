@@ -980,35 +980,41 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     let mergedCount = 0;
     let skippedDuplicates = 0;
 
-    // Insert connections that don't already exist in target
-    for (const conn of sourceConnections.rows) {
-      if (targetBlockIds.has(conn.block_id)) {
-        skippedDuplicates++;
-        continue;
+    // Insert connections that don't already exist in target and
+    // delete the source collection in a single transaction to avoid
+    // partially-merged state if the app is interrupted.
+    await db.transactionAsync(async (tx) => {
+      // Insert connections that don't already exist in target
+      for (const conn of sourceConnections.rows) {
+        if (targetBlockIds.has(conn.block_id)) {
+          skippedDuplicates++;
+          continue;
+        }
+
+        await tx.executeSqlAsync(
+          `INSERT INTO connections (block_id, collection_id, created_timestamp, created_by, remote_created_at)
+           VALUES (?, ?, ?, ?, ?);`,
+          [
+            conn.block_id,
+            targetId,
+            conn.created_timestamp,
+            conn.created_by,
+            conn.remote_created_at,
+          ]
+        );
+        mergedCount++;
       }
 
-      await db.execAsync(
-        [
-          {
-            sql: `INSERT INTO connections (block_id, collection_id, created_timestamp, created_by, remote_created_at)
-                  VALUES (?, ?, ?, ?, ?);`,
-            args: [
-              conn.block_id,
-              targetId,
-              conn.created_timestamp,
-              conn.created_by,
-              conn.remote_created_at,
-            ],
-          },
-        ],
-        false
+      // Delete the source collection and its connections atomically
+      await tx.executeSqlAsync(
+        `DELETE FROM connections WHERE collection_id = ?;`,
+        [sourceId]
       );
-      mergedCount++;
-    }
-
-    // Delete the source collection and its connections
-    await deleteCollection(sourceId);
-
+      await tx.executeSqlAsync(
+        `DELETE FROM collections WHERE id = ?;`,
+        [sourceId]
+      );
+    });
     // Invalidate queries
     queryClient.invalidateQueries({ queryKey: ["collections"] });
     queryClient.invalidateQueries({
