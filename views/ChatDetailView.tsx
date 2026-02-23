@@ -3,6 +3,8 @@ import { YStack } from "tamagui";
 import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
 import { TextForageView } from "../components/TextForageView";
 import { useEffect, useState } from "react";
+import { useTotalBlockCount, useCollection } from "../utils/db";
+import { StyledText } from "../components/Themed";
 
 export function ChatDetailView({
   initialCollectionId,
@@ -16,6 +18,11 @@ export function ChatDetailView({
   useEffect(() => {
     setSelectedCollection(initialCollectionId);
   }, [initialCollectionId]);
+
+  const { data: totalBlocks = 0 } = useTotalBlockCount();
+  const { data: collection } = useCollection(selectedCollection ?? undefined);
+
+  const itemCount = selectedCollection ? collection?.numBlocks : totalBlocks;
 
   return (
     <>
@@ -32,7 +39,14 @@ export function ChatDetailView({
       <YStack height="100%" overflow="hidden">
         <Stack.Screen
           options={{
-            headerRight: (props) => {
+            headerLeft: () => (
+              <YStack paddingHorizontal="$2">
+                <StyledText metadata>
+                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                </StyledText>
+              </YStack>
+            ),
+            headerRight: () => {
               return selectedCollection !== null ? (
                 <CollectionDetailsHeaderLink id={selectedCollection} />
               ) : null;

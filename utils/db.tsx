@@ -35,6 +35,7 @@ import { ShareIntent } from "../hooks/useShareIntent";
 import {
   ArenaChannelInfo,
   createBlock as createBlockArena,
+  getBlock as getBlockArena,
   getChannelInfo,
   getChannelInfoFromUrl,
   getPendingBlockUpdates,
@@ -233,6 +234,18 @@ interface DatabaseContextProps {
     selectedCollection?: string
   ) => Promise<ArenaImportInfo>;
 
+  // cleanup utilities
+  getUnconnectedBlockCount: () => Promise<number>;
+  deleteUnconnectedBlocks: () => Promise<number>;
+  offloadCollectionBlocks: (collectionId: string) => Promise<{
+    offloadedCount: number;
+    failedCount: number;
+  }>;
+  mergeCollections: (opts: {
+    sourceId: string;
+    targetId: string;
+  }) => Promise<{ mergedCount: number; skippedDuplicates: number }>;
+
   // internal
   db: SQLite.SQLiteDatabase;
   initDatabases: () => Promise<void>;
@@ -292,6 +305,11 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   tryImportArenaChannel: async () => {
     throw new Error("not yet loaded");
   },
+
+  getUnconnectedBlockCount: async () => 0,
+  deleteUnconnectedBlocks: async () => 0,
+  offloadCollectionBlocks: async () => ({ offloadedCount: 0, failedCount: 0 }),
+  mergeCollections: async () => ({ mergedCount: 0, skippedDuplicates: 0 }),
 
   db,
   initDatabases: async () => {},
@@ -793,6 +811,219 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
     await deleteBlocksInternal(blocks);
     await deleteCollection(id);
+  };
+
+  const getUnconnectedBlockCount = async (): Promise<number> => {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `
+            SELECT COUNT(*) as count FROM (
+              SELECT blocks.id
+              FROM blocks
+              LEFT JOIN connections ON connections.block_id = blocks.id
+              WHERE blocks.deletion_timestamp IS NULL
+                AND blocks.remote_source_type IS NOT NULL
+              GROUP BY blocks.id
+              HAVING COUNT(connections.collection_id) = 0
+            );`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+    return result.rows[0]?.count ?? 0;
+  };
+
+  const deleteUnconnectedBlocks = async (): Promise<number> => {
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `
+            SELECT blocks.id
+            FROM blocks
+            LEFT JOIN connections ON connections.block_id = blocks.id
+            WHERE blocks.deletion_timestamp IS NULL
+              AND blocks.remote_source_type IS NOT NULL
+            GROUP BY blocks.id
+            HAVING COUNT(connections.collection_id) = 0;`,
+          args: [],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(result);
+
+    const blockIds = result.rows.map((row) => row.id.toString());
+    if (blockIds.length === 0) {
+      return 0;
+    }
+
+    await deleteBlocksById(blockIds, true);
+    return blockIds.length;
+  };
+
+  const offloadCollectionBlocks = async (
+    collectionId: string
+  ): Promise<{ offloadedCount: number; failedCount: number }> => {
+    const blocks = await getCollectionItems(collectionId, null);
+    let offloadedCount = 0;
+    let failedCount = 0;
+
+    for (const block of blocks) {
+      // Skip blocks that are not remote-synced or don't have local files
+      if (block.remoteSourceType !== RemoteSourceType.Arena) {
+        continue;
+      }
+      if (!block.content.startsWith(PHOTOS_FOLDER)) {
+        continue;
+      }
+      if (!block.remoteSourceInfo?.arenaId) {
+        console.warn(
+          `Block ${block.id} has remote source type but no arenaId`
+        );
+        continue;
+      }
+
+      try {
+        // Fetch remote URL from Arena
+        const arenaBlock = await getBlockArena(
+          block.remoteSourceInfo.arenaId,
+          arenaAccessToken
+        );
+
+        // Extract the appropriate URL based on block type
+        const remoteUrl =
+          arenaBlock.attachment?.url ||
+          arenaBlock.embed?.url ||
+          arenaBlock.image?.display?.url ||
+          arenaBlock.content;
+
+        if (!remoteUrl) {
+          console.warn(`No remote URL found for block ${block.id}`);
+          failedCount++;
+          continue;
+        }
+
+        // Update the block's content to the remote URL
+        const oldContent = block.content;
+        const [updateResult] = await db.execAsync(
+          [
+            {
+              sql: `UPDATE blocks SET content = ? WHERE id = ?;`,
+              args: [remoteUrl, block.id],
+            },
+          ],
+          false
+        );
+        handleSqlErrors(updateResult);
+
+        // Delete the local file
+        try {
+          await FileSystem.deleteAsync(
+            FileSystem.documentDirectory + oldContent
+          );
+        } catch (fileErr) {
+          console.warn(`Failed to delete local file for block ${block.id}:`, fileErr);
+        }
+
+        offloadedCount++;
+      } catch (err) {
+        console.error(`Failed to offload block ${block.id}:`, err);
+        failedCount++;
+      }
+    }
+
+    // Invalidate queries to refresh the UI
+    queryClient.invalidateQueries({
+      queryKey: ["collection", { collectionId }],
+    });
+    queryClient.invalidateQueries({ queryKey: ["blocks"] });
+
+    return { offloadedCount, failedCount };
+  };
+
+  const mergeCollections = async ({
+    sourceId,
+    targetId,
+  }: {
+    sourceId: string;
+    targetId: string;
+  }): Promise<{ mergedCount: number; skippedDuplicates: number }> => {
+    // Get all connections from the source collection
+    const [sourceConnections] = await db.execAsync(
+      [
+        {
+          sql: `SELECT * FROM connections WHERE collection_id = ?;`,
+          args: [sourceId],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(sourceConnections);
+
+    // Get existing block IDs in target to detect duplicates
+    const [targetBlocks] = await db.execAsync(
+      [
+        {
+          sql: `SELECT block_id FROM connections WHERE collection_id = ?;`,
+          args: [targetId],
+        },
+      ],
+      true
+    );
+    handleSqlErrors(targetBlocks);
+    const targetBlockIds = new Set(
+      targetBlocks.rows.map((row) => row.block_id)
+    );
+
+    let mergedCount = 0;
+    let skippedDuplicates = 0;
+
+    // Insert connections that don't already exist in target and
+    // delete the source collection in a single transaction to avoid
+    // partially-merged state if the app is interrupted.
+    await db.transactionAsync(async (tx) => {
+      // Insert connections that don't already exist in target
+      for (const conn of sourceConnections.rows) {
+        if (targetBlockIds.has(conn.block_id)) {
+          skippedDuplicates++;
+          continue;
+        }
+
+        const insertResult = await tx.executeSqlAsync(
+          `INSERT INTO connections (block_id, collection_id, created_timestamp, created_by, remote_created_at)
+           VALUES (?, ?, ?, ?, ?);`,
+          [
+            conn.block_id,
+            targetId,
+            conn.created_timestamp,
+            conn.created_by,
+            conn.remote_created_at,
+          ]
+        );
+        handleSqlErrors(insertResult);
+        mergedCount++;
+      }
+
+      // Delete the source collection and its connections atomically
+      await tx.executeSqlAsync(
+        `DELETE FROM connections WHERE collection_id = ?;`,
+        [sourceId]
+      );
+      await tx.executeSqlAsync(
+        `DELETE FROM collections WHERE id = ?;`,
+        [sourceId]
+      );
+    });
+    // Invalidate queries
+    queryClient.invalidateQueries({ queryKey: ["collections"] });
+    queryClient.invalidateQueries({
+      queryKey: ["collection", { collectionId: targetId }],
+    });
+
+    return { mergedCount, skippedDuplicates };
   };
 
   const createCollectionBase = async (collection: CollectionInsertInfo) => {
@@ -2292,6 +2523,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         getBlocks,
         getCollections,
         getExistingAssetIds,
+        // cleanup utilities
+        getUnconnectedBlockCount,
+        deleteUnconnectedBlocks,
+        offloadCollectionBlocks,
+        mergeCollections,
         // internal
         db,
         initDatabases,

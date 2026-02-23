@@ -1,13 +1,14 @@
-import { YStack, Spinner, ScrollView } from "tamagui";
+import { YStack, XStack, Spinner, ScrollView } from "tamagui";
 import { Collection, RemoteSourceType } from "../utils/dataTypes";
-import { useContext, useState } from "react";
-import { DatabaseContext } from "../utils/db";
+import { useContext, useMemo, useState } from "react";
+import { DatabaseContext, useCollection } from "../utils/db";
 import {
   ArenaLogo,
   ButtonWithConfirm,
   Collapsible,
   EditableTextOnClick,
   ExternalLinkText,
+  Icon,
   StyledButton,
   StyledParagraph,
   StyledText,
@@ -19,6 +20,8 @@ import { UserContext } from "../utils/user";
 import { ErrorsContext } from "../utils/errors";
 import { useStickyValue } from "../utils/mmkv";
 import { useQueryClient } from "@tanstack/react-query";
+import { CollectionSelect } from "./CollectionSelect";
+import { TouchableOpacity } from "react-native";
 
 export function CollectionDetailView({
   collection,
@@ -44,6 +47,8 @@ export function CollectionDetailView({
     getCollectionItems,
     updateCollection,
     syncBlockToArena,
+    offloadCollectionBlocks,
+    mergeCollections,
   } = useContext(DatabaseContext);
   const { arenaAccessToken } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +56,17 @@ export function CollectionDetailView({
   const { logError } = useContext(ErrorsContext);
   const queryClient = useQueryClient();
   const [devModeEnabled] = useStickyValue("devModeEnabled", false);
+
+  // Merge state
+  const [selectedMergeCollectionId, setSelectedMergeCollectionId] = useState<
+    string | null
+  >(null);
+  // mergeDirection: true = merge selected INTO current (current survives)
+  // mergeDirection: false = merge current INTO selected (selected survives)
+  const [mergeDirection, setMergeDirection] = useState(true);
+  const { data: selectedMergeCollection } = useCollection(
+    selectedMergeCollectionId || ""
+  );
   async function update(updateFn: () => ReturnType<typeof updateCollection>) {
     setIsLoading(true);
     try {
@@ -153,6 +169,88 @@ export function CollectionDetailView({
       console.log("DONE!");
     } catch (err) {}
     setIsLoading(false);
+  }
+
+  async function onClickOffload() {
+    if (!arenaAccessToken) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { offloadedCount, failedCount } = await offloadCollectionBlocks(
+        id.toString()
+      );
+      if (failedCount > 0) {
+        alert(
+          `Offloaded ${offloadedCount} items to remote storage. ${failedCount} items failed.`
+        );
+      } else if (offloadedCount === 0) {
+        alert("No items to offload. All items are already using remote storage.");
+      } else {
+        alert(`Offloaded ${offloadedCount} items to remote storage.`);
+      }
+    } catch (err) {
+      logError(err);
+      alert("Failed to offload items. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function onMerge() {
+    if (!selectedMergeCollectionId) return;
+
+    setIsLoading(true);
+    try {
+      const sourceId = mergeDirection
+        ? selectedMergeCollectionId
+        : id.toString();
+      const targetId = mergeDirection
+        ? id.toString()
+        : selectedMergeCollectionId;
+
+      const { mergedCount, skippedDuplicates } = await mergeCollections({
+        sourceId,
+        targetId,
+      });
+
+      const targetName = mergeDirection
+        ? title
+        : selectedMergeCollection?.title ?? selectedMergeCollectionId;
+      alert(
+        `Merged ${mergedCount} items into "${targetName}".${
+          skippedDuplicates > 0
+            ? ` ${skippedDuplicates} duplicates were skipped.`
+            : ""
+        }`
+      );
+
+      setSelectedMergeCollectionId(null);
+      setMergeDirection(true);
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+
+      if (!mergeDirection) {
+        // Current collection was deleted, navigate to the target
+        queryClient.invalidateQueries({
+          queryKey: ["collection", { collectionId: selectedMergeCollectionId }],
+        });
+        router.replace(`/collection/${selectedMergeCollectionId}`);
+      } else {
+        // Staying on current collection, refresh it
+        queryClient.invalidateQueries({
+          queryKey: ["collection", { collectionId: id.toString() }],
+        });
+      }
+    } catch (err) {
+      logError(err);
+      alert("Failed to merge collections. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function onClickLinkToArena() {
@@ -324,16 +422,20 @@ export function CollectionDetailView({
                       Please submit some feedback in the Profile tab if this is
                       happening because it's a bug!
                     </StyledText>
-                    {/* TODO: add a button to "reset" channel from remote, which deletes items that it doesn't find */}
-                    {/* <StyledButton
-                    onPress={onClickSyncNewItems}
-                    disabled={isLoading}
-                    icon={isLoading ? <Spinner size="small" /> : null}
-                    marginTop="$2"
-                  >
-                    {`Sync new items from ${remoteSourceType}`}
-                    <ArenaLogo style={{ marginLeft: -4 }} />
-                  </StyledButton> */}
+                    <YStack marginTop="$2">
+                      <StyledButton
+                        onPress={onClickOffload}
+                        disabled={isLoading || !arenaAccessToken}
+                        icon={isLoading ? <Spinner size="small" /> : null}
+                      >
+                        Offload items to remote storage
+                        <ArenaLogo style={{ marginLeft: -4 }} />
+                      </StyledButton>
+                      <StyledText metadata>
+                        Deletes local files and uses remote URLs instead, saving
+                        local storage space. Items remain visible in the app.
+                      </StyledText>
+                    </YStack>
                   </>
                 ) : arenaAccessToken ? (
                   <>
@@ -348,6 +450,110 @@ export function CollectionDetailView({
                     </StyledButton>
                   </>
                 ) : null}
+                <YStack marginTop="$2" gap="$2">
+                  <StyledText bold>Merge Collections</StyledText>
+
+                  {/* Collection pair display with swap */}
+                  <XStack
+                    alignItems="center"
+                    justifyContent="center"
+                    gap="$2"
+                    paddingVertical="$2"
+                  >
+                    {/* Current collection (fixed) */}
+                    <YStack
+                      flex={1}
+                      backgroundColor={mergeDirection ? "$orange4" : "$gray4"}
+                      padding="$2"
+                      borderRadius="$2"
+                      alignItems="center"
+                    >
+                      <StyledText size="$1" color="$gray11">
+                        {mergeDirection ? "Keep" : "Delete"}
+                      </StyledText>
+                      <StyledText
+                        numberOfLines={1}
+                        bold={mergeDirection}
+                        textAlign="center"
+                      >
+                        {title}
+                      </StyledText>
+                    </YStack>
+
+                    {/* Swap button */}
+                    <TouchableOpacity
+                      onPress={() => setMergeDirection(!mergeDirection)}
+                    >
+                      <YStack
+                        backgroundColor="$blue4"
+                        padding="$2"
+                        borderRadius="$4"
+                      >
+                        <Icon name="swap-horizontal" size={20} />
+                      </YStack>
+                    </TouchableOpacity>
+
+                    {/* Selected collection (picker) */}
+                    <YStack
+                      flex={1}
+                      backgroundColor={mergeDirection ? "$gray4" : "$orange4"}
+                      padding="$2"
+                      borderRadius="$2"
+                      alignItems="center"
+                    >
+                      <StyledText size="$1" color="$gray11">
+                        {mergeDirection ? "Delete" : "Keep"}
+                      </StyledText>
+                      <CollectionSelect
+                        selectedCollection={selectedMergeCollectionId}
+                        setSelectedCollection={setSelectedMergeCollectionId}
+                        excludeCollectionIds={[id.toString()]}
+                        collectionPlaceholder="Select..."
+                        triggerProps={{
+                          backgroundColor: "transparent",
+                          borderWidth: 0,
+                          paddingHorizontal: 0,
+                          paddingVertical: 0,
+                          minHeight: 0,
+                          height: "auto",
+                          width: "100%",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      />
+                    </YStack>
+                  </XStack>
+
+                  {/* Merge description */}
+                  {selectedMergeCollectionId && selectedMergeCollection && (
+                    <StyledText metadata textAlign="center">
+                      {mergeDirection
+                        ? `"${selectedMergeCollection.title}" will be deleted. Its items will be moved into "${title}".`
+                        : `"${title}" will be deleted. Its items will be moved into "${selectedMergeCollection.title}".`}
+                    </StyledText>
+                  )}
+
+                  {/* Merge button */}
+                  <ButtonWithConfirm
+                    onPress={onMerge}
+                    disabled={isLoading || !selectedMergeCollectionId}
+                    icon={isLoading ? <Spinner size="small" /> : null}
+                    confirmationTitle="Merge collections?"
+                    confirmationDescription={
+                      selectedMergeCollection
+                        ? mergeDirection
+                          ? `"${selectedMergeCollection.title}" will be permanently deleted. Its items will be moved into "${title}".`
+                          : `"${title}" will be permanently deleted. Its items will be moved into "${selectedMergeCollection.title}".`
+                        : "Select a collection first."
+                    }
+                  >
+                    Merge
+                  </ButtonWithConfirm>
+
+                  <StyledText metadata>
+                    Combine two collections into one, keeping all items.
+                  </StyledText>
+                </YStack>
                 {remoteSourceType ? (
                   <>
                     <YStack>
