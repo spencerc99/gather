@@ -56,3 +56,5 @@ eas.json
 
 .cursormemory.md
 cursor/*
+
+.claude/settings.local.json
