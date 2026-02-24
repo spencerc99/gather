@@ -1,5 +1,6 @@
 import { Tabs, Stack } from "expo-router";
 import { YStack } from "tamagui";
+import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
 import { TextForageView } from "../components/TextForageView";
 import { useEffect, useState } from "react";
 import { useTotalBlockCount, useCollection } from "../utils/db";
@@ -45,7 +46,11 @@ export function ChatDetailView({
                 </StyledText>
               </YStack>
             ),
-            headerRight: () => null,
+            headerRight: () => {
+              return selectedCollection !== null ? (
+                <CollectionDetailsHeaderLink id={selectedCollection} />
+              ) : null;
+            },
           }}
         />
         <TextForageView
