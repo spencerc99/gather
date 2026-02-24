@@ -2045,7 +2045,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           console.log("[Arena Sync] Block Updates:", blocksToUpdate.length);
           for (const block of blocksToUpdate) {
             try {
-              handleBlockRemoteUpdate(block);
+              await handleBlockRemoteUpdate(block);
             } catch (err) {
               logError(err);
             }
@@ -2058,7 +2058,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           );
           for (const collection of collectionsToUpdate) {
             try {
-              handleCollectionRemoteUpdate(collection);
+              await handleCollectionRemoteUpdate(collection);
             } catch (err) {
               logError(err);
             }
@@ -2076,7 +2076,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           const blocksToDelete = await getPendingArenaBlocksToDelete();
           console.log("[Arena Sync] Block Deletes:", blocksToDelete.length);
           try {
-            handleDeleteBlocksRemote(blocksToDelete);
+            await handleDeleteBlocksRemote(blocksToDelete);
           } catch (err) {
             logError(err);
           }
@@ -2145,7 +2145,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ],
         })),
       ];
-      await db.execAsync(statements, false);
+      const syncResults = await db.execAsync(statements, false);
+      handleSqlErrors(syncResults);
 
       // Invalidate relevant queries now that both block and connections are saved
       queryClient.invalidateQueries({
@@ -2716,7 +2717,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         }
 
         try {
-          await db.execAsync(
+          const deleteResults = await db.execAsync(
             [
               {
                 sql: `DELETE FROM connections WHERE block_id = ?;`,
@@ -2729,6 +2730,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             ],
             false
           );
+          handleSqlErrors(deleteResults);
           deletedLocal++;
         } catch (err) {
           const msg = `Failed to delete local block ${block.id}: ${err}`;
