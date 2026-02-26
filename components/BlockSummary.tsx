@@ -36,7 +36,9 @@ import { UserContext, extractCreatorFromCreatedBy } from "../utils/user";
 import { BlockCreatedByAvatar } from "./BlockCreatedByAvatar";
 import { useTime } from "../hooks/useTime";
 
-const MaxMenuTitleLength = 50;
+// Keep short enough to fit ~2 lines in the hold menu so the Delete button
+// at the bottom is always reachable without scrolling.
+const MaxMenuTitleLength = 30;
 
 function useBlockMenuItems(
   block: Block,

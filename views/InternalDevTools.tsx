@@ -24,6 +24,7 @@ import {
   ArenaGraphqlKey,
 } from "../utils/arena";
 import { MilestoneKey } from "../utils/celebrations";
+import { Alert } from "react-native";
 
 export function InternalDevTools({}: {}) {
   const {
@@ -32,6 +33,8 @@ export function InternalDevTools({}: {}) {
     getPendingArenaBlocks,
     getUnconnectedBlockCount,
     deleteUnconnectedBlocks,
+    findAndCleanDuplicates,
+    countDuplicates,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { currentUser, arenaAccessToken } = useContext(UserContext);
@@ -117,6 +120,57 @@ export function InternalDevTools({}: {}) {
           }}
         >
           <StyledParagraph>Sync from Arena</StyledParagraph>
+        </StyledButton>
+
+        <StyledButton
+          theme="red"
+          disabled={isLoading}
+          icon={isLoading ? <Spinner size="small" /> : null}
+          onPress={async () => {
+            setIsLoading(true);
+            try {
+              const count = await countDuplicates();
+              if (count === 0) {
+                Alert.alert("No Duplicates", "No duplicate blocks found.");
+                return;
+              }
+              Alert.alert(
+                "Clean Duplicate Blocks",
+                `Found ${count} duplicate block${count === 1 ? "" : "s"} with Gather attribution. Delete them from both Arena and local?`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: `Delete ${count}`,
+                    style: "destructive",
+                    onPress: async () => {
+                      setIsLoading(true);
+                      try {
+                        const result = await findAndCleanDuplicates();
+                        Alert.alert(
+                          "Dedup Complete",
+                          `Deleted locally: ${result.deletedLocal}\n` +
+                            `Deleted from Arena: ${result.deletedRemote}\n` +
+                            (result.errors.length > 0
+                              ? `\nErrors (${result.errors.length}):\n${result.errors.slice(0, 3).join("\n")}`
+                              : "")
+                        );
+                      } catch (err) {
+                        Alert.alert("Dedup Failed", String(err));
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    },
+                  },
+                ]
+              );
+            } catch (err) {
+              Alert.alert("Error", String(err));
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+        >
+          <StyledParagraph>Clean Duplicate Blocks</StyledParagraph>
         </StyledButton>
 
         <StyledButton

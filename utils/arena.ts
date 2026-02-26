@@ -22,7 +22,7 @@ export const ArenaClientId = process.env.EXPO_PUBLIC_ARENA_CLIENT_ID!;
 export const ArenaClientSecret = process.env.EXPO_PUBLIC_ARENA_CLIENT_SECRET!;
 export const ArenaGraphqlKey = process.env.EXPO_PUBLIC_ARENA_GRAPHQL_KEY!;
 export const ArenaTokenStorageKey = "arena-token";
-const GatherArenaAttribution =
+export const GatherArenaAttribution =
   "created with [Gather](https://gather.directory/)";
 
 enum ArenaVisibility {
@@ -105,7 +105,8 @@ export type ArenaClass =
   | "Media"
   | "Attachment"
   | "Embed"
-  | "Block";
+  | "Block"
+  | "PendingBlock";
 export interface RawArenaChannelItem {
   id: string;
   title: string;
@@ -1342,7 +1343,20 @@ export function removePendingBlockUpdate(blockId: string) {
 export function rawArenaBlocksToBlockInsertInfo(
   arenaBlocks: RawArenaChannelItem[]
 ): DatabaseBlockInsert[] {
-  return arenaBlocks.map(rawArenaBlockToBlockInsertInfo);
+  // Filter out PendingBlock items — these are blocks Arena is still
+  // processing (e.g. image uploads). They'll be picked up on the next
+  // sync cycle once Arena finishes processing them.
+  return arenaBlocks
+    .filter((block) => {
+      if (block.class === "PendingBlock") {
+        console.log(
+          `[Arena Sync] Skipping PendingBlock arena_id=${block.id} title="${block.title}"`
+        );
+        return false;
+      }
+      return true;
+    })
+    .map(rawArenaBlockToBlockInsertInfo);
 }
 
 export function rawArenaBlockToBlockInsertInfo(

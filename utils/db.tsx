@@ -10,6 +10,7 @@ import * as FileSystem from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { ErrorsContext } from "./errors";
 import {
+  GatherArenaAttribution,
   getBlock as getArenaBlock,
   getChannelItems,
   getPendingCollectionUpdates,
@@ -252,6 +253,13 @@ interface DatabaseContextProps {
   trySyncPendingArenaBlocks: () => void;
   trySyncNewArenaBlocks: () => void;
   getPendingArenaBlocks: () => any;
+  findAndCleanDuplicates: () => Promise<{
+    found: number;
+    deletedLocal: number;
+    deletedRemote: number;
+    errors: string[];
+  }>;
+  countDuplicates: () => Promise<number>;
   selectedReviewCollection: string | null;
   setSelectedReviewCollection: (collectionId: string | null) => void;
   getExistingAssetIds: (
@@ -316,6 +324,13 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
   trySyncPendingArenaBlocks: () => {},
   trySyncNewArenaBlocks: () => {},
   getPendingArenaBlocks: () => {},
+  findAndCleanDuplicates: async () => ({
+    found: 0,
+    deletedLocal: 0,
+    deletedRemote: 0,
+    errors: [],
+  }),
+  countDuplicates: async () => 0,
   selectedReviewCollection: null,
   setSelectedReviewCollection: () => {},
   getBlocks: async (opts) => {
@@ -373,28 +388,35 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   // Queue to store the triggers
   const triggerQueueRef = useRef<(() => void)[]>([]);
 
-  // Function to trigger the sync
-  const triggerBlockSync = () => {
-    const syncFunction = async () => {
-      isSyncingRef.current = true;
-      try {
-        await trySyncPendingArenaBlocks();
-        const nextTrigger = triggerQueueRef.current.shift();
-        if (nextTrigger) {
-          await nextTrigger();
+  // Function to trigger the sync. Returns a promise that resolves when this
+  // sync invocation completes, ensuring callers can properly await sync.
+  const triggerBlockSync = (): Promise<void> => {
+    return new Promise<void>((resolve) => {
+      const syncFunction = async () => {
+        isSyncingRef.current = true;
+        try {
+          await trySyncPendingArenaBlocks();
+        } catch (err) {
+          logError(err);
+        } finally {
+          // Start next queued sync before clearing the flag so there's
+          // never a window where isSyncingRef is false while work remains.
+          const nextTrigger = triggerQueueRef.current.shift();
+          if (nextTrigger) {
+            nextTrigger();
+          } else {
+            isSyncingRef.current = false;
+          }
+          resolve();
         }
-      } finally {
-        isSyncingRef.current = false;
-      }
-    };
+      };
 
-    if (triggerQueueRef.current.length === 0 && !isSyncingRef.current) {
-      // If the queue is empty, start the sync process
-      syncFunction();
-    } else {
-      // If the queue is not empty, add the sync function to the queue
-      triggerQueueRef.current.push(syncFunction);
-    }
+      if (!isSyncingRef.current) {
+        syncFunction();
+      } else {
+        triggerQueueRef.current.push(syncFunction);
+      }
+    });
   };
   const debouncedTriggerBlockSync = useDebounce(
     triggerBlockSync,
@@ -530,14 +552,20 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     mutationFn: createBlocksBase,
     onSuccess: (blockInfos, { collectionId, blocksToInsert }) => {
       queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
-      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+      queryClient.invalidateQueries({
+        queryKey: ["blocks", { type: "uncategorized" }],
+      });
+      queryClient.invalidateQueries({ queryKey: ["blocks", "count"] });
     },
     onError: (err, { collectionId }, context) => {
       console.error("Error creating blocks:", err);
       // If we had optimistic updates, we would roll them back here
       // For now, just invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
-      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+      queryClient.invalidateQueries({
+        queryKey: ["blocks", { type: "uncategorized" }],
+      });
+      queryClient.invalidateQueries({ queryKey: ["blocks", "count"] });
     },
   });
   const createBlocks = createBlocksMutation.mutateAsync;
@@ -1865,7 +1893,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function syncWithArena() {
     try {
-      await debouncedTriggerBlockSync();
+      // Push all pending local blocks to Arena FIRST and wait for completion.
+      // Uses triggerBlockSync (not the debounced version) so we actually await
+      // the sync finishing before pulling. This prevents the race where we pull
+      // blocks from Arena that we just pushed but haven't saved the arena_id
+      // for locally, causing duplicates.
+      await triggerBlockSync();
       const { lastSyncedAt } = await getLastSyncedRemoteInfo();
       // if passed 6 hours, sync again
       if (
@@ -1890,20 +1923,26 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
 
-    InteractionManager.runAfterInteractions(async () => {
-      try {
-        const result = await getArenaCollections();
-        const collectionsToSync = result.rows.map((collection) => ({
-          ...mapDbCollectionToCollection(collection),
-        }));
-        for (const collectionToSync of collectionsToSync) {
-          InteractionManager.runAfterInteractions(async () => {
+    // Wrap in a promise so callers can await completion. Without this,
+    // InteractionManager.runAfterInteractions fires and forgets, meaning
+    // syncWithArena would proceed (or return) before pulling finishes.
+    await new Promise<void>((resolve) => {
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          const result = await getArenaCollections();
+          const collectionsToSync = result.rows.map((collection) => ({
+            ...mapDbCollectionToCollection(collection),
+          }));
+          // Sync collections sequentially to avoid concurrent DB writes
+          // and ensure each collection's sync completes before the next starts.
+          for (const collectionToSync of collectionsToSync) {
             await syncNewRemoteItemsForCollection(collectionToSync);
-          });
+          }
+        } finally {
+          await updateLastSyncedRemoteInfo();
+          resolve();
         }
-      } finally {
-        await updateLastSyncedRemoteInfo();
-      }
+      });
     });
   }
 
@@ -1917,109 +1956,140 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
 
-    InteractionManager.runAfterInteractions(async () => {
-      const result = await getPendingArenaConnections();
+    // Phase 1: Sync pending block creates.
+    // Each phase is wrapped in a Promise around InteractionManager so that
+    // the function properly awaits completion. Previously these were all
+    // fire-and-forget, meaning isSyncingRef was cleared before the actual
+    // work finished, allowing concurrent syncs and causing the race condition.
+    await new Promise<void>((resolve) => {
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          const result = await getPendingArenaConnections();
 
-      if (!result.rows.length) {
-        return;
-      }
-
-      // @ts-ignore
-      const connectionsToSync: BlockWithCollectionInfo[] = result.rows
-        .map((block) => {
-          const blockMappedToCamelCase =
-            mapSnakeCaseToCamelCaseProperties(block);
-          const mappedBlock = mapDbBlockToBlock(block);
-          return {
-            ...blockMappedToCamelCase,
-            ...mappedBlock,
-            collectionRemoteSourceTypes:
-              blockMappedToCamelCase.collectionRemoteSourceTypes as RemoteSourceType[],
-            collectionRemoteSourceInfos:
-              blockMappedToCamelCase.collectionRemoteSourceInfos
-                ? (JSON.parse(
-                    blockMappedToCamelCase.collectionRemoteSourceInfos
-                  ).map(
-                    (info: string) => JSON.parse(info) as RemoteSourceInfo
-                  ) as RemoteSourceInfo[])
-                : null,
-          } as BlockWithCollectionInfo;
-        })
-        .filter((b) => !queuedBlocksToSync.current.has(b.id));
-
-      connectionsToSync.forEach((c) => queuedBlocksToSync.current.add(c.id));
-
-      try {
-        console.log(
-          `Syncing ${connectionsToSync.length} pending connections to arena`
-        );
-
-        const succesfullySyncedConnections = [];
-
-        for (const connToSync of connectionsToSync) {
-          console.log("syncing", connToSync);
-          const { collectionRemoteSourceInfos, collectionIds } = connToSync;
-          const arenaCollectionInfo = collectionRemoteSourceInfos.map(
-            (c, idx) => ({
-              channelId: c.arenaId,
-              collectionId: collectionIds[idx],
-            })
-          );
-          const newRemoteItem = await syncBlockToArena(
-            connToSync,
-            arenaCollectionInfo
-          );
-          if (newRemoteItem) {
-            succesfullySyncedConnections.push(connToSync);
+          if (!result.rows.length) {
+            return;
           }
-        }
 
-        console.log(
-          `Successfully synced ${succesfullySyncedConnections.map(
-            (c) => `${c.id}-${c.collectionIds}`
-          )} to arena. Failed to sync ${
-            connectionsToSync.length - succesfullySyncedConnections.length
-          }`
-        );
-      } catch (err) {
-        logError(err);
-      } finally {
-        connectionsToSync.forEach((c) =>
-          queuedBlocksToSync.current.delete(c.id)
-        );
-      }
-    });
-    InteractionManager.runAfterInteractions(async () => {
-      const blocksToUpdate = await getPendingArenaBlocksToUpdate();
-      console.log("[Arena Sync] Block Updates:", blocksToUpdate.length);
-      for (const block of blocksToUpdate) {
-        try {
-          handleBlockRemoteUpdate(block);
-        } catch (err) {
-          logError(err);
+          // @ts-ignore
+          const connectionsToSync: BlockWithCollectionInfo[] = result.rows
+            .map((block) => {
+              const blockMappedToCamelCase =
+                mapSnakeCaseToCamelCaseProperties(block);
+              const mappedBlock = mapDbBlockToBlock(block);
+              return {
+                ...blockMappedToCamelCase,
+                ...mappedBlock,
+                collectionRemoteSourceTypes:
+                  blockMappedToCamelCase.collectionRemoteSourceTypes as RemoteSourceType[],
+                collectionRemoteSourceInfos:
+                  blockMappedToCamelCase.collectionRemoteSourceInfos
+                    ? (JSON.parse(
+                        blockMappedToCamelCase.collectionRemoteSourceInfos
+                      ).map(
+                        (info: string) => JSON.parse(info) as RemoteSourceInfo
+                      ) as RemoteSourceInfo[])
+                    : null,
+              } as BlockWithCollectionInfo;
+            })
+            .filter((b) => !queuedBlocksToSync.current.has(b.id));
+
+          connectionsToSync.forEach((c) =>
+            queuedBlocksToSync.current.add(c.id)
+          );
+
+          try {
+            console.log(
+              `Syncing ${connectionsToSync.length} pending connections to arena`
+            );
+
+            const succesfullySyncedConnections = [];
+
+            for (const connToSync of connectionsToSync) {
+              console.log("syncing", connToSync);
+              const { collectionRemoteSourceInfos, collectionIds } =
+                connToSync;
+              const arenaCollectionInfo = collectionRemoteSourceInfos.map(
+                (c, idx) => ({
+                  channelId: c.arenaId,
+                  collectionId: collectionIds[idx],
+                })
+              );
+              const newRemoteItem = await syncBlockToArena(
+                connToSync,
+                arenaCollectionInfo
+              );
+              if (newRemoteItem) {
+                succesfullySyncedConnections.push(connToSync);
+              }
+            }
+
+            console.log(
+              `Successfully synced ${succesfullySyncedConnections.map(
+                (c) => `${c.id}-${c.collectionIds}`
+              )} to arena. Failed to sync ${
+                connectionsToSync.length - succesfullySyncedConnections.length
+              }`
+            );
+          } catch (err) {
+            logError(err);
+          } finally {
+            connectionsToSync.forEach((c) =>
+              queuedBlocksToSync.current.delete(c.id)
+            );
+          }
+        } finally {
+          resolve();
         }
-      }
-      const collectionsToUpdate = await getPendingArenaCollectionsToUpdate();
-      console.log(
-        "[Arena Sync] Collection Updates:",
-        collectionsToUpdate.length
-      );
-      for (const collection of collectionsToUpdate) {
-        try {
-          handleCollectionRemoteUpdate(collection);
-        } catch (err) {
-          logError(err);
-        }
-      }
+      });
     });
-    InteractionManager.runAfterInteractions(async () => {
-      const blocksToDelete = await getPendingArenaBlocksToDelete();
-      console.log("[Arena Sync] Block Deletes:", blocksToDelete.length);
-      try {
-        handleDeleteBlocksRemote(blocksToDelete);
-      } catch (err) {
-        logError(err);
-      }
+
+    // Phase 2: Sync pending block/collection updates.
+    await new Promise<void>((resolve) => {
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          const blocksToUpdate = await getPendingArenaBlocksToUpdate();
+          console.log("[Arena Sync] Block Updates:", blocksToUpdate.length);
+          for (const block of blocksToUpdate) {
+            try {
+              await handleBlockRemoteUpdate(block);
+            } catch (err) {
+              logError(err);
+            }
+          }
+          const collectionsToUpdate =
+            await getPendingArenaCollectionsToUpdate();
+          console.log(
+            "[Arena Sync] Collection Updates:",
+            collectionsToUpdate.length
+          );
+          for (const collection of collectionsToUpdate) {
+            try {
+              await handleCollectionRemoteUpdate(collection);
+            } catch (err) {
+              logError(err);
+            }
+          }
+        } finally {
+          resolve();
+        }
+      });
+    });
+
+    // Phase 3: Sync pending block deletes.
+    await new Promise<void>((resolve) => {
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          const blocksToDelete = await getPendingArenaBlocksToDelete();
+          console.log("[Arena Sync] Block Deletes:", blocksToDelete.length);
+          try {
+            await handleDeleteBlocksRemote(blocksToDelete);
+          } catch (err) {
+            logError(err);
+          }
+        } finally {
+          resolve();
+        }
+      });
     });
   }
 
@@ -2043,42 +2113,61 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         block.type === BlockType.Link &&
         image?.display.url &&
         image.display.url !== block.content;
-      // TODO: do these db updates in a transaction
-      await db.execAsync(
-        [
-          {
-            sql: `UPDATE blocks SET remote_source_type = ?, remote_source_info = ?${
-              hasUpdatedImage ? `, content = ?` : ""
-            } WHERE id = ?;`,
-            args: [
-              RemoteSourceType.Arena,
-              JSON.stringify({
-                arenaId: newBlockId.toString(),
-                arenaClass: "Block",
-              } as RemoteSourceInfo),
-              ...(hasUpdatedImage ? [image.display.url] : []),
-              block.id,
-            ],
-          },
-        ],
-        false
-      );
-      for (const collectionInfo of collectionInfos) {
-        await upsertConnections([
-          {
-            blockId: block.id,
-            collectionId: collectionInfo.collectionId,
-            remoteCreatedAt: connections[collectionInfo.channelId].connected_at,
-            createdBy: getCreatedByForRemote(
+
+      // Perform block update AND all connection upserts in a single atomic
+      // db.execAsync batch. Previously these were separate calls: first the
+      // block's arena_id was saved, then each connection was upserted one by
+      // one. If anything failed between steps (or a concurrent sync read the
+      // DB between them), the block could end up uploaded to Arena without
+      // the connection being marked as synced (remote_created_at still NULL),
+      // causing re-upload on the next sync cycle and duplicate blocks.
+      const statements: Array<{ sql: string; args: any[] }> = [
+        {
+          sql: `UPDATE blocks SET remote_source_type = ?, remote_source_info = ?${
+            hasUpdatedImage ? `, content = ?` : ""
+          } WHERE id = ?;`,
+          args: [
+            RemoteSourceType.Arena,
+            JSON.stringify({
+              arenaId: newBlockId.toString(),
+              arenaClass: "Block",
+            } as RemoteSourceInfo),
+            ...(hasUpdatedImage ? [image.display.url] : []),
+            block.id,
+          ],
+        },
+        ...collectionInfos.map((collectionInfo) => ({
+          sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT(block_id, collection_id) DO UPDATE SET remote_created_at = excluded.remote_created_at;`,
+          args: [
+            block.id,
+            collectionInfo.collectionId,
+            getCreatedByForRemote(
               RemoteSourceType.Arena,
               connections[collectionInfo.channelId].user.slug
             ),
-          },
-        ]);
-      }
+            connections[collectionInfo.channelId].connected_at,
+          ],
+        })),
+      ];
+      const syncResults = await db.execAsync(statements, false);
+      handleSqlErrors(syncResults);
+
+      // Invalidate relevant queries now that both block and connections are saved
       queryClient.invalidateQueries({
         queryKey: ["blocks", { blockId: block.id }],
       });
+      for (const collectionInfo of collectionInfos) {
+        queryClient.invalidateQueries({
+          queryKey: ["blocks", { collectionId: collectionInfo.collectionId }],
+        });
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["connections", { blockId: block.id }],
+      });
+      queryClient.invalidateQueries({ queryKey: ["connections", "count"] });
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
       return arenaBlock;
     } catch (err) {
       logError(err);
@@ -2187,20 +2276,78 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           });
           // These get returned in descending order of connected, so reverse it
           lastContents.reverse();
+
+          // Filter out blocks that Gather itself uploaded but hasn't linked
+          // locally yet (the race condition). We detect these by checking if
+          // the description starts with the Gather attribution AND the block's
+          // arena_id doesn't already exist locally. If it does exist locally,
+          // ON CONFLICT(arena_id) handles dedup, so we let those through.
+          const existingArenaIds = new Set<string>();
+          if (lastContents.length > 0) {
+            const arenaIds = lastContents
+              .map((b) => b.id?.toString())
+              .filter(Boolean);
+            if (arenaIds.length > 0) {
+              const [existingResult] = await db.execAsync(
+                [
+                  {
+                    sql: inParam(
+                      `SELECT arena_id FROM blocks WHERE arena_id IN (?#) AND deletion_timestamp IS NULL`,
+                      arenaIds
+                    ),
+                    args: [],
+                  },
+                ],
+                true
+              );
+              handleSqlErrors(existingResult);
+              existingResult.rows.forEach((row: any) =>
+                existingArenaIds.add(row.arena_id)
+              );
+            }
+          }
+
+          const filteredContents = lastContents.filter((block) => {
+            const isGatherUploaded =
+              block.description?.startsWith(GatherArenaAttribution);
+            const alreadyLinkedLocally = existingArenaIds.has(
+              block.id?.toString()
+            );
+            if (isGatherUploaded && !alreadyLinkedLocally) {
+              logError(
+                `[Arena Sync Guard] Skipping re-pull of Gather-uploaded block ` +
+                  `arena_id=${block.id} title="${block.title}" ` +
+                  `channel=${channelId} collection=${collectionId} ` +
+                  `connected_at=${block.connected_at}`
+              );
+              return false;
+            }
+            return true;
+          });
+
           // TODO: handle deletions so pass in a list of blockIds that are in the collection already
           console.log(
-            `Found ${lastContents.length} new items from remote to add to ${collection.title}`
+            `Found ${lastContents.length} new items from remote` +
+              (lastContents.length !== filteredContents.length
+                ? ` (${lastContents.length - filteredContents.length} skipped as Gather-uploaded duplicates)`
+                : "") +
+              ` to add to ${collection.title}`
           );
-          if (lastContents.length > 0) {
+          if (filteredContents.length > 0) {
             console.log(
               "lastconnectedat",
-              lastContents[lastContents.length - 1].connected_at
+              filteredContents[filteredContents.length - 1].connected_at
             );
             const blockInfos = await createBlocks({
-              blocksToInsert: rawArenaBlocksToBlockInsertInfo(lastContents),
+              blocksToInsert: rawArenaBlocksToBlockInsertInfo(filteredContents),
               collectionId,
             });
             itemsAdded = blockInfos.filter((b) => b.created).length;
+          }
+          // Always advance the sync cursor based on the original unfiltered
+          // list, even if all items were filtered out. Otherwise filtered
+          // (skipped) blocks would be re-fetched on every sync cycle.
+          if (lastContents.length > 0) {
             await updateLastSyncedInfoForChannel(channelId, {
               lastSyncedAt: new Date().toISOString(),
               lastSyncedBlockCreatedAt:
@@ -2276,7 +2423,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           queryKey: ["blocks", { collectionId }],
         });
       }
-      queryClient.invalidateQueries({ queryKey: ["connections"] });
+      for (const { blockId } of connections) {
+        queryClient.invalidateQueries({
+          queryKey: ["connections", { blockId }],
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["connections", "count"] });
       queryClient.invalidateQueries({
         queryKey: ["blocks", { type: "uncategorized" }],
       });
@@ -2483,6 +2635,142 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
   }
 
+  // Count duplicate blocks (Gather-attributed) without deleting.
+  async function countDuplicates(): Promise<number> {
+    try {
+      const [result] = await db.execAsync(
+        [
+          {
+            sql: `
+              SELECT COUNT(*) as count
+              FROM blocks
+              WHERE deletion_timestamp IS NULL
+                AND description LIKE ? || '%'
+            `,
+            args: [GatherArenaAttribution],
+          },
+        ],
+        true
+      );
+      handleSqlErrors(result);
+      return result.rows[0]?.count ?? 0;
+    } catch (err) {
+      logError(err);
+      return 0;
+    }
+  }
+
+  // Find and delete duplicate blocks caused by the sync race condition.
+  // Any block with the Gather attribution description is a re-pulled copy
+  // from Arena — the local original never has it. So we simply find and
+  // delete every block with that description, both locally and from Arena.
+  // If Arena deletion fails for a block, its local copy is kept to ensure
+  // they stay in sync.
+  async function findAndCleanDuplicates(): Promise<{
+    found: number;
+    deletedLocal: number;
+    deletedRemote: number;
+    errors: string[];
+  }> {
+    const errors: string[] = [];
+    let deletedLocal = 0;
+    let deletedRemote = 0;
+
+    try {
+      const [result] = await db.execAsync(
+        [
+          {
+            sql: `
+              SELECT
+                b.id,
+                b.title,
+                b.arena_id,
+                c.collection_id,
+                col.remote_source_info as collection_remote_source_info
+              FROM blocks b
+              INNER JOIN connections c ON c.block_id = b.id
+              INNER JOIN collections col ON col.id = c.collection_id
+              WHERE b.deletion_timestamp IS NULL
+                AND b.description LIKE ? || '%'
+            `,
+            args: [GatherArenaAttribution],
+          },
+        ],
+        true
+      );
+      handleSqlErrors(result);
+
+      const blocksToDelete = result.rows.map((row: any) => ({
+        id: row.id.toString(),
+        arenaId: row.arena_id as string | null,
+        channelId: row.collection_remote_source_info
+          ? JSON.parse(row.collection_remote_source_info)?.arenaId ?? null
+          : null,
+      }));
+
+      const found = blocksToDelete.length;
+      console.log(`[Dedup] Found ${found} Gather-attributed blocks to delete.`);
+
+      for (const block of blocksToDelete) {
+        // Delete from Arena first. If this fails, skip local deletion
+        // so the block isn't removed from only one side.
+        if (block.arenaId && block.channelId && arenaAccessToken) {
+          try {
+            await removeBlockFromChannel({
+              blockId: block.arenaId,
+              channelId: block.channelId,
+              arenaToken: arenaAccessToken,
+            });
+            deletedRemote++;
+          } catch (err) {
+            const msg = `Failed to delete arena block ${block.arenaId} from channel ${block.channelId}, skipping local delete: ${err}`;
+            errors.push(msg);
+            logError(msg);
+            continue;
+          }
+        }
+
+        try {
+          const deleteResults = await db.execAsync(
+            [
+              {
+                sql: `DELETE FROM connections WHERE block_id = ?;`,
+                args: [block.id],
+              },
+              {
+                sql: `DELETE FROM blocks WHERE id = ?;`,
+                args: [block.id],
+              },
+            ],
+            false
+          );
+          handleSqlErrors(deleteResults);
+          deletedLocal++;
+        } catch (err) {
+          const msg = `Failed to delete local block ${block.id}: ${err}`;
+          errors.push(msg);
+          logError(msg);
+        }
+      }
+
+      if (deletedLocal > 0) {
+        queryClient.invalidateQueries({ queryKey: ["blocks"] });
+        queryClient.invalidateQueries({ queryKey: ["collections"] });
+        queryClient.invalidateQueries({ queryKey: ["connections"] });
+      }
+
+      console.log(
+        `[Dedup] Complete. Deleted ${deletedLocal} local, ${deletedRemote} remote. ${errors.length} errors.`
+      );
+    } catch (err) {
+      const msg = `Dedup failed: ${err}`;
+      errors.push(msg);
+      logError(msg);
+    }
+
+    return { found: deletedLocal + deletedRemote, deletedLocal, deletedRemote, errors };
+  }
+
   return (
     <DatabaseContext.Provider
       value={{
@@ -2534,6 +2822,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         trySyncPendingArenaBlocks,
         getPendingArenaBlocks: getPendingArenaConnections,
         trySyncNewArenaBlocks,
+        findAndCleanDuplicates,
+        countDuplicates,
       }}
     >
       {children}
