@@ -552,14 +552,20 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     mutationFn: createBlocksBase,
     onSuccess: (blockInfos, { collectionId, blocksToInsert }) => {
       queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
-      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+      queryClient.invalidateQueries({
+        queryKey: ["blocks", { type: "uncategorized" }],
+      });
+      queryClient.invalidateQueries({ queryKey: ["blocks", "count"] });
     },
     onError: (err, { collectionId }, context) => {
       console.error("Error creating blocks:", err);
       // If we had optimistic updates, we would roll them back here
       // For now, just invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
-      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+      queryClient.invalidateQueries({
+        queryKey: ["blocks", { type: "uncategorized" }],
+      });
+      queryClient.invalidateQueries({ queryKey: ["blocks", "count"] });
     },
   });
   const createBlocks = createBlocksMutation.mutateAsync;
@@ -2157,7 +2163,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           queryKey: ["blocks", { collectionId: collectionInfo.collectionId }],
         });
       }
-      queryClient.invalidateQueries({ queryKey: ["connections"] });
+      queryClient.invalidateQueries({
+        queryKey: ["connections", { blockId: block.id }],
+      });
+      queryClient.invalidateQueries({ queryKey: ["connections", "count"] });
       queryClient.invalidateQueries({ queryKey: ["collections"] });
       return arenaBlock;
     } catch (err) {
@@ -2414,7 +2423,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           queryKey: ["blocks", { collectionId }],
         });
       }
-      queryClient.invalidateQueries({ queryKey: ["connections"] });
+      for (const { blockId } of connections) {
+        queryClient.invalidateQueries({
+          queryKey: ["connections", { blockId }],
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["connections", "count"] });
       queryClient.invalidateQueries({
         queryKey: ["blocks", { type: "uncategorized" }],
       });
