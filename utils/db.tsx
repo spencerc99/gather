@@ -1973,25 +1973,45 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           // @ts-ignore
           const connectionsToSync: BlockWithCollectionInfo[] = result.rows
             .map((block) => {
-              const blockMappedToCamelCase =
-                mapSnakeCaseToCamelCaseProperties(block);
-              const mappedBlock = mapDbBlockToBlock(block);
-              return {
-                ...blockMappedToCamelCase,
-                ...mappedBlock,
-                collectionRemoteSourceTypes:
-                  blockMappedToCamelCase.collectionRemoteSourceTypes as RemoteSourceType[],
-                collectionRemoteSourceInfos:
-                  blockMappedToCamelCase.collectionRemoteSourceInfos
-                    ? (JSON.parse(
-                        blockMappedToCamelCase.collectionRemoteSourceInfos
-                      ).map(
-                        (info: string) => JSON.parse(info) as RemoteSourceInfo
-                      ) as RemoteSourceInfo[])
-                    : null,
-              } as BlockWithCollectionInfo;
+              try {
+                const blockMappedToCamelCase =
+                  mapSnakeCaseToCamelCaseProperties(block);
+                const mappedBlock = mapDbBlockToBlock(block);
+
+                let collectionRemoteSourceInfos: RemoteSourceInfo[] | null =
+                  null;
+                if (blockMappedToCamelCase.collectionRemoteSourceInfos) {
+                  const parsed = JSON.parse(
+                    blockMappedToCamelCase.collectionRemoteSourceInfos
+                  );
+                  // json_group_array may return items as JSON objects (not
+                  // double-quoted strings) depending on SQLite version, so
+                  // handle both cases.
+                  collectionRemoteSourceInfos = parsed.map((info: any) =>
+                    typeof info === "string"
+                      ? (JSON.parse(info) as RemoteSourceInfo)
+                      : (info as RemoteSourceInfo)
+                  );
+                }
+
+                return {
+                  ...blockMappedToCamelCase,
+                  ...mappedBlock,
+                  collectionRemoteSourceTypes:
+                    blockMappedToCamelCase.collectionRemoteSourceTypes as RemoteSourceType[],
+                  collectionRemoteSourceInfos,
+                } as BlockWithCollectionInfo;
+              } catch (err) {
+                logError(
+                  `[Arena Sync] Failed to parse pending block row id=${block.id}: ${err}`
+                );
+                return null;
+              }
             })
-            .filter((b) => !queuedBlocksToSync.current.has(b.id));
+            .filter(
+              (b): b is BlockWithCollectionInfo =>
+                b !== null && !queuedBlocksToSync.current.has(b.id)
+            );
 
           connectionsToSync.forEach((c) =>
             queuedBlocksToSync.current.add(c.id)
@@ -2136,20 +2156,25 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             block.id,
           ],
         },
-        ...collectionInfos.map((collectionInfo) => ({
-          sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
-              VALUES (?, ?, ?, ?)
-              ON CONFLICT(block_id, collection_id) DO UPDATE SET remote_created_at = excluded.remote_created_at;`,
-          args: [
-            block.id,
-            collectionInfo.collectionId,
-            getCreatedByForRemote(
-              RemoteSourceType.Arena,
-              connections[collectionInfo.channelId].user.slug
-            ),
-            connections[collectionInfo.channelId].connected_at,
-          ],
-        })),
+        ...collectionInfos.map((collectionInfo) => {
+          const conn = connections[collectionInfo.channelId];
+          return {
+            sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(block_id, collection_id) DO UPDATE SET remote_created_at = excluded.remote_created_at;`,
+            args: [
+              block.id,
+              collectionInfo.collectionId,
+              conn?.user?.slug
+                ? getCreatedByForRemote(
+                    RemoteSourceType.Arena,
+                    conn.user.slug
+                  )
+                : currentUser?.id ?? "unknown",
+              conn?.connected_at ?? new Date().toISOString(),
+            ],
+          };
+        }),
       ];
       const syncResults = await db.execAsync(statements, false);
       handleSqlErrors(syncResults);
