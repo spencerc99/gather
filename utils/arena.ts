@@ -274,9 +274,9 @@ export function nextUrlFromArenaContentsResponse(
   }
 }
 
-const ArenaApiUrl = "https://api.are.na/v2";
+const ArenaApiUrl = "https://api.are.na/v3";
 const ArenaGraphqlApi = "https://api.are.na/graphql";
-const ArenaChannelsApi = "https://api.are.na/v2/channels";
+const ArenaChannelsApi = "https://api.are.na/v3/channels";
 export const ArenaChannelRegex =
   /(?:https:\/\/)?(?:www\.)?are\.na\/[\w-]+\/([\w-]+)/;
 
@@ -1185,13 +1185,13 @@ export async function getUserChannels(
     throw Error("failed to get user info from are.na");
   }
   const baseUrl = search
-    ? withQueryParams(`https://api.are.na/v2/search/user/${userInfo.id}`, {
+    ? withQueryParams(`https://api.are.na/v3/search/user/${userInfo.id}`, {
         "filter[type]": "channels",
         q: search,
         page,
         per,
       })
-    : withQueryParams(`https://api.are.na/v2/users/${userInfo.id}/channels`, {
+    : withQueryParams(`https://api.are.na/v3/users/${userInfo.id}/channels`, {
         per,
         page,
       });
@@ -1222,7 +1222,7 @@ export async function searchChannels(
     search,
   }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
-  const baseUrl = withQueryParams(`https://api.are.na/v2/search/channels`, {
+  const baseUrl = withQueryParams(`https://api.are.na/v3/search/channels`, {
     q: search,
     page,
     per,

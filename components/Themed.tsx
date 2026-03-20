@@ -539,17 +539,23 @@ export function SearchBarInput({
   setSearchValue: (newValue: string) => void;
   containerProps?: GetProps<typeof Stack>;
 }) {
-  // TODO: add clear input
+  // Use defaultValue instead of value to avoid controlled TextInput lag on
+  // React Native. When typing fast, the JS bridge latency can cause the
+  // native text to reset to a stale `value`, reordering characters.
+  // We key the component on an empty-vs-nonempty boundary so that external
+  // clears (resetting searchValue to "") remount the input.
+  const wasCleared = searchValue === "";
   return (
     <InputWithIcon
+      key={wasCleared ? "empty" : "filled"}
       icon="search"
       placeholder="Search..."
       clearButtonMode="always"
       enterKeyHint="search"
       width="100%"
       backgroundColor="$gray4"
-      value={searchValue}
-      onChangeText={(text) => setSearchValue(text)}
+      defaultValue={searchValue}
+      onChangeText={setSearchValue}
       containerProps={containerProps}
       {...props}
     />
