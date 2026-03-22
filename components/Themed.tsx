@@ -209,7 +209,7 @@ export function EditModeText({
         alignItems="flex-start"
         justifyContent="flex-start"
         ref={inputRef}
-        value={editableContent}
+        defaultValue={editableContent}
         placeholder={defaultText}
         onChangeText={setEditableContent}
         pointerEvents={editing ? "auto" : "none"}
@@ -329,11 +329,12 @@ export function EditableTextOnClick({
           {/* NOTE KEEP IN SYNC WITH EditModeText */}
           {editing ? (
             <InputComponent
+              key="editing"
               flex={1}
               alignItems="flex-start"
               justifyContent="flex-start"
               ref={inputRef}
-              value={editableContent}
+              defaultValue={editableContent}
               placeholder={defaultText}
               onChangeText={setEditableContent}
               pointerEvents={editing ? "auto" : "none"}
@@ -369,6 +370,7 @@ export function EditableTextOnClick({
             />
           ) : (
             <InputComponent
+              key="display"
               ref={inputRef}
               value={editableContent}
               placeholder={defaultText}

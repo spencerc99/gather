@@ -202,6 +202,14 @@ function TextForageViewContent({
 }: TextForageViewProps) {
   const { getLocationMetadata } = useLocation();
   const [textValue, setTextValue] = useState("");
+  // Incremented on programmatic text changes (mention selection, clear, share
+  // intent) to remount the textarea. Combined with defaultValue, this avoids
+  // the controlled TextInput lag caused by JS bridge latency.
+  const [textInputKey, setTextInputKey] = useState(0);
+  const setTextValueProgrammatic = useCallback((text: string) => {
+    setTextValue(text);
+    setTextInputKey((k) => k + 1);
+  }, []);
   const [medias, setMedias] = useState<PickedMedia[]>([]);
   const [isLoadingAssets, setIsLoadingAssets] = useState(false);
   const {
@@ -374,14 +382,14 @@ function TextForageViewContent({
         const newText =
           textValue.slice(0, mentionStartIndex) +
           textValue.slice(mentionStartIndex + (mentionQuery?.length || 0) + 1);
-        setTextValue(newText.trimEnd());
+        setTextValueProgrammatic(newText.trimEnd());
       }
 
       // Clear mention state
       setMentionQuery(null);
       setMentionStartIndex(null);
     },
-    [mentionStartIndex, mentionQuery, textValue]
+    [mentionStartIndex, mentionQuery, textValue, setTextValueProgrammatic]
   );
 
   // Handle removing a selected collection
@@ -426,7 +434,7 @@ function TextForageViewContent({
           },
         ]);
       } else {
-        setTextValue(shareIntent);
+        setTextValueProgrammatic(shareIntent);
       }
     }
   }, [shareIntent]);
@@ -542,7 +550,7 @@ function TextForageViewContent({
       });
 
       // Only clear the UI after successful save
-      setTextValue("");
+      setTextValueProgrammatic("");
       setMedias([]);
       setSelectedCollections([]);
       setMentionQuery(null);
@@ -992,6 +1000,7 @@ function TextForageViewContent({
               ></StyledButton>
             </YStack>
             <StyledTextArea
+              key={textInputKey}
               // NOTE: idk why but the padding is huge on android lol
               padding={Platform.OS === "android" ? "$2" : undefined}
               paddingRight="$6"
@@ -1001,7 +1010,7 @@ function TextForageViewContent({
               maxLength={2000}
               onChangeText={handleTextChange}
               maxHeight={Dimensions.get("window").height / 2}
-              value={textValue}
+              defaultValue={textValue}
               enablesReturnKeyAutomatically
               onFocus={() => {
                 setTextFocused(true);
