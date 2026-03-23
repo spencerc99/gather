@@ -32,7 +32,7 @@ export function RapidCreateCollection() {
       <XStack alignItems="center" gap="$1.5">
         <StyledInput
           flex={1}
-          value={collectionName}
+          defaultValue={collectionName}
           onChangeText={setCollectionName}
           placeholder="Collection name..."
           onSubmitEditing={async () => {

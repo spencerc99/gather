@@ -312,7 +312,7 @@ export function SelectArenaChannel({
   ) : (
     <>
       <StyledInput
-        value={arenaChannel}
+        defaultValue={arenaChannel}
         onChangeText={(text) => setArenaChannel(text)}
         placeholder="https://are.na/spencer-chang/basket-sjuhif_oeqk"
         autogrow

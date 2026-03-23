@@ -372,7 +372,7 @@ export function EditableTextOnClick({
             <InputComponent
               key="display"
               ref={inputRef}
-              value={editableContent}
+              defaultValue={editableContent}
               placeholder={defaultText}
               onChangeText={setEditableContent}
               pointerEvents="none"
