@@ -1212,21 +1212,11 @@ export async function getUserChannels(
     search,
   }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
-  const userInfo = await getMyArenaUserInfo(accessToken);
-  if (!userInfo?.id) {
-    throw Error("failed to get user info from are.na");
+  const params: Record<string, any> = { scope: "my", per, page };
+  if (search) {
+    params.q = search;
   }
-  const baseUrl = search
-    ? withQueryParams(`https://api.are.na/v2/search/user/${userInfo.id}`, {
-        "filter[type]": "channels",
-        q: search,
-        page,
-        per,
-      })
-    : withQueryParams(`https://api.are.na/v3/users/${userInfo.id}/channels`, {
-        per,
-        page,
-      });
+  const baseUrl = withQueryParams(`${ArenaChannelsApi}`, params);
   try {
     const resp = await fetch(baseUrl, {
       headers: {
@@ -1252,8 +1242,7 @@ export async function searchChannels(
     search,
   }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
-  // Search endpoints are still v2 — v3 search is not yet available
-  const baseUrl = withQueryParams(`https://api.are.na/v2/search/channels`, {
+  const baseUrl = withQueryParams(`${ArenaChannelsApi}`, {
     q: search,
     page,
     per,
