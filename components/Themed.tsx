@@ -23,7 +23,13 @@ import {
 } from "tamagui";
 import { Link, LinkProps } from "expo-router";
 import { FontAwesome, FontAwesome6, Ionicons } from "@expo/vector-icons";
-import { PropsWithChildren, useEffect, useMemo, useState } from "react";
+import React, {
+  PropsWithChildren,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Keyboard, Platform, useColorScheme } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { PHOTOS_FOLDER } from "../utils/blobs";
@@ -504,16 +510,19 @@ export function Icon(props: GetProps<typeof IconComponent>) {
   return <IconComponent size={18 || props.size} {...props} />;
 }
 
-export function InputWithIcon({
-  icon,
-  iconSize,
-  containerProps,
-  ...props
-}: GetProps<typeof StyledInput> & {
-  icon: GetProps<typeof IconComponent>["name"];
-  iconSize?: GetProps<typeof IconComponent>["size"];
-  containerProps?: GetProps<typeof Stack>;
-}) {
+export const InputWithIcon = React.forwardRef(function InputWithIcon(
+  {
+    icon,
+    iconSize,
+    containerProps,
+    ...props
+  }: GetProps<typeof StyledInput> & {
+    icon: GetProps<typeof IconComponent>["name"];
+    iconSize?: GetProps<typeof IconComponent>["size"];
+    containerProps?: GetProps<typeof Stack>;
+  },
+  ref: any,
+) {
   return (
     <Stack position="relative" {...containerProps}>
       <YStack
@@ -526,10 +535,10 @@ export function InputWithIcon({
       >
         <Icon name={icon} size={iconSize} />
       </YStack>
-      <StyledInput {...props} paddingLeft="$4" />
+      <StyledInput ref={ref} {...props} paddingLeft="$4" />
     </Stack>
   );
-}
+});
 
 export function SearchBarInput({
   searchValue,
@@ -544,12 +553,18 @@ export function SearchBarInput({
   // Use defaultValue instead of value to avoid controlled TextInput lag on
   // React Native. When typing fast, the JS bridge latency can cause the
   // native text to reset to a stale `value`, reordering characters.
-  // We key the component on an empty-vs-nonempty boundary so that external
-  // clears (resetting searchValue to "") remount the input.
-  const wasCleared = searchValue === "";
+  // We use a ref to imperatively clear when searchValue is externally reset.
+  const inputRef = useRef<any>(null);
+  const prevSearchValue = useRef(searchValue);
+  useEffect(() => {
+    if (searchValue === "" && prevSearchValue.current !== "") {
+      inputRef.current?.clear?.();
+    }
+    prevSearchValue.current = searchValue;
+  }, [searchValue]);
   return (
     <InputWithIcon
-      key={wasCleared ? "empty" : "filled"}
+      ref={inputRef}
       icon="search"
       placeholder="Search..."
       clearButtonMode="always"
