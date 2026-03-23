@@ -283,6 +283,7 @@ export function nextUrlFromArenaContentsResponse(
 const ArenaApiUrl = "https://api.are.na/v3";
 const ArenaGraphqlApi = "https://api.are.na/graphql";
 const ArenaChannelsApi = "https://api.are.na/v3/channels";
+const ArenaSearchApi = "https://api.are.na/v3/search";
 export const ArenaChannelRegex =
   /(?:https:\/\/)?(?:www\.)?are\.na\/[\w-]+\/([\w-]+)/;
 
@@ -1212,11 +1213,11 @@ export async function getUserChannels(
     search,
   }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
-  const params: Record<string, any> = { scope: "my", per, page };
+  const params: Record<string, any> = { type: "Channel", scope: "my", per, page };
   if (search) {
     params.q = search;
   }
-  const baseUrl = withQueryParams(`${ArenaChannelsApi}`, params);
+  const baseUrl = withQueryParams(`${ArenaSearchApi}`, params);
   try {
     const resp = await fetch(baseUrl, {
       headers: {
@@ -1242,7 +1243,8 @@ export async function searchChannels(
     search,
   }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
-  const baseUrl = withQueryParams(`${ArenaChannelsApi}`, {
+  const baseUrl = withQueryParams(`${ArenaSearchApi}`, {
+    type: "Channel",
     q: search,
     page,
     per,
