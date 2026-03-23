@@ -1380,7 +1380,7 @@ export async function getUserChannels(
     page,
   };
   if (search) {
-    params.q = search;
+    params.query = search;
   }
   const baseUrl = withQueryParams(`${ArenaSearchApi}`, params);
   try {
@@ -1410,7 +1410,7 @@ export async function searchChannels(
 ): Promise<UserChannelResponse> {
   const baseUrl = withQueryParams(`${ArenaSearchApi}`, {
     type: "Channel",
-    q: search,
+    query: search,
     page,
     per,
   });
