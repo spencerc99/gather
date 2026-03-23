@@ -1217,7 +1217,7 @@ export async function getUserChannels(
     throw Error("failed to get user info from are.na");
   }
   const baseUrl = search
-    ? withQueryParams(`https://api.are.na/v3/search/user/${userInfo.id}`, {
+    ? withQueryParams(`https://api.are.na/v2/search/user/${userInfo.id}`, {
         "filter[type]": "channels",
         q: search,
         page,
@@ -1252,7 +1252,8 @@ export async function searchChannels(
     search,
   }: { page?: number; per?: number; search?: string } = {}
 ): Promise<UserChannelResponse> {
-  const baseUrl = withQueryParams(`https://api.are.na/v3/search/channels`, {
+  // Search endpoints are still v2 — v3 search is not yet available
+  const baseUrl = withQueryParams(`https://api.are.na/v2/search/channels`, {
     q: search,
     page,
     per,
