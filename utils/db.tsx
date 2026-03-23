@@ -141,7 +141,7 @@ function mapDbCollectionToCollection(collection: any): Collection {
       collectionMappedToCamelCase.remoteSourceType as RemoteSourceType,
     remoteSourceInfo: collectionMappedToCamelCase.remoteSourceInfo
       ? (JSON.parse(
-          collectionMappedToCamelCase.remoteSourceInfo
+          collectionMappedToCamelCase.remoteSourceInfo,
         ) as RemoteSourceInfo)
       : null,
     // TODO: add collaborators
@@ -179,7 +179,7 @@ interface DatabaseContextProps {
   getBlocks: (opts?: GetBlocksOptions) => Promise<Block[]>;
   // localBlocks: Block[] | null;
   createBlocks: (
-    blocks: BlocksInsertInfo
+    blocks: BlocksInsertInfo,
   ) => Promise<Array<{ blockId: string; created: boolean }>>;
   getBlock: (blockId: string) => Promise<Block>;
   updateBlock: (opts: {
@@ -200,17 +200,17 @@ interface DatabaseContextProps {
   }) => Promise<Collection | undefined>;
   getCollectionItems: (
     collectionId: string,
-    options?: GetBlocksOptions
+    options?: GetBlocksOptions,
   ) => Promise<CollectionBlock[]>;
   syncNewRemoteItems: (
-    collectionId: string
+    collectionId: string,
   ) => Promise<{ itemsAdded: number; collectionUpdated: boolean } | undefined>;
   syncAllRemoteItems: (
-    collectionId: string
+    collectionId: string,
   ) => Promise<{ itemsAdded: number; collectionUpdated: boolean } | undefined>;
   syncBlockToArena: (
     block: Block,
-    collectionInfos: ArenaCollectionInfo[]
+    collectionInfos: ArenaCollectionInfo[],
   ) => Promise<RawArenaBlock | undefined>;
   getCollection: (collectionId: string) => Promise<Collection>;
   deleteCollection: (id: string) => Promise<void>;
@@ -232,7 +232,7 @@ interface DatabaseContextProps {
   // arena
   tryImportArenaChannel: (
     arenaChannel: string | ArenaChannelInfo,
-    selectedCollection?: string
+    selectedCollection?: string,
   ) => Promise<ArenaImportInfo>;
 
   // cleanup utilities
@@ -263,7 +263,7 @@ interface DatabaseContextProps {
   selectedReviewCollection: string | null;
   setSelectedReviewCollection: (collectionId: string | null) => void;
   getExistingAssetIds: (
-    assetIds: (string | null | undefined)[]
+    assetIds: (string | null | undefined)[],
   ) => Promise<string[]>;
 }
 
@@ -355,7 +355,7 @@ function handleSqlErrors(
   results:
     | (SQLite.ResultSet | SQLite.ResultSetError)[]
     | SQLite.ResultSet
-    | SQLite.ResultSetError
+    | SQLite.ResultSetError,
 ): asserts results is typeof results extends any[]
   ? SQLite.ResultSet[]
   : SQLite.ResultSet {
@@ -370,7 +370,7 @@ function handleSqlErrors(
     throw new Error(
       `${errors.length} error(s): ${errors
         .map((e) => e.error.message)
-        .join("\n")}`
+        .join("\n")}`,
     );
   }
 }
@@ -420,7 +420,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
   const debouncedTriggerBlockSync = useDebounce(
     triggerBlockSync,
-    10 * 1000 // batch updates every 10 seconds
+    10 * 1000, // batch updates every 10 seconds
   );
 
   useEffect(() => {
@@ -464,7 +464,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               deletion_timestamp timestamp,
               created_by TEXT NOT NULL,
               arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'))
-          );`
+          );`,
           ),
           tx.executeSqlAsync(
             `CREATE TABLE IF NOT EXISTS collections (
@@ -478,7 +478,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               remote_source_type varchar(128),
               remote_source_info blob ,
               arena_id VARCHAR(24) AS (json_extract(remote_source_info, '$.arenaId'))
-          );`
+          );`,
           ),
         ]);
 
@@ -494,7 +494,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               PRIMARY KEY (block_id, collection_id),
               FOREIGN KEY (block_id) REFERENCES blocks(id),
               FOREIGN KEY (collection_id) REFERENCES collections(id)
-          );`
+          );`,
         );
 
         // await migrateAmpersandEscape(db);
@@ -530,7 +530,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   > => {
     // TODO: change to use insertBlocks
     const blockInfos = await Promise.all(
-      blocksToInsert.map(async (block) => createBlock(block))
+      blocksToInsert.map(async (block) => createBlock(block)),
     );
     const blockIds = blockInfos.map(({ blockId }) => blockId);
 
@@ -625,7 +625,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           block.localAssetId || null,
           block.captureTime || null,
           block.locationData ? JSON.stringify(block.locationData) : null,
-        ]
+        ],
       );
 
       handleSqlErrors(result);
@@ -637,7 +637,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         // means conflicted so find by arenaId
         const conflictResult = await tx.executeSqlAsync(
           `SELECT id FROM blocks WHERE arena_id = ?;`,
-          [block.remoteSourceInfo.arenaId.toString()]
+          [block.remoteSourceInfo.arenaId.toString()],
         );
         handleSqlErrors(conflictResult);
         insertId = conflictResult.rows[0]?.id;
@@ -658,7 +658,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               connection.collectionId,
               block.createdBy,
               connection.remoteCreatedAt || null,
-            ]
+            ],
           );
         }
       }
@@ -679,7 +679,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     const blocks = result.rows.map(mapDbBlockToBlock);
@@ -698,8 +698,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       await tx.executeSqlAsync(
         inParam(
           `UPDATE blocks SET deletion_timestamp = current_timestamp WHERE id IN (?#);`,
-          blockIds
-        )
+          blockIds,
+        ),
       );
 
       if (!ignoreRemote) {
@@ -722,13 +722,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
 
     const localBlocks = blocks.filter(
-      (block) => block.remoteSourceType === undefined
+      (block) => block.remoteSourceType === undefined,
     );
 
     await deleteBlocksInternal(localBlocks);
 
     const remoteBlocks = blocks.filter(
-      (block) => block.remoteSourceType !== undefined
+      (block) => block.remoteSourceType !== undefined,
     );
 
     const successfulDeletes = [];
@@ -755,7 +755,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             console.log(
               `removing block ${arenaBlockId} from channel ${
                 remoteSourceInfo!.arenaId
-              }`
+              }`,
             );
             try {
               await removeBlockFromChannel({
@@ -777,7 +777,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const blockIds = blocks.map((block) => block.id);
     await db.transactionAsync(async (tx) => {
       await tx.executeSqlAsync(
-        inParam(`DELETE FROM blocks WHERE id IN (?#);`, blockIds)
+        inParam(`DELETE FROM blocks WHERE id IN (?#);`, blockIds),
       );
 
       void Promise.all(
@@ -785,15 +785,17 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           .filter(
             (block) =>
               FileBlockTypes.includes(block.type) &&
-              block.content.startsWith(PHOTOS_FOLDER)
+              block.content.startsWith(PHOTOS_FOLDER),
           )
           .map(async (block) =>
-            FileSystem.deleteAsync(FileSystem.documentDirectory + block.content)
-          )
+            FileSystem.deleteAsync(
+              FileSystem.documentDirectory + block.content,
+            ),
+          ),
       );
 
       await tx.executeSqlAsync(
-        inParam(`DELETE FROM connections where block_id IN (?#);`, blockIds)
+        inParam(`DELETE FROM connections where block_id IN (?#);`, blockIds),
       );
     });
   };
@@ -808,12 +810,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       await tx.executeSqlAsync(
         `
         DELETE FROM collections WHERE id = ?;`,
-        [id]
+        [id],
       );
       await tx.executeSqlAsync(
         `
         DELETE FROM connections WHERE collection_id = ?;`,
-        [id]
+        [id],
       );
     });
   };
@@ -858,7 +860,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result.rows[0]?.count ?? 0;
@@ -879,7 +881,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
 
@@ -893,7 +895,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
 
   const offloadCollectionBlocks = async (
-    collectionId: string
+    collectionId: string,
   ): Promise<{ offloadedCount: number; failedCount: number }> => {
     const blocks = await getCollectionItems(collectionId, null);
     let offloadedCount = 0;
@@ -908,9 +910,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         continue;
       }
       if (!block.remoteSourceInfo?.arenaId) {
-        console.warn(
-          `Block ${block.id} has remote source type but no arenaId`
-        );
+        console.warn(`Block ${block.id} has remote source type but no arenaId`);
         continue;
       }
 
@@ -918,7 +918,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         // Fetch remote URL from Arena
         const arenaBlock = await getBlockArena(
           block.remoteSourceInfo.arenaId,
-          arenaAccessToken
+          arenaAccessToken,
         );
 
         // Extract the appropriate URL based on block type
@@ -943,17 +943,20 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               args: [remoteUrl, block.id],
             },
           ],
-          false
+          false,
         );
         handleSqlErrors(updateResult);
 
         // Delete the local file
         try {
           await FileSystem.deleteAsync(
-            FileSystem.documentDirectory + oldContent
+            FileSystem.documentDirectory + oldContent,
           );
         } catch (fileErr) {
-          console.warn(`Failed to delete local file for block ${block.id}:`, fileErr);
+          console.warn(
+            `Failed to delete local file for block ${block.id}:`,
+            fileErr,
+          );
         }
 
         offloadedCount++;
@@ -987,7 +990,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [sourceId],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(sourceConnections);
 
@@ -999,11 +1002,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [targetId],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(targetBlocks);
     const targetBlockIds = new Set(
-      targetBlocks.rows.map((row) => row.block_id)
+      targetBlocks.rows.map((row) => row.block_id),
     );
 
     let mergedCount = 0;
@@ -1029,7 +1032,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             conn.created_timestamp,
             conn.created_by,
             conn.remote_created_at,
-          ]
+          ],
         );
         handleSqlErrors(insertResult);
         mergedCount++;
@@ -1038,12 +1041,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       // Delete the source collection and its connections atomically
       await tx.executeSqlAsync(
         `DELETE FROM connections WHERE collection_id = ?;`,
-        [sourceId]
+        [sourceId],
       );
-      await tx.executeSqlAsync(
-        `DELETE FROM collections WHERE id = ?;`,
-        [sourceId]
-      );
+      await tx.executeSqlAsync(`DELETE FROM collections WHERE id = ?;`, [
+        sourceId,
+      ]);
     });
     // Invalidate queries
     queryClient.invalidateQueries({ queryKey: ["collections"] });
@@ -1083,7 +1085,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ],
         },
       ],
-      false
+      false,
     );
 
     handleSqlErrors(result);
@@ -1117,11 +1119,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     sortType: SortType,
     remoteConnectedAt: string,
     connectedAt: string,
-    { seed }: { seed?: number } = {}
+    { seed }: { seed?: number } = {},
   ) => {
     ensure(
       sortType !== SortType.Random || seed !== undefined,
-      "Random sort requires a seed"
+      "Random sort requires a seed",
     );
     switch (sortType) {
       case SortType.Created:
@@ -1148,7 +1150,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       sortType,
       "block_connections.remote_connected_at",
       "NULL",
-      { seed }
+      { seed },
     )}
     ${
       page === null
@@ -1169,7 +1171,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [],
         },
       ],
-      true
+      true,
     );
     try {
       handleSqlErrors(result);
@@ -1181,7 +1183,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   const SelectCollectionInfoSql = (
-    whereClause?: string
+    whereClause?: string,
   ) => `WITH block_connections AS (
               SELECT      id, 
                           content, 
@@ -1189,8 +1191,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                           connections.created_timestamp as created_timestamp from blocks 
               LEFT JOIN   connections ON connections.block_id = blocks.id AND blocks.content != ''
               WHERE       blocks.type IN ('${BlockType.Image}', '${
-    BlockType.Link
-  }') AND blocks.deletion_timestamp IS NULL
+                BlockType.Link
+              }') AND blocks.deletion_timestamp IS NULL
           ),
           annotated_collections AS (SELECT DISTINCT
               collections.id,
@@ -1227,11 +1229,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   const SelectCollectionsSortTypeToClause = (
     sortType: SortType,
-    { seed }: { seed?: number } = {}
+    { seed }: { seed?: number } = {},
   ) => {
     ensure(
       sortType !== SortType.Random || seed !== undefined,
-      "Random sort requires a seed"
+      "Random sort requires a seed",
     );
     switch (sortType) {
       case SortType.Created:
@@ -1257,7 +1259,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (search) {
       const escapedSearch = getEscapedSearchString(search);
       whereConditions.push(
-        `(collections.title LIKE ${escapedSearch} OR collections.description LIKE ${escapedSearch})`
+        `(collections.title LIKE ${escapedSearch} OR collections.description LIKE ${escapedSearch})`,
       );
     }
     const compositeWhereClause = whereConditions.join(" AND ");
@@ -1295,7 +1297,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             args: [],
           },
         ],
-        true
+        true,
       );
       handleSqlErrors(result);
 
@@ -1309,7 +1311,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   // TODO: genericize
   async function getArenaCollectionIds(
-    remoteSourceType?: RemoteSourceType
+    remoteSourceType?: RemoteSourceType,
   ): Promise<Set<string>> {
     const [result] = await db.execAsync(
       [
@@ -1327,11 +1329,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               args: [remoteSourceType],
             },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return new Set(
-      result.rows.map((collection) => collection["arena_id"].toString())
+      result.rows.map((collection) => collection["arena_id"].toString()),
     );
   }
 
@@ -1344,7 +1346,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [blockId.toString()],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
 
@@ -1364,7 +1366,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [collectionId],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
 
@@ -1475,7 +1477,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         try {
           arenaCollection = await getChannelInfo(
             arenaCollectionId,
-            arenaAccessToken
+            arenaAccessToken,
           );
         } catch (err) {
           logError(err);
@@ -1582,7 +1584,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ],
         },
       ],
-      false
+      false,
     );
 
     handleSqlErrors(result);
@@ -1591,7 +1593,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (!ignoreRemoteUpdate) {
       recordPendingBlockUpdate(
         blockId,
-        Object.keys(editInfo) as (keyof Block)[]
+        Object.keys(editInfo) as (keyof Block)[],
       );
       void handleBlockRemoteUpdate(newBlock);
     }
@@ -1618,7 +1620,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       page = 0,
       sortType = SortType.RemoteCreated,
       seed,
-    }: GetBlocksOptions = {}
+    }: GetBlocksOptions = {},
   ): Promise<CollectionBlock[]> {
     const [result] = await db.execAsync(
       [
@@ -1650,7 +1652,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               "connections.created_timestamp",
               {
                 seed,
-              }
+              },
             )}
             ${
               page === null
@@ -1660,7 +1662,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [collectionId],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
 
@@ -1706,7 +1708,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           ],
         },
       ],
-      false
+      false,
     );
 
     handleSqlErrors(result);
@@ -1714,7 +1716,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     if (!ignoreRemoteUpdate) {
       recordPendingCollectionUpdate(
         collectionId,
-        Object.keys(editInfo) as (keyof Collection)[]
+        Object.keys(editInfo) as (keyof Collection)[],
       );
       void handleCollectionRemoteUpdate(newCollection);
     }
@@ -1760,7 +1762,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     blockConnections: InsertBlockConnection[];
   }) {
     await upsertConnections(
-      blockConnections.map((c) => ({ ...c, collectionId }))
+      blockConnections.map((c) => ({ ...c, collectionId })),
     );
 
     const collectionAddedTo = await getCollection(collectionId);
@@ -1801,7 +1803,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result as SQLite.ResultSet;
@@ -1821,12 +1823,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             FROM        blocks
             WHERE       blocks.id IN (?#) AND
                         blocks.deletion_timestamp IS NULL;`,
-            Object.keys(blocksToUpdate)
+            Object.keys(blocksToUpdate),
           ),
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result.rows.map(mapDbBlockToBlock);
@@ -1845,12 +1847,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             `SELECT  collections.id, collections.title, collections.description, collections.remote_source_type, collections.remote_source_info, collections.updated_timestamp
             FROM        collections
             WHERE       collections.id IN (?#);`,
-            Object.keys(collectionsToUpdate)
+            Object.keys(collectionsToUpdate),
           ),
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result.rows.map(mapDbCollectionToCollection);
@@ -1868,7 +1870,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result.rows.map(mapDbBlockToBlock);
@@ -1885,7 +1887,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result as SQLite.ResultSet;
@@ -1984,9 +1986,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 collectionRemoteSourceInfos:
                   blockMappedToCamelCase.collectionRemoteSourceInfos
                     ? (JSON.parse(
-                        blockMappedToCamelCase.collectionRemoteSourceInfos
+                        blockMappedToCamelCase.collectionRemoteSourceInfos,
                       ).map(
-                        (info: string) => JSON.parse(info) as RemoteSourceInfo
+                        (info: string) => JSON.parse(info) as RemoteSourceInfo,
                       ) as RemoteSourceInfo[])
                     : null,
               } as BlockWithCollectionInfo;
@@ -1994,29 +1996,28 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             .filter((b) => !queuedBlocksToSync.current.has(b.id));
 
           connectionsToSync.forEach((c) =>
-            queuedBlocksToSync.current.add(c.id)
+            queuedBlocksToSync.current.add(c.id),
           );
 
           try {
             console.log(
-              `Syncing ${connectionsToSync.length} pending connections to arena`
+              `Syncing ${connectionsToSync.length} pending connections to arena`,
             );
 
             const succesfullySyncedConnections = [];
 
             for (const connToSync of connectionsToSync) {
               console.log("syncing", connToSync);
-              const { collectionRemoteSourceInfos, collectionIds } =
-                connToSync;
+              const { collectionRemoteSourceInfos, collectionIds } = connToSync;
               const arenaCollectionInfo = collectionRemoteSourceInfos.map(
                 (c, idx) => ({
                   channelId: c.arenaId,
                   collectionId: collectionIds[idx],
-                })
+                }),
               );
               const newRemoteItem = await syncBlockToArena(
                 connToSync,
-                arenaCollectionInfo
+                arenaCollectionInfo,
               );
               if (newRemoteItem) {
                 succesfullySyncedConnections.push(connToSync);
@@ -2025,16 +2026,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
             console.log(
               `Successfully synced ${succesfullySyncedConnections.map(
-                (c) => `${c.id}-${c.collectionIds}`
+                (c) => `${c.id}-${c.collectionIds}`,
               )} to arena. Failed to sync ${
                 connectionsToSync.length - succesfullySyncedConnections.length
-              }`
+              }`,
             );
           } catch (err) {
             logError(err);
           } finally {
             connectionsToSync.forEach((c) =>
-              queuedBlocksToSync.current.delete(c.id)
+              queuedBlocksToSync.current.delete(c.id),
             );
           }
         } finally {
@@ -2060,7 +2061,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             await getPendingArenaCollectionsToUpdate();
           console.log(
             "[Arena Sync] Collection Updates:",
-            collectionsToUpdate.length
+            collectionsToUpdate.length,
           );
           for (const collection of collectionsToUpdate) {
             try {
@@ -2095,7 +2096,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function syncBlockToArena(
     block: Block,
-    collectionInfos: ArenaCollectionInfo[]
+    collectionInfos: ArenaCollectionInfo[],
   ): Promise<RawArenaBlock | undefined> {
     if (!arenaAccessToken) {
       return;
@@ -2145,7 +2146,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             collectionInfo.collectionId,
             getCreatedByForRemote(
               RemoteSourceType.Arena,
-              connections[collectionInfo.channelId].user.slug
+              connections[collectionInfo.channelId].user.slug,
             ),
             connections[collectionInfo.channelId].connected_at,
           ],
@@ -2175,7 +2176,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   async function getLastRemoteItemForCollection(
-    collectionId: string
+    collectionId: string,
   ): Promise<(Block & { remoteConnectedAt: string }) | null> {
     const [result] = await db.execAsync(
       [
@@ -2194,7 +2195,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [collectionId],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
 
@@ -2215,7 +2216,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function syncNewRemoteItemsForCollection(
     collection: Collection,
-    { ignoreLastSynced }: { ignoreLastSynced?: boolean } = {}
+    { ignoreLastSynced }: { ignoreLastSynced?: boolean } = {},
   ) {
     if (!collection.remoteSourceType || !collection.remoteSourceInfo) {
       return;
@@ -2236,9 +2237,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           if (!ignoreLastSynced) {
             lastSyncedInfo = await getLastSyncedInfoForChannel(channelId);
             if (!lastSyncedInfo) {
-              const lastRemoteItem = await getLastRemoteItemForCollection(
-                collectionId
-              );
+              const lastRemoteItem =
+                await getLastRemoteItemForCollection(collectionId);
               if (lastRemoteItem?.remoteSourceInfo) {
                 lastSyncedInfo = {
                   lastSyncedBlockCreatedAt: lastRemoteItem.remoteConnectedAt,
@@ -2260,7 +2260,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               collection.updatedAt.getTime()
             ) {
               console.log(
-                `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`
+                `Found different remote title, updating collection ${collectionId} title to ${channelInfo.title}`,
               );
               await updateCollection({
                 collectionId,
@@ -2293,32 +2293,33 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   {
                     sql: inParam(
                       `SELECT arena_id FROM blocks WHERE arena_id IN (?#) AND deletion_timestamp IS NULL`,
-                      arenaIds
+                      arenaIds,
                     ),
                     args: [],
                   },
                 ],
-                true
+                true,
               );
               handleSqlErrors(existingResult);
               existingResult.rows.forEach((row: any) =>
-                existingArenaIds.add(row.arena_id)
+                existingArenaIds.add(row.arena_id),
               );
             }
           }
 
           const filteredContents = lastContents.filter((block) => {
-            const isGatherUploaded =
-              block.description?.startsWith(GatherArenaAttribution);
+            const isGatherUploaded = block.description?.startsWith(
+              GatherArenaAttribution,
+            );
             const alreadyLinkedLocally = existingArenaIds.has(
-              block.id?.toString()
+              block.id?.toString(),
             );
             if (isGatherUploaded && !alreadyLinkedLocally) {
               logError(
                 `[Arena Sync Guard] Skipping re-pull of Gather-uploaded block ` +
                   `arena_id=${block.id} title="${block.title}" ` +
                   `channel=${channelId} collection=${collectionId} ` +
-                  `connected_at=${block.connected_at}`
+                  `connected_at=${block.connected_at}`,
               );
               return false;
             }
@@ -2331,12 +2332,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               (lastContents.length !== filteredContents.length
                 ? ` (${lastContents.length - filteredContents.length} skipped as Gather-uploaded duplicates)`
                 : "") +
-              ` to add to ${collection.title}`
+              ` to add to ${collection.title}`,
           );
           if (filteredContents.length > 0) {
             console.log(
               "lastconnectedat",
-              filteredContents[filteredContents.length - 1].connected_at
+              filteredContents[filteredContents.length - 1].connected_at,
             );
             const blockInfos = await createBlocks({
               blocksToInsert: rawArenaBlocksToBlockInsertInfo(filteredContents),
@@ -2358,7 +2359,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           break;
         default:
           throw new Error(
-            `Remote source type ${collection.remoteSourceType} not supported`
+            `Remote source type ${collection.remoteSourceType} not supported`,
           );
       }
       return {
@@ -2391,7 +2392,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         blockId,
         createdBy: createdBy || currentUser!.id,
         remoteCreatedAt,
-      }))
+      })),
     );
     InteractionManager.runAfterInteractions(async () => {
       await debouncedTriggerBlockSync();
@@ -2406,9 +2407,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               VALUES (?, ?, ?, ?)
               ON CONFLICT(block_id, collection_id) DO UPDATE SET remote_created_at = excluded.remote_created_at;`,
           args: [blockId, collectionId, createdBy, remoteCreatedAt || null],
-        })
+        }),
       ),
-      false
+      false,
     );
     handleSqlErrors(result);
   }
@@ -2450,7 +2451,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       queryClient.setQueryData<Block[]>(
         ["blocks", { type: "uncategorized" }],
         (old) =>
-          old?.filter((b) => !connections.map((c) => c.blockId).includes(b.id))
+          old?.filter((b) => !connections.map((c) => c.blockId).includes(b.id)),
       );
 
       // Return a context object with the snapshotted value
@@ -2459,7 +2460,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     onError: (_err, _data, context) => {
       queryClient.setQueryData(
         ["blocks", { type: "uncategorized" }],
-        context?.previousUncategorizedBlocks
+        context?.previousUncategorizedBlocks,
       );
     },
   });
@@ -2471,12 +2472,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         {
           sql: inParam(
             `SELECT collection_id FROM connections WHERE block_id = ? AND collection_id NOT IN (?#);`,
-            collectionIds
+            collectionIds,
           ),
           args: [blockId],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(selectResult);
 
@@ -2485,7 +2486,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       page: null,
       whereClause: inParam(
         `collections.id IN (?#) AND collections.remote_source_type IS NOT NULL AND collections.remote_source_info IS NOT NULL`,
-        removedCollectionIds
+        removedCollectionIds,
       ),
     });
 
@@ -2495,12 +2496,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           {
             sql: inParam(
               `DELETE FROM connections WHERE block_id = ? AND collection_id NOT IN (?#);`,
-              collectionIds
+              collectionIds,
             ),
             args: [blockId],
           },
         ],
-        false
+        false,
       );
       handleSqlErrors(result);
       await addConnections({
@@ -2526,7 +2527,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function getConnectionsForBlock(
     blockId: string,
-    { filterRemoteOnly }: { filterRemoteOnly?: boolean } = {}
+    { filterRemoteOnly }: { filterRemoteOnly?: boolean } = {},
   ): Promise<Connection[]> {
     const [result] = await db.execAsync(
       [
@@ -2545,7 +2546,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           args: [blockId],
         },
       ],
-      true
+      true,
     );
 
     handleSqlErrors(result);
@@ -2567,13 +2568,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   async function tryImportArenaChannel(
     arenaChannel: string | ArenaChannelInfo,
-    selectedCollection?: string
+    selectedCollection?: string,
   ): Promise<ArenaImportInfo> {
     console.log(`importing ${JSON.stringify(arenaChannel)}`);
-    const { title, id, contents, user, created_at } =
-      typeof arenaChannel === "string"
-        ? await getChannelInfoFromUrl(arenaChannel, arenaAccessToken)
-        : arenaChannel;
+    const {
+      title,
+      id,
+      contents,
+      owner: user,
+      created_at,
+    } = typeof arenaChannel === "string"
+      ? await getChannelInfoFromUrl(arenaChannel, arenaAccessToken)
+      : arenaChannel;
     let collectionId = selectedCollection;
     const channelId = id.toString();
     if (!collectionId) {
@@ -2602,7 +2608,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }
 
   async function getExistingAssetIds(
-    assetIds: (string | null | undefined)[]
+    assetIds: (string | null | undefined)[],
   ): Promise<string[]> {
     try {
       const validAssetIds = assetIds.filter((id): id is string => !!id);
@@ -2618,12 +2624,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
              FROM blocks 
              WHERE local_asset_id IN (?#) 
              AND deletion_timestamp IS NULL;`,
-              validAssetIds
+              validAssetIds,
             ),
             args: [],
           },
         ],
-        true
+        true,
       );
 
       handleSqlErrors(result);
@@ -2650,7 +2656,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             args: [GatherArenaAttribution],
           },
         ],
-        true
+        true,
       );
       handleSqlErrors(result);
       return result.rows[0]?.count ?? 0;
@@ -2696,7 +2702,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             args: [GatherArenaAttribution],
           },
         ],
-        true
+        true,
       );
       handleSqlErrors(result);
 
@@ -2704,7 +2710,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         id: row.id.toString(),
         arenaId: row.arena_id as string | null,
         channelId: row.collection_remote_source_info
-          ? JSON.parse(row.collection_remote_source_info)?.arenaId ?? null
+          ? (JSON.parse(row.collection_remote_source_info)?.arenaId ?? null)
           : null,
       }));
 
@@ -2742,7 +2748,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 args: [block.id],
               },
             ],
-            false
+            false,
           );
           handleSqlErrors(deleteResults);
           deletedLocal++;
@@ -2760,7 +2766,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }
 
       console.log(
-        `[Dedup] Complete. Deleted ${deletedLocal} local, ${deletedRemote} remote. ${errors.length} errors.`
+        `[Dedup] Complete. Deleted ${deletedLocal} local, ${deletedRemote} remote. ${errors.length} errors.`,
       );
     } catch (err) {
       const msg = `Dedup failed: ${err}`;
@@ -2768,7 +2774,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       logError(msg);
     }
 
-    return { found: deletedLocal + deletedRemote, deletedLocal, deletedRemote, errors };
+    return {
+      found: deletedLocal + deletedRemote,
+      deletedLocal,
+      deletedRemote,
+      errors,
+    };
   }
 
   return (
@@ -2852,7 +2863,7 @@ export function useTotalBlockCount() {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result.rows[0].count;
@@ -2874,7 +2885,7 @@ export function useTotalCollectionCount() {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result.rows[0].count;
@@ -2896,7 +2907,7 @@ export function useTotalConnectionCount() {
           args: [],
         },
       ],
-      true
+      true,
     );
     handleSqlErrors(result);
     return result.rows[0].count;
@@ -2936,7 +2947,7 @@ export function useUncategorizedBlocks() {
             args: [],
           },
         ],
-        true
+        true,
       );
 
       handleSqlErrors(events);
@@ -2996,7 +3007,7 @@ export function useCollections({
 
   const collections = useMemo(
     () => data?.pages.flatMap((p) => p.collections),
-    [data]
+    [data],
   );
 
   useEffect(() => {
