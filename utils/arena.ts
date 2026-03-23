@@ -271,11 +271,17 @@ export function nextUrlFromArenaContentsResponse(
   response: any,
   perPage: number = 20,
 ): string | undefined {
-  const { contents } = response;
-  if (contents.length === perPage) {
+  // v3 uses meta.has_more_pages
+  if (response.meta?.has_more_pages) {
+    const currPage = response.meta.current_page || Number(params.page) || 1;
+    return apiUrl(baseUrl, path, { ...params, page: currPage + 1 });
+  }
+  // v2 fallback: check if contents array is full page
+  const items = getContentsFromResponse(response);
+  if (items.length === perPage) {
     return apiUrl(baseUrl, path, {
       ...params,
-      page: Number(params.page) || 1 + 1,
+      page: (Number(params.page) || 1) + 1,
     });
   }
 }
@@ -286,6 +292,122 @@ const ArenaChannelsApi = "https://api.are.na/v3/channels";
 const ArenaSearchApi = "https://api.are.na/v3/search";
 export const ArenaChannelRegex =
   /(?:https:\/\/)?(?:www\.)?are\.na\/[\w-]+\/([\w-]+)/;
+
+/**
+ * Extract a plain string from a v3 description/content field that may be
+ * either a string (v2) or an object `{ plain, html, markdown }` (v3).
+ */
+function normalizeArenaText(val: any): string {
+  if (val == null) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "object") return val.plain ?? val.markdown ?? "";
+  return String(val);
+}
+
+/**
+ * Normalize a v3 REST block/item into the RawArenaChannelItem shape
+ * expected by the rest of the codebase (v2 field names).
+ *
+ * Key v3 differences handled:
+ *  - `type` / `base_type` instead of `class` / `base_class`
+ *  - `description` and `content` can be objects `{plain, html, markdown}`
+ *  - `image.small.src` instead of `image.thumb.url`
+ *  - `image.medium.src` instead of `image.display.url`
+ *  - `image.src` instead of `image.original.url`
+ *  - `connection.connected_at` / `connection.connected_by` instead of
+ *    top-level `connected_at` / `connected_by_user_*`
+ *  - `user` shape has `avatar` instead of `avatar_image`
+ */
+function normalizeV3Block(raw: any): RawArenaChannelItem {
+  // If it already has `class`, it's already v2 (e.g. from GraphQL mapper)
+  if (raw.class && raw.base_class) return raw as RawArenaChannelItem;
+
+  const arenaClass: ArenaClass =
+    raw.class ?? raw.type ?? raw.__typename ?? "Block";
+  const baseClass = raw.base_class ?? raw.base_type ?? "Block";
+
+  // Normalize image field from v3 shape to v2 shape
+  let image = raw.image;
+  if (image && !image.display) {
+    image = {
+      ...image,
+      content_type: image.content_type ?? "image/jpeg",
+      display: { url: image.medium?.src ?? image.src ?? image.large?.src ?? "" },
+      square: { url: image.square?.src ?? image.small?.src ?? "" },
+      thumb: { url: image.small?.src ?? image.square?.src ?? "" },
+      original: { url: image.src ?? image.large?.src ?? "" },
+    };
+  }
+
+  // Normalize connection info
+  const connection = raw.connection;
+  const connectedAt =
+    raw.connected_at ?? connection?.connected_at ?? "";
+  const connectedByUserId =
+    raw.connected_by_user_id ??
+    connection?.connected_by?.id?.toString() ??
+    "";
+  const connectedByUserSlug =
+    raw.connected_by_user_slug ??
+    connection?.connected_by?.slug ??
+    "";
+
+  // Normalize user avatar
+  const user = raw.user ? {
+    ...raw.user,
+    avatar_image: raw.user.avatar_image ?? {
+      thumb: raw.user.avatar ?? "",
+      display: raw.user.avatar ?? "",
+    },
+  } : raw.user;
+
+  return {
+    ...raw,
+    id: raw.id?.toString?.() ?? raw.id,
+    class: arenaClass,
+    base_class: baseClass,
+    description: normalizeArenaText(raw.description),
+    content: arenaClass === "Text"
+      ? normalizeArenaText(raw.content)
+      : raw.content,
+    image: image ?? null,
+    connected_at: connectedAt,
+    connected_by_user_id: connectedByUserId,
+    connected_by_user_slug: connectedByUserSlug,
+    user,
+  } as RawArenaChannelItem;
+}
+
+/**
+ * Normalize a v3 channel response to ArenaChannelInfo shape.
+ * Handles single-channel endpoints like /v3/channels/{slug}.
+ */
+function normalizeV3Channel(raw: any): ArenaChannelInfo {
+  const description = normalizeArenaText(raw.description);
+  return {
+    ...raw,
+    status: raw.status ?? raw.visibility ?? "closed",
+    length: raw.length ?? raw.counts?.blocks ?? 0,
+    metadata: { description, ...(raw.metadata ?? {}) },
+    owner: raw.owner ? {
+      ...raw.owner,
+      avatar_image: raw.owner.avatar_image ?? {
+        thumb: raw.owner.avatar ?? "",
+        display: raw.owner.avatar ?? "",
+      },
+    } : raw.owner,
+    added_to_at: raw.added_to_at ?? raw.updated_at,
+    contents: raw.contents ?? [],
+  } as ArenaChannelInfo;
+}
+
+/**
+ * Extract the contents/data array from a v3 response that may use
+ * either `contents` (v2) or `data` (v3).
+ */
+function getContentsFromResponse(respBody: any): any[] {
+  return respBody.contents ?? respBody.data ?? [];
+}
 
 function maybeParseChannelIdentifierFromUrl(maybeChannelUrl: string): string {
   if (ArenaChannelRegex.test(maybeChannelUrl)) {
@@ -327,7 +449,8 @@ export async function getChannelThumb(
     throw new Error(`${resp.status}: failed to fetch channel thumb`);
   }
   const respBody = await resp.json();
-  return respBody.contents ?? [];
+  const items = getContentsFromResponse(respBody);
+  return items.map(normalizeV3Block);
 }
 
 function mapListChannelItemsResponseToItems(
@@ -498,8 +621,8 @@ export async function getChannelInfo(
         `${resp.status}: failed to fetch channel info ${resp.statusText}`,
       );
     }
-    const { contents, ...rest } = respBody;
-    channelInfo = rest as ArenaChannelInfo;
+    const { contents, data, ...rest } = respBody;
+    channelInfo = normalizeV3Channel(rest);
   } catch (e) {
     logError(e);
     throw e;
@@ -511,41 +634,58 @@ export async function getChannelInfoFromUrl(
   url: string,
   accessToken?: string | null,
 ): Promise<ArenaChannelInfo> {
-  const transformedUrl = transformChannelUrlToApiUrl(url);
-  console.log("getting arena info from url", transformedUrl);
-  let fetchedItems: RawArenaChannelItem[] = [];
-  const baseUrl = transformedUrl;
-  let channelInfo = {};
-  let isFirstFetch = true;
+  const channelBaseUrl = transformChannelUrlToApiUrl(url);
+  console.log("getting arena info from url", channelBaseUrl);
+  const authHeaders = accessToken
+    ? { Authorization: `Bearer ${accessToken}` }
+    : {};
+
+  // 1. Fetch channel metadata
+  let channelInfo: any;
   try {
-    let nextUrl: string | undefined = baseUrl;
+    const resp = await fetch(channelBaseUrl, { headers: authHeaders });
+    const respBody = await resp.json();
+    if (!resp.ok) {
+      throw new Error(`${resp.status}: failed to fetch channel info`);
+    }
+    // v3 single-channel response has no `contents`; v2 may include them.
+    const inlineContents = getContentsFromResponse(respBody);
+    channelInfo = normalizeV3Channel(respBody);
+
+    // If the response included contents inline (v2 style), use them directly
+    if (inlineContents.length > 0) {
+      channelInfo.contents = inlineContents.map(normalizeV3Block);
+    }
+  } catch (e) {
+    logError(e);
+    throw e;
+  }
+
+  // 2. Fetch contents from /contents endpoint (paginated)
+  let fetchedItems: RawArenaChannelItem[] = [];
+  try {
+    const contentsBaseUrl = `${channelBaseUrl}/contents`;
+    let nextUrl: string | undefined = contentsBaseUrl;
     while (nextUrl) {
-      const resp = await fetch(nextUrl, {
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-      });
+      const resp = await fetch(nextUrl, { headers: authHeaders });
       const respBody = await resp.json();
-      if (isFirstFetch) {
-        const { contents, ...rest } = respBody;
-        channelInfo = rest as ArenaChannelInfo;
-        isFirstFetch = false;
+      if (!resp.ok) {
+        throw new Error(`${resp.status}: failed to fetch channel contents`);
       }
-      let contents: RawArenaChannelItem[] = respBody.contents;
-      contents = contents.filter(
+      let items: RawArenaChannelItem[] = getContentsFromResponse(respBody)
+        .map(normalizeV3Block);
+      items = items.filter(
         // NOTE: class = block only if are.na has failed to process it
         (c) => c.base_class === "Block" && c.class !== "Block",
       );
-      // TODO: this should all migrate to the new block fetch...
-      contents = contents.map((c) => ({
+      items = items.map((c) => ({
         ...c,
         title: escapeArenaStrings(c.title),
         description: escapeArenaStrings(c.description),
         content: c.class === "Text" ? escapeArenaStrings(c.content) : c.content,
       }));
-      // Update storage with any new items
-      fetchedItems.push(...contents);
-      nextUrl = nextUrlFromResponse(baseUrl, "", {}, respBody);
+      fetchedItems.push(...items);
+      nextUrl = nextUrlFromResponse(contentsBaseUrl, "", {}, respBody);
     }
   } catch (e) {
     logError(e);
@@ -558,7 +698,8 @@ export function arenaClassToBlockType(
   arenaItem: RawArenaChannelItem,
 ): BlockType {
   const { class: classVal, embed, attachment, image } = arenaItem;
-  switch (classVal) {
+  const typeVal = classVal ?? (arenaItem as any).type;
+  switch (typeVal) {
     case "Image":
       return BlockType.Image;
     // TODO: figure this out
@@ -600,7 +741,7 @@ export function arenaClassToBlockType(
       return embed?.url ? BlockType.Link : BlockType.Image;
     default:
       throw new Error(
-        `Unhandled arena class: ${classVal}, ${JSON.stringify(arenaItem)}`,
+        `Unhandled arena class: ${typeVal}, ${JSON.stringify(arenaItem)}`,
       );
   }
 }
@@ -610,19 +751,20 @@ export function arenaClassToMimeType({
   embed,
   attachment,
   image,
+  ...rest
 }: RawArenaChannelItem): MimeType | undefined {
-  switch (classVal) {
+  const typeVal = classVal ?? (rest as any).type;
+  switch (typeVal) {
     case "Image":
-      return image!.content_type as MimeType;
+      return (image?.content_type as MimeType) ?? undefined;
     case "Attachment":
-      return attachment!.content_type as MimeType;
+      return (attachment?.content_type as MimeType) ?? undefined;
     case "Text":
     case "Link":
       return undefined;
-    // TODO: actually handle this and use embed, need to figure out what embed url to use since URL is empty, for now it just
-    // shows an image.
     case "Media":
-      return embed?.url ? undefined : (image!.content_type as MimeType);
+    case "Embed":
+      return embed?.url ? undefined : ((image?.content_type as MimeType) ?? undefined);
   }
 }
 
@@ -1183,38 +1325,6 @@ interface UserChannelResponse {
   nextPage?: number;
 }
 
-/**
- * Map a v3 search result channel to the ArenaChannelInfo shape used internally.
- * v3 fields differ: `visibility` instead of `status`, `counts.blocks` instead of
- * `length`, `owner.avatar` instead of `owner.avatar_image.thumb`, and `description`
- * can be an object `{plain, html, markdown}` instead of a string.
- */
-function mapV3ChannelToChannelInfo(raw: any): ArenaChannelInfo {
-  const description =
-    typeof raw.description === "object" && raw.description !== null
-      ? raw.description.plain
-      : raw.description;
-  return {
-    ...raw,
-    // v3 uses `visibility` where v2 used `status`
-    status: raw.visibility ?? raw.status,
-    // v3 uses `counts.blocks` where v2 used `length`
-    length: raw.counts?.blocks ?? raw.length ?? 0,
-    // normalize metadata.description for rawArenaChannelToCollection
-    metadata: { description, ...(raw.metadata ?? {}) },
-    // v3 owner shape: { id, name, slug, avatar, initials }
-    // v2 owner shape: { slug, avatar_image: { thumb } }
-    owner: {
-      ...(raw.owner ?? {}),
-      avatar_image: raw.owner?.avatar_image ?? {
-        thumb: raw.owner?.avatar ?? null,
-      },
-    },
-    // v3 search doesn't include added_to_at; fall back to updated_at
-    added_to_at: raw.added_to_at ?? raw.updated_at,
-  };
-}
-
 function parseChannelListResponse(
   respBody: any,
   currentPage: number,
@@ -1222,7 +1332,7 @@ function parseChannelListResponse(
   const rawItems = respBody.data || respBody.channels || [];
   const channels = rawItems
     .filter((item: any) => item != null && item.id != null)
-    .map(mapV3ChannelToChannelInfo);
+    .map(normalizeV3Channel);
   // v3 uses meta.has_more_pages, v2 uses current_page/total_pages
   const hasMorePages =
     respBody.meta?.has_more_pages ??
@@ -1327,11 +1437,12 @@ export async function createChannel({
       "Content-Type": "application/json",
     },
   });
-  const maybeChannel: ArenaChannelInfo = await resp.json();
+  const rawChannel = await resp.json();
   if (!resp.ok) {
-    logError(`failed to create channel ${resp.status}: ${maybeChannel}`);
-    throw new Error(JSON.stringify(maybeChannel));
+    logError(`failed to create channel ${resp.status}: ${rawChannel}`);
+    throw new Error(JSON.stringify(rawChannel));
   }
+  const maybeChannel = normalizeV3Channel(rawChannel);
   await updateArenaChannel({
     channelId: maybeChannel.id.toString(),
     arenaToken: accessToken,
@@ -1403,7 +1514,8 @@ export function rawArenaBlocksToBlockInsertInfo(
   // sync cycle once Arena finishes processing them.
   return arenaBlocks
     .filter((block) => {
-      if (block.class === "PendingBlock") {
+      const blockClass = block.class ?? (block as any).type;
+      if (blockClass === "PendingBlock") {
         console.log(
           `[Arena Sync] Skipping PendingBlock arena_id=${block.id} title="${block.title}"`,
         );
@@ -1417,29 +1529,20 @@ export function rawArenaBlocksToBlockInsertInfo(
 export function rawArenaBlockToBlockInsertInfo(
   block: RawArenaChannelItem,
 ): DatabaseBlockInsert {
-  if (
-    !(
-      block.attachment?.url ||
-      // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
-      // it only provides the html iframe code..
-      block.embed?.url ||
-      block.image?.display.url ||
-      block.content
-    )
-  ) {
+  const imageUrl = block.image?.display?.url ?? block.image?.original?.url;
+  const contentValue =
+    block.attachment?.url ||
+    block.embed?.url ||
+    imageUrl ||
+    block.content;
+  if (!contentValue) {
     console.error("MISSING CONTENT FOR ", block);
     logError(`MISSING CONTENT FOR ${block}`);
   }
   return {
     title: block.title,
-    description: block.description,
-    content:
-      block.attachment?.url ||
-      // TODO: this is not defined... see arena.ts for example. at least for tiktok videos,
-      // it only provides the html iframe code..
-      block.embed?.url ||
-      block.image?.display.url ||
-      block.content,
+    description: normalizeArenaText(block.description),
+    content: contentValue,
     type: arenaClassToBlockType(block),
     contentType: arenaClassToMimeType(block),
     source: block.source?.url,
@@ -1473,8 +1576,9 @@ export function rawArenaChannelToCollection(
   return {
     ...mapSnakeCaseToCamelCaseProperties(channel),
     description: channel.metadata?.description || undefined,
-    thumbnail: channel.contents?.find((c) => Boolean(c.image?.thumb.url))?.image
-      ?.thumb.url,
+    thumbnail: channel.contents?.find((c) =>
+      Boolean(c.image?.thumb?.url),
+    )?.image?.thumb?.url,
     remoteSourceType: RemoteSourceType.Arena,
     numBlocks: channel.length,
     createdAt: new Date(channel.created_at),
