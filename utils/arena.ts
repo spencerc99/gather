@@ -1184,15 +1184,45 @@ interface UserChannelResponse {
 }
 
 /**
- * Parse channel list response handling both v2 and v3 API formats.
- * v2: { channels: [...], current_page, total_pages }
- * v3: { data: [...], meta: { has_more_pages, current_page } }
+ * Map a v3 search result channel to the ArenaChannelInfo shape used internally.
+ * v3 fields differ: `visibility` instead of `status`, `counts.blocks` instead of
+ * `length`, `owner.avatar` instead of `owner.avatar_image.thumb`, and `description`
+ * can be an object `{plain, html, markdown}` instead of a string.
  */
+function mapV3ChannelToChannelInfo(raw: any): ArenaChannelInfo {
+  const description =
+    typeof raw.description === "object" && raw.description !== null
+      ? raw.description.plain
+      : raw.description;
+  return {
+    ...raw,
+    // v3 uses `visibility` where v2 used `status`
+    status: raw.visibility ?? raw.status,
+    // v3 uses `counts.blocks` where v2 used `length`
+    length: raw.counts?.blocks ?? raw.length ?? 0,
+    // normalize metadata.description for rawArenaChannelToCollection
+    metadata: { description, ...(raw.metadata ?? {}) },
+    // v3 owner shape: { id, name, slug, avatar, initials }
+    // v2 owner shape: { slug, avatar_image: { thumb } }
+    owner: {
+      ...(raw.owner ?? {}),
+      avatar_image: raw.owner?.avatar_image ?? {
+        thumb: raw.owner?.avatar ?? null,
+      },
+    },
+    // v3 search doesn't include added_to_at; fall back to updated_at
+    added_to_at: raw.added_to_at ?? raw.updated_at,
+  };
+}
+
 function parseChannelListResponse(
   respBody: any,
   currentPage: number,
 ): UserChannelResponse {
-  const channels = respBody.data || [];
+  const rawItems = respBody.data || respBody.channels || [];
+  const channels = rawItems
+    .filter((item: any) => item != null && item.id != null)
+    .map(mapV3ChannelToChannelInfo);
   // v3 uses meta.has_more_pages, v2 uses current_page/total_pages
   const hasMorePages =
     respBody.meta?.has_more_pages ??
@@ -1233,9 +1263,7 @@ export async function getUserChannels(
       const text = await resp.text().catch(() => "");
       throw new Error(`${resp.status}: failed to fetch user channels: ${text}`);
     }
-    console.log("resp", resp);
     const respBody = await resp.json();
-    console.log("respBody", respBody);
     return parseChannelListResponse(respBody, page);
   } catch (e) {
     logError(e);
