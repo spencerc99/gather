@@ -250,10 +250,16 @@ export function nextUrlFromResponse(
   params: Record<string, any>,
   response: any
 ): string | undefined {
-  // TODO: this is not standardized across are.na responses..
+  // Handle v3 meta.has_more_pages pagination
+  if (response.meta?.has_more_pages) {
+    const currPage =
+      response.meta.current_page || response.page || response.current_page || 1;
+    return apiUrl(baseUrl, path, { ...params, page: currPage + 1 });
+  }
+  // Fallback to v2 pagination
   const { page, length, per, current_page } = response;
   let currPage = page || current_page;
-  if (currPage * per < length) {
+  if (currPage && per && length && currPage * per < length) {
     return apiUrl(baseUrl, path, { ...params, page: currPage + 1 });
   }
 }
@@ -316,8 +322,11 @@ export async function getChannelThumb(
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   });
+  if (!resp.ok) {
+    throw new Error(`${resp.status}: failed to fetch channel thumb`);
+  }
   const respBody = await resp.json();
-  return respBody.contents;
+  return respBody.contents ?? [];
 }
 
 function mapListChannelItemsResponseToItems(
@@ -1144,32 +1153,55 @@ export async function removeBlockFromChannel({
 export async function getMyArenaUserInfo(
   accessToken: string
 ): Promise<RawArenaUser> {
-  return await fetch(`${ArenaApiUrl}/me`, {
+  const resp = await fetch(`${ArenaApiUrl}/me`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-  })
-    .then((r) => r.json())
-    .catch((err) => {
-      logError(err);
-      throw err;
-    });
+  });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => "");
+    logError(`getMyArenaUserInfo failed: ${resp.status} ${text}`);
+    throw new Error(`${resp.status}: failed to get user info from are.na`);
+  }
+  return resp.json();
 }
 
 export async function getArenaUserInfo(
   slug: string
 ): Promise<RawArenaUser | null> {
-  return await fetch(`${ArenaApiUrl}/users/${slug}`, {})
-    .then((r) => r.json())
-    .catch((err) => {
-      logError(err);
-      throw err;
-    });
+  const resp = await fetch(`${ArenaApiUrl}/users/${slug}`, {});
+  if (!resp.ok) {
+    logError(`getArenaUserInfo failed: ${resp.status}`);
+    return null;
+  }
+  return resp.json();
 }
 
 interface UserChannelResponse {
   channels: ArenaChannelInfo[];
   nextPage?: number;
+}
+
+/**
+ * Parse channel list response handling both v2 and v3 API formats.
+ * v2: { channels: [...], current_page, total_pages }
+ * v3: { channels: [...], meta: { has_more_pages, current_page } }
+ */
+function parseChannelListResponse(
+  respBody: any,
+  currentPage: number
+): UserChannelResponse {
+  const channels = respBody.channels || [];
+  // v3 uses meta.has_more_pages, v2 uses current_page/total_pages
+  const hasMorePages =
+    respBody.meta?.has_more_pages ??
+    (respBody.current_page != null &&
+      respBody.total_pages != null &&
+      respBody.current_page < respBody.total_pages);
+  return {
+    channels,
+    nextPage: hasMorePages ? currentPage + 1 : undefined,
+  };
 }
 
 export async function getUserChannels(
@@ -1201,14 +1233,12 @@ export async function getUserChannels(
         Authorization: `Bearer ${accessToken}`,
       },
     });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new Error(`${resp.status}: failed to fetch user channels: ${text}`);
+    }
     const respBody = await resp.json();
-    return {
-      channels: respBody.channels,
-      nextPage:
-        respBody.current_page < respBody.total_pages
-          ? respBody.current_page + 1
-          : undefined,
-    };
+    return parseChannelListResponse(respBody, page);
   } catch (e) {
     logError(e);
     throw e;
@@ -1233,14 +1263,12 @@ export async function searchChannels(
         Authorization: `Bearer ${accessToken}`,
       },
     });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new Error(`${resp.status}: failed to search channels: ${text}`);
+    }
     const respBody = await resp.json();
-    return {
-      channels: respBody.channels,
-      nextPage:
-        respBody.current_page < respBody.total_pages
-          ? respBody.current_page + 1
-          : undefined,
-    };
+    return parseChannelListResponse(respBody, page);
   } catch (e) {
     logError(e);
     throw e;
