@@ -439,7 +439,8 @@ export async function getChannelThumb(
   { accessToken }: { accessToken?: string | null } = {},
 ): Promise<RawArenaChannelItem[]> {
   const channelId = maybeParseChannelIdentifierFromUrl(channelIdOrUrl);
-  const url = `${ArenaChannelsApi}/${channelId}/thumb`;
+  // v3 has no /thumb endpoint; fetch first page of contents instead
+  const url = `${ArenaChannelsApi}/${channelId}/contents?per=20`;
   const resp = await fetch(url, {
     headers: {
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -607,7 +608,8 @@ export async function getChannelInfo(
   channelId: string,
   accessToken?: string | null,
 ): Promise<Omit<ArenaChannelInfo, "contents">> {
-  const baseUrl = `${ArenaChannelsApi}/${channelId}/thumb`;
+  // v3 has no /thumb endpoint; use the base channel endpoint
+  const baseUrl = `${ArenaChannelsApi}/${channelId}`;
   let channelInfo = {};
   try {
     const resp = await fetch(baseUrl, {
