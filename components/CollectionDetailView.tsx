@@ -272,6 +272,7 @@ export function CollectionDetailView({
           remoteSourceType: RemoteSourceType.Arena,
           remoteSourceInfo: {
             arenaId: newChannel.id.toString(),
+            arenaSlug: newChannel.slug,
             arenaClass: "Collection",
           },
         },

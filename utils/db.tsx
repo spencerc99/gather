@@ -2582,8 +2582,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ? await getChannelInfoFromUrl(arenaChannel, arenaAccessToken)
       : arenaChannel;
     let collectionId = selectedCollection;
-    // Prefer slug for v3 REST API compatibility; fall back to numeric id
-    const channelId = channelSlug || id.toString();
+    const channelId = id.toString();
     if (!collectionId) {
       collectionId = await createCollection({
         title,
@@ -2591,6 +2590,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         remoteSourceType: RemoteSourceType.Arena,
         remoteSourceInfo: {
           arenaId: channelId,
+          ...(channelSlug ? { arenaSlug: channelSlug } : {}),
           arenaClass: "Collection",
         },
       });
