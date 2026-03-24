@@ -447,6 +447,17 @@ export async function getChannelThumb(
     },
   });
   if (!resp.ok) {
+    // If 404 and numeric ID, try via GraphQL paginated fetch
+    if (resp.status === 404 && /^\d+$/.test(channelId)) {
+      console.log(
+        `[Arena] REST 404 for channel contents (numeric id=${channelId}), using GraphQL`,
+      );
+      return await getChannelItemsPaginated(channelId, {
+        accessToken,
+        page: 1,
+        per: 20,
+      });
+    }
     throw new Error(`${resp.status}: failed to fetch channel thumb`);
   }
   const respBody = await resp.json();
@@ -516,6 +527,9 @@ export async function getChannelItemsPaginated(
   }: { accessToken?: string | null; page?: number; per?: number } = {},
 ): Promise<RawArenaChannelItem[]> {
   const baseQuery = listChannelBlocksQuery({ channelId, per, page });
+  console.log(
+    `[Arena GraphQL] Fetching channel ${channelId} page=${page} per=${per}`,
+  );
   const resp = await fetch(ArenaGraphqlApi, {
     method: "POST",
     headers: {
@@ -528,6 +542,28 @@ export async function getChannelItemsPaginated(
     }),
   });
   const respBody = await resp.json();
+  if (!resp.ok || respBody.errors) {
+    console.error(
+      `[Arena GraphQL] Error fetching channel ${channelId}:`,
+      resp.status,
+      JSON.stringify(respBody.errors ?? respBody),
+    );
+    if (respBody.errors) {
+      throw new Error(
+        `GraphQL error: ${respBody.errors.map((e: any) => e.message).join(", ")}`,
+      );
+    }
+  }
+  if (!respBody.data?.channel?.blokks) {
+    console.error(
+      `[Arena GraphQL] Unexpected response shape for channel ${channelId}:`,
+      JSON.stringify(respBody).slice(0, 500),
+    );
+    return [];
+  }
+  console.log(
+    `[Arena GraphQL] Got ${respBody.data.channel.blokks.length} blocks for channel ${channelId}`,
+  );
   let contents: RawArenaChannelItem[] =
     mapListChannelItemsResponseToItems(respBody);
   return contents;
@@ -604,32 +640,88 @@ export async function getChannelItems(
   return fetchedItems;
 }
 
+/**
+ * Fetch channel metadata. Uses REST for slug-based IDs,
+ * falls back to GraphQL for numeric IDs (v3 REST requires slugs).
+ */
 export async function getChannelInfo(
   channelId: string,
   accessToken?: string | null,
 ): Promise<Omit<ArenaChannelInfo, "contents">> {
-  // v3 has no /thumb endpoint; use the base channel endpoint
   const baseUrl = `${ArenaChannelsApi}/${channelId}`;
-  let channelInfo = {};
   try {
     const resp = await fetch(baseUrl, {
       headers: {
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
     });
-    const respBody = await resp.json();
-    if (!resp.ok) {
-      throw new Error(
-        `${resp.status}: failed to fetch channel info ${resp.statusText}`,
-      );
+    if (resp.ok) {
+      const respBody = await resp.json();
+      const { contents, data, ...rest } = respBody;
+      return normalizeV3Channel(rest) as ArenaChannelInfo;
     }
-    const { contents, data, ...rest } = respBody;
-    channelInfo = normalizeV3Channel(rest);
+    // If REST 404 and channelId is numeric, try GraphQL
+    if (resp.status === 404 && /^\d+$/.test(channelId)) {
+      console.log(
+        `[Arena] REST 404 for numeric channelId=${channelId}, falling back to GraphQL`,
+      );
+      return await getChannelInfoViaGraphQL(channelId, accessToken);
+    }
+    throw new Error(
+      `${resp.status}: failed to fetch channel info ${resp.statusText}`,
+    );
   } catch (e) {
     logError(e);
     throw e;
   }
-  return channelInfo as ArenaChannelInfo;
+}
+
+async function getChannelInfoViaGraphQL(
+  channelId: string,
+  accessToken?: string | null,
+): Promise<ArenaChannelInfo> {
+  const query = `{
+    channel(id: ${channelId}) {
+      id
+      title
+      slug
+      visibility
+      created_at(format: "%Y-%m-%dT%H:%M:%S.%LZ")
+      updated_at(format: "%Y-%m-%dT%H:%M:%S.%LZ")
+      counts {
+        blocks
+        channels
+        collaborators
+        contents
+      }
+      user {
+        id
+        slug
+        name
+        avatar
+      }
+    }
+  }`;
+  const resp = await fetch(ArenaGraphqlApi, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-APP-TOKEN": ArenaGraphqlKey,
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify({ query }),
+  });
+  const respBody = await resp.json();
+  if (!resp.ok || !respBody.data?.channel) {
+    throw new Error(
+      `GraphQL getChannelInfo failed: ${resp.status} ${JSON.stringify(respBody.errors ?? respBody)}`,
+    );
+  }
+  const ch = respBody.data.channel;
+  return normalizeV3Channel({
+    ...ch,
+    owner: ch.user,
+  }) as ArenaChannelInfo;
 }
 
 export async function getChannelInfoFromUrl(

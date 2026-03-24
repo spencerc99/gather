@@ -2574,6 +2574,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const {
       title,
       id,
+      slug: channelSlug,
       contents,
       owner: user,
       created_at,
@@ -2581,7 +2582,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       ? await getChannelInfoFromUrl(arenaChannel, arenaAccessToken)
       : arenaChannel;
     let collectionId = selectedCollection;
-    const channelId = id.toString();
+    // Prefer slug for v3 REST API compatibility; fall back to numeric id
+    const channelId = channelSlug || id.toString();
     if (!collectionId) {
       collectionId = await createCollection({
         title,
