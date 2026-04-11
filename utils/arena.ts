@@ -450,8 +450,10 @@ export async function getChannelThumb(
     throw new Error(`${resp.status}: failed to fetch channel thumb`);
   }
   const respBody = await resp.json();
-  const items = getContentsFromResponse(respBody);
-  return items.map(normalizeV3Block);
+  const items = getContentsFromResponse(respBody)
+    .map(normalizeV3Block)
+    .filter((c) => c.base_class === "Block" && c.class !== "Block");
+  return items;
 }
 
 function mapListChannelItemsResponseToItems(
@@ -1540,6 +1542,12 @@ export function rawArenaBlocksToBlockInsertInfo(
       if (blockClass === "PendingBlock") {
         console.log(
           `[Arena Sync] Skipping PendingBlock arena_id=${block.id} title="${block.title}"`,
+        );
+        return false;
+      }
+      if (block.base_class === "Channel" || blockClass === "Channel") {
+        console.log(
+          `[Arena Sync] Skipping Channel arena_id=${block.id} title="${block.title}"`,
         );
         return false;
       }
