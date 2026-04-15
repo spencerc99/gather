@@ -1065,7 +1065,20 @@ export async function createBlock({
     throw new Error("failed to get block id from response");
   }
 
-  const blockInfo = await getBlock(blockId, arenaToken);
+  // getBlock is a best-effort enrichment call (mainly for the image field).
+  // If it fails, we still have the essential data (blockId + connections) from
+  // the GraphQL response. Letting this failure propagate previously caused
+  // the local DB save to be skipped entirely, leaving the block "pending"
+  // and causing infinite re-uploads.
+  let blockInfo: RawArenaBlock;
+  try {
+    blockInfo = await getBlock(blockId, arenaToken);
+  } catch (err) {
+    logError(
+      `[Arena] getBlock enrichment failed for ${blockId}, using minimal data: ${err}`
+    );
+    blockInfo = { id: Number(blockId) } as RawArenaBlock;
+  }
   return {
     arenaBlock: blockInfo,
     connections,
