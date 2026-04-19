@@ -1,6 +1,7 @@
 import { InteractionManager, Platform } from "react-native";
 import {
   InfiniteData,
+  QueryClient,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -375,6 +376,35 @@ function handleSqlErrors(
   }
 }
 
+export function invalidateBlockFeeds(
+  queryClient: QueryClient,
+  collectionId: string | undefined,
+) {
+  queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
+  queryClient.invalidateQueries({
+    queryKey: ["blocks", { collectionId: undefined }],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["blocks", { type: "uncategorized" }],
+  });
+  queryClient.invalidateQueries({ queryKey: ["blocks", "count"] });
+}
+
+export function invalidateAllBlockFeeds(queryClient: QueryClient) {
+  queryClient.invalidateQueries({
+    predicate: (query) => {
+      const key = query.queryKey;
+      if (key[0] !== "blocks") return false;
+      if (key[1] === "count") return true;
+      if (key[1] && typeof key[1] === "object") {
+        const arg = key[1] as Record<string, unknown>;
+        return !("blockId" in arg);
+      }
+      return false;
+    },
+  });
+}
+
 export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const { currentUser, arenaAccessToken } = useContext(UserContext);
   const { isConnected } = useContext(NetworkContext);
@@ -550,22 +580,18 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
   const createBlocksMutation = useMutation({
     mutationFn: createBlocksBase,
-    onSuccess: (blockInfos, { collectionId, blocksToInsert }) => {
-      queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
-      queryClient.invalidateQueries({
-        queryKey: ["blocks", { type: "uncategorized" }],
-      });
-      queryClient.invalidateQueries({ queryKey: ["blocks", "count"] });
+    onSuccess: (blockInfos, { collectionId }) => {
+      const createdCount = blockInfos.filter((b) => b.created).length;
+      if (createdCount === 0) {
+        return;
+      }
+      invalidateBlockFeeds(queryClient, collectionId);
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
     },
-    onError: (err, { collectionId }, context) => {
+    onError: (err, { collectionId }) => {
       console.error("Error creating blocks:", err);
-      // If we had optimistic updates, we would roll them back here
-      // For now, just invalidate to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["blocks", { collectionId }] });
-      queryClient.invalidateQueries({
-        queryKey: ["blocks", { type: "uncategorized" }],
-      });
-      queryClient.invalidateQueries({ queryKey: ["blocks", "count"] });
+      invalidateBlockFeeds(queryClient, collectionId);
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
     },
   });
   const createBlocks = createBlocksMutation.mutateAsync;
@@ -709,8 +735,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   };
   const deleteBlocksMutation = useMutation({
     mutationFn: deleteBlocksBase,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+    onSuccess: (_data, { blocks }) => {
+      invalidateAllBlockFeeds(queryClient);
+      for (const block of blocks) {
+        queryClient.invalidateQueries({
+          queryKey: ["blocks", { blockId: block.id }],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["connections", { blockId: block.id }],
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["collections"] });
     },
   });
@@ -900,6 +934,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const blocks = await getCollectionItems(collectionId, null);
     let offloadedCount = 0;
     let failedCount = 0;
+    const offloadedBlockIds: string[] = [];
 
     for (const block of blocks) {
       // Skip blocks that are not remote-synced or don't have local files
@@ -960,6 +995,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         }
 
         offloadedCount++;
+        offloadedBlockIds.push(block.id);
       } catch (err) {
         console.error(`Failed to offload block ${block.id}:`, err);
         failedCount++;
@@ -970,7 +1006,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     queryClient.invalidateQueries({
       queryKey: ["collection", { collectionId }],
     });
-    queryClient.invalidateQueries({ queryKey: ["blocks"] });
+    invalidateBlockFeeds(queryClient, collectionId);
+    for (const blockId of offloadedBlockIds) {
+      queryClient.invalidateQueries({ queryKey: ["blocks", { blockId }] });
+    }
 
     return { offloadedCount, failedCount };
   };
@@ -1603,12 +1642,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const updateBlockMutation = useMutation({
     mutationFn: updateBlockBase,
     onSuccess: (_data, { blockId }) => {
-      // TODO: can probably make this more efficient.. but for now it needs to refresh.
-      // just invalidate the specific block ID but
-      // manually set query data if present of the other one
-      queryClient.invalidateQueries({
-        queryKey: ["blocks"],
-      });
+      invalidateAllBlockFeeds(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["blocks", { blockId }] });
     },
   });
   const updateBlock = updateBlockMutation.mutateAsync;
@@ -2160,9 +2195,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         queryKey: ["blocks", { blockId: block.id }],
       });
       for (const collectionInfo of collectionInfos) {
-        queryClient.invalidateQueries({
-          queryKey: ["blocks", { collectionId: collectionInfo.collectionId }],
-        });
+        invalidateBlockFeeds(queryClient, collectionInfo.collectionId);
       }
       queryClient.invalidateQueries({
         queryKey: ["connections", { blockId: block.id }],
@@ -2420,9 +2453,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       // TODO: change numConnectiosn to separate query to just invalidate that
       queryClient.invalidateQueries({ queryKey: ["collections"] });
       for (const collectionId of collectionIds) {
-        queryClient.invalidateQueries({
-          queryKey: ["blocks", { collectionId }],
-        });
+        invalidateBlockFeeds(queryClient, collectionId);
       }
       for (const { blockId } of connections) {
         queryClient.invalidateQueries({
@@ -2430,9 +2461,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         });
       }
       queryClient.invalidateQueries({ queryKey: ["connections", "count"] });
-      queryClient.invalidateQueries({
-        queryKey: ["blocks", { type: "uncategorized" }],
-      });
     },
     onMutate: async (connections) => {
       // Cancel any outgoing refetches
@@ -2762,7 +2790,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }
 
       if (deletedLocal > 0) {
-        queryClient.invalidateQueries({ queryKey: ["blocks"] });
+        invalidateAllBlockFeeds(queryClient);
+        for (const block of blocksToDelete) {
+          queryClient.invalidateQueries({
+            queryKey: ["blocks", { blockId: block.id }],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["connections", { blockId: block.id }],
+          });
+        }
         queryClient.invalidateQueries({ queryKey: ["collections"] });
         queryClient.invalidateQueries({ queryKey: ["connections"] });
       }

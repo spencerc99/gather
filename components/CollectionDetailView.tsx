@@ -1,7 +1,11 @@
 import { YStack, XStack, Spinner, ScrollView } from "tamagui";
 import { Collection, RemoteSourceType } from "../utils/dataTypes";
 import { useContext, useMemo, useState } from "react";
-import { DatabaseContext, useCollection } from "../utils/db";
+import {
+  DatabaseContext,
+  invalidateAllBlockFeeds,
+  useCollection,
+} from "../utils/db";
 import {
   ArenaLogo,
   ButtonWithConfirm,
@@ -231,7 +235,7 @@ export function CollectionDetailView({
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["collections"] });
-      queryClient.invalidateQueries({ queryKey: ["blocks"] });
+      invalidateAllBlockFeeds(queryClient);
 
       if (!mergeDirection) {
         // Current collection was deleted, navigate to the target

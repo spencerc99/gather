@@ -1606,9 +1606,6 @@ export function rawArenaChannelToCollection(
   return {
     ...mapSnakeCaseToCamelCaseProperties(channel),
     description: channel.metadata?.description || undefined,
-    thumbnail: channel.contents?.find((c) =>
-      Boolean(c.image?.thumb?.url),
-    )?.image?.thumb?.url,
     remoteSourceType: RemoteSourceType.Arena,
     numBlocks: channel.length,
     createdAt: new Date(channel.created_at),
