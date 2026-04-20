@@ -68,18 +68,20 @@ export function CollectionSummary({
           </StyledParagraph>
         </StyledView>
       </YStack>
-      <YStack width={40} height={40}>
-        <AspectRatioImage
-          uri={thumbnail}
-          otherProps={{
-            aspectRatio: 1,
-            resizeMode: "cover",
-            borderRadius: "$2",
-            height: 40,
-            width: 40,
-          }}
-        />
-      </YStack>
+      {thumbnail ? (
+        <YStack width={40} height={40}>
+          <AspectRatioImage
+            uri={thumbnail}
+            otherProps={{
+              aspectRatio: 1,
+              resizeMode: "cover",
+              borderRadius: "$2",
+              height: 40,
+              width: 40,
+            }}
+          />
+        </YStack>
+      ) : null}
     </XStack>
   );
 }

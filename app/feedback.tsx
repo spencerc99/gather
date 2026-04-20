@@ -64,7 +64,7 @@ export default function Feedback() {
           </StyledText>
           <XStack position="relative">
             <StyledTextArea
-              value={feedback}
+              defaultValue={feedback}
               onChangeText={setFeedback}
               placeholder={Body}
               minHeight={200}

@@ -15,7 +15,6 @@ import {
   XStack,
   YStack,
   YStackProps,
-  useDebounceValue,
 } from "tamagui";
 import {
   ArenaLogo,
@@ -42,8 +41,8 @@ WebBrowser.maybeCompleteAuthSession();
 
 // Endpoint
 const discovery = {
-  authorizationEndpoint: "http://dev.are.na/oauth/authorize",
-  tokenEndpoint: "https://dev.are.na/oauth/token",
+  authorizationEndpoint: "https://www.are.na/oauth/authorize",
+  tokenEndpoint: "https://api.are.na/v3/oauth/token",
 };
 
 export function ArenaLogin({ path }: { path: string }) {
@@ -132,17 +131,17 @@ export function ArenaLogin({ path }: { path: string }) {
   );
 }
 
-// http://dev.are.na/oauth/authorize
+// https://www.are.na/oauth/authorize
 // ?client_id=YOUR_CLIENT_ID
 // &redirect_uri=YOUR_CALLBACK_URL
-// &response_type=code </pre>
+// &response_type=code
 
-// POST https://dev.are.na/oauth/token
+// POST https://api.are.na/v3/oauth/token
 // ?client_id=THE_ID
 // &client_secret=THE_SECRET
 // &code=RETURNED_CODE
 // &grant_type=authorization_code
-// &redirect_uri=YOUR_CALLBACK_URL</pre>
+// &redirect_uri=YOUR_CALLBACK_URL
 
 export function SelectArenaChannel({
   arenaChannel,
@@ -160,10 +159,9 @@ export function SelectArenaChannel({
   const { arenaAccessToken } = useContext(UserContext);
   const [searchValue, setSearchValue] = useState("");
   const [open, setOpen] = useState(false);
-  const debouncedSearch = useDebounceValue(searchValue, 300);
 
   const { channels, isLoading, isFetchingNextPage, fetchMore } =
-    useArenaChannels(debouncedSearch);
+    useArenaChannels(searchValue);
 
   const renderChannel = useCallback(
     ({
@@ -314,7 +312,7 @@ export function SelectArenaChannel({
   ) : (
     <>
       <StyledInput
-        value={arenaChannel}
+        defaultValue={arenaChannel}
         onChangeText={(text) => setArenaChannel(text)}
         placeholder="https://are.na/spencer-chang/basket-sjuhif_oeqk"
         autogrow

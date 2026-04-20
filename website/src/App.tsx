@@ -69,7 +69,7 @@ function useArenaChannelBlocks(channelId: string): {
     const fetchBlocks = async () => {
       try {
         const response = await fetch(
-          `https://api.are.na/v2/channels/${channelId}/contents`
+          `https://api.are.na/v3/channels/${channelId}/contents`
         );
         const json = await response.json();
         setData(json.contents);

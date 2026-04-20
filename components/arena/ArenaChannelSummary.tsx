@@ -58,8 +58,8 @@ export function ArenaChannelSummary({
         }}
         extraMetadata={
           <UserAvatar
-            profilePic={channel.user.avatar_image.thumb}
-            userId={channel.user.slug}
+            profilePic={channel.owner.avatar_image.thumb}
+            userId={channel.owner.slug}
             size={16}
           />
         }

@@ -281,7 +281,7 @@ export default function IntroScreen() {
             </YStack>
             <StyledInput
               placeholder="gather@tiny-inter.net"
-              value={email}
+              defaultValue={email}
               onChangeText={(text) => setEmail(text)}
               inputMode="email"
               textContentType="emailAddress"

@@ -51,7 +51,8 @@ export function useArenaChannels(
         };
 
   const annotatedChannels = data?.pages
-    .flatMap((p) => p.channels)
+    .flatMap((p) => p.channels ?? [])
+    .filter((c) => c != null && c.id != null)
     .map((c) => ({
       ...c,
       isDisabled: Boolean(remoteCollectionIds?.has(c.id.toString())),

@@ -63,6 +63,7 @@ export type RemoteSourceInfo = RemoteSourceInfoMap[RemoteSourceType];
 
 export interface ArenaChannelCollectionInfo {
   arenaId: string;
+  arenaSlug?: string;
   arenaClass: "Collection";
 }
 export interface ArenaChannelBlockInfo {

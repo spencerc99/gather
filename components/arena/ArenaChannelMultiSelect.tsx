@@ -7,7 +7,6 @@ import {
   ToggleGroup,
   XStack,
   YStack,
-  useDebounceValue,
 } from "tamagui";
 import { ArenaChannelInfo } from "../../utils/arena";
 import {
@@ -54,7 +53,6 @@ export function ArenaChannelMultiSelect({
   const { arenaAccessToken } = useContext(UserContext);
   const colorScheme = useColorScheme();
   const [searchValue, setSearchValue] = useState("");
-  const debouncedSearch = useDebounceValue(searchValue, 300);
   const [open, setOpen] = useState(false);
   const [toggleValue, setToggleValue] = useState<ChannelScope>(
     ChannelScope.User
@@ -81,7 +79,7 @@ export function ArenaChannelMultiSelect({
   );
 
   const { channels, isLoading, isFetchingNextPage, fetchMore, error } =
-    useArenaChannels(debouncedSearch, toggleValue);
+    useArenaChannels(searchValue, toggleValue);
 
   const sortedAndAnnotatedChannels = useMemo(() => {
     const mapped = (channels || []).map((channel) => ({
