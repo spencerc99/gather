@@ -61,6 +61,14 @@
         }
       ],
       [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Gather to access your photos so you can browse and add them, and see which ones you've already added.",
+          "savePhotosPermission": "Allow Gather to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
         "expo-config-plugin-ios-share-extension",
         {
           "activationRules": {

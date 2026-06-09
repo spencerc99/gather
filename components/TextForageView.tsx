@@ -2,6 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
 import {
   useCallback,
   useContext,
@@ -61,6 +62,7 @@ import * as Location from "expo-location";
 import { useLocation, LocationProvider } from "../utils/location";
 import { CollectionSummary } from "./CollectionSummary";
 import { CollectionSelect } from "./CollectionSelect";
+import { CustomPhotoPicker } from "./CustomPhotoPicker";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -174,6 +176,48 @@ const processMediaAsset = async (
     contentType: asset.mimeType as MimeType,
     assetId: asset.assetId,
     ...metadata,
+  };
+};
+
+const guessContentType = (
+  filename: string | undefined,
+  mediaType: MediaLibrary.MediaTypeValue
+): MimeType | undefined => {
+  const ext =
+    filename && filename.includes(".")
+      ? "." + filename.split(".").pop()!.toLowerCase()
+      : "";
+  const mime = (MimeType as Record<string, string>)[ext];
+  if (mime) {
+    return mime as MimeType;
+  }
+  return mediaType === MediaLibrary.MediaType.video
+    ? (MimeType[".mp4"] as MimeType)
+    : (MimeType[".jpg"] as MimeType);
+};
+
+// Convert a device media-library asset (from our custom picker) into the
+// PickedMedia shape, pulling the local file uri plus capture time / location
+// the same way processMediaAsset does for the native picker.
+const processPickedAsset = async (
+  asset: MediaLibrary.Asset
+): Promise<PickedMedia> => {
+  const info = await MediaLibrary.getAssetInfoAsync(asset);
+  let locationData: LocationMetadata | undefined;
+  if (info.location) {
+    locationData = await getLocationMetadata(
+      info.location.latitude,
+      info.location.longitude
+    );
+  }
+  const isVideo = asset.mediaType === MediaLibrary.MediaType.video;
+  return {
+    uri: info.localUri || asset.uri,
+    type: isVideo ? BlockType.Video : BlockType.Image,
+    contentType: guessContentType(asset.filename, asset.mediaType),
+    assetId: asset.id,
+    captureTime: info.creationTime || asset.creationTime,
+    locationData,
   };
 };
 
@@ -446,25 +490,26 @@ function TextForageViewContent({
     fetchNextPage();
   }
 
-  const pickImage = async () => {
-    setIsLoadingAssets(true);
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsMultipleSelection: true,
-      quality: 1,
-      orderedSelection: true,
-      exif: true,
-    });
+  const [pickerVisible, setPickerVisible] = useState(false);
 
-    if (!result.canceled) {
-      const mediaWithMetadata = await Promise.all(
-        result.assets.map(processMediaAsset)
-      );
-
-      setMedias([...medias, ...mediaWithMetadata]);
-    }
-    setIsLoadingAssets(false);
-  };
+  const handlePickerConfirm = useCallback(
+    async (assets: MediaLibrary.Asset[]) => {
+      setPickerVisible(false);
+      if (!assets.length) {
+        return;
+      }
+      setIsLoadingAssets(true);
+      try {
+        const mediaWithMetadata = await Promise.all(
+          assets.map(processPickedAsset)
+        );
+        setMedias((prev) => [...prev, ...mediaWithMetadata]);
+      } finally {
+        setIsLoadingAssets(false);
+      }
+    },
+    []
+  );
 
   function removeMedia(idx: number) {
     setMedias(medias.filter((_, i) => i !== idx));
@@ -943,7 +988,7 @@ function TextForageViewContent({
             /> */}
             <StyledButton
               icon={<Icon size={24} name="images" />}
-              onPress={pickImage}
+              onPress={() => setPickerVisible(true)}
               paddingHorizontal="$1"
               theme="grey"
               chromeless
@@ -1022,6 +1067,12 @@ function TextForageViewContent({
           </XStack>
         </YStack>
       </Animated.View>
+      <CustomPhotoPicker
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onConfirm={handlePickerConfirm}
+        alreadyPickedAssetIds={medias.map((m) => m.assetId)}
+      />
     </StyledView>
   );
 }

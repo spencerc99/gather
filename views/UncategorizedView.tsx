@@ -8,8 +8,10 @@ import { Block } from "../utils/dataTypes";
 import { Icon, StyledButton, StyledText } from "../components/Themed";
 import {
   Dimensions,
+  FlatList,
   Keyboard,
   Platform,
+  Pressable,
   SafeAreaView,
   ViewToken,
 } from "react-native";
@@ -32,6 +34,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
+const GridGap = 3;
+
 export function UncategorizedView() {
   const { addConnections, deleteBlock } = useContext(DatabaseContext);
   const { currentUser } = useContext(UserContext);
@@ -42,6 +46,23 @@ export function UncategorizedView() {
   const [lastSwipeDirection, setLastSwipeDirection] = useState<"next" | "prev">(
     "next"
   );
+  const [viewMode, setViewMode] = useState<"swipe" | "grid">("swipe");
+  // Blocks multi-selected in grid mode for bulk-connecting to collections.
+  const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(
+    new Set()
+  );
+
+  const toggleBlockSelection = useCallback((blockId: string) => {
+    setSelectedBlockIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(blockId)) {
+        next.delete(blockId);
+      } else {
+        next.add(blockId);
+      }
+      return next;
+    });
+  }, []);
 
   const renderBlock = useCallback(
     (block: Block, idx: number) => {
@@ -98,6 +119,7 @@ export function UncategorizedView() {
   );
 
   const width = Dimensions.get("window").width;
+  const gridCellSize = Math.floor(width / 3) - GridGap * 2;
   const carouselRef = useRef<ICarouselInstance>(null);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [searchValue, setSearchValue] = useState("");
@@ -111,6 +133,37 @@ export function UncategorizedView() {
     },
     [events]
   );
+
+  // Connect every grid-selected block to the chosen collections at once.
+  const handleBulkConnect = useCallback(async () => {
+    if (selectedBlockIds.size === 0 || selectedCollections.length === 0) {
+      return;
+    }
+    Keyboard.dismiss();
+    await Promise.all(
+      Array.from(selectedBlockIds).map((blockId) =>
+        addConnections({
+          blockId,
+          connections: selectedCollections.map((c) => ({
+            collectionId: c,
+            createdBy: currentUser!.id,
+          })),
+        })
+      )
+    );
+    setSelectedBlockIds(new Set());
+    setSelectedCollections([]);
+    setSearchValue("");
+  }, [selectedBlockIds, selectedCollections, addConnections, currentUser]);
+
+  // Jump the swipe carousel straight to a block tapped in the grid.
+  const jumpToSwipe = useCallback((index: number) => {
+    setCurrentIdx(index);
+    setViewMode("swipe");
+    requestAnimationFrame(() => {
+      carouselRef.current?.scrollTo({ index, animated: false });
+    });
+  }, []);
 
   function CarouselItem({ item, index }: { item: Block; index: number }) {
     if (!events) {
@@ -246,37 +299,193 @@ export function UncategorizedView() {
     >
       <Animated.View style={{ ...translateStyle }}>
         <Stack minHeight="100%">
-          <XStack flex={1} flexGrow={1} onTouchMove={() => Keyboard.dismiss()}>
-            <Carousel
-              ref={carouselRef}
-              loop={false}
-              // TODO: this isn't actually available in this source in this version but seemingly does something? i literally have no idea why
-              // @ts-ignore
-              minScrollDistancePerSwipe={0.1}
-              withAnimation={{
-                type: "spring",
-                config: {
-                  damping: 40,
-                  mass: 1.2,
-                  stiffness: 250,
-                },
-              }}
-              snapEnabled
-              width={width}
-              data={events}
-              windowSize={5}
-              renderItem={({ item, index }) => CarouselItem({ item, index })}
-              onSnapToItem={(index) => {
-                if (index > currentIdx) {
-                  setLastSwipeDirection("next");
-                } else if (index < currentIdx) {
-                  setLastSwipeDirection("prev");
-                }
-                setCurrentIdx(index);
-              }}
+          {/* Swipe / Grid view toggle */}
+          <XStack
+            position="absolute"
+            top={4}
+            right={8}
+            zIndex={10}
+            backgroundColor="$gray3"
+            borderRadius={20}
+            padding={2}
+            gap={2}
+          >
+            <StyledButton
+              size="$2"
+              circular
+              chromeless
+              backgroundColor={viewMode === "swipe" ? "$background" : "transparent"}
+              icon={<Icon name="albums" size={18} />}
+              onPress={() => setViewMode("swipe")}
+            />
+            <StyledButton
+              size="$2"
+              circular
+              chromeless
+              backgroundColor={viewMode === "grid" ? "$background" : "transparent"}
+              icon={<Icon name="grid" size={18} />}
+              onPress={() => setViewMode("grid")}
             />
           </XStack>
+
+          {viewMode === "swipe" ? (
+            <XStack flex={1} flexGrow={1} onTouchMove={() => Keyboard.dismiss()}>
+              <Carousel
+                ref={carouselRef}
+                loop={false}
+                // TODO: this isn't actually available in this source in this version but seemingly does something? i literally have no idea why
+                // @ts-ignore
+                minScrollDistancePerSwipe={0.1}
+                withAnimation={{
+                  type: "spring",
+                  config: {
+                    damping: 40,
+                    mass: 1.2,
+                    stiffness: 250,
+                  },
+                }}
+                snapEnabled
+                width={width}
+                data={events}
+                windowSize={5}
+                renderItem={({ item, index }) => CarouselItem({ item, index })}
+                onSnapToItem={(index) => {
+                  if (index > currentIdx) {
+                    setLastSwipeDirection("next");
+                  } else if (index < currentIdx) {
+                    setLastSwipeDirection("prev");
+                  }
+                  setCurrentIdx(index);
+                }}
+              />
+            </XStack>
+          ) : (
+            <YStack flex={1} flexGrow={1}>
+              <StyledText textAlign="center" marginTop="$1.5" marginBottom="$1">
+                {events.length} unconnected,{" "}
+                {totalBlocks === null ? "..." : totalBlocks} total
+              </StyledText>
+              <FlatList
+                data={events}
+                keyExtractor={(item) => item.id}
+                numColumns={3}
+                onTouchMove={() => Keyboard.dismiss()}
+                contentContainerStyle={{
+                  paddingHorizontal: GridGap,
+                  paddingBottom: 16,
+                }}
+                renderItem={({ item, index }) => {
+                  const selected = selectedBlockIds.has(item.id);
+                  return (
+                    <Pressable
+                      onPress={() => toggleBlockSelection(item.id)}
+                      style={{
+                        width: gridCellSize,
+                        height: gridCellSize,
+                        margin: GridGap,
+                      }}
+                    >
+                      <YStack
+                        width="100%"
+                        height="100%"
+                        borderRadius={8}
+                        overflow="hidden"
+                        backgroundColor="$gray3"
+                        borderWidth={2}
+                        borderColor={selected ? "$orange9" : "transparent"}
+                        justifyContent="center"
+                        alignItems="center"
+                      >
+                        <BlockSummary
+                          block={item}
+                          hideHoldMenu
+                          hideMetadata
+                          editable={false}
+                          isVisible={false}
+                          containerProps={{
+                            width: "100%",
+                            height: "100%",
+                            gap: 0,
+                            justifyContent: "center",
+                          }}
+                          style={{ width: "100%", height: "100%" }}
+                          blockStyle={{ resizeMode: "cover" }}
+                        />
+                      </YStack>
+                      {/* Selection badge */}
+                      <YStack
+                        position="absolute"
+                        top={6}
+                        right={6}
+                        width={22}
+                        height={22}
+                        borderRadius={11}
+                        borderWidth={1.5}
+                        borderColor="white"
+                        backgroundColor={
+                          selected ? "$orange9" : "rgba(0,0,0,0.25)"
+                        }
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        {selected && (
+                          <Icon name="checkmark" color="white" size={14} />
+                        )}
+                      </YStack>
+                      {/* Jump to this item in swipe view */}
+                      <StyledButton
+                        position="absolute"
+                        bottom={4}
+                        right={4}
+                        size="$1"
+                        circular
+                        chromeless
+                        backgroundColor="rgba(0,0,0,0.45)"
+                        icon={<Icon name="expand" color="white" size={12} />}
+                        onPress={() => jumpToSwipe(index)}
+                      />
+                    </Pressable>
+                  );
+                }}
+              />
+            </YStack>
+          )}
+
           <Stack paddingHorizontal="$1">
+            {viewMode === "grid" && selectedBlockIds.size > 0 && (
+              <XStack
+                paddingHorizontal="$2"
+                paddingVertical="$1.5"
+                gap="$2"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <StyledText>{selectedBlockIds.size} selected</StyledText>
+                <XStack gap="$2" alignItems="center">
+                  <StyledButton
+                    theme="red"
+                    circular
+                    size="$small"
+                    icon={<Icon name="close" />}
+                    onPress={() => setSelectedBlockIds(new Set())}
+                  />
+                  <StyledButton
+                    size="$medium"
+                    borderRadius={20}
+                    disabled={selectedCollections.length === 0}
+                    opacity={selectedCollections.length === 0 ? 0.5 : 1}
+                    onPress={handleBulkConnect}
+                    iconAfter={
+                      <SizableText>
+                        ({selectedCollections.length.toString()})
+                      </SizableText>
+                    }
+                  >
+                    Connect
+                  </StyledButton>
+                </XStack>
+              </XStack>
+            )}
             <SelectCollectionsList
               searchValue={searchValue}
               setSearchValue={setSearchValue}
