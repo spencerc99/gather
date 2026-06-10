@@ -500,15 +500,27 @@ function TextForageViewContent({
       }
       setIsLoadingAssets(true);
       try {
-        const mediaWithMetadata = await Promise.all(
+        const results = await Promise.allSettled(
           assets.map(processPickedAsset)
         );
-        setMedias((prev) => [...prev, ...mediaWithMetadata]);
+        const mediaWithMetadata = results
+          .filter(
+            (r): r is PromiseFulfilledResult<PickedMedia> =>
+              r.status === "fulfilled"
+          )
+          .map((r) => r.value);
+        const failed = results.filter((r) => r.status === "rejected");
+        if (failed.length) {
+          logError((failed[0] as PromiseRejectedResult).reason);
+        }
+        if (mediaWithMetadata.length) {
+          setMedias((prev) => [...prev, ...mediaWithMetadata]);
+        }
       } finally {
         setIsLoadingAssets(false);
       }
     },
-    []
+    [logError]
   );
 
   function removeMedia(idx: number) {

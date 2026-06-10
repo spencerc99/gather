@@ -302,28 +302,30 @@ export function UncategorizedView() {
           {/* Swipe / Grid view toggle */}
           <XStack
             position="absolute"
-            top={4}
-            right={8}
+            top={6}
+            left={8}
             zIndex={10}
-            backgroundColor="$gray3"
-            borderRadius={20}
-            padding={2}
-            gap={2}
+            backgroundColor="$gray4"
+            borderRadius={22}
+            padding={3}
+            gap={3}
           >
             <StyledButton
-              size="$2"
               circular
-              chromeless
+              size="$3"
+              chromeless={viewMode !== "swipe"}
+              theme={viewMode === "swipe" ? "orange" : undefined}
               backgroundColor={viewMode === "swipe" ? "$background" : "transparent"}
-              icon={<Icon name="albums" size={18} />}
+              icon={<Icon name="albums" size={22} />}
               onPress={() => setViewMode("swipe")}
             />
             <StyledButton
-              size="$2"
               circular
-              chromeless
+              size="$3"
+              chromeless={viewMode !== "grid"}
+              theme={viewMode === "grid" ? "orange" : undefined}
               backgroundColor={viewMode === "grid" ? "$background" : "transparent"}
-              icon={<Icon name="grid" size={18} />}
+              icon={<Icon name="grid" size={22} />}
               onPress={() => setViewMode("grid")}
             />
           </XStack>

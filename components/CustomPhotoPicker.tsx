@@ -13,12 +13,13 @@ import {
   FlatList,
   Image,
   Linking,
-  Platform,
+  Modal,
   Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Spinner, XStack, YStack } from "tamagui";
 import { DatabaseContext } from "../utils/db";
+import { ErrorsContext } from "../utils/errors";
 import { Icon, IconType, StyledButton, StyledText, StyledView } from "./Themed";
 
 const PageSize = 90;
@@ -43,6 +44,7 @@ export function CustomPhotoPicker({
   alreadyPickedAssetIds = [],
 }: CustomPhotoPickerProps) {
   const { getExistingAssetIds } = useContext(DatabaseContext);
+  const { logError } = useContext(ErrorsContext);
   const insets = useSafeAreaInsets();
   const bottomTabHeight = useBottomTabBarHeight();
 
@@ -68,7 +70,8 @@ export function CustomPhotoPicker({
   );
 
   const isAdded = useCallback(
-    (assetId: string) => existingAssetIds.has(assetId) || sessionAddedSet.has(assetId),
+    (assetId: string) =>
+      existingAssetIds.has(assetId) || sessionAddedSet.has(assetId),
     [existingAssetIds, sessionAddedSet]
   );
 
@@ -86,13 +89,18 @@ export function CustomPhotoPicker({
     setFilter("all");
   }, []);
 
-  // Track the latest cursor synchronously so rapid onEndReached calls don't
-  // re-request the same page.
+  // Track loading synchronously so rapid onEndReached calls don't double-fetch.
   const loadingRef = useRef(false);
 
   const loadPage = useCallback(
     async (cursor: string | undefined) => {
       if (loadingRef.current) {
+        return;
+      }
+      // Never touch the media library before we actually have permission —
+      // otherwise getAssetsAsync throws "MEDIA_LIBRARY permission is required".
+      const perm = await MediaLibrary.getPermissionsAsync();
+      if (!perm.granted) {
         return;
       }
       loadingRef.current = true;
@@ -128,12 +136,16 @@ export function CustomPhotoPicker({
             return next;
           });
         }
+      } catch (err) {
+        // Swallow so we never surface an unhandled rejection; stop paging.
+        logError(err);
+        setHasNextPage(false);
       } finally {
         loadingRef.current = false;
         setIsLoading(false);
       }
     },
-    [getExistingAssetIds]
+    [getExistingAssetIds, logError]
   );
 
   // Request permission and load the first page when opened.
@@ -141,16 +153,20 @@ export function CustomPhotoPicker({
     if (!visible) {
       return;
     }
+    let cancelled = false;
     (async () => {
       let granted = permission?.granted;
       if (!granted) {
         const resp = await requestPermission();
         granted = resp.granted;
       }
-      if (granted && assets.length === 0) {
+      if (!cancelled && granted && assets.length === 0) {
         void loadPage(undefined);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, permission?.granted]);
 
@@ -200,49 +216,46 @@ export function CustomPhotoPicker({
     onClose();
   }, [resetState, onClose]);
 
-  if (!visible) {
-    return null;
-  }
-
   const permissionDenied =
     permission && !permission.granted && !permission.canAskAgain;
 
   return (
-    <StyledView
-      position="absolute"
-      top={0}
-      left={0}
-      right={0}
-      bottom={0}
-      backgroundColor="$background"
-      zIndex={1000}
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={handleClose}
     >
-      <YStack flex={1} paddingTop={insets.top}>
+      <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
         {/* Header */}
         <XStack
           alignItems="center"
           justifyContent="space-between"
           paddingHorizontal="$3"
-          paddingVertical="$2"
+          paddingVertical="$2.5"
+          gap="$2"
         >
           <StyledButton
             chromeless
-            circular
             size="$3"
-            icon={<Icon name="close" size={24} />}
             onPress={handleClose}
-            paddingHorizontal={0}
-          />
-          <StyledText bold fontSize="$5">
+            paddingHorizontal="$2"
+            minWidth={72}
+            justifyContent="flex-start"
+          >
+            Cancel
+          </StyledButton>
+          <StyledText bold fontSize="$6">
             Add photos
           </StyledText>
           <StyledButton
             theme="green"
             size="$3"
             disabled={selectedIds.length === 0}
-            opacity={selectedIds.length === 0 ? 0.5 : 1}
+            opacity={selectedIds.length === 0 ? 0.4 : 1}
             onPress={handleConfirm}
             borderRadius={20}
+            minWidth={72}
           >
             Add{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
           </StyledButton>
@@ -252,7 +265,7 @@ export function CustomPhotoPicker({
         <XStack
           gap="$2"
           paddingHorizontal="$3"
-          paddingBottom="$2"
+          paddingBottom="$2.5"
           alignItems="center"
         >
           {(
@@ -262,17 +275,21 @@ export function CustomPhotoPicker({
               ["added", "Added"],
             ] as [FilterMode, string][]
           ).map(([mode, label]) => (
-            <StyledButton
-              key={mode}
-              size="$2"
-              chromeless={filter !== mode}
-              theme={filter === mode ? "orange" : undefined}
-              backgroundColor={filter === mode ? "$orange4" : "$gray3"}
-              borderRadius={16}
-              onPress={() => setFilter(mode)}
-            >
-              <StyledText fontSize="$2">{label}</StyledText>
-            </StyledButton>
+            <Pressable key={mode} onPress={() => setFilter(mode)}>
+              <StyledView
+                paddingHorizontal="$3"
+                paddingVertical="$1.5"
+                borderRadius={16}
+                backgroundColor={filter === mode ? "$orange9" : "$gray4"}
+              >
+                <StyledText
+                  fontSize="$3"
+                  color={filter === mode ? "white" : "$color"}
+                >
+                  {label}
+                </StyledText>
+              </StyledView>
+            </Pressable>
           ))}
         </XStack>
 
@@ -398,7 +415,9 @@ export function CustomPhotoPicker({
                       borderRadius={11}
                       borderWidth={1.5}
                       borderColor="white"
-                      backgroundColor={isSelected ? "$orange9" : "rgba(0,0,0,0.25)"}
+                      backgroundColor={
+                        isSelected ? "$orange9" : "rgba(0,0,0,0.25)"
+                      }
                       alignItems="center"
                       justifyContent="center"
                     >
@@ -415,7 +434,7 @@ export function CustomPhotoPicker({
           />
         )}
       </YStack>
-    </StyledView>
+    </Modal>
   );
 }
 
