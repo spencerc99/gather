@@ -35,9 +35,8 @@ interface CustomPhotoPickerProps {
   // Asset ids already staged in the composer this session. Treated the same as
   // assets already saved to Gather: shown as "added" and not selectable.
   alreadyPickedAssetIds?: (string | null | undefined)[];
-  // Safe-area insets captured by the parent. Passed in because
-  // useSafeAreaInsets() reports 0 inside a native Modal.
-  topInset?: number;
+  // Bottom safe-area inset captured by the parent (useSafeAreaInsets() reports
+  // 0 inside a native Modal) so the grid clears the home indicator.
   bottomInset?: number;
 }
 
@@ -46,7 +45,6 @@ export function CustomPhotoPicker({
   onClose,
   onConfirm,
   alreadyPickedAssetIds = [],
-  topInset = 0,
   bottomInset = 0,
 }: CustomPhotoPickerProps) {
   const { getExistingAssetIds } = useContext(DatabaseContext);
@@ -227,19 +225,18 @@ export function CustomPhotoPicker({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="fullScreen"
+      // pageSheet presents the picker as a card the OS already insets below the
+      // notch/Dynamic Island, so there's nothing for the header to clip under.
+      // On Android presentationStyle is ignored, so pad for the status bar.
+      presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      {/* useSafeAreaInsets() reports 0 inside a Modal, so the parent passes its
-          captured insets in — the fullScreen Modal covers the whole window so
-          the window insets apply directly. Add a small status-bar fallback. */}
       <YStack
         flex={1}
         backgroundColor="$background"
-        paddingTop={Math.max(
-          topInset,
-          Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0,
-        )}
+        paddingTop={
+          Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0
+        }
       >
         <YStack flex={1}>
           {/* Header */}
