@@ -303,8 +303,8 @@ export function UncategorizedView() {
               single toggle button that swaps icons. */}
           <StyledButton
             position="absolute"
-            top={8}
-            left={10}
+            top={6}
+            left={6}
             zIndex={10}
             size="$small"
             backgroundColor="$gray6"
