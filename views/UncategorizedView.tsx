@@ -299,40 +299,20 @@ export function UncategorizedView() {
     >
       <Animated.View style={{ ...translateStyle }}>
         <Stack minHeight="100%">
-          {/* Focused (swipe) / Grid view toggle */}
-          <XStack
+          {/* Focused (swipe) / Grid view toggle — matches the Review view's
+              single toggle button that swaps icons. */}
+          <StyledButton
             position="absolute"
-            top={6}
-            left={8}
+            top={8}
+            left={10}
             zIndex={10}
-            backgroundColor="$gray4"
-            borderRadius={26}
-            padding={4}
-            gap={4}
-          >
-            <StyledButton
-              circular
-              size="$4"
-              chromeless={viewMode !== "swipe"}
-              theme={viewMode === "swipe" ? "orange" : undefined}
-              backgroundColor={
-                viewMode === "swipe" ? "$background" : "transparent"
-              }
-              icon={<Icon name="albums" size={22} />}
-              onPress={() => setViewMode("swipe")}
-            />
-            <StyledButton
-              circular
-              size="$4"
-              chromeless={viewMode !== "grid"}
-              theme={viewMode === "grid" ? "orange" : undefined}
-              backgroundColor={
-                viewMode === "grid" ? "$background" : "transparent"
-              }
-              icon={<Icon name="grid" size={22} />}
-              onPress={() => setViewMode("grid")}
-            />
-          </XStack>
+            size="$small"
+            backgroundColor="$gray6"
+            icon={<Icon name={viewMode === "swipe" ? "grid" : "image"} />}
+            onPress={() =>
+              setViewMode((m) => (m === "swipe" ? "grid" : "swipe"))
+            }
+          />
 
           {viewMode === "swipe" ? (
             <XStack
