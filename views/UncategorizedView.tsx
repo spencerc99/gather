@@ -172,27 +172,6 @@ export function UncategorizedView() {
 
     return (
       <>
-        <StyledButton
-          position="absolute"
-          top={6}
-          right={6}
-          zIndex={5}
-          size="$small"
-          icon={<Icon name="trash" />}
-          theme="red"
-          onPress={() => {
-            handleDeleteBlock(item.id);
-          }}
-        />
-        <StyledText
-          marginBottom="auto"
-          textAlign="center"
-          width="100%"
-          marginTop="$1.5"
-        >
-          {index + 1} / {events.length} unconnected,{" "}
-          {totalBlocks === null ? "..." : totalBlocks} total
-        </StyledText>
         <YStack
           paddingVertical="$2"
           // NOTE: minHeight is ideal here for aesthetic but we need to handle
@@ -299,20 +278,44 @@ export function UncategorizedView() {
     >
       <Animated.View style={{ ...translateStyle }}>
         <Stack minHeight="100%">
-          {/* Focused (swipe) / Grid view toggle — matches the Review view's
-              single toggle button that swaps icons. */}
-          <StyledButton
-            position="absolute"
-            top={6}
-            left={6}
-            zIndex={10}
-            size="$small"
-            backgroundColor="$gray6"
-            icon={<Icon name={viewMode === "swipe" ? "grid" : "image"} />}
-            onPress={() =>
-              setViewMode((m) => (m === "swipe" ? "grid" : "swipe"))
-            }
-          />
+          {/* Header row: view toggle · count · delete (single flex row so the
+              toggle and trash always line up). */}
+          <XStack
+            alignItems="center"
+            paddingHorizontal={6}
+            paddingTop={6}
+            gap="$2"
+          >
+            <StyledButton
+              size="$small"
+              backgroundColor="$gray6"
+              icon={<Icon name={viewMode === "swipe" ? "grid" : "image"} />}
+              onPress={() =>
+                setViewMode((m) => (m === "swipe" ? "grid" : "swipe"))
+              }
+            />
+            <StyledText flex={1} textAlign="center">
+              {viewMode === "swipe" ? `${currentIdx + 1} / ` : ""}
+              {events.length} unconnected,{" "}
+              {totalBlocks === null ? "..." : totalBlocks} total
+            </StyledText>
+            {viewMode === "swipe" ? (
+              <StyledButton
+                size="$small"
+                icon={<Icon name="trash" />}
+                theme="red"
+                onPress={() => {
+                  const current = events[currentIdx];
+                  if (current) {
+                    handleDeleteBlock(current.id);
+                  }
+                }}
+              />
+            ) : (
+              // Spacer to keep the count centered when the trash is hidden.
+              <Stack width={40} />
+            )}
+          </XStack>
 
           {viewMode === "swipe" ? (
             <XStack
@@ -351,10 +354,6 @@ export function UncategorizedView() {
             </XStack>
           ) : (
             <YStack flex={1} flexGrow={1}>
-              <StyledText textAlign="center" marginTop="$1.5" marginBottom="$1">
-                {events.length} unconnected,{" "}
-                {totalBlocks === null ? "..." : totalBlocks} total
-              </StyledText>
               <FlatList
                 data={events}
                 keyExtractor={(item) => item.id}
