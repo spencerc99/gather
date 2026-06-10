@@ -431,9 +431,9 @@ export function CustomPhotoPicker({
               <StyledButton
                 theme="green"
                 size="$5"
-                height={68}
-                borderRadius={16}
-                fontSize="$6"
+                height={54}
+                borderRadius={14}
+                fontSize="$5"
                 fontWeight="700"
                 disabled={selectedIds.length === 0}
                 opacity={selectedIds.length === 0 ? 0.5 : 1}
