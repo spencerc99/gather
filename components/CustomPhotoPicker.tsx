@@ -239,44 +239,12 @@ export function CustomPhotoPicker({
         }
       >
         <YStack flex={1}>
-          {/* Header */}
-          <XStack
-            alignItems="center"
-            justifyContent="space-between"
-            paddingHorizontal="$3"
-            paddingVertical="$2.5"
-            gap="$2"
-          >
-            <StyledButton
-              chromeless
-              size="$3"
-              onPress={handleClose}
-              paddingHorizontal="$2"
-              minWidth={72}
-              justifyContent="flex-start"
-            >
-              Cancel
-            </StyledButton>
-            <StyledText bold fontSize="$6">
-              Add photos
-            </StyledText>
-            <StyledButton
-              theme="green"
-              size="$3"
-              disabled={selectedIds.length === 0}
-              opacity={selectedIds.length === 0 ? 0.4 : 1}
-              onPress={handleConfirm}
-              borderRadius={20}
-              minWidth={72}
-            >
-              Add{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
-            </StyledButton>
-          </XStack>
-
-          {/* Filter segmented control */}
+          {/* No top bar — swipe the sheet down to dismiss. Filters sit up top
+              with extra padding so they clear the sheet's grab handle. */}
           <XStack
             gap="$2"
             paddingHorizontal="$3"
+            paddingTop="$5"
             paddingBottom="$2.5"
             alignItems="center"
           >
@@ -328,13 +296,14 @@ export function CustomPhotoPicker({
               data={filteredAssets}
               keyExtractor={(item) => item.id}
               numColumns={NumColumns}
+              style={{ flex: 1 }}
               onEndReached={handleEndReached}
               onEndReachedThreshold={1.5}
               removeClippedSubviews
               initialNumToRender={PageSize}
               windowSize={5}
               contentContainerStyle={{
-                paddingBottom: bottomInset + 24,
+                paddingBottom: 24,
               }}
               ListEmptyComponent={
                 isLoading ? null : (
@@ -447,6 +416,33 @@ export function CustomPhotoPicker({
                 );
               }}
             />
+          )}
+
+          {/* Full-width Add button pinned to the bottom */}
+          {!permissionDenied && (
+            <YStack
+              paddingHorizontal="$3"
+              paddingTop="$2.5"
+              paddingBottom={bottomInset + 12}
+              borderTopWidth={1}
+              borderTopColor="$gray4"
+              backgroundColor="$background"
+            >
+              <StyledButton
+                theme="green"
+                size="$5"
+                borderRadius={14}
+                disabled={selectedIds.length === 0}
+                opacity={selectedIds.length === 0 ? 0.5 : 1}
+                onPress={handleConfirm}
+              >
+                {selectedIds.length > 0
+                  ? `Add ${selectedIds.length} photo${
+                      selectedIds.length > 1 ? "s" : ""
+                    }`
+                  : "Select photos to add"}
+              </StyledButton>
+            </YStack>
           )}
         </YStack>
       </YStack>
