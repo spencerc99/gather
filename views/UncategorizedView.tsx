@@ -5,7 +5,7 @@ import {
   useUncategorizedBlocks,
 } from "../utils/db";
 import { Block } from "../utils/dataTypes";
-import { Icon, StyledButton, StyledText } from "../components/Themed";
+import { Icon, IconType, StyledButton, StyledText } from "../components/Themed";
 import {
   Dimensions,
   FlatList,
@@ -44,12 +44,12 @@ export function UncategorizedView() {
   const bottomTabHeight = useBottomTabBarHeight();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [lastSwipeDirection, setLastSwipeDirection] = useState<"next" | "prev">(
-    "next"
+    "next",
   );
   const [viewMode, setViewMode] = useState<"swipe" | "grid">("swipe");
   // Blocks multi-selected in grid mode for bulk-connecting to collections.
   const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   const toggleBlockSelection = useCallback((blockId: string) => {
@@ -90,7 +90,7 @@ export function UncategorizedView() {
         />
       );
     },
-    [currentIdx]
+    [currentIdx],
   );
 
   const onClickConnect = useCallback(
@@ -115,7 +115,7 @@ export function UncategorizedView() {
       }
       Keyboard.dismiss();
     },
-    [events, lastSwipeDirection]
+    [events, lastSwipeDirection],
   );
 
   const width = Dimensions.get("window").width;
@@ -131,7 +131,7 @@ export function UncategorizedView() {
       }
       await deleteBlock(blockId);
     },
-    [events]
+    [events],
   );
 
   // Connect every grid-selected block to the chosen collections at once.
@@ -148,8 +148,8 @@ export function UncategorizedView() {
             collectionId: c,
             createdBy: currentUser!.id,
           })),
-        })
-      )
+        }),
+      ),
     );
     setSelectedBlockIds(new Set());
     setSelectedCollections([]);
@@ -260,8 +260,8 @@ export function UncategorizedView() {
                 (Platform.OS === "android"
                   ? 40
                   : Platform.OS === "ios"
-                  ? bottomTabHeight
-                  : 0)
+                    ? bottomTabHeight
+                    : 0)
               )
             : 0,
         },
@@ -299,39 +299,51 @@ export function UncategorizedView() {
     >
       <Animated.View style={{ ...translateStyle }}>
         <Stack minHeight="100%">
-          {/* Swipe / Grid view toggle */}
+          {/* Focused (swipe) / Grid view toggle */}
           <XStack
             position="absolute"
             top={6}
             left={8}
             zIndex={10}
             backgroundColor="$gray4"
-            borderRadius={22}
-            padding={3}
-            gap={3}
+            borderRadius={26}
+            padding={4}
+            gap={4}
           >
             <StyledButton
               circular
-              size="$3"
+              size="$4"
               chromeless={viewMode !== "swipe"}
               theme={viewMode === "swipe" ? "orange" : undefined}
-              backgroundColor={viewMode === "swipe" ? "$background" : "transparent"}
-              icon={<Icon name="albums" size={22} />}
+              backgroundColor={
+                viewMode === "swipe" ? "$background" : "transparent"
+              }
+              icon={
+                <Icon name="square" type={IconType.FontAwesomeIcon} size={24} />
+              }
               onPress={() => setViewMode("swipe")}
             />
             <StyledButton
               circular
-              size="$3"
+              size="$4"
               chromeless={viewMode !== "grid"}
               theme={viewMode === "grid" ? "orange" : undefined}
-              backgroundColor={viewMode === "grid" ? "$background" : "transparent"}
-              icon={<Icon name="grid" size={22} />}
+              backgroundColor={
+                viewMode === "grid" ? "$background" : "transparent"
+              }
+              icon={
+                <Icon name="th" type={IconType.FontAwesomeIcon} size={24} />
+              }
               onPress={() => setViewMode("grid")}
             />
           </XStack>
 
           {viewMode === "swipe" ? (
-            <XStack flex={1} flexGrow={1} onTouchMove={() => Keyboard.dismiss()}>
+            <XStack
+              flex={1}
+              flexGrow={1}
+              onTouchMove={() => Keyboard.dismiss()}
+            >
               <Carousel
                 ref={carouselRef}
                 loop={false}

@@ -95,7 +95,7 @@ interface PickedMedia {
 
 const getLocationMetadata = async (
   latitude: number,
-  longitude: number
+  longitude: number,
 ): Promise<LocationMetadata> => {
   try {
     const results = await Location.reverseGeocodeAsync({ latitude, longitude });
@@ -137,12 +137,12 @@ const getCurrentLocationMetadata = async (): Promise<
 const parseExifDate = (dateString?: string): number | undefined => {
   if (!dateString) return undefined;
   return new Date(
-    dateString.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3")
+    dateString.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3"),
   ).getTime();
 };
 
 const processMediaAsset = async (
-  asset: ImagePicker.ImagePickerAsset
+  asset: ImagePicker.ImagePickerAsset,
 ): Promise<PickedMedia> => {
   let metadata = null;
   if (asset.exif) {
@@ -181,7 +181,7 @@ const processMediaAsset = async (
 
 const guessContentType = (
   filename: string | undefined,
-  mediaType: MediaLibrary.MediaTypeValue
+  mediaType: MediaLibrary.MediaTypeValue,
 ): MimeType | undefined => {
   const ext =
     filename && filename.includes(".")
@@ -200,14 +200,14 @@ const guessContentType = (
 // PickedMedia shape, pulling the local file uri plus capture time / location
 // the same way processMediaAsset does for the native picker.
 const processPickedAsset = async (
-  asset: MediaLibrary.Asset
+  asset: MediaLibrary.Asset,
 ): Promise<PickedMedia> => {
   const info = await MediaLibrary.getAssetInfoAsync(asset);
   let locationData: LocationMetadata | undefined;
   if (info.location) {
     locationData = await getLocationMetadata(
       info.location.latitude,
-      info.location.longitude
+      info.location.longitude,
     );
   }
   const isVideo = asset.mediaType === MediaLibrary.MediaType.video;
@@ -284,11 +284,11 @@ function TextForageViewContent({
 
   // @ mention autocomplete state
   const [selectedCollections, setSelectedCollections] = useState<Collection[]>(
-    []
+    [],
   );
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionStartIndex, setMentionStartIndex] = useState<number | null>(
-    null
+    null,
   );
   const textInputRef = useRef<TextInput>(null);
 
@@ -303,7 +303,7 @@ function TextForageViewContent({
     if (!mentionCollections) return [];
     const selectedIds = new Set(selectedCollections.map((c) => c.id));
     return mentionCollections.filter(
-      (c) => !selectedIds.has(c.id) && c.id !== collectionId
+      (c) => !selectedIds.has(c.id) && c.id !== collectionId,
     );
   }, [mentionCollections, selectedCollections, collectionId]);
 
@@ -314,7 +314,7 @@ function TextForageViewContent({
       selectedCollections.some((c) => c.id === collectionId)
     ) {
       setSelectedCollections((prev) =>
-        prev.filter((c) => c.id !== collectionId)
+        prev.filter((c) => c.id !== collectionId),
       );
     }
   }, [collectionId]);
@@ -329,15 +329,15 @@ function TextForageViewContent({
           (Platform.OS === "android"
             ? messageBarKeyboardPadding
             : Platform.OS === "ios"
-            ? bottomTabHeight
-            : 0)
+              ? bottomTabHeight
+              : 0)
         : 0,
     };
   }, [keyboard.height, textFocused]);
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
-      placeholders[Math.floor(Math.random() * placeholders.length)]
+      placeholders[Math.floor(Math.random() * placeholders.length)],
     );
   }, []);
 
@@ -353,7 +353,7 @@ function TextForageViewContent({
       const collectionItemsText = collectionItems.map((item) =>
         item.content.length > MaxPlaceholderLength
           ? item.content.slice(0, MaxPlaceholderLength) + "..."
-          : item.content
+          : item.content,
       );
       console.log("collectionItemsText", collectionItemsText);
       if (collectionItemsText.length) {
@@ -367,7 +367,7 @@ function TextForageViewContent({
     void fetchPlaceholders().then((newPlaceholders) => {
       setPlaceholders(newPlaceholders);
       setTextPlaceholder(
-        newPlaceholders[Math.floor(Math.random() * newPlaceholders.length)]
+        newPlaceholders[Math.floor(Math.random() * newPlaceholders.length)],
       );
     });
   }, []);
@@ -412,7 +412,7 @@ function TextForageViewContent({
       setMentionStartIndex(lastAtIndex);
       setMentionQuery(query);
     },
-    [setTextValue]
+    [setTextValue],
   );
 
   // Handle selecting a collection from autocomplete
@@ -433,7 +433,7 @@ function TextForageViewContent({
       setMentionQuery(null);
       setMentionStartIndex(null);
     },
-    [mentionStartIndex, mentionQuery, textValue, setTextValueProgrammatic]
+    [mentionStartIndex, mentionQuery, textValue, setTextValueProgrammatic],
   );
 
   // Handle removing a selected collection
@@ -501,12 +501,12 @@ function TextForageViewContent({
       setIsLoadingAssets(true);
       try {
         const results = await Promise.allSettled(
-          assets.map(processPickedAsset)
+          assets.map(processPickedAsset),
         );
         const mediaWithMetadata = results
           .filter(
             (r): r is PromiseFulfilledResult<PickedMedia> =>
-              r.status === "fulfilled"
+              r.status === "fulfilled",
           )
           .map((r) => r.value);
         const failed = results.filter((r) => r.status === "rejected");
@@ -520,7 +520,7 @@ function TextForageViewContent({
         setIsLoadingAssets(false);
       }
     },
-    [logError]
+    [logError],
   );
 
   function removeMedia(idx: number) {
@@ -562,7 +562,7 @@ function TextForageViewContent({
               const fileUri = await getFsPathForMediaResult(
                 uri,
                 type === BlockType.Image ? "jpg" : "mp4",
-                assetId
+                assetId,
               );
               return {
                 createdBy: currentUser!.id,
@@ -576,8 +576,8 @@ function TextForageViewContent({
                 title: useTextAsMediaTitle ? savedTextValue.trim() : undefined,
                 collectionsToConnect,
               };
-            }
-          )
+            },
+          ),
         );
         blocksToInsert.push(...mediaToInsert);
       }
@@ -668,7 +668,7 @@ function TextForageViewContent({
 
       console.log("Starting recording..");
       const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
       setRecording(recording);
       console.log("Recording started");
@@ -736,7 +736,7 @@ function TextForageViewContent({
 
     if (!result.canceled) {
       const mediaWithMetadata = await Promise.all(
-        result.assets.map(processMediaAsset)
+        result.assets.map(processMediaAsset),
       );
 
       setMedias([...medias, ...mediaWithMetadata]);
@@ -748,7 +748,7 @@ function TextForageViewContent({
 
   async function checkExistingMedias(): Promise<Set<string>> {
     const existingMedias = await getExistingAssetIds(
-      medias.map(({ assetId }) => assetId)
+      medias.map(({ assetId }) => assetId),
     );
 
     return new Set(existingMedias);
@@ -1033,7 +1033,7 @@ function TextForageViewContent({
                           text: "Add Anyway",
                           onPress: () => onSaveResult(),
                         },
-                      ]
+                      ],
                     );
                   } else {
                     onSaveResult();

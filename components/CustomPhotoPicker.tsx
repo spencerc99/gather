@@ -1,4 +1,3 @@
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as MediaLibrary from "expo-media-library";
 import {
   useCallback,
@@ -16,7 +15,11 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  initialWindowMetrics,
+} from "react-native-safe-area-context";
 import { Spinner, XStack, YStack } from "tamagui";
 import { DatabaseContext } from "../utils/db";
 import { ErrorsContext } from "../utils/errors";
@@ -45,8 +48,6 @@ export function CustomPhotoPicker({
 }: CustomPhotoPickerProps) {
   const { getExistingAssetIds } = useContext(DatabaseContext);
   const { logError } = useContext(ErrorsContext);
-  const insets = useSafeAreaInsets();
-  const bottomTabHeight = useBottomTabBarHeight();
 
   const [permission, requestPermission] = MediaLibrary.usePermissions();
 
@@ -57,7 +58,7 @@ export function CustomPhotoPicker({
 
   // Asset ids that already exist in Gather (queried per page as photos load).
   const [existingAssetIds, setExistingAssetIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [filter, setFilter] = useState<FilterMode>("all");
   // Ordered list of selected asset ids (mirrors the native picker's ordered
@@ -66,18 +67,18 @@ export function CustomPhotoPicker({
 
   const sessionAddedSet = useMemo(
     () => new Set(alreadyPickedAssetIds.filter((id): id is string => !!id)),
-    [alreadyPickedAssetIds]
+    [alreadyPickedAssetIds],
   );
 
   const isAdded = useCallback(
     (assetId: string) =>
       existingAssetIds.has(assetId) || sessionAddedSet.has(assetId),
-    [existingAssetIds, sessionAddedSet]
+    [existingAssetIds, sessionAddedSet],
   );
 
   const screenWidth = Dimensions.get("window").width;
   const cellSize = Math.floor(
-    (screenWidth - CellGap * (NumColumns - 1)) / NumColumns
+    (screenWidth - CellGap * (NumColumns - 1)) / NumColumns,
   );
 
   const resetState = useCallback(() => {
@@ -127,7 +128,7 @@ export function CustomPhotoPicker({
 
         // Cross-reference this page against Gather's saved blocks.
         const existing = await getExistingAssetIds(
-          result.assets.map((a) => a.id)
+          result.assets.map((a) => a.id),
         );
         if (existing.length) {
           setExistingAssetIds((prev) => {
@@ -145,7 +146,7 @@ export function CustomPhotoPicker({
         setIsLoading(false);
       }
     },
-    [getExistingAssetIds, logError]
+    [getExistingAssetIds, logError],
   );
 
   // Request permission and load the first page when opened.
@@ -185,10 +186,10 @@ export function CustomPhotoPicker({
       setSelectedIds((prev) =>
         prev.includes(assetId)
           ? prev.filter((id) => id !== assetId)
-          : [...prev, assetId]
+          : [...prev, assetId],
       );
     },
-    [isAdded]
+    [isAdded],
   );
 
   const filteredAssets = useMemo(() => {
@@ -226,214 +227,223 @@ export function CustomPhotoPicker({
       presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >
-      <YStack flex={1} backgroundColor="$background" paddingTop={insets.top}>
-        {/* Header */}
-        <XStack
-          alignItems="center"
-          justifyContent="space-between"
-          paddingHorizontal="$3"
-          paddingVertical="$2.5"
-          gap="$2"
-        >
-          <StyledButton
-            chromeless
-            size="$3"
-            onPress={handleClose}
-            paddingHorizontal="$2"
-            minWidth={72}
-            justifyContent="flex-start"
-          >
-            Cancel
-          </StyledButton>
-          <StyledText bold fontSize="$6">
-            Add photos
-          </StyledText>
-          <StyledButton
-            theme="green"
-            size="$3"
-            disabled={selectedIds.length === 0}
-            opacity={selectedIds.length === 0 ? 0.4 : 1}
-            onPress={handleConfirm}
-            borderRadius={20}
-            minWidth={72}
-          >
-            Add{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
-          </StyledButton>
-        </XStack>
-
-        {/* Filter segmented control */}
-        <XStack
-          gap="$2"
-          paddingHorizontal="$3"
-          paddingBottom="$2.5"
-          alignItems="center"
-        >
-          {(
-            [
-              ["all", "All"],
-              ["new", "Not added"],
-              ["added", "Added"],
-            ] as [FilterMode, string][]
-          ).map(([mode, label]) => (
-            <Pressable key={mode} onPress={() => setFilter(mode)}>
-              <StyledView
-                paddingHorizontal="$3"
-                paddingVertical="$1.5"
-                borderRadius={16}
-                backgroundColor={filter === mode ? "$orange9" : "$gray4"}
+      {/* Modals render outside the app's SafeAreaProvider, so re-establish one
+          here — otherwise insets are 0 and the header clips under the notch. */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+          <YStack flex={1} backgroundColor="$background">
+            {/* Header */}
+            <XStack
+              alignItems="center"
+              justifyContent="space-between"
+              paddingHorizontal="$3"
+              paddingVertical="$2.5"
+              gap="$2"
+            >
+              <StyledButton
+                chromeless
+                size="$3"
+                onPress={handleClose}
+                paddingHorizontal="$2"
+                minWidth={72}
+                justifyContent="flex-start"
               >
-                <StyledText
-                  fontSize="$3"
-                  color={filter === mode ? "white" : "$color"}
-                >
-                  {label}
-                </StyledText>
-              </StyledView>
-            </Pressable>
-          ))}
-        </XStack>
+                Cancel
+              </StyledButton>
+              <StyledText bold fontSize="$6">
+                Add photos
+              </StyledText>
+              <StyledButton
+                theme="green"
+                size="$3"
+                disabled={selectedIds.length === 0}
+                opacity={selectedIds.length === 0 ? 0.4 : 1}
+                onPress={handleConfirm}
+                borderRadius={20}
+                minWidth={72}
+              >
+                Add{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
+              </StyledButton>
+            </XStack>
 
-        {permissionDenied ? (
-          <YStack
-            flex={1}
-            alignItems="center"
-            justifyContent="center"
-            gap="$3"
-            paddingHorizontal="$4"
-          >
-            <StyledText textAlign="center">
-              Gather needs access to your photos to add them.
-            </StyledText>
-            <StyledButton theme="orange" onPress={() => Linking.openSettings()}>
-              Open Settings
-            </StyledButton>
-          </YStack>
-        ) : (
-          <FlatList
-            data={filteredAssets}
-            keyExtractor={(item) => item.id}
-            numColumns={NumColumns}
-            onEndReached={handleEndReached}
-            onEndReachedThreshold={1.5}
-            removeClippedSubviews
-            initialNumToRender={PageSize}
-            windowSize={5}
-            contentContainerStyle={{
-              paddingBottom: bottomTabHeight + insets.bottom + 16,
-            }}
-            ListEmptyComponent={
-              isLoading ? null : (
-                <YStack padding="$6" alignItems="center">
-                  <StyledText metadata>
-                    {filter === "added"
-                      ? "Nothing here has been added yet."
-                      : filter === "new"
-                      ? "Everything here is already added."
-                      : "No photos found."}
-                  </StyledText>
-                </YStack>
-              )
-            }
-            ListFooterComponent={
-              isLoading ? (
-                <YStack padding="$4" alignItems="center">
-                  <Spinner size="small" color="$orange9" />
-                </YStack>
-              ) : null
-            }
-            renderItem={({ item }) => {
-              const added = isAdded(item.id);
-              const selectionIndex = selectedIds.indexOf(item.id);
-              const isSelected = selectionIndex !== -1;
-              return (
-                <Pressable
-                  onPress={() => toggleSelect(item.id)}
-                  style={{
-                    width: cellSize,
-                    height: cellSize,
-                    marginRight: CellGap,
-                    marginBottom: CellGap,
-                  }}
-                >
-                  <Image
-                    source={{ uri: item.uri }}
-                    style={{ width: "100%", height: "100%" }}
-                    resizeMode="cover"
-                  />
-
-                  {/* Video duration badge */}
-                  {item.mediaType === MediaLibrary.MediaType.video && (
-                    <XStack
-                      position="absolute"
-                      bottom={4}
-                      right={4}
-                      backgroundColor="rgba(0,0,0,0.6)"
-                      paddingHorizontal={4}
-                      borderRadius={4}
-                      alignItems="center"
-                      gap={2}
+            {/* Filter segmented control */}
+            <XStack
+              gap="$2"
+              paddingHorizontal="$3"
+              paddingBottom="$2.5"
+              alignItems="center"
+            >
+              {(
+                [
+                  ["all", "All"],
+                  ["new", "Not added"],
+                  ["added", "Added"],
+                ] as [FilterMode, string][]
+              ).map(([mode, label]) => (
+                <Pressable key={mode} onPress={() => setFilter(mode)}>
+                  <StyledView
+                    paddingHorizontal="$3"
+                    paddingVertical="$1.5"
+                    borderRadius={16}
+                    backgroundColor={filter === mode ? "$orange9" : "$gray4"}
+                  >
+                    <StyledText
+                      fontSize="$3"
+                      color={filter === mode ? "white" : "$color"}
                     >
-                      <Icon name="videocam" size={10} color="white" />
-                      <StyledText color="white" fontSize={10}>
-                        {formatDuration(item.duration)}
-                      </StyledText>
-                    </XStack>
-                  )}
-
-                  {/* Already-added overlay: dim + checkmark, not selectable */}
-                  {added && (
-                    <StyledView
-                      position="absolute"
-                      top={0}
-                      left={0}
-                      right={0}
-                      bottom={0}
-                      backgroundColor="rgba(0,0,0,0.55)"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Icon
-                        name="checkmark-circle"
-                        type={IconType.Ionicons}
-                        size={28}
-                        color="white"
-                      />
-                      <StyledText color="white" fontSize={10} marginTop={2}>
-                        added
-                      </StyledText>
-                    </StyledView>
-                  )}
-
-                  {/* Selection badge */}
-                  {!added && (
-                    <StyledView
-                      position="absolute"
-                      top={6}
-                      right={6}
-                      width={22}
-                      height={22}
-                      borderRadius={11}
-                      borderWidth={1.5}
-                      borderColor="white"
-                      backgroundColor={
-                        isSelected ? "$orange9" : "rgba(0,0,0,0.25)"
-                      }
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      {isSelected && (
-                        <StyledText color="white" fontSize={11} bold>
-                          {selectionIndex + 1}
-                        </StyledText>
-                      )}
-                    </StyledView>
-                  )}
+                      {label}
+                    </StyledText>
+                  </StyledView>
                 </Pressable>
-              );
-            }}
-          />
-        )}
-      </YStack>
+              ))}
+            </XStack>
+
+            {permissionDenied ? (
+              <YStack
+                flex={1}
+                alignItems="center"
+                justifyContent="center"
+                gap="$3"
+                paddingHorizontal="$4"
+              >
+                <StyledText textAlign="center">
+                  Gather needs access to your photos to add them.
+                </StyledText>
+                <StyledButton
+                  theme="orange"
+                  onPress={() => Linking.openSettings()}
+                >
+                  Open Settings
+                </StyledButton>
+              </YStack>
+            ) : (
+              <FlatList
+                data={filteredAssets}
+                keyExtractor={(item) => item.id}
+                numColumns={NumColumns}
+                onEndReached={handleEndReached}
+                onEndReachedThreshold={1.5}
+                removeClippedSubviews
+                initialNumToRender={PageSize}
+                windowSize={5}
+                contentContainerStyle={{
+                  paddingBottom: 24,
+                }}
+                ListEmptyComponent={
+                  isLoading ? null : (
+                    <YStack padding="$6" alignItems="center">
+                      <StyledText metadata>
+                        {filter === "added"
+                          ? "Nothing here has been added yet."
+                          : filter === "new"
+                            ? "Everything here is already added."
+                            : "No photos found."}
+                      </StyledText>
+                    </YStack>
+                  )
+                }
+                ListFooterComponent={
+                  isLoading ? (
+                    <YStack padding="$4" alignItems="center">
+                      <Spinner size="small" color="$orange9" />
+                    </YStack>
+                  ) : null
+                }
+                renderItem={({ item }) => {
+                  const added = isAdded(item.id);
+                  const selectionIndex = selectedIds.indexOf(item.id);
+                  const isSelected = selectionIndex !== -1;
+                  return (
+                    <Pressable
+                      onPress={() => toggleSelect(item.id)}
+                      style={{
+                        width: cellSize,
+                        height: cellSize,
+                        marginRight: CellGap,
+                        marginBottom: CellGap,
+                      }}
+                    >
+                      <Image
+                        source={{ uri: item.uri }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+
+                      {/* Video duration badge */}
+                      {item.mediaType === MediaLibrary.MediaType.video && (
+                        <XStack
+                          position="absolute"
+                          bottom={4}
+                          right={4}
+                          backgroundColor="rgba(0,0,0,0.6)"
+                          paddingHorizontal={4}
+                          borderRadius={4}
+                          alignItems="center"
+                          gap={2}
+                        >
+                          <Icon name="videocam" size={10} color="white" />
+                          <StyledText color="white" fontSize={10}>
+                            {formatDuration(item.duration)}
+                          </StyledText>
+                        </XStack>
+                      )}
+
+                      {/* Already-added overlay: dim + checkmark, not selectable */}
+                      {added && (
+                        <StyledView
+                          position="absolute"
+                          top={0}
+                          left={0}
+                          right={0}
+                          bottom={0}
+                          backgroundColor="rgba(0,0,0,0.55)"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Icon
+                            name="checkmark-circle"
+                            type={IconType.Ionicons}
+                            size={28}
+                            color="white"
+                          />
+                          <StyledText color="white" fontSize={10} marginTop={2}>
+                            added
+                          </StyledText>
+                        </StyledView>
+                      )}
+
+                      {/* Selection badge */}
+                      {!added && (
+                        <StyledView
+                          position="absolute"
+                          top={6}
+                          right={6}
+                          width={22}
+                          height={22}
+                          borderRadius={11}
+                          borderWidth={1.5}
+                          borderColor="white"
+                          backgroundColor={
+                            isSelected ? "$orange9" : "rgba(0,0,0,0.25)"
+                          }
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          {isSelected && (
+                            <StyledText color="white" fontSize={11} bold>
+                              {selectionIndex + 1}
+                            </StyledText>
+                          )}
+                        </StyledView>
+                      )}
+                    </Pressable>
+                  );
+                }}
+              />
+            )}
+          </YStack>
+        </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }
