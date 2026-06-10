@@ -1084,6 +1084,8 @@ function TextForageViewContent({
         onClose={() => setPickerVisible(false)}
         onConfirm={handlePickerConfirm}
         alreadyPickedAssetIds={medias.map((m) => m.assetId)}
+        topInset={insets.top}
+        bottomInset={insets.bottom}
       />
     </StyledView>
   );
