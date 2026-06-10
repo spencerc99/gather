@@ -13,13 +13,11 @@ import {
   Image,
   Linking,
   Modal,
+  Platform,
   Pressable,
-} from "react-native";
-import {
-  SafeAreaProvider,
   SafeAreaView,
-  initialWindowMetrics,
-} from "react-native-safe-area-context";
+  StatusBar,
+} from "react-native";
 import { Spinner, XStack, YStack } from "tamagui";
 import { DatabaseContext } from "../utils/db";
 import { ErrorsContext } from "../utils/errors";
@@ -227,11 +225,18 @@ export function CustomPhotoPicker({
       presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >
-      {/* Modals render outside the app's SafeAreaProvider, so re-establish one
-          here — otherwise insets are 0 and the header clips under the notch. */}
-      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-        <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-          <YStack flex={1} backgroundColor="$background">
+      {/* react-native-safe-area-context insets are 0 inside a Modal, so use
+          RN's native SafeAreaView (reads the real window insets on iOS) and a
+          status-bar fallback on Android to keep the header below the notch. */}
+      <YStack
+        flex={1}
+        backgroundColor="$background"
+        paddingTop={
+          Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0
+        }
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <YStack flex={1}>
             {/* Header */}
             <XStack
               alignItems="center"
@@ -443,7 +448,7 @@ export function CustomPhotoPicker({
             )}
           </YStack>
         </SafeAreaView>
-      </SafeAreaProvider>
+      </YStack>
     </Modal>
   );
 }

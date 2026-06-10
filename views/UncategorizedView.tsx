@@ -5,7 +5,7 @@ import {
   useUncategorizedBlocks,
 } from "../utils/db";
 import { Block } from "../utils/dataTypes";
-import { Icon, IconType, StyledButton, StyledText } from "../components/Themed";
+import { Icon, StyledButton, StyledText } from "../components/Themed";
 import {
   Dimensions,
   FlatList,
@@ -318,9 +318,7 @@ export function UncategorizedView() {
               backgroundColor={
                 viewMode === "swipe" ? "$background" : "transparent"
               }
-              icon={
-                <Icon name="square" type={IconType.FontAwesomeIcon} size={24} />
-              }
+              icon={<Icon name="albums" size={22} />}
               onPress={() => setViewMode("swipe")}
             />
             <StyledButton
@@ -331,9 +329,7 @@ export function UncategorizedView() {
               backgroundColor={
                 viewMode === "grid" ? "$background" : "transparent"
               }
-              icon={
-                <Icon name="th" type={IconType.FontAwesomeIcon} size={24} />
-              }
+              icon={<Icon name="grid" size={22} />}
               onPress={() => setViewMode("grid")}
             />
           </XStack>
