@@ -7,6 +7,7 @@ import {
 import { Block } from "../utils/dataTypes";
 import {
   Icon,
+  IconType,
   StyledButton,
   StyledInput,
   StyledText,
@@ -459,12 +460,9 @@ export function UncategorizedView() {
                         position="absolute"
                         bottom={6}
                         right={6}
-                        size="$3"
-                        circular
-                        backgroundColor="rgba(0,0,0,0.65)"
-                        pressStyle={{ backgroundColor: "rgba(0,0,0,0.85)" }}
+                        size="$small"
                         icon={
-                          <Icon name="expand" color="white" size={26} />
+                          <Icon name="expand" type={IconType.FontAwesomeIcon} />
                         }
                         onPress={() => openInCarousel(index)}
                       />
@@ -484,28 +482,25 @@ export function UncategorizedView() {
                 alignItems="center"
                 justifyContent="space-between"
               >
-                <StyledText>{selectedBlockIds.size} selected</StyledText>
-                <XStack gap="$2" alignItems="center">
+                <XStack gap="$1.5" alignItems="center">
                   <StyledButton
-                    theme="red"
-                    circular
                     size="$small"
                     icon={<Icon name="close" />}
                     onPress={() => setSelectedBlockIds(new Set())}
                   />
+                  <StyledText>{selectedBlockIds.size} selected</StyledText>
+                </XStack>
+                <XStack gap="$2" alignItems="center">
                   <StyledButton
-                    size="$medium"
-                    borderRadius={20}
+                    size="$small"
                     icon={<Icon name="pencil" />}
                     onPress={() => {
                       setBulkTitleValue("");
                       setBulkTitleVisible(true);
                     }}
-                  >
-                    Title
-                  </StyledButton>
+                  />
                   <StyledButton
-                    size="$medium"
+                    size="$small"
                     borderRadius={20}
                     disabled={selectedCollections.length === 0}
                     opacity={selectedCollections.length === 0 ? 0.5 : 1}
