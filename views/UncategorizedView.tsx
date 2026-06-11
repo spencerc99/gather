@@ -1,4 +1,11 @@
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   DatabaseContext,
   useTotalBlockCount,
@@ -42,6 +49,89 @@ import Animated, {
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 const GridGap = 3;
+
+// Memoized so toggling one item's selection only re-renders that cell rather
+// than every BlockSummary in the grid (the main cause of slow selection).
+const OrganizeGridCell = memo(function OrganizeGridCell({
+  block,
+  index,
+  selected,
+  cellSize,
+  onToggle,
+  onOpen,
+}: {
+  block: Block;
+  index: number;
+  selected: boolean;
+  cellSize: number;
+  onToggle: (id: string) => void;
+  onOpen: (index: number) => void;
+}) {
+  return (
+    <Pressable
+      onPress={() => onToggle(block.id)}
+      style={{ width: cellSize, height: cellSize, margin: GridGap }}
+    >
+      <YStack
+        width="100%"
+        height="100%"
+        borderRadius={8}
+        overflow="hidden"
+        backgroundColor="$gray3"
+        borderWidth={2}
+        borderColor={selected ? "$orange9" : "transparent"}
+        justifyContent="center"
+        alignItems="center"
+      >
+        <BlockSummary
+          block={block}
+          hideHoldMenu
+          hideMetadata
+          editable={false}
+          isVisible={false}
+          containerProps={{
+            width: "100%",
+            height: "100%",
+            gap: 0,
+            justifyContent: "center",
+          }}
+          style={{ width: "100%", height: "100%" }}
+          blockStyle={{ resizeMode: "cover" }}
+        />
+      </YStack>
+      {/* Selection badge */}
+      <YStack
+        position="absolute"
+        top={6}
+        right={6}
+        width={22}
+        height={22}
+        borderRadius={11}
+        borderWidth={1.5}
+        borderColor="white"
+        backgroundColor={selected ? "$orange9" : "rgba(0,0,0,0.25)"}
+        alignItems="center"
+        justifyContent="center"
+      >
+        {selected && <Icon name="checkmark" color="white" size={14} />}
+      </YStack>
+      {/* Open this item in the focused carousel (secondary) */}
+      <StyledButton
+        position="absolute"
+        bottom={6}
+        right={6}
+        size="$tiny"
+        circular
+        borderWidth={0}
+        backgroundColor="rgba(0,0,0,0.4)"
+        icon={
+          <Icon name="expand" type={IconType.FontAwesomeIcon} color="white" />
+        }
+        onPress={() => onOpen(index)}
+      />
+    </Pressable>
+  );
+});
 
 export function UncategorizedView() {
   const { addConnections, deleteBlock, updateBlock } =
@@ -397,85 +487,28 @@ export function UncategorizedView() {
                   paddingHorizontal: GridGap,
                   paddingBottom: 16,
                 }}
-                renderItem={({ item, index }) => {
-                  const selected = selectedBlockIds.has(item.id);
-                  return (
-                    <Pressable
-                      onPress={() => toggleBlockSelection(item.id)}
-                      style={{
-                        width: gridCellSize,
-                        height: gridCellSize,
-                        margin: GridGap,
-                      }}
-                    >
-                      <YStack
-                        width="100%"
-                        height="100%"
-                        borderRadius={8}
-                        overflow="hidden"
-                        backgroundColor="$gray3"
-                        borderWidth={2}
-                        borderColor={selected ? "$orange9" : "transparent"}
-                        justifyContent="center"
-                        alignItems="center"
-                      >
-                        <BlockSummary
-                          block={item}
-                          hideHoldMenu
-                          hideMetadata
-                          editable={false}
-                          isVisible={false}
-                          containerProps={{
-                            width: "100%",
-                            height: "100%",
-                            gap: 0,
-                            justifyContent: "center",
-                          }}
-                          style={{ width: "100%", height: "100%" }}
-                          blockStyle={{ resizeMode: "cover" }}
-                        />
-                      </YStack>
-                      {/* Selection badge */}
-                      <YStack
-                        position="absolute"
-                        top={6}
-                        right={6}
-                        width={22}
-                        height={22}
-                        borderRadius={11}
-                        borderWidth={1.5}
-                        borderColor="white"
-                        backgroundColor={
-                          selected ? "$orange9" : "rgba(0,0,0,0.25)"
-                        }
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        {selected && (
-                          <Icon name="checkmark" color="white" size={14} />
-                        )}
-                      </YStack>
-                      {/* Open this item in the focused carousel (secondary) */}
-                      <StyledButton
-                        position="absolute"
-                        bottom={6}
-                        right={6}
-                        size="$tiny"
-                        circular
-                        borderWidth={0}
-                        backgroundColor="rgba(0,0,0,0.4)"
-                        icon={
-                          <Icon
-                            name="expand"
-                            type={IconType.FontAwesomeIcon}
-                            color="white"
-                          />
-                        }
-                        onPress={() => openInCarousel(index)}
-                      />
-                    </Pressable>
-                  );
+                removeClippedSubviews
+                initialNumToRender={15}
+                maxToRenderPerBatch={9}
+                windowSize={5}
+                getItemLayout={(_, index) => {
+                  const rowHeight = gridCellSize + GridGap * 2;
+                  return {
+                    length: rowHeight,
+                    offset: rowHeight * Math.floor(index / 3),
+                    index,
+                  };
                 }}
+                renderItem={({ item, index }) => (
+                  <OrganizeGridCell
+                    block={item}
+                    index={index}
+                    selected={selectedBlockIds.has(item.id)}
+                    cellSize={gridCellSize}
+                    onToggle={toggleBlockSelection}
+                    onOpen={openInCarousel}
+                  />
+                )}
               />
             </YStack>
           )}

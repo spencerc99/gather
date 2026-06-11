@@ -1,5 +1,6 @@
 import * as MediaLibrary from "expo-media-library";
 import {
+  memo,
   useCallback,
   useContext,
   useEffect,
@@ -300,7 +301,7 @@ export function CustomPhotoPicker({
               onEndReached={handleEndReached}
               onEndReachedThreshold={1.5}
               removeClippedSubviews
-              initialNumToRender={PageSize}
+              initialNumToRender={24}
               windowSize={5}
               contentContainerStyle={{
                 paddingBottom: 24,
@@ -325,94 +326,29 @@ export function CustomPhotoPicker({
                   </YStack>
                 ) : null
               }
+              maxToRenderPerBatch={12}
+              getItemLayout={(_, index) => {
+                const rowHeight = cellSize + CellGap;
+                return {
+                  length: rowHeight,
+                  offset: rowHeight * Math.floor(index / NumColumns),
+                  index,
+                };
+              }}
               renderItem={({ item }) => {
-                const added = isAdded(item.id);
                 const selectionIndex = selectedIds.indexOf(item.id);
-                const isSelected = selectionIndex !== -1;
                 return (
-                  <Pressable
-                    onPress={() => toggleSelect(item.id)}
-                    style={{
-                      width: cellSize,
-                      height: cellSize,
-                      marginRight: CellGap,
-                      marginBottom: CellGap,
-                    }}
-                  >
-                    <Image
-                      source={{ uri: item.uri }}
-                      style={{ width: "100%", height: "100%" }}
-                      resizeMode="cover"
-                    />
-
-                    {/* Video duration badge */}
-                    {item.mediaType === MediaLibrary.MediaType.video && (
-                      <XStack
-                        position="absolute"
-                        bottom={4}
-                        right={4}
-                        backgroundColor="rgba(0,0,0,0.6)"
-                        paddingHorizontal={4}
-                        borderRadius={4}
-                        alignItems="center"
-                        gap={2}
-                      >
-                        <Icon name="videocam" size={10} color="white" />
-                        <StyledText color="white" fontSize={10}>
-                          {formatDuration(item.duration)}
-                        </StyledText>
-                      </XStack>
-                    )}
-
-                    {/* Already-added overlay: dim + checkmark, not selectable */}
-                    {added && (
-                      <StyledView
-                        position="absolute"
-                        top={0}
-                        left={0}
-                        right={0}
-                        bottom={0}
-                        backgroundColor="rgba(0,0,0,0.55)"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <Icon
-                          name="checkmark-circle"
-                          type={IconType.Ionicons}
-                          size={28}
-                          color="white"
-                        />
-                        <StyledText color="white" fontSize={10} marginTop={2}>
-                          added
-                        </StyledText>
-                      </StyledView>
-                    )}
-
-                    {/* Selection badge */}
-                    {!added && (
-                      <StyledView
-                        position="absolute"
-                        top={6}
-                        right={6}
-                        width={22}
-                        height={22}
-                        borderRadius={11}
-                        borderWidth={1.5}
-                        borderColor="white"
-                        backgroundColor={
-                          isSelected ? "$orange9" : "rgba(0,0,0,0.25)"
-                        }
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        {isSelected && (
-                          <StyledText color="white" fontSize={11} bold>
-                            {selectionIndex + 1}
-                          </StyledText>
-                        )}
-                      </StyledView>
-                    )}
-                  </Pressable>
+                  <PhotoCell
+                    uri={item.uri}
+                    isVideo={item.mediaType === MediaLibrary.MediaType.video}
+                    duration={item.duration}
+                    added={isAdded(item.id)}
+                    isSelected={selectionIndex !== -1}
+                    selectionIndex={selectionIndex}
+                    cellSize={cellSize}
+                    assetId={item.id}
+                    onPress={toggleSelect}
+                  />
                 );
               }}
             />
@@ -452,6 +388,114 @@ export function CustomPhotoPicker({
     </Modal>
   );
 }
+
+// Memoized so selecting one photo only re-renders the cells whose state
+// actually changed, not the whole visible grid.
+const PhotoCell = memo(function PhotoCell({
+  uri,
+  isVideo,
+  duration,
+  added,
+  isSelected,
+  selectionIndex,
+  cellSize,
+  assetId,
+  onPress,
+}: {
+  uri: string;
+  isVideo: boolean;
+  duration: number;
+  added: boolean;
+  isSelected: boolean;
+  selectionIndex: number;
+  cellSize: number;
+  assetId: string;
+  onPress: (id: string) => void;
+}) {
+  return (
+    <Pressable
+      onPress={() => onPress(assetId)}
+      style={{
+        width: cellSize,
+        height: cellSize,
+        marginRight: CellGap,
+        marginBottom: CellGap,
+      }}
+    >
+      <Image
+        source={{ uri }}
+        style={{ width: "100%", height: "100%" }}
+        resizeMode="cover"
+      />
+
+      {/* Video duration badge */}
+      {isVideo && (
+        <XStack
+          position="absolute"
+          bottom={4}
+          right={4}
+          backgroundColor="rgba(0,0,0,0.6)"
+          paddingHorizontal={4}
+          borderRadius={4}
+          alignItems="center"
+          gap={2}
+        >
+          <Icon name="videocam" size={10} color="white" />
+          <StyledText color="white" fontSize={10}>
+            {formatDuration(duration)}
+          </StyledText>
+        </XStack>
+      )}
+
+      {/* Already-added overlay: dim + checkmark, not selectable */}
+      {added && (
+        <StyledView
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          backgroundColor="rgba(0,0,0,0.55)"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Icon
+            name="checkmark-circle"
+            type={IconType.Ionicons}
+            size={28}
+            color="white"
+          />
+          <StyledText color="white" fontSize={10} marginTop={2}>
+            added
+          </StyledText>
+        </StyledView>
+      )}
+
+      {/* Selection badge */}
+      {!added && (
+        <StyledView
+          position="absolute"
+          top={6}
+          right={6}
+          width={22}
+          height={22}
+          borderRadius={11}
+          borderWidth={1.5}
+          borderColor="white"
+          backgroundColor={isSelected ? "$orange9" : "rgba(0,0,0,0.25)"}
+          alignItems="center"
+          justifyContent="center"
+        >
+          {isSelected && (
+            <StyledText color="white" fontSize={11} bold>
+              {selectionIndex + 1}
+            </StyledText>
+          )}
+        </StyledView>
+      )}
+    </Pressable>
+  );
+});
 
 function formatDuration(seconds: number): string {
   if (!seconds || seconds < 0) {
