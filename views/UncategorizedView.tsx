@@ -460,9 +460,16 @@ export function UncategorizedView() {
                         position="absolute"
                         bottom={6}
                         right={6}
-                        size="$small"
+                        size="$tiny"
+                        circular
+                        borderWidth={0}
+                        backgroundColor="rgba(0,0,0,0.4)"
                         icon={
-                          <Icon name="expand" type={IconType.FontAwesomeIcon} />
+                          <Icon
+                            name="expand"
+                            type={IconType.FontAwesomeIcon}
+                            color="white"
+                          />
                         }
                         onPress={() => openInCarousel(index)}
                       />
@@ -484,7 +491,8 @@ export function UncategorizedView() {
               >
                 <XStack gap="$1.5" alignItems="center">
                   <StyledButton
-                    size="$small"
+                    size="$tiny"
+                    theme="red"
                     icon={<Icon name="close" />}
                     onPress={() => setSelectedBlockIds(new Set())}
                   />
@@ -552,7 +560,7 @@ export function UncategorizedView() {
             padding="$4"
             gap="$3"
           >
-            <StyledText bold fontSize="$5">
+            <StyledText bold size="$5">
               Title {selectedBlockIds.size} item
               {selectedBlockIds.size > 1 ? "s" : ""}
             </StyledText>
