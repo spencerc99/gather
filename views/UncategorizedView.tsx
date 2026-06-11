@@ -272,7 +272,7 @@ export function UncategorizedView() {
     );
     setBulkTitleValue("");
     setBulkTitleVisible(false);
-    setSelectedBlockIds(new Set());
+    // Keep the selection so the user can connect the titled items next.
   }, [bulkTitleValue, selectedBlockIds, updateBlock]);
 
   // Open a block from the grid in the focused carousel ("drill in").
