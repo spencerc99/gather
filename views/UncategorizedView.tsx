@@ -5,11 +5,17 @@ import {
   useUncategorizedBlocks,
 } from "../utils/db";
 import { Block } from "../utils/dataTypes";
-import { Icon, StyledButton, StyledText } from "../components/Themed";
+import {
+  Icon,
+  StyledButton,
+  StyledInput,
+  StyledText,
+} from "../components/Themed";
 import {
   Dimensions,
   FlatList,
   Keyboard,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -37,7 +43,8 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 const GridGap = 3;
 
 export function UncategorizedView() {
-  const { addConnections, deleteBlock } = useContext(DatabaseContext);
+  const { addConnections, deleteBlock, updateBlock } =
+    useContext(DatabaseContext);
   const { currentUser } = useContext(UserContext);
   const { data: totalBlocks } = useTotalBlockCount();
   const { data: events } = useUncategorizedBlocks();
@@ -46,11 +53,15 @@ export function UncategorizedView() {
   const [lastSwipeDirection, setLastSwipeDirection] = useState<"next" | "prev">(
     "next",
   );
-  const [viewMode, setViewMode] = useState<"swipe" | "grid">("swipe");
-  // Blocks multi-selected in grid mode for bulk-connecting to collections.
+  // Grid is the default home view; you drill into the carousel to focus one item.
+  const [viewMode, setViewMode] = useState<"swipe" | "grid">("grid");
+  // Blocks multi-selected in grid mode for bulk actions (connect / title).
   const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(
     new Set(),
   );
+  // Bulk-title dialog state.
+  const [bulkTitleVisible, setBulkTitleVisible] = useState(false);
+  const [bulkTitleValue, setBulkTitleValue] = useState("");
 
   const toggleBlockSelection = useCallback((blockId: string) => {
     setSelectedBlockIds((prev) => {
@@ -156,8 +167,25 @@ export function UncategorizedView() {
     setSearchValue("");
   }, [selectedBlockIds, selectedCollections, addConnections, currentUser]);
 
-  // Jump the swipe carousel straight to a block tapped in the grid.
-  const jumpToSwipe = useCallback((index: number) => {
+  // Apply a single title to every grid-selected block.
+  const handleBulkTitle = useCallback(async () => {
+    const title = bulkTitleValue.trim();
+    if (!title || selectedBlockIds.size === 0) {
+      setBulkTitleVisible(false);
+      return;
+    }
+    await Promise.all(
+      Array.from(selectedBlockIds).map((blockId) =>
+        updateBlock({ blockId, editInfo: { title } }),
+      ),
+    );
+    setBulkTitleValue("");
+    setBulkTitleVisible(false);
+    setSelectedBlockIds(new Set());
+  }, [bulkTitleValue, selectedBlockIds, updateBlock]);
+
+  // Open a block from the grid in the focused carousel ("drill in").
+  const openInCarousel = useCallback((index: number) => {
     setCurrentIdx(index);
     setViewMode("swipe");
     requestAnimationFrame(() => {
@@ -278,22 +306,25 @@ export function UncategorizedView() {
     >
       <Animated.View style={{ ...translateStyle }}>
         <Stack minHeight="100%">
-          {/* Header row: view toggle · count · delete (single flex row so the
-              toggle and trash always line up). */}
+          {/* Header row. Grid is home; the carousel is a drill-in with a back
+              button to return. Single flex row keeps the buttons aligned. */}
           <XStack
             alignItems="center"
             paddingHorizontal={6}
             paddingTop={6}
             gap="$2"
           >
-            <StyledButton
-              size="$small"
-              backgroundColor="$gray6"
-              icon={<Icon name={viewMode === "swipe" ? "grid" : "image"} />}
-              onPress={() =>
-                setViewMode((m) => (m === "swipe" ? "grid" : "swipe"))
-              }
-            />
+            {viewMode === "swipe" ? (
+              <StyledButton
+                size="$small"
+                backgroundColor="$gray6"
+                icon={<Icon name="chevron-back" />}
+                onPress={() => setViewMode("grid")}
+              />
+            ) : (
+              // Spacer to keep the count centered.
+              <Stack width={40} />
+            )}
             <StyledText flex={1} textAlign="center">
               {viewMode === "swipe" ? `${currentIdx + 1} / ` : ""}
               {events.length} unconnected,{" "}
@@ -326,6 +357,8 @@ export function UncategorizedView() {
               <Carousel
                 ref={carouselRef}
                 loop={false}
+                // Open at the drilled-in item when entering from the grid.
+                defaultIndex={currentIdx}
                 // TODO: this isn't actually available in this source in this version but seemingly does something? i literally have no idea why
                 // @ts-ignore
                 minScrollDistancePerSwipe={0.1}
@@ -421,17 +454,19 @@ export function UncategorizedView() {
                           <Icon name="checkmark" color="white" size={14} />
                         )}
                       </YStack>
-                      {/* Jump to this item in swipe view */}
+                      {/* Open this item in the focused carousel (secondary) */}
                       <StyledButton
                         position="absolute"
                         bottom={4}
                         right={4}
-                        size="$1"
+                        size="$2"
                         circular
                         chromeless
-                        backgroundColor="rgba(0,0,0,0.45)"
-                        icon={<Icon name="expand" color="white" size={12} />}
-                        onPress={() => jumpToSwipe(index)}
+                        backgroundColor="rgba(0,0,0,0.5)"
+                        icon={
+                          <Icon name="scan-outline" color="white" size={16} />
+                        }
+                        onPress={() => openInCarousel(index)}
                       />
                     </Pressable>
                   );
@@ -458,6 +493,17 @@ export function UncategorizedView() {
                     icon={<Icon name="close" />}
                     onPress={() => setSelectedBlockIds(new Set())}
                   />
+                  <StyledButton
+                    size="$medium"
+                    borderRadius={20}
+                    icon={<Icon name="pencil" />}
+                    onPress={() => {
+                      setBulkTitleValue("");
+                      setBulkTitleVisible(true);
+                    }}
+                  >
+                    Title
+                  </StyledButton>
                   <StyledButton
                     size="$medium"
                     borderRadius={20}
@@ -488,6 +534,59 @@ export function UncategorizedView() {
           </Stack>
         </Stack>
       </Animated.View>
+
+      {/* Bulk-title dialog: one title applied to all selected items */}
+      <Modal
+        visible={bulkTitleVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBulkTitleVisible(false)}
+      >
+        <YStack
+          flex={1}
+          backgroundColor="rgba(0,0,0,0.4)"
+          justifyContent="center"
+          alignItems="center"
+          paddingHorizontal="$4"
+        >
+          <YStack
+            width="100%"
+            maxWidth={360}
+            backgroundColor="$background"
+            borderRadius={16}
+            padding="$4"
+            gap="$3"
+          >
+            <StyledText bold fontSize="$5">
+              Title {selectedBlockIds.size} item
+              {selectedBlockIds.size > 1 ? "s" : ""}
+            </StyledText>
+            <StyledInput
+              value={bulkTitleValue}
+              onChangeText={setBulkTitleValue}
+              placeholder="Enter a title for all selected"
+              autoFocus
+              onSubmitEditing={handleBulkTitle}
+            />
+            <XStack gap="$2" justifyContent="flex-end">
+              <StyledButton
+                chromeless
+                onPress={() => setBulkTitleVisible(false)}
+              >
+                Cancel
+              </StyledButton>
+              <StyledButton
+                theme="green"
+                disabled={!bulkTitleValue.trim()}
+                opacity={!bulkTitleValue.trim() ? 0.5 : 1}
+                onPress={handleBulkTitle}
+              >
+                Apply
+              </StyledButton>
+            </XStack>
+          </YStack>
+        </YStack>
+      </Modal>
     </SafeAreaView>
   );
 }
