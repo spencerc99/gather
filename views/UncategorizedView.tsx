@@ -457,14 +457,14 @@ export function UncategorizedView() {
                       {/* Open this item in the focused carousel (secondary) */}
                       <StyledButton
                         position="absolute"
-                        bottom={4}
-                        right={4}
-                        size="$2"
+                        bottom={6}
+                        right={6}
+                        size="$3"
                         circular
-                        chromeless
-                        backgroundColor="rgba(0,0,0,0.5)"
+                        backgroundColor="rgba(0,0,0,0.65)"
+                        pressStyle={{ backgroundColor: "rgba(0,0,0,0.85)" }}
                         icon={
-                          <Icon name="scan-outline" color="white" size={16} />
+                          <Icon name="expand" color="white" size={26} />
                         }
                         onPress={() => openInCarousel(index)}
                       />
