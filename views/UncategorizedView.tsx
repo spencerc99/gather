@@ -535,6 +535,7 @@ export function UncategorizedView() {
                 <XStack gap="$2" alignItems="center">
                   <StyledButton
                     size="$small"
+                    theme="gray"
                     icon={<Icon name="pencil" />}
                     onPress={() => {
                       setBulkTitleValue("");
