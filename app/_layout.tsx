@@ -28,6 +28,7 @@ import {
   useColorScheme,
 } from "react-native";
 import { HoldMenuProvider } from "react-native-hold-menu";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -98,7 +99,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (Platform.OS === "android") {
       NavigationBar.setBackgroundColorAsync(
-        colorScheme === "light" ? "white" : "black"
+        colorScheme === "light" ? "white" : "black",
       );
     }
   }, [colorScheme]);
@@ -108,43 +109,45 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <SafeAreaProvider>
-        <ErrorsProvider>
-          <TamaguiProvider config={config}>
-            <Theme name={colorScheme === "dark" ? "dark" : "light"}>
-              <QueryClientProvider client={client}>
-                <NetworkProvider>
-                  <HoldMenuProvider
-                    theme={colorScheme || undefined}
-                    safeAreaInsets={insets}
-                    // @ts-ignore
-                    onOpen={() => {
-                      if (Keyboard.isVisible()) {
-                        Keyboard.dismiss();
-                      }
-                    }}
-                  >
-                    <UserProvider>
-                      <DatabaseProvider>
-                        <RootLayoutNav />
-                        <StatusBar
-                          style="auto"
-                          // NOTE: idk why but "auto" doesn't properly change color on Android.
-                          backgroundColor={
-                            colorScheme === "light" ? "white" : "black"
-                          }
-                        />
-                      </DatabaseProvider>
-                    </UserProvider>
-                  </HoldMenuProvider>
-                </NetworkProvider>
-              </QueryClientProvider>
-            </Theme>
-          </TamaguiProvider>
-        </ErrorsProvider>
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <SafeAreaProvider>
+          <ErrorsProvider>
+            <TamaguiProvider config={config}>
+              <Theme name={colorScheme === "dark" ? "dark" : "light"}>
+                <QueryClientProvider client={client}>
+                  <NetworkProvider>
+                    <HoldMenuProvider
+                      theme={colorScheme || undefined}
+                      safeAreaInsets={insets}
+                      // @ts-ignore
+                      onOpen={() => {
+                        if (Keyboard.isVisible()) {
+                          Keyboard.dismiss();
+                        }
+                      }}
+                    >
+                      <UserProvider>
+                        <DatabaseProvider>
+                          <RootLayoutNav />
+                          <StatusBar
+                            style="auto"
+                            // NOTE: idk why but "auto" doesn't properly change color on Android.
+                            backgroundColor={
+                              colorScheme === "light" ? "white" : "black"
+                            }
+                          />
+                        </DatabaseProvider>
+                      </UserProvider>
+                    </HoldMenuProvider>
+                  </NetworkProvider>
+                </QueryClientProvider>
+              </Theme>
+            </TamaguiProvider>
+          </ErrorsProvider>
+        </SafeAreaProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 

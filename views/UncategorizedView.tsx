@@ -173,6 +173,7 @@ export function UncategorizedView() {
           block={block}
           key={block.id}
           editable={true}
+          zoomable
           style={{
             height: "100%",
             width: "100%",

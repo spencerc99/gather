@@ -42,7 +42,10 @@ const MaxMenuTitleLength = 30;
 
 function useBlockMenuItems(
   block: Block,
-  { onClickEdit, isOwner }: { onClickEdit?: () => void; isOwner?: boolean } = {}
+  {
+    onClickEdit,
+    isOwner,
+  }: { onClickEdit?: () => void; isOwner?: boolean } = {},
 ): {
   blockMenuItems: MenuItemProps[];
 } {
@@ -143,7 +146,7 @@ function useBlockMenuItems(
         },
       },
     ],
-    [id, source, content, type, title, deleteBlock]
+    [id, source, content, type, title, deleteBlock],
   );
 
   return { blockMenuItems };
@@ -159,6 +162,7 @@ export function BlockSummary({
   containerProps,
   editable,
   isVisible,
+  zoomable,
 }: {
   block: Block;
   hideMetadata?: boolean;
@@ -169,6 +173,7 @@ export function BlockSummary({
   containerProps?: GetProps<typeof YStack>;
   editable?: boolean;
   isVisible?: boolean;
+  zoomable?: boolean;
 }) {
   const { id, title, createdAt } = block;
   const { updateBlock } = useContext(DatabaseContext);
@@ -219,9 +224,10 @@ export function BlockSummary({
           ...blockStyle,
         }}
         isVisible={isVisible}
+        zoomable={zoomable}
       />
     ),
-    [block, isEditing, isVisible]
+    [block, isEditing, isVisible, zoomable],
   );
 
   function renderMetadata() {
@@ -244,14 +250,14 @@ export function BlockSummary({
         metadata.push(
           <Fragment key={"link"}>
             from <ExternalLinkText href={source!}>{source}</ExternalLinkText>
-          </Fragment>
+          </Fragment>,
         );
         break;
       case BlockType.Document:
         metadata.push(
           <Fragment key={"link"}>
             from <ExternalLinkText href={content}>{content}</ExternalLinkText>
-          </Fragment>
+          </Fragment>,
         );
         break;
     }
@@ -281,7 +287,7 @@ export function BlockSummary({
                 await updateBlock({
                   blockId: id,
                   editInfo: { title: newTitle },
-                })
+                }),
             );
           }}
         />
@@ -587,7 +593,7 @@ export function BlockReviewSummary({
         isVisible={isVisible}
       />
     ),
-    [block, isVisible, widthProperty, style, blockStyle]
+    [block, isVisible, widthProperty, style, blockStyle],
   );
 
   const dateInfo = useMemo(
@@ -597,7 +603,7 @@ export function BlockReviewSummary({
         dateKind: "absolute",
         includeDescription: true,
       }),
-    [block, isRemoteCollection]
+    [block, isRemoteCollection],
   );
   // TODO: need to truncate title, etc. to make it fit
   const renderedSummary = useMemo(
@@ -639,7 +645,7 @@ export function BlockReviewSummary({
       showBackground,
       blockMenuItems,
       content,
-    ]
+    ],
   );
   return shouldLink ? (
     <Link
@@ -674,7 +680,7 @@ export function BlockMetadata({
   const time = useTime(60 * 1000);
   const dateInfo = useMemo(
     () => getDateForBlock(block, { isRemoteCollection, dateKind }),
-    [time]
+    [time],
   );
 
   let metadata;
@@ -720,14 +726,14 @@ function getDateForBlock(
     isRemoteCollection?: boolean;
     dateKind?: "relative" | "absolute";
     includeDescription?: boolean;
-  }
+  },
 ) {
   const { createdAt, remoteConnectedAt, connectedAt } = block;
 
   const date =
     isRemoteCollection && remoteConnectedAt
       ? remoteConnectedAt
-      : connectedAt ?? createdAt;
+      : (connectedAt ?? createdAt);
   const dateInfo =
     dateKind === "relative"
       ? getRelativeDate(date)
@@ -736,8 +742,8 @@ function getDateForBlock(
     isRemoteCollection && remoteConnectedAt
       ? "synced"
       : connectedAt
-      ? "connected"
-      : "created";
+        ? "connected"
+        : "created";
   return includeDescription ? `${dateDescription} @ ${dateInfo}` : dateInfo;
 }
 
@@ -751,7 +757,7 @@ export function BlockConnections({ block }: { block: Block }) {
       (collectionIds || []).map(async (collectionId) => {
         const collection = await getCollection(collectionId);
         return collection?.title;
-      })
+      }),
     ).then((c) => setCollectionsToShow(c.filter(Boolean)));
   }, []);
 

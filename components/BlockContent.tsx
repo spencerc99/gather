@@ -34,6 +34,7 @@ export function BlockContent({
   textContainerProps = {},
   textProps = {},
   isVisible,
+  zoomable,
 }: Pick<Block, "type" | "content" | "title" | "description"> & {
   isEditing?: boolean;
   commitEdit?: (newContent: string | null) => Promise<void>;
@@ -42,6 +43,7 @@ export function BlockContent({
   textContainerProps?: YStackProps;
   textProps?: ParagraphProps;
   isVisible?: boolean;
+  zoomable?: boolean;
 }) {
   const theme = useTheme();
   let renderedContent;
@@ -105,6 +107,7 @@ export function BlockContent({
           }
           alt={`Image ${title} ${description}`}
           isVisible={isVisible}
+          zoomable={zoomable}
         />
       );
       break;

@@ -1,5 +1,6 @@
 import { BlockType, isBlockContentVideo } from "../utils/mimeTypes";
 import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
+import { PinchToZoom } from "./PinchToZoom";
 import { Pressable } from "react-native";
 import { Audio, ResizeMode, Video } from "expo-av";
 import {
@@ -23,6 +24,7 @@ export function MediaView({
   videoProps,
   children,
   isVisible = true,
+  zoomable = false,
 }: PropsWithChildren<{
   media: string;
   blockType: BlockType;
@@ -30,6 +32,7 @@ export function MediaView({
   style?: StyleProps;
   videoProps?: GetProps<typeof Video>;
   isVisible?: boolean;
+  zoomable?: boolean;
 }>) {
   const [sound, setSound] = useState<Audio.Sound | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -94,7 +97,7 @@ export function MediaView({
             console.log(`FATAL PLAYER ERROR: ${status.error}`);
           }
         }
-      }
+      },
     );
     setSound(sound);
   }
@@ -123,8 +126,8 @@ export function MediaView({
             }}
           />
         ) : null;
-      case BlockType.Image:
-        return (
+      case BlockType.Image: {
+        const image = (
           <AspectRatioImage
             uri={media}
             // TODO: types
@@ -133,6 +136,8 @@ export function MediaView({
             }}
           />
         );
+        return zoomable ? <PinchToZoom>{image}</PinchToZoom> : image;
+      }
       case BlockType.Document:
         if (!mediaIsVideo) {
           return null;
