@@ -612,6 +612,8 @@ export function UncategorizedView() {
             <XStack gap="$2" justifyContent="flex-end">
               <StyledButton
                 chromeless
+                theme="gray"
+                pressStyle={{ backgroundColor: "$gray5" }}
                 onPress={() => setBulkTitleVisible(false)}
               >
                 Cancel
