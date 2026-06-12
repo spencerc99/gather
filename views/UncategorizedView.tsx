@@ -558,16 +558,20 @@ export function UncategorizedView() {
                 </XStack>
               </XStack>
             )}
-            <SelectCollectionsList
-              searchValue={searchValue}
-              setSearchValue={setSearchValue}
-              selectedCollections={selectedCollections}
-              setSelectedCollections={setSelectedCollections}
-              horizontal
-              onFocusInputChange={(isFocused) =>
-                setCollectionsSelectInputFocused(isFocused)
-              }
-            />
+            {/* In grid view, hide the collection picker until items are
+                selected so the grid is unobstructed while navigating. */}
+            {(viewMode === "swipe" || selectedBlockIds.size > 0) && (
+              <SelectCollectionsList
+                searchValue={searchValue}
+                setSearchValue={setSearchValue}
+                selectedCollections={selectedCollections}
+                setSelectedCollections={setSelectedCollections}
+                horizontal
+                onFocusInputChange={(isFocused) =>
+                  setCollectionsSelectInputFocused(isFocused)
+                }
+              />
+            )}
           </Stack>
         </Stack>
       </Animated.View>
