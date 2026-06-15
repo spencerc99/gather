@@ -40,7 +40,7 @@ export default function TabLayout() {
           tabBarLabel: "",
           headerShown: true,
           tabBarIcon: ({ color }) => <TabBarIcon name="create" color={color} />,
-          headerRight: () => headerIcons,
+          headerRight: () => <HeaderIcon href="/search" icon="search" />,
         }}
       />
       <Tabs.Screen

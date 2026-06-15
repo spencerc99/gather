@@ -98,7 +98,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (Platform.OS === "android") {
       NavigationBar.setBackgroundColorAsync(
-        colorScheme === "light" ? "white" : "black"
+        colorScheme === "light" ? "white" : "black",
       );
     }
   }, [colorScheme]);
@@ -254,6 +254,13 @@ function RootLayoutNav() {
         name="collection/[id]/index"
         options={{
           presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="search"
+        options={{
+          presentation: "card",
+          title: "Search",
         }}
       />
       <Stack.Screen
