@@ -1,3 +1,4 @@
+import { Image as ExpoImage } from "expo-image";
 import * as MediaLibrary from "expo-media-library";
 import {
   memo,
@@ -11,7 +12,6 @@ import {
 import {
   Dimensions,
   FlatList,
-  Image,
   Linking,
   Modal,
   Platform,
@@ -300,7 +300,11 @@ export function CustomPhotoPicker({
               style={{ flex: 1 }}
               onEndReached={handleEndReached}
               onEndReachedThreshold={1.5}
-              removeClippedSubviews
+              // removeClippedSubviews drops the views of offscreen cells, and on
+              // iOS that intermittently leaves blank cells when they scroll back
+              // into view. Keep it on Android (stable + helps memory) but rely on
+              // expo-image's recycling on iOS instead.
+              removeClippedSubviews={Platform.OS === "android"}
               initialNumToRender={24}
               windowSize={5}
               contentContainerStyle={{
@@ -420,12 +424,24 @@ const PhotoCell = memo(function PhotoCell({
         height: cellSize,
         marginRight: CellGap,
         marginBottom: CellGap,
+        // Neutral backing so a not-yet-decoded cell reads as a gray tile rather
+        // than a blank white square while its thumbnail loads.
+        backgroundColor: "#3a3a3a",
       }}
     >
-      <Image
-        source={{ uri }}
+      <ExpoImage
+        source={uri}
         style={{ width: "100%", height: "100%" }}
-        resizeMode="cover"
+        contentFit="cover"
+        // PhotoKit (ph://) and remote thumbnails: request the small grid-sized
+        // representation, which iOS serves from its always-local thumbnail
+        // cache, so something shows even on a flaky/no connection (matching the
+        // native picker) instead of blocking on a full iCloud download.
+        recyclingKey={assetId}
+        cachePolicy="memory-disk"
+        transition={120}
+        allowDownscaling
+        priority="low"
       />
 
       {/* Video duration badge */}
