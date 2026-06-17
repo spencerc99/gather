@@ -332,10 +332,15 @@ export function CustomPhotoPicker({
               }
               maxToRenderPerBatch={12}
               getItemLayout={(_, index) => {
+                // With numColumns > 1, FlatList groups items into rows and calls
+                // getItemLayout with the ROW index (not the item index), so the
+                // offset is simply rowHeight * index. Dividing by NumColumns here
+                // would collapse every NumColumns rows onto one offset, corrupting
+                // the virtualization window and blanking cells as you scroll.
                 const rowHeight = cellSize + CellGap;
                 return {
                   length: rowHeight,
-                  offset: rowHeight * Math.floor(index / NumColumns),
+                  offset: rowHeight * index,
                   index,
                 };
               }}
