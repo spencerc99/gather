@@ -46,6 +46,7 @@
     "expo-file-system": "~16.0.9",
     "expo-font": "~11.10.3",
     "expo-haptics": "~12.8.1",
+    "expo-image": "~1.10.6",
     "expo-image-picker": "~14.7.1",
     "expo-linking": "~6.2.2",
     "expo-location": "~16.5.5",

@@ -27,7 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function getDisplayForCreatedBy(
   createdBy: string,
-  arenaUserInfo: RawArenaUser | null
+  arenaUserInfo: RawArenaUser | null,
 ) {
   const { userId, source } = extractCreatorFromCreatedBy(createdBy);
   if (!source) {
@@ -38,7 +38,9 @@ function getDisplayForCreatedBy(
       return (
         <>
           <ExternalLinkText href={`https://are.na/${userId}`}>
-            {arenaUserInfo && userId === arenaUserInfo.slug ? "you" : userId}{" "}
+            {arenaUserInfo && userId === arenaUserInfo.slug
+              ? "you"
+              : userId}{" "}
           </ExternalLinkText>
           <ArenaLogo />
         </>
@@ -76,11 +78,11 @@ export function BlockDetailView({ block }: { block: Block }) {
   const { updateBlock } = useContext(DatabaseContext);
   const { arenaUserInfo } = useContext(UserContext);
   const { data: connections, isLoading: loadingData } = useBlockConnections(
-    id.toString()
+    id.toString(),
   );
   const hasRemoteConnection = useMemo(
     () => connections?.some((c) => Boolean(c.remoteSourceType)),
-    [connections]
+    [connections],
   );
   const createdByDisplay = getDisplayForCreatedBy(createdBy, arenaUserInfo);
   const [devModeEnabled] = useStickyValue("devModeEnabled", false);
@@ -145,13 +147,14 @@ export function BlockDetailView({ block }: { block: Block }) {
                     await updateBlock({
                       blockId: id,
                       editInfo: { title: newTitle },
-                    })
+                    }),
                 );
               }}
             />
             {/* TODO: on delete navigate back */}
             <BlockSummary
               block={block}
+              zoomable
               blockStyle={{
                 objectFit: "contain",
                 aspectRatio: undefined,
@@ -178,7 +181,7 @@ export function BlockDetailView({ block }: { block: Block }) {
                     await updateBlock({
                       blockId: id,
                       editInfo: { description: newDescription },
-                    })
+                    }),
                 );
               }}
             />

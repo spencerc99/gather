@@ -2,6 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
 import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
 import {
   useCallback,
   useContext,
@@ -61,6 +62,7 @@ import * as Location from "expo-location";
 import { useLocation, LocationProvider } from "../utils/location";
 import { CollectionSummary } from "./CollectionSummary";
 import { CollectionSelect } from "./CollectionSelect";
+import { CustomPhotoPicker } from "./CustomPhotoPicker";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -93,7 +95,7 @@ interface PickedMedia {
 
 const getLocationMetadata = async (
   latitude: number,
-  longitude: number
+  longitude: number,
 ): Promise<LocationMetadata> => {
   try {
     const results = await Location.reverseGeocodeAsync({ latitude, longitude });
@@ -135,12 +137,12 @@ const getCurrentLocationMetadata = async (): Promise<
 const parseExifDate = (dateString?: string): number | undefined => {
   if (!dateString) return undefined;
   return new Date(
-    dateString.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3")
+    dateString.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3"),
   ).getTime();
 };
 
 const processMediaAsset = async (
-  asset: ImagePicker.ImagePickerAsset
+  asset: ImagePicker.ImagePickerAsset,
 ): Promise<PickedMedia> => {
   let metadata = null;
   if (asset.exif) {
@@ -174,6 +176,48 @@ const processMediaAsset = async (
     contentType: asset.mimeType as MimeType,
     assetId: asset.assetId,
     ...metadata,
+  };
+};
+
+const guessContentType = (
+  filename: string | undefined,
+  mediaType: MediaLibrary.MediaTypeValue,
+): MimeType | undefined => {
+  const ext =
+    filename && filename.includes(".")
+      ? "." + filename.split(".").pop()!.toLowerCase()
+      : "";
+  const mime = (MimeType as Record<string, string>)[ext];
+  if (mime) {
+    return mime as MimeType;
+  }
+  return mediaType === MediaLibrary.MediaType.video
+    ? (MimeType[".mp4"] as MimeType)
+    : (MimeType[".jpg"] as MimeType);
+};
+
+// Convert a device media-library asset (from our custom picker) into the
+// PickedMedia shape, pulling the local file uri plus capture time / location
+// the same way processMediaAsset does for the native picker.
+const processPickedAsset = async (
+  asset: MediaLibrary.Asset,
+): Promise<PickedMedia> => {
+  const info = await MediaLibrary.getAssetInfoAsync(asset);
+  let locationData: LocationMetadata | undefined;
+  if (info.location) {
+    locationData = await getLocationMetadata(
+      info.location.latitude,
+      info.location.longitude,
+    );
+  }
+  const isVideo = asset.mediaType === MediaLibrary.MediaType.video;
+  return {
+    uri: info.localUri || asset.uri,
+    type: isVideo ? BlockType.Video : BlockType.Image,
+    contentType: guessContentType(asset.filename, asset.mediaType),
+    assetId: asset.id,
+    captureTime: info.creationTime || asset.creationTime,
+    locationData,
   };
 };
 
@@ -240,11 +284,11 @@ function TextForageViewContent({
 
   // @ mention autocomplete state
   const [selectedCollections, setSelectedCollections] = useState<Collection[]>(
-    []
+    [],
   );
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionStartIndex, setMentionStartIndex] = useState<number | null>(
-    null
+    null,
   );
   const textInputRef = useRef<TextInput>(null);
 
@@ -259,7 +303,7 @@ function TextForageViewContent({
     if (!mentionCollections) return [];
     const selectedIds = new Set(selectedCollections.map((c) => c.id));
     return mentionCollections.filter(
-      (c) => !selectedIds.has(c.id) && c.id !== collectionId
+      (c) => !selectedIds.has(c.id) && c.id !== collectionId,
     );
   }, [mentionCollections, selectedCollections, collectionId]);
 
@@ -270,7 +314,7 @@ function TextForageViewContent({
       selectedCollections.some((c) => c.id === collectionId)
     ) {
       setSelectedCollections((prev) =>
-        prev.filter((c) => c.id !== collectionId)
+        prev.filter((c) => c.id !== collectionId),
       );
     }
   }, [collectionId]);
@@ -285,15 +329,15 @@ function TextForageViewContent({
           (Platform.OS === "android"
             ? messageBarKeyboardPadding
             : Platform.OS === "ios"
-            ? bottomTabHeight
-            : 0)
+              ? bottomTabHeight
+              : 0)
         : 0,
     };
   }, [keyboard.height, textFocused]);
 
   const updatePlaceholder = useCallback(() => {
     setTextPlaceholder(
-      placeholders[Math.floor(Math.random() * placeholders.length)]
+      placeholders[Math.floor(Math.random() * placeholders.length)],
     );
   }, []);
 
@@ -309,7 +353,7 @@ function TextForageViewContent({
       const collectionItemsText = collectionItems.map((item) =>
         item.content.length > MaxPlaceholderLength
           ? item.content.slice(0, MaxPlaceholderLength) + "..."
-          : item.content
+          : item.content,
       );
       console.log("collectionItemsText", collectionItemsText);
       if (collectionItemsText.length) {
@@ -323,7 +367,7 @@ function TextForageViewContent({
     void fetchPlaceholders().then((newPlaceholders) => {
       setPlaceholders(newPlaceholders);
       setTextPlaceholder(
-        newPlaceholders[Math.floor(Math.random() * newPlaceholders.length)]
+        newPlaceholders[Math.floor(Math.random() * newPlaceholders.length)],
       );
     });
   }, []);
@@ -368,7 +412,7 @@ function TextForageViewContent({
       setMentionStartIndex(lastAtIndex);
       setMentionQuery(query);
     },
-    [setTextValue]
+    [setTextValue],
   );
 
   // Handle selecting a collection from autocomplete
@@ -389,7 +433,7 @@ function TextForageViewContent({
       setMentionQuery(null);
       setMentionStartIndex(null);
     },
-    [mentionStartIndex, mentionQuery, textValue, setTextValueProgrammatic]
+    [mentionStartIndex, mentionQuery, textValue, setTextValueProgrammatic],
   );
 
   // Handle removing a selected collection
@@ -446,25 +490,38 @@ function TextForageViewContent({
     fetchNextPage();
   }
 
-  const pickImage = async () => {
-    setIsLoadingAssets(true);
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsMultipleSelection: true,
-      quality: 1,
-      orderedSelection: true,
-      exif: true,
-    });
+  const [pickerVisible, setPickerVisible] = useState(false);
 
-    if (!result.canceled) {
-      const mediaWithMetadata = await Promise.all(
-        result.assets.map(processMediaAsset)
-      );
-
-      setMedias([...medias, ...mediaWithMetadata]);
-    }
-    setIsLoadingAssets(false);
-  };
+  const handlePickerConfirm = useCallback(
+    async (assets: MediaLibrary.Asset[]) => {
+      setPickerVisible(false);
+      if (!assets.length) {
+        return;
+      }
+      setIsLoadingAssets(true);
+      try {
+        const results = await Promise.allSettled(
+          assets.map(processPickedAsset),
+        );
+        const mediaWithMetadata = results
+          .filter(
+            (r): r is PromiseFulfilledResult<PickedMedia> =>
+              r.status === "fulfilled",
+          )
+          .map((r) => r.value);
+        const failed = results.filter((r) => r.status === "rejected");
+        if (failed.length) {
+          logError((failed[0] as PromiseRejectedResult).reason);
+        }
+        if (mediaWithMetadata.length) {
+          setMedias((prev) => [...prev, ...mediaWithMetadata]);
+        }
+      } finally {
+        setIsLoadingAssets(false);
+      }
+    },
+    [logError],
+  );
 
   function removeMedia(idx: number) {
     setMedias(medias.filter((_, i) => i !== idx));
@@ -505,7 +562,7 @@ function TextForageViewContent({
               const fileUri = await getFsPathForMediaResult(
                 uri,
                 type === BlockType.Image ? "jpg" : "mp4",
-                assetId
+                assetId,
               );
               return {
                 createdBy: currentUser!.id,
@@ -519,8 +576,8 @@ function TextForageViewContent({
                 title: useTextAsMediaTitle ? savedTextValue.trim() : undefined,
                 collectionsToConnect,
               };
-            }
-          )
+            },
+          ),
         );
         blocksToInsert.push(...mediaToInsert);
       }
@@ -611,7 +668,7 @@ function TextForageViewContent({
 
       console.log("Starting recording..");
       const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
       setRecording(recording);
       console.log("Recording started");
@@ -679,7 +736,7 @@ function TextForageViewContent({
 
     if (!result.canceled) {
       const mediaWithMetadata = await Promise.all(
-        result.assets.map(processMediaAsset)
+        result.assets.map(processMediaAsset),
       );
 
       setMedias([...medias, ...mediaWithMetadata]);
@@ -691,7 +748,7 @@ function TextForageViewContent({
 
   async function checkExistingMedias(): Promise<Set<string>> {
     const existingMedias = await getExistingAssetIds(
-      medias.map(({ assetId }) => assetId)
+      medias.map(({ assetId }) => assetId),
     );
 
     return new Set(existingMedias);
@@ -943,7 +1000,7 @@ function TextForageViewContent({
             /> */}
             <StyledButton
               icon={<Icon size={24} name="images" />}
-              onPress={pickImage}
+              onPress={() => setPickerVisible(true)}
               paddingHorizontal="$1"
               theme="grey"
               chromeless
@@ -976,7 +1033,7 @@ function TextForageViewContent({
                           text: "Add Anyway",
                           onPress: () => onSaveResult(),
                         },
-                      ]
+                      ],
                     );
                   } else {
                     onSaveResult();
@@ -1022,6 +1079,13 @@ function TextForageViewContent({
           </XStack>
         </YStack>
       </Animated.View>
+      <CustomPhotoPicker
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onConfirm={handlePickerConfirm}
+        alreadyPickedAssetIds={medias.map((m) => m.assetId)}
+        bottomInset={insets.bottom}
+      />
     </StyledView>
   );
 }

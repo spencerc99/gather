@@ -56,8 +56,11 @@ const bodyFont = createInterFont(
   },
   {
     sizeSize: (size) => Math.round(size * 1.1),
-    sizeLineHeight: (size) => Math.round(size * 1.1),
-  }
+    // lineHeight needs headroom above fontSize or tall/bold glyphs clip at the
+    // top. This previously matched sizeSize exactly (zero leading) — the
+    // recurring cause of clipped header text. Scale it ~1.27x the font size.
+    sizeLineHeight: (size) => Math.round(size * 1.4),
+  },
 );
 
 export const config = createTamagui({
