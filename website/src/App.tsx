@@ -1,3 +1,5 @@
+// ABOUTME: Renders the Gather marketing homepage and testimonial gallery.
+// ABOUTME: Loads testimonial images from the public Are.na channel API.
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.scss";
 import { ImageZoom } from "./components/ImageZoom";
@@ -20,6 +22,7 @@ interface RawArenaChannelItem {
   image?: {
     content_type: string;
     display: { url: string };
+    medium: { src: string };
     square: { url: string };
     thumb: { url: string };
     original: {
@@ -71,8 +74,20 @@ function useArenaChannelBlocks(channelId: string): {
         const response = await fetch(
           `https://api.are.na/v3/channels/${channelId}/contents`
         );
-        const json = await response.json();
-        setData(json.contents);
+        if (!response.ok) {
+          throw new Error(`Are.na request failed with ${response.status}`);
+        }
+
+        const json: unknown = await response.json();
+        if (
+          typeof json !== "object" ||
+          json === null ||
+          !("data" in json) ||
+          !Array.isArray(json.data)
+        ) {
+          throw new Error("Are.na response did not include testimonial data");
+        }
+        setData(json.data);
       } catch (err) {
         setError(
           err instanceof Error ? err : new Error("Failed to fetch blocks")
@@ -210,15 +225,16 @@ function App() {
         <div className="carousel testimonials">
           {isLoading && <div>Loading...</div>}
           {shuffledTestimonials.map((testimonial) => (
-            <>
-              {testimonial.image?.display.url ? (
-                <ImageZoom src={testimonial.image.display.url} />
-              ) : (
-                <div key={testimonial.id} className="testimonial">
-                  <p>{testimonial.content}</p>
-                </div>
-              )}
-            </>
+            testimonial.image?.medium.src ? (
+              <ImageZoom
+                key={testimonial.id}
+                src={testimonial.image.medium.src}
+              />
+            ) : (
+              <div key={testimonial.id} className="testimonial">
+                <p>{testimonial.content}</p>
+              </div>
+            )
           ))}
         </div>
         <br />
