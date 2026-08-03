@@ -49,6 +49,7 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { getGridItemLayout } from "../utils/gridLayout";
 
 const GridGap = 3;
 
@@ -494,14 +495,9 @@ export function UncategorizedView() {
                 initialNumToRender={15}
                 maxToRenderPerBatch={9}
                 windowSize={5}
-                getItemLayout={(_, index) => {
-                  const rowHeight = gridCellSize + GridGap * 2;
-                  return {
-                    length: rowHeight,
-                    offset: rowHeight * index,
-                    index,
-                  };
-                }}
+                getItemLayout={(_, index) =>
+                  getGridItemLayout(gridCellSize, GridGap, 3, index)
+                }
                 renderItem={({ item, index }) => (
                   <OrganizeGridCell
                     block={item}
