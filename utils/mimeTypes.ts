@@ -1,3 +1,5 @@
+// ABOUTME: Defines media block categories and MIME types recognized by Basket.
+// ABOUTME: Provides helpers for classifying file-backed image and video content.
 export enum BlockType {
   Image = "image",
   Video = "video",
@@ -42,6 +44,8 @@ export enum MimeType {
   ".epub" = "application/epub+zip",
   ".gz" = "application/gzip",
   ".gif" = "image/gif",
+  ".heic" = "image/heic",
+  ".heif" = "image/heif",
   ".htm" = "text/html",
   ".html" = "text/html",
   ".jpg" = "image/jpeg",

@@ -1,3 +1,7 @@
+// ABOUTME: Integrates Basket collections and blocks with the Are.na API.
+// ABOUTME: Handles authentication, channel syncing, media uploads, and metadata updates.
+import { Buffer } from "buffer";
+import * as FileSystem from "expo-file-system";
 import {
   Block,
   Collection,
@@ -6,9 +10,17 @@ import {
   RemoteSourceType,
 } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
+import {
+  buildArenaBlockRequest,
+  buildArenaConnectionRequest,
+  buildArenaPresignRequest,
+  detectImageContentType,
+  getArenaUploadFilename,
+  getArenaUploadSourceUrl,
+  mapArenaConnectionBatch,
+} from "./arenaRequests";
 import { logError } from "./errors";
 import { withQueryParams } from "./url";
-const XMLParser = require("react-xml-parser");
 import {
   ArenaUpdatedBlocksKey,
   ArenaUpdatedChannelsKey,
@@ -794,150 +806,113 @@ export function arenaClassToMimeType({
   }
 }
 
-export const buildFormDataFromFile = ({
-  file,
-  policy,
-  contentType,
-}: {
-  // This is the format expected for "blob" idk lol
-  // for reference: https://github.com/benjreinhart/react-native-aws3
-  file: { uri: string; name: string; type?: string };
-  policy: S3UploadPolicy;
-  contentType: string;
-}): FormData => {
-  const formData = new FormData();
-
-  formData.append("Content-Type", contentType);
-  formData.append("key", policy.key);
-  formData.append("AWSAccessKeyId", policy.AWSAccessKeyId);
-  formData.append("acl", policy.acl);
-  formData.append("success_action_status", policy.success_action_status);
-  formData.append("policy", policy.policy);
-  formData.append("signature", policy.signature);
-  // @ts-ignore
-  formData.append("file", file);
-
-  return formData;
-};
-
-export const parseLocationFromS3Response = (data: string) => {
-  const parser = new XMLParser();
-  const parsed = parser.parseFromString(data);
-  return parsed.getElementsByTagName("Location")[0].value;
-};
-
-export interface S3UploadPolicy {
+interface ArenaPresignedFile {
+  upload_url: string;
   key: string;
-  AWSAccessKeyId: string;
-  acl: string;
-  success_action_status: string;
-  policy: string;
-  signature: string;
-  bucket: string;
+  content_type: string;
 }
 
-const uploadPolicyQuery = `
-  query UploadPolicy {
-    me {
-      __typename
-      id
-      ...AvatarUploader
-    }
-  }
-  fragment AvatarUploader on Me {
-    __typename
-    id
-    policy {
-      __typename
-      AWSAccessKeyId
-      acl
-      bucket
-      expires
-      key
-      policy
-      signature
-      success_action_status
-    }
-  }
-`;
+interface ArenaPresignResponse {
+  files: ArenaPresignedFile[];
+  expires_in: number;
+}
 
-async function getUploadPolicy(accessToken: string): Promise<S3UploadPolicy> {
-  const resp = await fetch(ArenaGraphqlApi, {
+async function getImageContentType(
+  block: Block,
+): Promise<string | undefined> {
+  const encodedHeader = await FileSystem.readAsStringAsync(block.content, {
+    encoding: FileSystem.EncodingType.Base64,
+    position: 0,
+    length: 12,
+  });
+  return detectImageContentType(
+    Uint8Array.from(Buffer.from(encodedHeader, "base64")),
+  );
+}
+
+async function getUploadContentType(block: Block): Promise<string> {
+  if (block.type === BlockType.Image) {
+    const detectedContentType = await getImageContentType(block);
+    if (detectedContentType) {
+      return detectedContentType;
+    }
+  }
+  if (block.contentType) {
+    return block.contentType;
+  }
+  throw new Error(`Missing content type for Are.na upload ${block.id}`);
+}
+
+async function uploadFile({
+  block,
+  accessToken,
+}: {
+  block: Block;
+  accessToken: string;
+}): Promise<string> {
+  const contentType = await getUploadContentType(block);
+  const filename = getArenaUploadFilename(block.id, contentType);
+  const presignResponse = await fetch(`${ArenaApiUrl}/uploads/presign`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "X-APP-TOKEN": ArenaGraphqlKey,
       Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      query: uploadPolicyQuery,
-    }),
+    body: JSON.stringify(buildArenaPresignRequest(filename, contentType)),
   });
-  const respBody = await resp.json();
-  if (!respBody?.data?.me?.policy) {
+  const presignBody = (await presignResponse.json()) as ArenaPresignResponse;
+  if (!presignResponse.ok) {
     throw new Error(
-      `failed to upload image to arena. no upload policy found: ${JSON.stringify(
-        respBody,
+      `Failed to presign Are.na upload ${presignResponse.status}: ${JSON.stringify(
+        presignBody,
       )}`,
     );
   }
 
-  return respBody.data.me.policy;
-}
-
-export async function uploadFile({
-  file,
-  policy,
-  contentType,
-}: {
-  file: { uri: string; name: string; type?: string };
-  contentType: string;
-  policy: S3UploadPolicy;
-}): Promise<string> {
-  const formData = buildFormDataFromFile({
-    file,
-    policy,
-    contentType,
-  });
-
-  try {
-    const resp = await fetch(policy.bucket, {
-      method: "POST",
-      body: formData,
-    });
-    const respBody = await resp.text();
-    if (!resp.ok) {
-      throw new Error(
-        `failed to upload file to arena: ${resp.status} ${respBody}`,
-      );
-    }
-    return await parseLocationFromS3Response(respBody);
-  } catch (err) {
-    logError(err);
-    throw err;
+  const presignedFile = presignBody.files?.[0];
+  if (
+    !presignedFile?.upload_url ||
+    !presignedFile.key ||
+    !presignedFile.content_type
+  ) {
+    throw new Error(
+      `Invalid Are.na presign response: ${JSON.stringify(presignBody)}`,
+    );
   }
+
+  const uploadResponse = await FileSystem.uploadAsync(
+    presignedFile.upload_url,
+    block.content,
+    {
+      httpMethod: "PUT",
+      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      headers: {
+        "Content-Type": presignedFile.content_type,
+      },
+    },
+  );
+  if (uploadResponse.status < 200 || uploadResponse.status >= 300) {
+    throw new Error(
+      `Failed to upload file to Are.na ${uploadResponse.status}: ${uploadResponse.body}`,
+    );
+  }
+  return getArenaUploadSourceUrl(presignedFile.key);
 }
 
 async function getValueForBlock(
   block: Block,
   accessToken: string,
 ): Promise<any> {
-  const { type, title, content, source, contentType } = block;
+  const { type, content, source } = block;
   switch (type) {
     case BlockType.Text:
       return content;
     case BlockType.Image:
     case BlockType.Video:
-      const uploadPolicy = await getUploadPolicy(accessToken);
-      const url = await uploadFile({
-        file: {
-          uri: content,
-          name: title || "",
-          type: contentType || "",
-        },
-        policy: uploadPolicy,
-        contentType: contentType || "image/jpeg",
-      });
+      if (content.startsWith("https://") || content.startsWith("http://")) {
+        return content;
+      }
+      const url = await uploadFile({ block, accessToken });
       console.log("Uploaded file to arena", url);
 
       return url;
@@ -1055,77 +1030,6 @@ const listChannelBlocksQuery = ({
   }
 }`;
 
-const createBlockMutation = (channelIds: string[]) => `
-  mutation createBlockMutation(
-    $channel_ids: [ID]!
-    $value: String
-    $title: String
-    $description: String
-  ) {
-    create_block(
-      input: {
-        channel_ids: $channel_ids
-        value: $value
-        title: $title
-        description: $description
-      }
-    ) {
-      block: blokk {
-        __typename
-        ... on Model {
-          id
-        }
-        ... on ConnectableInterface {
-          ${channelIds
-            .map(
-              (c) => `
-              channel${c}: connection_to(channel_id: ${c}) {
-                connected_at: created_at(format:"%Y-%m-%dT%H:%M:%S.%LZ")
-                user {
-                  id
-                  slug
-                }
-              }`,
-            )
-            .join("\n")}
-        }
-      }
-    }
-  }
-`;
-
-const createConnectionMutation = (channelIds: string[]) => `
-  mutation createConnectionMutation(
-    $channel_ids: [ID]!
-    $connectable_id: ID!
-    $connectable_type: BaseConnectableTypeEnum!
-  ) {
-    __typename
-    create_connection(
-      input: {
-        channel_ids: $channel_ids
-        connectable_type: $connectable_type
-        connectable_id: $connectable_id
-      }
-    ) {
-      __typename
-      connectable {
-       ${channelIds
-         .map(
-           (c) => `
-              channel${c}: connection_to(channel_id: ${c}) {
-                connected_at: created_at(format:"%Y-%m-%dT%H:%M:%S.%LZ")
-                user {
-                  id
-                  slug
-                }
-              }`,
-         )
-         .join("\n")}
-      }
-    }
-  }`;
-
 export async function createBlock({
   block,
   channelIds,
@@ -1138,55 +1042,45 @@ export async function createBlock({
   arenaBlock: RawArenaBlock;
   connections: { [channelId: string]: ArenaConnection };
 }> {
-  let resp: Response;
   let blockId = block.remoteSourceInfo?.arenaId;
-  let connections: { [channelId: string]: ArenaConnection } = {};
+  const connections: { [channelId: string]: ArenaConnection } = {};
   if (block.remoteSourceInfo?.arenaId) {
     console.log(
       `adding existing arena block ${block.remoteSourceInfo.arenaId} to channel`,
       channelIds,
     );
-    resp = await fetch(ArenaGraphqlApi, {
+    const resp = await fetch(`${ArenaApiUrl}/connections`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${arenaToken}`,
         "Content-Type": "application/json",
-        "X-APP-TOKEN": ArenaGraphqlKey,
       },
-      body: JSON.stringify({
-        query: createConnectionMutation(channelIds),
-        variables: {
-          channel_ids: channelIds,
-          connectable_type: "BLOCK",
-          connectable_id: block.remoteSourceInfo.arenaId,
-        },
-      }),
+      body: JSON.stringify(
+        buildArenaConnectionRequest({
+          arenaBlockId: block.remoteSourceInfo.arenaId,
+          channelIds,
+        }),
+      ),
     });
+    const response = await resp.json();
     if (!resp.ok) {
       logError(
         `failed to create connection for existing arena block ${
           resp.status
-        }: ${JSON.stringify(resp)}`,
-      );
-      throw new Error(JSON.stringify(resp));
-    }
-    const response = await resp.json();
-    if (response.errors?.length) {
-      logError(
-        `failed to create connection for existing arena block ${JSON.stringify(
-          response,
-        )}`,
+        }: ${JSON.stringify(response)}`,
       );
       throw new Error(JSON.stringify(response));
     }
-    channelIds.forEach((c) => {
-      connections[c] = response.data.create_connection.connectable[
-        `channel${c}`
-      ] as ArenaConnection;
-    });
+    Object.assign(
+      connections,
+      mapArenaConnectionBatch({
+        channelIds,
+        connections: response.data ?? [],
+      }),
+    );
   } else {
     const value = await getValueForBlock(block, arenaToken);
-    console.log("adding block to channel", channelIds, value, arenaToken);
+    console.log("adding block to channel", channelIds, value);
     const { title, description: blockDescription } = block;
     let description = blockDescription || GatherArenaAttribution;
     // TODO: allow customization of the default description
@@ -1197,45 +1091,41 @@ export async function createBlock({
         block.captureTime,
       ).toLocaleTimeString()}`;
     }
-    resp = await fetch(ArenaGraphqlApi, {
+    const resp = await fetch(`${ArenaApiUrl}/blocks`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${arenaToken}`,
         "Content-Type": "application/json",
-        "X-APP-TOKEN": ArenaGraphqlKey,
       },
-      body: JSON.stringify({
-        query: createBlockMutation(channelIds),
-        variables: {
-          channel_ids: channelIds,
+      body: JSON.stringify(
+        buildArenaBlockRequest({
           value,
+          channelIds,
           title,
           description,
-        },
-      }),
+        }),
+      ),
     });
+    const response = await resp.json();
     if (!resp.ok) {
       logError(
         `failed to create block in arena ${resp.status}: ${JSON.stringify(
-          resp,
+          response,
         )}`,
       );
-      throw new Error(JSON.stringify(resp));
-    }
-
-    const response = await resp.json();
-    if (response.errors?.length) {
-      logError(`failed to create block in arena ${JSON.stringify(response)}`);
       throw new Error(JSON.stringify(response));
     }
-
-    channelIds.forEach((c) => {
-      connections[c] = response.data.create_block.block[
-        `channel${c}`
-      ] as ArenaConnection;
-    });
-
-    blockId = response.data.create_block.block.id!;
+    Object.assign(
+      connections,
+      mapArenaConnectionBatch({
+        channelIds,
+        connections: channelIds.map(() => ({
+          connected_at: response.created_at,
+          connected_by: response.user,
+        })),
+      }),
+    );
+    blockId = response.id?.toString();
   }
 
   if (!blockId) {
@@ -1244,13 +1134,13 @@ export async function createBlock({
   }
 
   // getBlock is a best-effort enrichment call (mainly for the image field).
-  // If it fails, we still have the essential data (blockId + connections) from
-  // the GraphQL response. Letting this failure propagate previously caused
-  // the local DB save to be skipped entirely, leaving the block "pending"
-  // and causing infinite re-uploads.
+  // If it fails, we still have the essential block ID from the create response.
+  // The local DB must save that ID so a later sync does not create a duplicate.
   let blockInfo: RawArenaBlock;
   try {
-    blockInfo = await getBlock(blockId, arenaToken);
+    blockInfo = normalizeV3Block(
+      await getBlock(blockId, arenaToken),
+    ) as unknown as RawArenaBlock;
   } catch (err) {
     logError(
       `[Arena] getBlock enrichment failed for ${blockId}, using minimal data: ${err}`

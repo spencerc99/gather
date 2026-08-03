@@ -1,6 +1,6 @@
 # Are.na HEIC upload investigation
 
-Basket can upload original HEIC bytes while labeling the file as JPEG. This is a Basket-side defect even if Are.na accepts correctly identified HEIC files.
+Basket's previous upload path could label original HEIC bytes as JPEG. The v3 upload path now detects the image type from its bytes before requesting an upload URL.
 
 ## Reported behavior
 
@@ -24,17 +24,17 @@ The custom photo picker:
 6. Uploads that file to Are.na's S3 bucket using the stored MIME type.
 7. Sends the S3 URL to Are.na for asynchronous block processing.
 
-`MimeType` does not include `.heic` or `.heif`. A photo named `IMG_1234.HEIC` therefore takes the JPEG fallback. The copied `.jpg` still contains HEIC bytes because `FileSystem.copyAsync` does not transcode media.
+`MimeType` did not include `.heic` or `.heif`. A photo named `IMG_1234.HEIC` therefore took the JPEG fallback. The copied `.jpg` still contained HEIC bytes because `FileSystem.copyAsync` does not transcode media.
 
-The native image picker has a related risk. It stores every picked image with a `.jpg` extension even when the picker reports a different MIME type.
+The native image picker has the same storage mismatch. It stores every picked image with a `.jpg` extension even when the picker reports a different MIME type. The upload path no longer trusts that cached extension for images.
 
-## Additional upload defects
+## Additional defects in the previous upload path
 
 ### Multipart filename is not a filename
 
-The Are.na upload uses `block.title || ""` as the multipart file `name`. A normal untitled photo is uploaded with an empty filename. A titled photo may use text with no extension.
+The GraphQL upload used `block.title || ""` as the multipart file `name`. A normal untitled photo was uploaded with an empty filename. A titled photo could use text with no extension.
 
-The media filename must come from the stored file path or a generated name with the correct extension. The block title is display metadata and should not determine file identity.
+The v3 upload generates a filename with the detected content type's extension. The block title remains display metadata.
 
 ### Processing failure is treated as synced
 
@@ -42,11 +42,17 @@ After creating the block, Basket performs a best-effort `getBlock` call. If that
 
 Are.na processes uploaded URLs asynchronously and exposes processing states. Basket does not wait for `available` or handle `failed`. A remote processing failure can therefore become permanent locally with no automatic retry.
 
-### Upload contract is private
+### The media creation path still used GraphQL
 
-Basket obtains an S3 policy through Are.na's GraphQL API, uploads directly to the returned bucket, then calls a GraphQL block mutation. Are.na's current public v3 API documents block creation from a URL or text. It does not document this direct-upload policy flow.
+Basket obtained an S3 policy through Are.na's GraphQL API, uploaded directly to the returned bucket, then called a GraphQL block mutation. The broader Are.na integration had moved to v3, but media creation had not.
 
-The private flow may continue to work, but Basket cannot assume it has the same compatibility guarantees as the public v3 block API.
+Are.na's v3 OpenAPI specification provides a public direct-upload flow:
+
+1. `POST /v3/uploads/presign` with a filename and content type.
+2. `PUT` the file bytes to the returned `upload_url` with the validated `Content-Type`.
+3. `POST /v3/blocks` with the temporary S3 object URL as `value`.
+
+Existing blocks can be added to channels with `POST /v3/connections`.
 
 ## What the Are.na fix may cover
 
@@ -60,21 +66,27 @@ An Are.na HEIC fix may allow correctly named and correctly typed HEIC URLs to pr
 
 Existing cards should be assumed to require reprocessing or replacement until an affected block proves otherwise.
 
-## Recommended repair
+## Implemented repair
 
-Preserve the original media in Gather and prepare a separate upload representation for Are.na:
+Basket now uses the documented v3 upload and creation flow:
 
-1. Carry the original filename and extension through `PickedMedia`.
-2. Store files with an extension that matches their bytes.
-3. Derive MIME type from the actual file representation. Do not default unknown image bytes to JPEG.
-4. For HEIC and HEIF, create a temporary JPEG upload representation. Keep the original Gather file unchanged.
-5. Give the multipart file a generated filename with the upload representation's extension.
-6. Create the Are.na block from the uploaded URL.
-7. Poll the v3 block endpoint until the state is `available` or `failed`, with a bounded timeout.
-8. Mark local connections synced only after `available`.
-9. Record `failed` state and enough metadata to retry without creating duplicate blocks.
+1. Read the first bytes of local images before upload.
+2. Detect JPEG, PNG, GIF, WebP, HEIC, and HEIF signatures.
+3. Generate a filename whose extension matches the detected content type.
+4. Request a v3 presigned upload URL.
+5. Upload the original bytes with the content type returned by Are.na.
+6. Create the block in its target channels through v3.
+7. Connect existing Are.na blocks through v3.
 
-Before implementing the conversion, confirm the image library and output-quality choice. Basket does not currently depend on an image conversion package.
+This keeps the original Gather file unchanged. HEIC and HEIF are not converted because the v3 specification lists both as supported file extensions. If Are.na rejects a correctly labeled HEIC upload in live testing, add a separate JPEG upload representation after choosing an image conversion library and output quality.
+
+The GraphQL API remains in use for channel sync and metadata operations that were outside this change.
+
+## Remaining processing-state work
+
+Basket still treats the block creation response as sufficient to mark the local block and connections as synced. It does not wait for the remote block to reach `available` or preserve a retryable state when Are.na reports `failed`.
+
+Do not add polling as an isolated upload change. A safe retry design must save the remote block ID before waiting, avoid duplicate block creation, and leave failed connections eligible for retry.
 
 ## Verification
 
@@ -93,13 +105,13 @@ For every upload, record:
 - Original filename.
 - Original and prepared file extensions.
 - Detected and uploaded MIME types.
-- Multipart filename.
+- Upload filename.
 - S3 object URL.
 - Are.na block ID.
 - Are.na processing state.
 - Are.na `image.filename` and `image.content_type`.
 
-The repair passes when every supported image reaches `available`, the returned filename and content type match the uploaded bytes, and a forced processing failure remains retryable without creating a duplicate block.
+The endpoint migration passes when every supported image reaches `available` and the returned filename and content type match the uploaded bytes. Processing-state retry behavior needs a separate test after its persistence design is implemented.
 
 ## Missing evidence
 
