@@ -58,3 +58,4 @@ eas.json
 cursor/*
 
 .claude/settings.local.json
+.claude/worktrees/
