@@ -1,3 +1,5 @@
+// ABOUTME: Authenticates with Are.na and selects channels for syncing.
+// ABOUTME: Requests write access and renders channel search controls.
 import {
   exchangeCodeAsync,
   makeRedirectUri,
@@ -56,6 +58,7 @@ export function ArenaLogin({ path }: { path: string }) {
       clientId: ArenaClientId,
       clientSecret: ArenaClientSecret,
       redirectUri,
+      scopes: ["write"],
       codeChallenge: undefined,
       codeChallengeMethod: undefined,
       usePKCE: false,
