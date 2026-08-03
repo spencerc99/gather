@@ -1,3 +1,5 @@
+// ABOUTME: Renders uncategorized blocks for selection, connection, and editing.
+// ABOUTME: Provides grid and focused-carousel views for organizing content.
 import {
   memo,
   useCallback,
@@ -496,7 +498,7 @@ export function UncategorizedView() {
                   const rowHeight = gridCellSize + GridGap * 2;
                   return {
                     length: rowHeight,
-                    offset: rowHeight * Math.floor(index / 3),
+                    offset: rowHeight * index,
                     index,
                   };
                 }}
