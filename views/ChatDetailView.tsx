@@ -6,7 +6,7 @@ import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
 import { TextForageView } from "../components/TextForageView";
 import { useEffect, useState } from "react";
 import { useTotalBlockCount, useCollection } from "../utils/db";
-import { StyledText } from "../components/Themed";
+import { Icon, IconType, StyledText } from "../components/Themed";
 import { Alert, TouchableOpacity } from "react-native";
 import { SortType } from "../utils/dataTypes";
 
@@ -69,10 +69,23 @@ export function ChatDetailView({
             ),
             headerRight: () => (
               <XStack alignItems="center">
-                <TouchableOpacity onPress={selectSortType}>
-                  <StyledText metadata paddingHorizontal="$2">
-                    {sortLabel}
-                  </StyledText>
+                <TouchableOpacity
+                  accessibilityLabel={`Sort texts, ${sortLabel}`}
+                  accessibilityRole="button"
+                  onPress={selectSortType}
+                >
+                  <XStack
+                    alignItems="center"
+                    gap="$1.5"
+                    paddingHorizontal="$2"
+                  >
+                    <Icon
+                      name="sort"
+                      type={IconType.FontAwesomeIcon}
+                      size={14}
+                    />
+                    <StyledText metadata>{sortLabel}</StyledText>
+                  </XStack>
                 </TouchableOpacity>
                 {selectedCollection !== null && (
                   <CollectionDetailsHeaderLink id={selectedCollection} />
