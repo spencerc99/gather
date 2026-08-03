@@ -1182,9 +1182,20 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     whereClause,
     sortType = SortType.Created,
     seed,
-  }: GetBlocksOptions = {}) =>
-    `${SelectBlockSql}
-    WHERE deletion_timestamp IS NULL${whereClause ? ` AND ${whereClause}` : ""}
+    search,
+  }: GetBlocksOptions = {}) => {
+    const searchClause = search
+      ? (() => {
+          const escaped = getEscapedSearchString(search);
+          // Match title/description on any block, plus the content body for
+          // text blocks (media content is a file path, so don't match it).
+          return ` AND (blocks.title LIKE ${escaped} OR blocks.description LIKE ${escaped} OR (blocks.type = '${BlockType.Text}' AND blocks.content LIKE ${escaped}))`;
+        })()
+      : "";
+    return `${SelectBlockSql}
+    WHERE deletion_timestamp IS NULL${
+      whereClause ? ` AND ${whereClause}` : ""
+    }${searchClause}
     ${SelectBlocksSortTypeToClause(
       sortType,
       "block_connections.remote_connected_at",
@@ -1196,17 +1207,19 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         ? ""
         : `LIMIT ${BlockSelectLimit} OFFSET ${page * BlockSelectLimit}`
     };`;
+  };
 
   async function getBlocks({
     page = 0,
     whereClause,
     sortType = SortType.Created,
     seed,
+    search,
   }: GetBlocksOptions = {}): Promise<Block[]> {
     const [result] = await db.execAsync(
       [
         {
-          sql: `${SelectBlocksSql({ page, sortType, seed, whereClause })};`,
+          sql: `${SelectBlocksSql({ page, sortType, seed, whereClause, search })};`,
           args: [],
         },
       ],
@@ -2019,7 +2032,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   null;
                 if (blockMappedToCamelCase.collectionRemoteSourceInfos) {
                   const parsed = JSON.parse(
-                    blockMappedToCamelCase.collectionRemoteSourceInfos
+                    blockMappedToCamelCase.collectionRemoteSourceInfos,
                   );
                   // json_group_array may return items as JSON objects (not
                   // double-quoted strings) depending on SQLite version, so
@@ -2027,7 +2040,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   collectionRemoteSourceInfos = parsed.map((info: any) =>
                     typeof info === "string"
                       ? (JSON.parse(info) as RemoteSourceInfo)
-                      : (info as RemoteSourceInfo)
+                      : (info as RemoteSourceInfo),
                   );
                 }
 
@@ -2040,14 +2053,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 } as BlockWithCollectionInfo;
               } catch (err) {
                 logError(
-                  `[Arena Sync] Failed to parse pending block row id=${block.id}: ${err}`
+                  `[Arena Sync] Failed to parse pending block row id=${block.id}: ${err}`,
                 );
                 return null;
               }
             })
             .filter(
               (b): b is BlockWithCollectionInfo =>
-                b !== null && !queuedBlocksToSync.current.has(b.id)
+                b !== null && !queuedBlocksToSync.current.has(b.id),
             );
 
           connectionsToSync.forEach((c) =>
@@ -2202,11 +2215,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               block.id,
               collectionInfo.collectionId,
               conn?.user?.slug
-                ? getCreatedByForRemote(
-                    RemoteSourceType.Arena,
-                    conn.user.slug
-                  )
-                : currentUser?.id ?? "unknown",
+                ? getCreatedByForRemote(RemoteSourceType.Arena, conn.user.slug)
+                : (currentUser?.id ?? "unknown"),
               conn?.connected_at ?? new Date().toISOString(),
             ],
           };
@@ -3116,6 +3126,55 @@ export function useCollections({
     isLoading,
     debouncedFetchMoreCollections,
     isFetchingNextPage,
+  };
+}
+
+// Full-text-ish search across blocks (title, description, and text content).
+export function useBlockSearch(searchValue: string) {
+  const { getBlocks } = useContext(DatabaseContext);
+  const debouncedSearch = useDebounceValue(searchValue, 300);
+  const trimmedSearch = (debouncedSearch || "").trim();
+
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["blocks", { search: trimmedSearch }],
+    queryFn: async ({ pageParam: page, queryKey }) => {
+      const [_, { search }] = queryKey as [string, { search: string }];
+      const blocks = await getBlocks({ page, search });
+      return {
+        blocks,
+        nextId: blocks.length < BlockSelectLimit ? null : page + 1,
+        previousId: page === 0 ? null : page - 1,
+      };
+    },
+    initialPageParam: 0,
+    getPreviousPageParam: (firstPage) => firstPage?.previousId ?? undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextId ?? undefined,
+    enabled: trimmedSearch.length > 0,
+  });
+
+  const blocks = useMemo(() => data?.pages.flatMap((p) => p.blocks), [data]);
+
+  const fetchMore = useCallback(() => {
+    if (isFetchingNextPage || !hasNextPage) {
+      return;
+    }
+    fetchNextPage();
+  }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
+
+  return {
+    blocks: trimmedSearch.length > 0 ? blocks : undefined,
+    isLoading: isLoading && trimmedSearch.length > 0,
+    isFetching,
+    isFetchingNextPage,
+    fetchMore,
+    hasSearch: trimmedSearch.length > 0,
   };
 }
 

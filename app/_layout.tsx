@@ -260,6 +260,13 @@ function RootLayoutNav() {
         }}
       />
       <Stack.Screen
+        name="search"
+        options={{
+          presentation: "card",
+          title: "Search",
+        }}
+      />
+      <Stack.Screen
         name="block/[id]/index"
         options={{
           presentation: "card",
