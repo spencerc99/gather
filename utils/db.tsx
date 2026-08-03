@@ -1,3 +1,5 @@
+// ABOUTME: Provides Basket's local SQLite data access and React query bindings.
+// ABOUTME: Stores blocks, collections, and their connections while syncing remote sources.
 import { InteractionManager, Platform } from "react-native";
 import {
   InfiniteData,
@@ -86,6 +88,7 @@ import {
   mapDbBlockToBlock,
   mapSnakeCaseToCamelCaseProperties,
 } from "./dbUtils";
+import { getBlockSortClause } from "./blockSort";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -1143,6 +1146,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const SelectBlockSql = `WITH block_connections AS (
             SELECT    connections.block_id,
                       MIN(connections.remote_connected_at_datetime) AS remote_connected_at,
+                      MAX(connections.created_timestamp) AS last_connected_at,
                       COUNT(connections.collection_id) as num_connections,
                       json_group_array(connections.collection_id) as collection_ids
             FROM      connections
@@ -1154,28 +1158,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                     block_connections.remote_connected_at as remote_connected_at
           FROM      blocks
           LEFT JOIN block_connections ON block_connections.block_id = blocks.id`; // coalesce to get around it being null..
-  const SelectBlocksSortTypeToClause = (
-    sortType: SortType,
-    remoteConnectedAt: string,
-    connectedAt: string,
-    { seed }: { seed?: number } = {},
-  ) => {
-    ensure(
-      sortType !== SortType.Random || seed !== undefined,
-      "Random sort requires a seed",
-    );
-    switch (sortType) {
-      case SortType.Created:
-        return `ORDER BY  MIN(COALESCE(${remoteConnectedAt}, blocks.created_timestamp), blocks.created_timestamp) DESC`;
-      case SortType.RemoteCreated:
-        // NOTE: local timestamp are stored as HH:MM:SS and remote_created_at is ISO timestamp, so we convert it to local to compare.
-        return `ORDER BY  CASE WHEN ${remoteConnectedAt} IS NOT NULL THEN ${remoteConnectedAt} ELSE COALESCE(${connectedAt}, blocks.created_timestamp) END DESC`;
-      case SortType.Random:
-        // TODO: lol this doesn't work bc sin isn't supported on ios..need to wait until expo supports custom sqlite extensions
-        // return `ORDER BY  SIN(blocks.id + ${seed})`;
-        return ``;
-    }
-  };
   const SelectBlocksSql = ({
     page = 0,
     // TODO:
@@ -1185,10 +1167,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }: GetBlocksOptions = {}) =>
     `${SelectBlockSql}
     WHERE deletion_timestamp IS NULL${whereClause ? ` AND ${whereClause}` : ""}
-    ${SelectBlocksSortTypeToClause(
+    ${getBlockSortClause(
       sortType,
-      "block_connections.remote_connected_at",
-      "NULL",
+      {
+        remoteConnectedAt: "block_connections.remote_connected_at",
+        connectedAt: "NULL",
+        lastConnectedAt: "block_connections.last_connected_at",
+      },
       { seed },
     )}
     ${
@@ -1665,6 +1650,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             WITH block_connections AS (
               SELECT    block_id,
                         json_group_array(connections.collection_id) as collection_ids,
+                        MAX(connections.created_timestamp) as last_connected_at,
                         COUNT(collection_id) as num_connections
               FROM      connections
               GROUP BY  1
@@ -1681,10 +1667,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             WHERE       deletion_timestamp IS NULL AND connections.collection_id = ?${
               whereClause ? ` AND ${whereClause}` : ""
             }
-            ${SelectBlocksSortTypeToClause(
+            ${getBlockSortClause(
               sortType,
-              "connections.remote_connected_at_datetime",
-              "connections.created_timestamp",
+              {
+                remoteConnectedAt: "connections.remote_connected_at_datetime",
+                connectedAt: "connections.created_timestamp",
+                lastConnectedAt: "block_connections.last_connected_at",
+              },
               {
                 seed,
               },

@@ -1,3 +1,5 @@
+// ABOUTME: Defines the data structures shared by Basket's storage and views.
+// ABOUTME: Keeps block, collection, connection, and media contracts in one place.
 import { BlockType, MimeType } from "./mimeTypes";
 import { ensureUnreachable } from "./react";
 
@@ -150,6 +152,8 @@ export interface ArenaImportInfo {
 export enum SortType {
   Random = "random",
   Created = "created",
+  Added = "added",
+  RecentlyConnected = "recently_connected",
   RemoteCreated = "remote_created",
 }
 

@@ -1,10 +1,14 @@
+// ABOUTME: Renders the texting screen and its collection-specific header controls.
+// ABOUTME: Keeps the active collection and feed ordering available to the text feed.
 import { Tabs, Stack } from "expo-router";
-import { YStack } from "tamagui";
+import { XStack, YStack } from "tamagui";
 import { CollectionDetailsHeaderLink } from "../app/collection/[id]";
 import { TextForageView } from "../components/TextForageView";
 import { useEffect, useState } from "react";
 import { useTotalBlockCount, useCollection } from "../utils/db";
 import { StyledText } from "../components/Themed";
+import { Alert, TouchableOpacity } from "react-native";
+import { SortType } from "../utils/dataTypes";
 
 export function ChatDetailView({
   initialCollectionId,
@@ -14,6 +18,7 @@ export function ChatDetailView({
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     initialCollectionId
   );
+  const [sortType, setSortType] = useState<SortType>(SortType.Added);
 
   useEffect(() => {
     setSelectedCollection(initialCollectionId);
@@ -23,6 +28,22 @@ export function ChatDetailView({
   const { data: collection } = useCollection(selectedCollection ?? undefined);
 
   const itemCount = selectedCollection ? collection?.numBlocks : totalBlocks;
+  const sortLabel =
+    sortType === SortType.Added ? "Added time" : "Recently connected";
+
+  function selectSortType() {
+    Alert.alert("Sort texts", undefined, [
+      {
+        text: "Added time",
+        onPress: () => setSortType(SortType.Added),
+      },
+      {
+        text: "Recently connected",
+        onPress: () => setSortType(SortType.RecentlyConnected),
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
 
   return (
     <>
@@ -46,16 +67,24 @@ export function ChatDetailView({
                 </StyledText>
               </YStack>
             ),
-            headerRight: () => {
-              return selectedCollection !== null ? (
-                <CollectionDetailsHeaderLink id={selectedCollection} />
-              ) : null;
-            },
+            headerRight: () => (
+              <XStack alignItems="center">
+                <TouchableOpacity onPress={selectSortType}>
+                  <StyledText metadata paddingHorizontal="$2">
+                    {sortLabel}
+                  </StyledText>
+                </TouchableOpacity>
+                {selectedCollection !== null && (
+                  <CollectionDetailsHeaderLink id={selectedCollection} />
+                )}
+              </XStack>
+            ),
           }}
         />
         <TextForageView
           collectionId={selectedCollection || undefined}
           onCollectionChange={setSelectedCollection}
+          sortType={sortType}
         />
       </YStack>
     </>

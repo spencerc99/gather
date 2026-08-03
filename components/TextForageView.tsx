@@ -1,3 +1,5 @@
+// ABOUTME: Displays the text feed and composer used for Basket's texting screen.
+// ABOUTME: Lets people add blocks, connect them to collections, and browse their messages.
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Audio } from "expo-av";
 import { Recording } from "expo-av/build/Audio";
@@ -56,6 +58,7 @@ import {
   Collection,
   LocationMetadata,
   BlockEditInfo,
+  SortType,
 } from "../utils/dataTypes";
 import { AppSettingType, getAppSetting } from "../app/settings";
 import * as Location from "expo-location";
@@ -224,17 +227,20 @@ const processPickedAsset = async (
 interface TextForageViewProps {
   collectionId?: string;
   onCollectionChange?: (collectionId: string | null) => void;
+  sortType: SortType;
 }
 
 export function TextForageView({
   collectionId,
   onCollectionChange,
+  sortType,
 }: TextForageViewProps) {
   return (
     <LocationProvider>
       <TextForageViewContent
         collectionId={collectionId}
         onCollectionChange={onCollectionChange}
+        sortType={sortType}
       />
     </LocationProvider>
   );
@@ -243,6 +249,7 @@ export function TextForageView({
 function TextForageViewContent({
   collectionId,
   onCollectionChange,
+  sortType,
 }: TextForageViewProps) {
   const { getLocationMetadata } = useLocation();
   const [textValue, setTextValue] = useState("");
@@ -269,7 +276,7 @@ function TextForageViewContent({
   const [textPlaceholder, setTextPlaceholder] = useState("");
   const [cameraPermission, requestCameraPermission] =
     ImagePicker.useCameraPermissions();
-  const queryKey = ["blocks", { collectionId }] as const;
+  const queryKey = ["blocks", { collectionId, sortType }] as const;
   const { logError } = useContext(ErrorsContext);
   const [placeholders, setPlaceholders] =
     useState<string[]>(DefaultPlaceholders);
@@ -446,12 +453,13 @@ function TextForageViewContent({
     useInfiniteQuery({
       queryKey,
       queryFn: async ({ pageParam: page, queryKey }) => {
-        const [_, { collectionId }] = queryKey;
+        const [_, { collectionId, sortType }] = queryKey;
 
         const blocks = !collectionId
-          ? await getBlocks({ page })
+          ? await getBlocks({ page, sortType })
           : await getCollectionItems(collectionId, {
               page: page,
+              sortType,
             });
 
         return {
