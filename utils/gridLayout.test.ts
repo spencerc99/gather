@@ -1,6 +1,6 @@
 // ABOUTME: Verifies virtualized grid positions use row-based offsets.
 // ABOUTME: Covers items within a row and across row boundaries.
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "@jest/globals";
 import { getGridRowLayout } from "./gridLayout";
 
 describe("getGridRowLayout", () => {

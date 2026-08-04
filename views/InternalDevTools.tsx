@@ -1,3 +1,5 @@
+// ABOUTME: Renders internal diagnostics and recovery actions for Basket data.
+// ABOUTME: Exposes guarded controls for Are.na sync and local cleanup operations.
 import { YStack, H3, XStack, Spinner, Checkbox } from "tamagui";
 import {
   StyledButton,
@@ -35,6 +37,7 @@ export function InternalDevTools({}: {}) {
     deleteUnconnectedBlocks,
     findAndCleanDuplicates,
     countDuplicates,
+    repairArenaUploadErrors,
   } = useContext(DatabaseContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { currentUser, arenaAccessToken } = useContext(UserContext);
@@ -62,6 +65,37 @@ export function InternalDevTools({}: {}) {
           into any issues, please contact Spencer first, and he might direct you
           to these buttons if there are issues :)
         </StyledText>
+        <ButtonWithConfirm
+          theme="red"
+          disabled={isLoading}
+          icon={isLoading ? <Spinner size="small" /> : null}
+          confirmationTitle="Repair malformed Are.na uploads?"
+          confirmationDescription="Scans every image and video linked to Are.na. Matching error blocks are re-uploaded to the same Are.na channels, and the malformed channel connections are removed after the replacement is available."
+          confirmText="Scan and repair"
+          onPress={async () => {
+            setIsLoading(true);
+            try {
+              const result = await repairArenaUploadErrors();
+              Alert.alert(
+                "Are.na Repair Complete",
+                `Scanned: ${result.scanned}\n` +
+                  `Malformed: ${result.found}\n` +
+                  `Repaired: ${result.repaired}\n` +
+                  (result.errors.length > 0
+                    ? `\nErrors (${result.errors.length}):\n${result.errors
+                        .slice(0, 3)
+                        .join("\n")}`
+                    : ""),
+              );
+            } catch (err) {
+              Alert.alert("Are.na Repair Failed", String(err));
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+        >
+          <StyledParagraph>Repair Are.na Upload Errors</StyledParagraph>
+        </ButtonWithConfirm>
         <XStack alignItems="center" gap="$2">
           <StyledText bold>Dev Mode?</StyledText>
           <Checkbox

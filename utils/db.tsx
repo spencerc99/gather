@@ -89,6 +89,11 @@ import {
   mapSnakeCaseToCamelCaseProperties,
 } from "./dbUtils";
 import { getBlockSortClause } from "./blockSort";
+import {
+  getArenaRecoveryCollectionInfos,
+  getArenaReplacementState,
+  isArenaUploadErrorBlock,
+} from "./arenaRecovery";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -179,6 +184,13 @@ interface ArenaCollectionInfo {
   channelId: string;
 }
 
+export interface ArenaUploadRepairResult {
+  scanned: number;
+  found: number;
+  repaired: number;
+  errors: string[];
+}
+
 interface DatabaseContextProps {
   getBlocks: (opts?: GetBlocksOptions) => Promise<Block[]>;
   // localBlocks: Block[] | null;
@@ -264,6 +276,7 @@ interface DatabaseContextProps {
     errors: string[];
   }>;
   countDuplicates: () => Promise<number>;
+  repairArenaUploadErrors: () => Promise<ArenaUploadRepairResult>;
   selectedReviewCollection: string | null;
   setSelectedReviewCollection: (collectionId: string | null) => void;
   getExistingAssetIds: (
@@ -335,6 +348,12 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
     errors: [],
   }),
   countDuplicates: async () => 0,
+  repairArenaUploadErrors: async () => ({
+    scanned: 0,
+    found: 0,
+    repaired: 0,
+    errors: [],
+  }),
   selectedReviewCollection: null,
   setSelectedReviewCollection: () => {},
   getBlocks: async (opts) => {
@@ -2153,73 +2172,250 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         block,
         arenaToken: arenaAccessToken,
       });
-      const { id: newBlockId, image } = arenaBlock;
-      const hasUpdatedImage =
-        block.type === BlockType.Link &&
-        image?.display.url &&
-        image.display.url !== block.content;
-
-      // Perform block update AND all connection upserts in a single atomic
-      // db.execAsync batch. Previously these were separate calls: first the
-      // block's arena_id was saved, then each connection was upserted one by
-      // one. If anything failed between steps (or a concurrent sync read the
-      // DB between them), the block could end up uploaded to Arena without
-      // the connection being marked as synced (remote_created_at still NULL),
-      // causing re-upload on the next sync cycle and duplicate blocks.
-      const statements: Array<{ sql: string; args: any[] }> = [
-        {
-          sql: `UPDATE blocks SET remote_source_type = ?, remote_source_info = ?${
-            hasUpdatedImage ? `, content = ?` : ""
-          } WHERE id = ?;`,
-          args: [
-            RemoteSourceType.Arena,
-            JSON.stringify({
-              arenaId: newBlockId.toString(),
-              arenaClass: "Block",
-            } as RemoteSourceInfo),
-            ...(hasUpdatedImage ? [image.display.url] : []),
-            block.id,
-          ],
-        },
-        ...collectionInfos.map((collectionInfo) => {
-          const conn = connections[collectionInfo.channelId];
-          return {
-            sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(block_id, collection_id) DO UPDATE SET remote_created_at = excluded.remote_created_at;`,
-            args: [
-              block.id,
-              collectionInfo.collectionId,
-              conn?.user?.slug
-                ? getCreatedByForRemote(
-                    RemoteSourceType.Arena,
-                    conn.user.slug
-                  )
-                : currentUser?.id ?? "unknown",
-              conn?.connected_at ?? new Date().toISOString(),
-            ],
-          };
-        }),
-      ];
-      const syncResults = await db.execAsync(statements, false);
-      handleSqlErrors(syncResults);
-
-      // Invalidate relevant queries now that both block and connections are saved
-      queryClient.invalidateQueries({
-        queryKey: ["blocks", { blockId: block.id }],
+      await saveArenaBlockSync({
+        block,
+        arenaBlock,
+        connections,
+        collectionInfos,
       });
-      for (const collectionInfo of collectionInfos) {
-        invalidateBlockFeeds(queryClient, collectionInfo.collectionId);
-      }
-      queryClient.invalidateQueries({
-        queryKey: ["connections", { blockId: block.id }],
-      });
-      queryClient.invalidateQueries({ queryKey: ["connections", "count"] });
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
       return arenaBlock;
     } catch (err) {
       logError(err);
     }
+  }
+
+  async function saveArenaBlockSync({
+    block,
+    arenaBlock,
+    connections,
+    collectionInfos,
+  }: {
+    block: Block;
+    arenaBlock: RawArenaBlock;
+    connections: Awaited<
+      ReturnType<typeof createBlockArena>
+    >["connections"];
+    collectionInfos: ArenaCollectionInfo[];
+  }): Promise<void> {
+    const { id: newBlockId, image } = arenaBlock;
+    const hasUpdatedImage =
+      block.type === BlockType.Link &&
+      image?.display.url &&
+      image.display.url !== block.content;
+
+    // Perform block update AND all connection upserts in a single atomic
+    // db.execAsync batch. Previously these were separate calls: first the
+    // block's arena_id was saved, then each connection was upserted one by
+    // one. If anything failed between steps (or a concurrent sync read the
+    // DB between them), the block could end up uploaded to Arena without
+    // the connection being marked as synced (remote_created_at still NULL),
+    // causing re-upload on the next sync cycle and duplicate blocks.
+    const statements: Array<{ sql: string; args: any[] }> = [
+      {
+        sql: `UPDATE blocks SET remote_source_type = ?, remote_source_info = ?${
+          hasUpdatedImage ? `, content = ?` : ""
+        } WHERE id = ?;`,
+        args: [
+          RemoteSourceType.Arena,
+          JSON.stringify({
+            arenaId: newBlockId.toString(),
+            arenaClass: "Block",
+          } as RemoteSourceInfo),
+          ...(hasUpdatedImage ? [image.display.url] : []),
+          block.id,
+        ],
+      },
+      ...collectionInfos.map((collectionInfo) => {
+        const conn = connections[collectionInfo.channelId];
+        return {
+          sql: `INSERT INTO connections (block_id, collection_id, created_by, remote_created_at)
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT(block_id, collection_id) DO UPDATE SET remote_created_at = excluded.remote_created_at;`,
+          args: [
+            block.id,
+            collectionInfo.collectionId,
+            conn?.user?.slug
+              ? getCreatedByForRemote(
+                  RemoteSourceType.Arena,
+                  conn.user.slug,
+                )
+              : currentUser?.id ?? "unknown",
+            conn?.connected_at ?? new Date().toISOString(),
+          ],
+        };
+      }),
+    ];
+    const syncResults = await db.execAsync(statements, false);
+    handleSqlErrors(syncResults);
+
+    queryClient.invalidateQueries({
+      queryKey: ["blocks", { blockId: block.id }],
+    });
+    for (const collectionInfo of collectionInfos) {
+      invalidateBlockFeeds(queryClient, collectionInfo.collectionId);
+    }
+    queryClient.invalidateQueries({
+      queryKey: ["connections", { blockId: block.id }],
+    });
+    queryClient.invalidateQueries({ queryKey: ["connections", "count"] });
+    queryClient.invalidateQueries({ queryKey: ["collections"] });
+  }
+
+  async function waitForArenaReplacement(
+    blockId: string,
+    initialBlock: RawArenaBlock,
+  ): Promise<RawArenaBlock> {
+    let arenaBlock = initialBlock;
+    let lastFetchError: unknown;
+    for (let attempt = 0; attempt < 45; attempt++) {
+      const state = getArenaReplacementState(arenaBlock);
+      if (state === "available") {
+        return arenaBlock;
+      }
+      if (state === "failed") {
+        throw new Error(`Are.na replacement ${blockId} failed processing`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2_000));
+      try {
+        arenaBlock = await getArenaBlock(blockId, arenaAccessToken);
+        lastFetchError = undefined;
+      } catch (err) {
+        lastFetchError = err;
+      }
+    }
+    throw new Error(
+      `Timed out waiting for Are.na replacement ${blockId}${
+        lastFetchError ? `: ${lastFetchError}` : ""
+      }`,
+    );
+  }
+
+  async function repairArenaUploadErrors(): Promise<ArenaUploadRepairResult> {
+    if (!arenaAccessToken) {
+      throw new Error("Log in to Are.na before repairing upload errors");
+    }
+    if (!isConnected) {
+      throw new Error("Connect to the internet before repairing upload errors");
+    }
+
+    const [result] = await db.execAsync(
+      [
+        {
+          sql: `SELECT DISTINCT blocks.*
+                FROM blocks
+                INNER JOIN connections ON connections.block_id = blocks.id
+                INNER JOIN collections ON collections.id = connections.collection_id
+                WHERE blocks.deletion_timestamp IS NULL
+                  AND blocks.type IN (?, ?)
+                  AND blocks.remote_source_type = ?
+                  AND blocks.remote_source_info IS NOT NULL
+                  AND collections.remote_source_type = ?
+                  AND collections.remote_source_info IS NOT NULL
+                  AND connections.remote_created_at IS NOT NULL;`,
+          args: [
+            BlockType.Image,
+            BlockType.Video,
+            RemoteSourceType.Arena,
+            RemoteSourceType.Arena,
+          ],
+        },
+      ],
+      true,
+    );
+    handleSqlErrors(result);
+
+    const blocks = result.rows.map(mapDbBlockToBlock);
+    const repairResult: ArenaUploadRepairResult = {
+      scanned: blocks.length,
+      found: 0,
+      repaired: 0,
+      errors: [],
+    };
+
+    for (const block of blocks) {
+      const oldArenaBlockId = block.remoteSourceInfo?.arenaId;
+      if (!oldArenaBlockId) {
+        continue;
+      }
+
+      try {
+        const remoteBlock = await getArenaBlock(
+          oldArenaBlockId,
+          arenaAccessToken,
+        );
+        if (!isArenaUploadErrorBlock(remoteBlock)) {
+          continue;
+        }
+        repairResult.found++;
+
+        const localConnections = await getConnectionsForBlock(block.id, {
+          filterRemoteOnly: true,
+        });
+        const collectionInfos = getArenaRecoveryCollectionInfos(
+          localConnections,
+        );
+        if (collectionInfos.length === 0) {
+          throw new Error("No matching Are.na channel connections found");
+        }
+        const channelIds = Array.from(
+          new Set(collectionInfos.map(({ channelId }) => channelId)),
+        );
+
+        const created = await createBlockArena({
+          block: { ...block, remoteSourceInfo: undefined },
+          channelIds,
+          arenaToken: arenaAccessToken,
+        });
+        const newArenaBlockId = created.arenaBlock.id.toString();
+
+        try {
+          const availableBlock = await waitForArenaReplacement(
+            newArenaBlockId,
+            created.arenaBlock,
+          );
+          await saveArenaBlockSync({
+            block,
+            arenaBlock: availableBlock,
+            connections: created.connections,
+            collectionInfos,
+          });
+        } catch (err) {
+          for (const channelId of channelIds) {
+            try {
+              await removeBlockFromChannel({
+                blockId: newArenaBlockId,
+                channelId,
+                arenaToken: arenaAccessToken,
+              });
+            } catch (cleanupError) {
+              logError(cleanupError);
+            }
+          }
+          throw err;
+        }
+
+        repairResult.repaired++;
+        for (const channelId of channelIds) {
+          try {
+            await removeBlockFromChannel({
+              blockId: oldArenaBlockId,
+              channelId,
+              arenaToken: arenaAccessToken,
+            });
+          } catch (err) {
+            repairResult.errors.push(
+              `Replaced local block ${block.id}, but could not remove malformed Are.na block ${oldArenaBlockId} from channel ${channelId}: ${err}`,
+            );
+          }
+        }
+      } catch (err) {
+        const message = `Failed to repair local block ${block.id} / Are.na block ${oldArenaBlockId}: ${err}`;
+        repairResult.errors.push(message);
+        logError(message);
+      }
+    }
+
+    return repairResult;
   }
 
   async function getLastRemoteItemForCollection(
@@ -2582,7 +2778,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 INNER JOIN collections ON connections.collection_id = collections.id
                 WHERE block_id = ?${
                   filterRemoteOnly
-                    ? ` AND collections.remote_source_type IS NOT NULL AND connections.remote_created_at IS NOT NULL`
+                    ? ` AND collections.remote_source_type IS NOT NULL AND collections.remote_source_info IS NOT NULL AND connections.remote_created_at IS NOT NULL`
                     : ""
                 };`,
           args: [blockId],
@@ -2887,6 +3083,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         trySyncNewArenaBlocks,
         findAndCleanDuplicates,
         countDuplicates,
+        repairArenaUploadErrors,
       }}
     >
       {children}
