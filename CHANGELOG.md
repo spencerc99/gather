@@ -4,6 +4,12 @@ All notable changes to Gather will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.6] - 2026-08-04
+
+### Added
+
+- **Are.na Image Recovery**: Internal Dev Tools can find malformed Are.na image uploads, recreate them in the same channels, and show progress while Are.na processes each replacement.
+
 ## [1.3.5] - 2026-08-03
 
 ### Added
