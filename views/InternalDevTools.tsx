@@ -18,7 +18,10 @@ import {
 } from "../utils/mmkv";
 import { UserContext, UserInfoId } from "../utils/user";
 import { useContext, useEffect, useState } from "react";
-import { DatabaseContext } from "../utils/db";
+import {
+  ArenaUploadRepairProgress,
+  DatabaseContext,
+} from "../utils/db";
 import { storage } from "../utils/mmkv";
 import {
   ArenaClientId,
@@ -27,6 +30,23 @@ import {
 } from "../utils/arena";
 import { MilestoneKey } from "../utils/celebrations";
 import { Alert } from "react-native";
+
+function getArenaRepairProgressText(
+  progress: ArenaUploadRepairProgress,
+): string {
+  switch (progress.phase) {
+    case "checking":
+      return `Checking image ${progress.current} of ${progress.total}`;
+    case "uploading":
+      return `Uploading replacement for image ${progress.current} of ${progress.total}`;
+    case "processing":
+      return `Waiting for Are.na on image ${progress.current} of ${progress.total} (${progress.processingAttempt}/45)`;
+    case "cleaning":
+      return `Removing malformed connections for image ${progress.current} of ${progress.total}`;
+    case "complete":
+      return `Complete: repaired ${progress.repaired} of ${progress.found} malformed images`;
+  }
+}
 
 export function InternalDevTools({}: {}) {
   const {
@@ -43,6 +63,8 @@ export function InternalDevTools({}: {}) {
   const { currentUser, arenaAccessToken } = useContext(UserContext);
   const [pendingArenaBlocks, setPendingArenaBlocks] = useState<any>([]);
   const [unconnectedBlockCount, setUnconnectedBlockCount] = useState<number>(0);
+  const [arenaRepairProgress, setArenaRepairProgress] =
+    useState<ArenaUploadRepairProgress | null>(null);
 
   const [devModeEnabled, setDevModeEnabled] = useStickyValue(
     "devModeEnabled",
@@ -70,12 +92,15 @@ export function InternalDevTools({}: {}) {
           disabled={isLoading}
           icon={isLoading ? <Spinner size="small" /> : null}
           confirmationTitle="Repair malformed Are.na uploads?"
-          confirmationDescription="Scans every image and video linked to Are.na. Matching error blocks are re-uploaded to the same Are.na channels, and the malformed channel connections are removed after the replacement is available."
+          confirmationDescription="Scans every image linked to Are.na. Matching error blocks are re-uploaded to the same Are.na channels, and the malformed channel connections are removed after the replacement is available."
           confirmText="Scan and repair"
           onPress={async () => {
             setIsLoading(true);
+            setArenaRepairProgress(null);
             try {
-              const result = await repairArenaUploadErrors();
+              const result = await repairArenaUploadErrors(
+                setArenaRepairProgress,
+              );
               Alert.alert(
                 "Are.na Repair Complete",
                 `Scanned: ${result.scanned}\n` +
@@ -94,8 +119,26 @@ export function InternalDevTools({}: {}) {
             }
           }}
         >
-          <StyledParagraph>Repair Are.na Upload Errors</StyledParagraph>
+          <StyledParagraph>
+            {isLoading
+              ? "Repairing Are.na Uploads…"
+              : "Repair Are.na Upload Errors"}
+          </StyledParagraph>
         </ButtonWithConfirm>
+        {arenaRepairProgress && (
+          <YStack>
+            <StyledText bold>
+              {getArenaRepairProgressText(arenaRepairProgress)}
+            </StyledText>
+            <StyledText metadata>
+              Found {arenaRepairProgress.found}; repaired{" "}
+              {arenaRepairProgress.repaired}
+              {arenaRepairProgress.blockId
+                ? `; local block ${arenaRepairProgress.blockId}`
+                : ""}
+            </StyledText>
+          </YStack>
+        )}
         <XStack alignItems="center" gap="$2">
           <StyledText bold>Dev Mode?</StyledText>
           <Checkbox

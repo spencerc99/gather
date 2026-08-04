@@ -91,7 +91,7 @@ import {
 import { getBlockSortClause } from "./blockSort";
 import {
   getArenaRecoveryCollectionInfos,
-  getArenaReplacementState,
+  getArenaImageReplacementState,
   isArenaUploadErrorBlock,
 } from "./arenaRecovery";
 
@@ -191,6 +191,25 @@ export interface ArenaUploadRepairResult {
   errors: string[];
 }
 
+export interface ArenaUploadRepairProgress {
+  phase:
+    | "checking"
+    | "uploading"
+    | "processing"
+    | "cleaning"
+    | "complete";
+  current: number;
+  total: number;
+  found: number;
+  repaired: number;
+  blockId?: string;
+  processingAttempt?: number;
+}
+
+type ArenaUploadRepairProgressHandler = (
+  progress: ArenaUploadRepairProgress,
+) => void;
+
 interface DatabaseContextProps {
   getBlocks: (opts?: GetBlocksOptions) => Promise<Block[]>;
   // localBlocks: Block[] | null;
@@ -276,7 +295,9 @@ interface DatabaseContextProps {
     errors: string[];
   }>;
   countDuplicates: () => Promise<number>;
-  repairArenaUploadErrors: () => Promise<ArenaUploadRepairResult>;
+  repairArenaUploadErrors: (
+    onProgress: ArenaUploadRepairProgressHandler,
+  ) => Promise<ArenaUploadRepairResult>;
   selectedReviewCollection: string | null;
   setSelectedReviewCollection: (collectionId: string | null) => void;
   getExistingAssetIds: (
@@ -348,7 +369,7 @@ export const DatabaseContext = createContext<DatabaseContextProps>({
     errors: [],
   }),
   countDuplicates: async () => 0,
-  repairArenaUploadErrors: async () => ({
+  repairArenaUploadErrors: async (_onProgress) => ({
     scanned: 0,
     found: 0,
     repaired: 0,
@@ -2261,14 +2282,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     queryClient.invalidateQueries({ queryKey: ["collections"] });
   }
 
-  async function waitForArenaReplacement(
+  async function waitForArenaImageReplacement(
     blockId: string,
     initialBlock: RawArenaBlock,
+    onProcessing: (attempt: number) => void,
   ): Promise<RawArenaBlock> {
     let arenaBlock = initialBlock;
     let lastFetchError: unknown;
     for (let attempt = 0; attempt < 45; attempt++) {
-      const state = getArenaReplacementState(arenaBlock);
+      onProcessing(attempt + 1);
+      const state = getArenaImageReplacementState(arenaBlock);
       if (state === "available") {
         return arenaBlock;
       }
@@ -2290,7 +2313,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     );
   }
 
-  async function repairArenaUploadErrors(): Promise<ArenaUploadRepairResult> {
+  async function repairArenaUploadErrors(
+    onProgress: ArenaUploadRepairProgressHandler,
+  ): Promise<ArenaUploadRepairResult> {
     if (!arenaAccessToken) {
       throw new Error("Log in to Are.na before repairing upload errors");
     }
@@ -2306,7 +2331,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 INNER JOIN connections ON connections.block_id = blocks.id
                 INNER JOIN collections ON collections.id = connections.collection_id
                 WHERE blocks.deletion_timestamp IS NULL
-                  AND blocks.type IN (?, ?)
+                  AND blocks.type = ?
                   AND blocks.remote_source_type = ?
                   AND blocks.remote_source_info IS NOT NULL
                   AND collections.remote_source_type = ?
@@ -2314,7 +2339,6 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   AND connections.remote_created_at IS NOT NULL;`,
           args: [
             BlockType.Image,
-            BlockType.Video,
             RemoteSourceType.Arena,
             RemoteSourceType.Arena,
           ],
@@ -2332,11 +2356,28 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       errors: [],
     };
 
-    for (const block of blocks) {
+    onProgress({
+      phase: "checking",
+      current: 0,
+      total: blocks.length,
+      found: 0,
+      repaired: 0,
+    });
+
+    for (const [index, block] of blocks.entries()) {
       const oldArenaBlockId = block.remoteSourceInfo?.arenaId;
       if (!oldArenaBlockId) {
         continue;
       }
+
+      const progress = {
+        current: index + 1,
+        total: blocks.length,
+        found: repairResult.found,
+        repaired: repairResult.repaired,
+        blockId: block.id,
+      };
+      onProgress({ phase: "checking", ...progress });
 
       try {
         const remoteBlock = await getArenaBlock(
@@ -2347,6 +2388,11 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           continue;
         }
         repairResult.found++;
+        onProgress({
+          phase: "uploading",
+          ...progress,
+          found: repairResult.found,
+        });
 
         const localConnections = await getConnectionsForBlock(block.id, {
           filterRemoteOnly: true,
@@ -2369,9 +2415,16 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         const newArenaBlockId = created.arenaBlock.id.toString();
 
         try {
-          const availableBlock = await waitForArenaReplacement(
+          const availableBlock = await waitForArenaImageReplacement(
             newArenaBlockId,
             created.arenaBlock,
+            (processingAttempt) =>
+              onProgress({
+                phase: "processing",
+                ...progress,
+                found: repairResult.found,
+                processingAttempt,
+              }),
           );
           await saveArenaBlockSync({
             block,
@@ -2394,7 +2447,12 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
           throw err;
         }
 
-        repairResult.repaired++;
+        onProgress({
+          phase: "cleaning",
+          ...progress,
+          found: repairResult.found,
+        });
+        let cleanupFailed = false;
         for (const channelId of channelIds) {
           try {
             await removeBlockFromChannel({
@@ -2403,10 +2461,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
               arenaToken: arenaAccessToken,
             });
           } catch (err) {
+            cleanupFailed = true;
             repairResult.errors.push(
               `Replaced local block ${block.id}, but could not remove malformed Are.na block ${oldArenaBlockId} from channel ${channelId}: ${err}`,
             );
           }
+        }
+        if (!cleanupFailed) {
+          repairResult.repaired++;
         }
       } catch (err) {
         const message = `Failed to repair local block ${block.id} / Are.na block ${oldArenaBlockId}: ${err}`;
@@ -2415,6 +2477,13 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }
     }
 
+    onProgress({
+      phase: "complete",
+      current: blocks.length,
+      total: blocks.length,
+      found: repairResult.found,
+      repaired: repairResult.repaired,
+    });
     return repairResult;
   }
 

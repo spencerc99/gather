@@ -45,21 +45,18 @@ export function isArenaUploadErrorBlock(
   );
 }
 
-export function getArenaReplacementState(
+export function getArenaImageReplacementState(
   block: ArenaRecoveryBlock,
 ): "processing" | "available" | "failed" {
+  const blockType = getArenaBlockType(block);
   if (
     block.state === "failed" ||
     isArenaUploadErrorBlock(block) ||
-    (block.state === "available" && getArenaBlockType(block) === "Text")
+    (block.state === "available" && blockType !== "Image")
   ) {
     return "failed";
   }
-  if (
-    block.state === "available" &&
-    getArenaBlockType(block) !== "PendingBlock" &&
-    getArenaBlockType(block) !== "Text"
-  ) {
+  if (block.state === "available" && blockType === "Image") {
     return "available";
   }
   return "processing";

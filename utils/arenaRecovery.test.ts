@@ -4,7 +4,7 @@ import { describe, expect, it } from "@jest/globals";
 import {
   ArenaUploadErrorContent,
   getArenaRecoveryCollectionInfos,
-  getArenaReplacementState,
+  getArenaImageReplacementState,
   isArenaUploadErrorBlock,
 } from "./arenaRecovery";
 import { RemoteSourceType } from "./dataTypes";
@@ -50,35 +50,34 @@ describe("Are.na upload error recovery", () => {
     ).toBe(false);
   });
 
-  it("waits for media availability and rejects failed replacements", () => {
+  it("waits for image availability and rejects non-image replacements", () => {
     expect(
-      getArenaReplacementState({
+      getArenaImageReplacementState({
         type: "PendingBlock",
         state: "processing",
       }),
     ).toBe("processing");
     expect(
-      getArenaReplacementState({
+      getArenaImageReplacementState({
         type: "Image",
         state: "available",
       }),
     ).toBe("available");
     expect(
-      getArenaReplacementState({
+      getArenaImageReplacementState({
         type: "Text",
         state: "available",
         content: ArenaUploadErrorContent,
       }),
     ).toBe("failed");
     expect(
-      getArenaReplacementState({
-        type: "Text",
+      getArenaImageReplacementState({
+        type: "Link",
         state: "available",
-        content: "Unexpected upload response",
       }),
     ).toBe("failed");
     expect(
-      getArenaReplacementState({
+      getArenaImageReplacementState({
         type: "Image",
         state: "failed",
       }),
