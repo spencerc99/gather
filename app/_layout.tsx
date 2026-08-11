@@ -12,7 +12,6 @@ import { withLayoutContext } from "expo-router";
 import { NetworkProvider } from "../utils/network";
 import * as NavigationBar from "expo-navigation-bar";
 import { TransitionPresets } from "@react-navigation/stack";
-import { Audio } from "expo-av";
 import {
   DarkTheme,
   DefaultTheme,
@@ -89,10 +88,6 @@ export default function RootLayout() {
   useEffect(() => {
     if (error) throw error;
   }, [error]);
-
-  useEffect(() => {
-    Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-  }, []);
 
   useEffect(() => {
     if (loaded) {

@@ -78,6 +78,7 @@ import {
 import { convertDbTimestampToDate } from "./date";
 import { Indices, Migrations, migrateAmpersandEscape } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
+import { hasPendingArenaConnections } from "./arenaSync";
 import { UserContext } from "./user";
 import { ensure, ensureUnreachable } from "./react";
 import { NetworkContext } from "./network";
@@ -491,8 +492,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       }
     });
   };
+  const triggerBlockSyncRef = useRef(triggerBlockSync);
+  triggerBlockSyncRef.current = triggerBlockSync;
+  const triggerLatestBlockSync = useCallback(
+    () => triggerBlockSyncRef.current(),
+    [],
+  );
   const debouncedTriggerBlockSync = useDebounce(
-    triggerBlockSync,
+    triggerLatestBlockSync,
     10 * 1000, // batch updates every 10 seconds
   );
 
@@ -510,7 +517,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     InteractionManager.runAfterInteractions(async () => {
       await syncWithArena();
     });
-  }, [arenaAccessToken, currentUser]);
+  }, [arenaAccessToken, currentUser?.id]);
 
   const queryClient = useQueryClient();
 
@@ -1832,7 +1839,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     const collectionAddedTo = await getCollection(collectionId);
     if (
       !collectionAddedTo?.remoteSourceType ||
-      !collectionAddedTo?.remoteSourceInfo
+      !collectionAddedTo?.remoteSourceInfo ||
+      !hasPendingArenaConnections(blockConnections)
     ) {
       return;
     }

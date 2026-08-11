@@ -88,7 +88,8 @@ export function MediaView({
 
     let disposed = false;
     let loadedSound: Audio.Sound | undefined;
-    void Audio.Sound.createAsync({ uri: media })
+    void Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
+      .then(() => Audio.Sound.createAsync({ uri: media }))
       .then(({ sound: createdSound }) => {
         if (disposed) {
           void createdSound.unloadAsync();
@@ -139,6 +140,9 @@ export function MediaView({
           return null;
         }
       case BlockType.Video:
+        if (!shouldPlay) {
+          return null;
+        }
         return (
           // @ts-ignore
           <StyledView

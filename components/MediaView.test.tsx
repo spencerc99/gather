@@ -6,11 +6,15 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { BlockType } from "../utils/mimeTypes";
 import { MediaView } from "./MediaView";
 
-const mockCreateSound = jest.fn();
-const mockUnloadSound = jest.fn();
+const mockCreateSound = jest.fn<
+  (...args: unknown[]) => Promise<{ sound: { unloadAsync: () => Promise<void> } }>
+>();
+const mockSetAudioMode = jest.fn<(...args: unknown[]) => Promise<void>>();
+const mockUnloadSound = jest.fn<() => Promise<void>>();
 
 jest.mock("expo-av", () => ({
   Audio: {
+    setAudioModeAsync: (...args: unknown[]) => mockSetAudioMode(...args),
     Sound: {
       createAsync: (...args: unknown[]) => mockCreateSound(...args),
     },
@@ -50,6 +54,8 @@ jest.mock("./PinchToZoom", () => ({
 
 describe("MediaView", () => {
   it("creates one audio resource and unloads it on unmount", async () => {
+    mockSetAudioMode.mockResolvedValue(undefined);
+    mockUnloadSound.mockResolvedValue(undefined);
     mockCreateSound.mockResolvedValue({
       sound: { unloadAsync: mockUnloadSound },
     });
@@ -61,6 +67,7 @@ describe("MediaView", () => {
     await act(async () => {});
 
     expect(mockCreateSound).toHaveBeenCalledTimes(1);
+    expect(mockSetAudioMode).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       view!.update(
@@ -73,7 +80,7 @@ describe("MediaView", () => {
     expect(mockUnloadSound).toHaveBeenCalledTimes(1);
   });
 
-  it("does not let video props autoplay hidden media", () => {
+  it("does not mount hidden video resources", () => {
     let view: ReturnType<typeof create>;
     act(() => {
       view = create(
@@ -86,7 +93,7 @@ describe("MediaView", () => {
       );
     });
 
-    expect(view!.root.findByType("Video").props.shouldPlay).toBe(false);
+    expect(view!.root.findAllByType("Video")).toHaveLength(0);
     act(() => view!.unmount());
   });
 
