@@ -93,7 +93,9 @@ describe("MediaView", () => {
       );
     });
 
-    expect(view!.root.findAllByType("Video")).toHaveLength(0);
+    expect(
+      view!.root.findAllByType("Video" as React.ElementType),
+    ).toHaveLength(0);
     act(() => view!.unmount());
   });
 
@@ -105,7 +107,9 @@ describe("MediaView", () => {
       );
     });
 
-    expect(view!.root.findByType("Video").props.isLooping).toBe(false);
+    expect(
+      view!.root.findByType("Video" as React.ElementType).props.isLooping,
+    ).toBe(false);
     act(() => view!.unmount());
   });
 });
