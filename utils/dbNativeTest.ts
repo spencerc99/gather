@@ -1,4 +1,4 @@
-// ABOUTME: Exercises Basket's SQLite access patterns against the native Expo module.
+// ABOUTME: Exercises Gather's SQLite access patterns against the native Expo module.
 // ABOUTME: Verifies reads, writes, conflicts, batches, and transaction rollback on a device.
 import * as SQLite from "expo-sqlite";
 

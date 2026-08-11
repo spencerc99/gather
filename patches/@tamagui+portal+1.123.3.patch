@@ -1,0 +1,65 @@
+diff --git a/node_modules/@tamagui/portal/dist/cjs/Portal.native.js b/node_modules/@tamagui/portal/dist/cjs/Portal.native.js
+index 86f5504..3c02baa 100644
+--- a/node_modules/@tamagui/portal/dist/cjs/Portal.native.js
++++ b/node_modules/@tamagui/portal/dist/cjs/Portal.native.js
+@@ -29,12 +29,14 @@ module.exports = __toCommonJS(Portal_native_exports);
+ var import_jsx_runtime = require("react/jsx-runtime"), import_stacks = require("@tamagui/stacks"), React = __toESM(require("react")), import_react_native = require("react-native"), import_constants = require("./constants"), import_useStackedZIndex = require("./useStackedZIndex"), import_GorhomPortalItem = require("./GorhomPortalItem"), createPortal = function() {
+   if (import_constants.IS_FABRIC)
+     try {
+-      return require("react-native/Libraries/Renderer/shims/ReactFabric").createPortal;
++      const renderer = require("react-native/Libraries/Renderer/shims/ReactFabric");
++      return renderer.createPortal ?? renderer.default?.createPortal;
+     } catch (err) {
+       return console.info("Note: error importing portal, defaulting to non-native portals", err), null;
+     }
+   try {
+-    return require("react-native/Libraries/Renderer/shims/ReactNative").createPortal;
++    const renderer = require("react-native/Libraries/Renderer/shims/ReactNative");
++    return renderer.createPortal ?? renderer.default?.createPortal;
+   } catch (err) {
+     return console.info("Note: error importing portal, defaulting to non-native portals", err), null;
+   }
+diff --git a/node_modules/@tamagui/portal/dist/esm/Portal.native.js b/node_modules/@tamagui/portal/dist/esm/Portal.native.js
+index 3405a35..81fb60a 100644
+--- a/node_modules/@tamagui/portal/dist/esm/Portal.native.js
++++ b/node_modules/@tamagui/portal/dist/esm/Portal.native.js
+@@ -8,12 +8,14 @@ import { GorhomPortalItem } from "./GorhomPortalItem";
+ var createPortal = function() {
+   if (IS_FABRIC)
+     try {
+-      return require("react-native/Libraries/Renderer/shims/ReactFabric").createPortal;
++      const renderer = require("react-native/Libraries/Renderer/shims/ReactFabric");
++      return renderer.createPortal ?? renderer.default?.createPortal;
+     } catch (err) {
+       return console.info("Note: error importing portal, defaulting to non-native portals", err), null;
+     }
+   try {
+-    return require("react-native/Libraries/Renderer/shims/ReactNative").createPortal;
++    const renderer = require("react-native/Libraries/Renderer/shims/ReactNative");
++    return renderer.createPortal ?? renderer.default?.createPortal;
+   } catch (err) {
+     return console.info("Note: error importing portal, defaulting to non-native portals", err), null;
+   }
+diff --git a/node_modules/@tamagui/portal/src/Portal.native.tsx b/node_modules/@tamagui/portal/src/Portal.native.tsx
+index 417dca0..dc080b5 100644
+--- a/node_modules/@tamagui/portal/src/Portal.native.tsx
++++ b/node_modules/@tamagui/portal/src/Portal.native.tsx
+@@ -9,14 +9,16 @@ import { GorhomPortalItem } from './GorhomPortalItem'
+ const createPortal = (() => {
+   if (IS_FABRIC) {
+     try {
+-      return require('react-native/Libraries/Renderer/shims/ReactFabric').createPortal
++      const renderer = require('react-native/Libraries/Renderer/shims/ReactFabric')
++      return renderer.createPortal ?? renderer.default?.createPortal
+     } catch (err) {
+       console.info(`Note: error importing portal, defaulting to non-native portals`, err)
+       return null
+     }
+   }
+   try {
+-    return require('react-native/Libraries/Renderer/shims/ReactNative').createPortal
++    const renderer = require('react-native/Libraries/Renderer/shims/ReactNative')
++    return renderer.createPortal ?? renderer.default?.createPortal
+   } catch (err) {
+     console.info(`Note: error importing portal, defaulting to non-native portals`, err)
+     return null

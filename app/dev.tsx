@@ -1,9 +1,9 @@
-// ABOUTME: Hosts Basket's internal diagnostics and opt-in native database test.
+// ABOUTME: Hosts Gather's internal diagnostics and opt-in native database test.
 // ABOUTME: Keeps recovery and developer-only verification tools on one route.
-import { SafeAreaView, Text } from "react-native";
+import { SafeAreaView } from "react-native";
 import { InternalDevTools } from "../views/InternalDevTools";
 import { useFixExpoRouter3NavigationTitle } from "../utils/router";
-import { ScrollView, YStack } from "tamagui";
+import { ScrollView, SizableText, YStack } from "tamagui";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { runNativeDatabaseTests } from "../utils/dbNativeTest";
@@ -42,7 +42,9 @@ export default function Dev() {
       <ScrollView>
         <YStack paddingHorizontal="8%" paddingTop="5%">
           {databaseTestStatus && (
-            <Text testID="sqlite-test-status">{databaseTestStatus}</Text>
+            <SizableText testID="sqlite-test-status">
+              {databaseTestStatus}
+            </SizableText>
           )}
           <InternalDevTools />
         </YStack>

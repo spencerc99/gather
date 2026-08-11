@@ -1,4 +1,6 @@
-import { Stack, useLocalSearchParams } from "expo-router";
+// ABOUTME: Renders Gather's primary text-foraging tab.
+// ABOUTME: Opens the saved default collection or a collection supplied by route parameters.
+import { useLocalSearchParams } from "expo-router";
 import { ChatDetailView } from "../../views/ChatDetailView";
 import { AppSettingType, getAppSetting } from "../settings";
 
@@ -7,13 +9,10 @@ export default function HomeScreen() {
   const defaultCollectionId = getAppSetting(AppSettingType.DefaultCollection);
 
   return (
-    <>
-      <Stack.Screen options={{ animation: "slide_from_bottom" }} />
-      <ChatDetailView
-        initialCollectionId={
-          collectionId ? collectionId.toString() : defaultCollectionId
-        }
-      />
-    </>
+    <ChatDetailView
+      initialCollectionId={
+        collectionId ? collectionId.toString() : defaultCollectionId
+      }
+    />
   );
 }
