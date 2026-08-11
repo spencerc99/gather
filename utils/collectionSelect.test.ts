@@ -5,6 +5,7 @@ import {
   collectionIdToSelectValue,
   selectValueToCollectionId,
 } from "./collectionSelect";
+import { describe, expect, it } from "@jest/globals";
 
 describe("collection select values", () => {
   it("uses a string value for all collections", () => {

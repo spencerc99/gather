@@ -1,3 +1,5 @@
+// ABOUTME: Renders image, video, audio, and document media for Gather blocks.
+// ABOUTME: Limits playback to visible content while the current screen and app are active.
 import { BlockType, isBlockContentVideo } from "../utils/mimeTypes";
 import { StyledView, StyledText, Icon, AspectRatioImage } from "./Themed";
 import { PinchToZoom } from "./PinchToZoom";
@@ -15,6 +17,7 @@ import { GetProps } from "tamagui";
 import { StyleProps } from "react-native-reanimated";
 import { ErrorsContext } from "../utils/errors";
 import { useFocusEffect } from "expo-router";
+import { useIsAppActive } from "../utils/appActivity";
 
 export function MediaView({
   media,
@@ -41,32 +44,28 @@ export function MediaView({
   const mediaIsVideo = isBlockContentVideo(media, blockType);
   const video = useRef<Video>(null);
   const [hasClicked, setHasClicked] = useState(false);
-  const [shouldPlay, setShouldPlay] = useState(false);
+  const [isScreenFocused, setIsScreenFocused] = useState(true);
+  const isAppActive = useIsAppActive();
+  const shouldPlay = isVisible && isScreenFocused && isAppActive;
 
-  const pauseVideoOnNavigate = useCallback(() => {
-    if (isVisible) {
-      setShouldPlay(true);
-    }
-
+  const trackScreenFocus = useCallback(() => {
+    setIsScreenFocused(true);
     return () => {
+      setIsScreenFocused(false);
       setHasClicked(false);
-      setShouldPlay(false);
     };
   }, []);
 
   useEffect(() => {
-    if (!video.current) {
-      return;
-    }
-    if (isVisible) {
-      setShouldPlay(true);
-    }
-    if (isVisible === false) {
+    if (!shouldPlay) {
       setHasClicked(false);
-      setShouldPlay(false);
+      if (isPlaying) {
+        void sound?.pauseAsync();
+        setIsPlaying(false);
+      }
     }
-  }, [isVisible, video.current]);
-  useFocusEffect(pauseVideoOnNavigate);
+  }, [shouldPlay, isPlaying, sound]);
+  useFocusEffect(trackScreenFocus);
 
   async function playSound() {
     console.log("play");
@@ -80,36 +79,33 @@ export function MediaView({
     setIsPlaying(false);
   }
 
-  async function maybeLoadSound() {
+  useEffect(() => {
+    setSound(undefined);
+    setIsPlaying(false);
     if (blockType !== BlockType.Audio) {
       return;
     }
 
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: media },
-      undefined,
-      (status) => {
-        if (status.isLoaded) {
-          //   console.log("status: ", status);
-          //   setIsPlaying(status.isPlaying);
-        } else {
-          if (status.error) {
-            console.log(`FATAL PLAYER ERROR: ${status.error}`);
-          }
+    let disposed = false;
+    let loadedSound: Audio.Sound | undefined;
+    void Audio.Sound.createAsync({ uri: media })
+      .then(({ sound: createdSound }) => {
+        if (disposed) {
+          void createdSound.unloadAsync();
+          return;
         }
-      },
-    );
-    setSound(sound);
-  }
+        loadedSound = createdSound;
+        setSound(createdSound);
+      })
+      .catch(logError);
 
-  useEffect(() => {
-    void maybeLoadSound();
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
+    return () => {
+      disposed = true;
+      if (loadedSound) {
+        void loadedSound.unloadAsync();
+      }
+    };
+  }, [blockType, media]);
 
   function renderMedia() {
     switch (blockType) {
@@ -171,9 +167,9 @@ export function MediaView({
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
               isLooping
-              shouldPlay={shouldPlay}
               isMuted={!hasClicked ? true : undefined}
               {...videoProps}
+              shouldPlay={shouldPlay}
             />
             {/* TODO: bring back when adding setting about autoplaying videos */}
             {/* {!hasClicked ? (

@@ -1,3 +1,5 @@
+// ABOUTME: Composes Gather's root providers, navigation stack, and platform chrome.
+// ABOUTME: Initializes fonts and app-wide services before rendering routes.
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   // Import the creation function
@@ -41,6 +43,8 @@ import { DatabaseContext, DatabaseProvider } from "../utils/db";
 import { UserProvider } from "../utils/user";
 import { ErrorsProvider } from "../utils/errors";
 import { useMilestoneCheck } from "../utils/celebrations";
+import { AppActivityProvider } from "../utils/appActivity";
+import { TimeProvider } from "../hooks/useTime";
 
 const client = new QueryClient();
 
@@ -116,31 +120,35 @@ export default function RootLayout() {
             <TamaguiProvider config={config}>
               <Theme name={colorScheme === "dark" ? "dark" : "light"}>
                 <QueryClientProvider client={client}>
-                  <NetworkProvider>
-                    <HoldMenuProvider
-                      theme={colorScheme || undefined}
-                      safeAreaInsets={insets}
-                      // @ts-ignore
-                      onOpen={() => {
-                        if (Keyboard.isVisible()) {
-                          Keyboard.dismiss();
-                        }
-                      }}
-                    >
-                      <UserProvider>
-                        <DatabaseProvider>
-                          <RootLayoutNav />
-                          <StatusBar
-                            style="auto"
-                            // NOTE: idk why but "auto" doesn't properly change color on Android.
-                            backgroundColor={
-                              colorScheme === "light" ? "white" : "black"
+                  <AppActivityProvider>
+                    <TimeProvider>
+                      <NetworkProvider>
+                        <HoldMenuProvider
+                          theme={colorScheme || undefined}
+                          safeAreaInsets={insets}
+                          // @ts-ignore
+                          onOpen={() => {
+                            if (Keyboard.isVisible()) {
+                              Keyboard.dismiss();
                             }
-                          />
-                        </DatabaseProvider>
-                      </UserProvider>
-                    </HoldMenuProvider>
-                  </NetworkProvider>
+                          }}
+                        >
+                          <UserProvider>
+                            <DatabaseProvider>
+                              <RootLayoutNav />
+                              <StatusBar
+                                style="auto"
+                                // NOTE: idk why but "auto" doesn't properly change color on Android.
+                                backgroundColor={
+                                  colorScheme === "light" ? "white" : "black"
+                                }
+                              />
+                            </DatabaseProvider>
+                          </UserProvider>
+                        </HoldMenuProvider>
+                      </NetworkProvider>
+                    </TimeProvider>
+                  </AppActivityProvider>
                 </QueryClientProvider>
               </Theme>
             </TamaguiProvider>

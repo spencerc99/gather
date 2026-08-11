@@ -1,3 +1,5 @@
+// ABOUTME: Presents blocks for review in focused carousel and compact feed layouts.
+// ABOUTME: Supports collection filtering, sorting, and visibility-aware media playback.
 import { useQuery } from "@tanstack/react-query";
 import {
   memo,
@@ -276,6 +278,7 @@ export function CarouselView({
   const insets = useSafeAreaInsets();
   const height =
     useWindowDimensions().height - 44 - bottomTabHeight - insets.top;
+  const [visibleIndex, setVisibleIndex] = useState(0);
 
   return (
     <YStack flex={1} paddingHorizontal="$4" width="100%" minHeight={height}>
@@ -295,6 +298,7 @@ export function CarouselView({
             <BlockReviewSummary
               shouldLink
               block={item}
+              isVisible={index === visibleIndex}
               style={{
                 width: "100%",
                 maxHeight: height * 0.9,
@@ -316,6 +320,7 @@ export function CarouselView({
             />
           </YStack>
         )}
+        onSnapToItem={setVisibleIndex}
       />
     </YStack>
   );

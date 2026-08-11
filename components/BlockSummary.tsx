@@ -1,3 +1,5 @@
+// ABOUTME: Renders block content, metadata, editing controls, and review summaries.
+// ABOUTME: Adapts block presentation for feeds, carousels, and linked detail views.
 import { DatabaseContext } from "../utils/db";
 import { Block } from "../utils/dataTypes";
 import * as WebBrowser from "expo-web-browser";
@@ -677,7 +679,7 @@ export function BlockMetadata({
   const { type, numConnections } = block;
 
   // update every minute
-  const time = useTime(60 * 1000);
+  const time = useTime();
   const dateInfo = useMemo(
     () => getDateForBlock(block, { isRemoteCollection, dateKind }),
     [time],

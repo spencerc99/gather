@@ -1,3 +1,5 @@
+// ABOUTME: Summarizes a block connection with its collection, source, and timestamp.
+// ABOUTME: Keeps relative connection dates current through the shared app clock.
 import { XStack, useTheme } from "tamagui";
 import { Connection } from "../utils/dataTypes";
 import { StyledParagraph, StyledView } from "./Themed";
@@ -17,7 +19,7 @@ export function ConnectionSummary({ connection }: { connection: Connection }) {
     remoteCreatedAt,
   } = connection;
 
-  const time = useTime(60 * 1000);
+  const time = useTime();
   const connectedAt = useMemo(
     () => getRelativeDate(remoteCreatedAt || createdTimestamp),
     [time, remoteCreatedAt, createdTimestamp]
