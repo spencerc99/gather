@@ -74,15 +74,31 @@ describe("MediaView", () => {
   });
 
   it("does not let video props autoplay hidden media", () => {
-    const view = create(
-      <MediaView
-        media="file.mp4"
-        blockType={BlockType.Video}
-        isVisible={false}
-        videoProps={{ shouldPlay: true }}
-      />,
-    );
+    let view: ReturnType<typeof create>;
+    act(() => {
+      view = create(
+        <MediaView
+          media="file.mp4"
+          blockType={BlockType.Video}
+          isVisible={false}
+          videoProps={{ shouldPlay: true }}
+        />,
+      );
+    });
 
-    expect(view.root.findByType("Video").props.shouldPlay).toBe(false);
+    expect(view!.root.findByType("Video").props.shouldPlay).toBe(false);
+    act(() => view!.unmount());
+  });
+
+  it("does not loop ordinary videos indefinitely", () => {
+    let view: ReturnType<typeof create>;
+    act(() => {
+      view = create(
+        <MediaView media="file.mp4" blockType={BlockType.Video} />,
+      );
+    });
+
+    expect(view!.root.findByType("Video").props.isLooping).toBe(false);
+    act(() => view!.unmount());
   });
 });

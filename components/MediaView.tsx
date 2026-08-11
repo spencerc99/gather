@@ -44,7 +44,7 @@ export function MediaView({
   const mediaIsVideo = isBlockContentVideo(media, blockType);
   const video = useRef<Video>(null);
   const [hasClicked, setHasClicked] = useState(false);
-  const [isScreenFocused, setIsScreenFocused] = useState(true);
+  const [isScreenFocused, setIsScreenFocused] = useState(false);
   const isAppActive = useIsAppActive();
   const shouldPlay = isVisible && isScreenFocused && isAppActive;
 
@@ -82,7 +82,7 @@ export function MediaView({
   useEffect(() => {
     setSound(undefined);
     setIsPlaying(false);
-    if (blockType !== BlockType.Audio) {
+    if (blockType !== BlockType.Audio || !shouldPlay) {
       return;
     }
 
@@ -105,7 +105,7 @@ export function MediaView({
         void loadedSound.unloadAsync();
       }
     };
-  }, [blockType, media]);
+  }, [blockType, media, shouldPlay]);
 
   function renderMedia() {
     switch (blockType) {
@@ -166,7 +166,7 @@ export function MediaView({
               ]}
               useNativeControls
               resizeMode={ResizeMode.CONTAIN}
-              isLooping
+              isLooping={false}
               isMuted={!hasClicked ? true : undefined}
               {...videoProps}
               shouldPlay={shouldPlay}

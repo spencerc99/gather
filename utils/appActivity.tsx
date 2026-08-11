@@ -1,6 +1,12 @@
 // ABOUTME: Publishes whether the native app is active through one AppState subscription.
 // ABOUTME: Lets timers and media suspend work while Gather is inactive.
-import { PropsWithChildren, createContext, useContext, useEffect, useState } from "react";
+import {
+  PropsWithChildren,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { AppState } from "react-native";
 
 const AppActivityContext = createContext(AppState.currentState === "active");
