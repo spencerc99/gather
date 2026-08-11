@@ -1,4 +1,8 @@
+// ABOUTME: Defines the native animation presets used by Basket's Tamagui components.
+// ABOUTME: Provides consistent motion speeds for sheets, overlays, and controls.
 import { createAnimations } from "@tamagui/animations-react-native";
+
+export const ResponsiveAnimationDuration = 160;
 
 export const RawAnimations: Parameters<typeof createAnimations>[0] = {
   bouncy: {
@@ -17,6 +21,10 @@ export const RawAnimations: Parameters<typeof createAnimations>[0] = {
     damping: 20,
     mass: 1.2,
     stiffness: 250,
+  },
+  responsive: {
+    type: "timing",
+    duration: ResponsiveAnimationDuration,
   },
 };
 

@@ -16,6 +16,7 @@ import {
   YStack,
   setupNativeSheet,
 } from "tamagui";
+import { ResponsiveAnimationDuration } from "../animations";
 import { Collection } from "../utils/dataTypes";
 import { DatabaseContext, useCollections } from "../utils/db";
 import { UserContext } from "../utils/user";
@@ -362,10 +363,8 @@ export function CollectionSelect({
         <Sheet
           modal
           animationConfig={{
-            type: "spring",
-            damping: 10,
-            mass: 0.3,
-            stiffness: 120,
+            type: "timing",
+            duration: ResponsiveAnimationDuration,
           }}
           dismissOnSnapToBottom
           snapPoints={[85]}
@@ -375,7 +374,7 @@ export function CollectionSelect({
             <Adapt.Contents />
           </Sheet.Frame>
           <Sheet.Overlay
-            animation="lazy"
+            animation="responsive"
             enterStyle={{ opacity: 0 }}
             exitStyle={{ opacity: 0 }}
           />
