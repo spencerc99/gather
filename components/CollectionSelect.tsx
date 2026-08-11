@@ -1,3 +1,5 @@
+// ABOUTME: Renders a searchable collection picker with creation and deletion controls.
+// ABOUTME: Supports selecting a collection or the all-collections option.
 import { memo, useCallback, useContext, useMemo, useState } from "react";
 import { Alert, FlatList, Keyboard } from "react-native";
 import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
@@ -18,6 +20,11 @@ import { Collection } from "../utils/dataTypes";
 import { DatabaseContext, useCollections } from "../utils/db";
 import { UserContext } from "../utils/user";
 import { CollectionSummary } from "./CollectionSummary";
+import {
+  AllCollectionsSelectValue,
+  collectionIdToSelectValue,
+  selectValueToCollectionId,
+} from "../utils/collectionSelect";
 import {
   Icon,
   IconType,
@@ -247,8 +254,7 @@ export function CollectionSelect({
         {collectionPlaceholder.includes(searchValue) && (
           <Select.Item
             index={0}
-            // @ts-ignore
-            value={null}
+            value={AllCollectionsSelectValue}
             key={"none"}
             backgroundColor={
               selectedCollection === null ? "$green4" : undefined
@@ -322,13 +328,10 @@ export function CollectionSelect({
     <Select
       // TODO: dumb because sometimes it is a number...
       onValueChange={(val) => {
-        setSelectedCollection(val ? val.toString() : val);
+        setSelectedCollection(selectValueToCollectionId(val));
         onTriggerSelect?.();
       }}
-      // @ts-ignore
-      value={
-        selectedCollection ? selectedCollection.toString() : selectedCollection
-      }
+      value={collectionIdToSelectValue(selectedCollection)}
       disablePreventBodyScroll
       open={open}
       onOpenChange={(isOpen) => {
