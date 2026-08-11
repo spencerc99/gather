@@ -2,7 +2,7 @@
   "expo": {
     "name": "Gather",
     "slug": "gather",
-    "privacy": "unlisted",
+    "newArchEnabled": false,
     "version": "1.3.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -107,7 +107,9 @@
             "prerendered": true
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
