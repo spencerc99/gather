@@ -1,5 +1,24 @@
 // ABOUTME: Builds Are.na API request bodies for media uploads and block creation.
-// ABOUTME: Identifies image bytes so uploads use accurate content types and filenames.
+// ABOUTME: Identifies image bytes and classifies API failures for safe recovery.
+export class ArenaApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ArenaApiError";
+  }
+}
+
+export function isArenaNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    error.status === 404
+  );
+}
+
 const ArenaUploadBucketUrl =
   "https://s3.amazonaws.com/arena_images-temp";
 

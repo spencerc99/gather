@@ -11,6 +11,7 @@ import {
 } from "./dataTypes";
 import { BlockType, MimeType } from "./mimeTypes";
 import {
+  ArenaApiError,
   buildArenaBlockRequest,
   buildArenaConnectionRequest,
   buildArenaPresignRequest,
@@ -1069,7 +1070,7 @@ export async function createBlock({
           resp.status
         }: ${JSON.stringify(response)}`,
       );
-      throw new Error(JSON.stringify(response));
+      throw new ArenaApiError(resp.status, JSON.stringify(response));
     }
     Object.assign(
       connections,
@@ -1394,7 +1395,10 @@ export async function getBlock(
   const json = await resp.json();
   if (!resp.ok) {
     logError(`${resp.status} failed to get block ${resp.statusText}`);
-    throw new Error(`${resp.status} failed to get block ${resp.statusText}`);
+    throw new ArenaApiError(
+      resp.status,
+      `${resp.status} failed to get block ${resp.statusText}`,
+    );
   }
   return json;
 }

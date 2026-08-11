@@ -2,14 +2,29 @@
 // ABOUTME: Covers media filename selection and byte-based image type detection.
 import { describe, expect, it } from "@jest/globals";
 import {
+  ArenaApiError,
   buildArenaBlockRequest,
   buildArenaConnectionRequest,
   buildArenaPresignRequest,
   detectImageContentType,
   getArenaUploadFilename,
   getArenaUploadSourceUrl,
+  isArenaNotFoundError,
   mapArenaConnectionBatch,
 } from "./arenaRequests";
+
+describe("Are.na request errors", () => {
+  it("identifies only not-found API responses", () => {
+    expect(isArenaNotFoundError(new ArenaApiError(404, "Not Found"))).toBe(
+      true,
+    );
+    expect(isArenaNotFoundError(new ArenaApiError(500, "Server Error"))).toBe(
+      false,
+    );
+    expect(isArenaNotFoundError({ status: 404 })).toBe(true);
+    expect(isArenaNotFoundError(new Error("404"))).toBe(false);
+  });
+});
 
 describe("Are.na upload requests", () => {
   it("builds the documented presign request", () => {

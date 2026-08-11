@@ -79,6 +79,7 @@ import { convertDbTimestampToDate } from "./date";
 import { Indices, Migrations, migrateAmpersandEscape } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { hasPendingArenaConnections } from "./arenaSync";
+import { isArenaNotFoundError } from "./arenaRequests";
 import { UserContext } from "./user";
 import { ensure, ensureUnreachable } from "./react";
 import { NetworkContext } from "./network";
@@ -2209,8 +2210,53 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       });
       return arenaBlock;
     } catch (err) {
+      if (
+        isArenaNotFoundError(err) &&
+        block.remoteSourceInfo?.arenaId &&
+        (await isArenaBlockDeleted(block.remoteSourceInfo.arenaId))
+      ) {
+        await removePendingConnectionsForDeletedArenaBlock(
+          block.id,
+          collectionInfos,
+        );
+        return;
+      }
       logError(err);
     }
+  }
+
+  async function isArenaBlockDeleted(arenaBlockId: string): Promise<boolean> {
+    try {
+      await getBlockArena(arenaBlockId, arenaAccessToken);
+      return false;
+    } catch (err) {
+      if (isArenaNotFoundError(err)) {
+        return true;
+      }
+      logError(err);
+      return false;
+    }
+  }
+
+  async function removePendingConnectionsForDeletedArenaBlock(
+    blockId: string,
+    collectionInfos: ArenaCollectionInfo[],
+  ): Promise<void> {
+    const result = await db.execAsync(
+      collectionInfos.map(({ collectionId }) => ({
+        sql: `DELETE FROM connections
+              WHERE block_id = ? AND collection_id = ? AND remote_created_at IS NULL;`,
+        args: [blockId, collectionId],
+      })),
+      false,
+    );
+    handleSqlErrors(result);
+    queryClient.invalidateQueries({ queryKey: ["collections"] });
+    queryClient.invalidateQueries({
+      queryKey: ["connections", { blockId }],
+    });
+    queryClient.invalidateQueries({ queryKey: ["connections", "count"] });
+    invalidateAllBlockFeeds(queryClient);
   }
 
   async function saveArenaBlockSync({
