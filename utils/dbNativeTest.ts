@@ -1,6 +1,9 @@
 // ABOUTME: Exercises Gather's SQLite access patterns against the native Expo module.
 // ABOUTME: Verifies reads, writes, conflicts, batches, and transaction rollback on a device.
 import * as SQLite from "expo-sqlite";
+import { createArenaPullStore } from "./arenaPullDatabase";
+import { BlockType } from "./mimeTypes";
+import { RemoteSourceType } from "./dataTypes";
 
 function ensureTestResult(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -18,13 +21,26 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       await transaction.runAsync(`CREATE TABLE collections (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
+        remote_source_type TEXT,
         remote_source_info TEXT,
+        updated_timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         arena_id TEXT AS (json_extract(remote_source_info, '$.arenaId'))
       );`);
       await transaction.runAsync(`CREATE TABLE blocks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        description TEXT,
         content TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'Text',
+        content_type TEXT,
+        source TEXT,
+        remote_source_type TEXT,
+        created_by TEXT NOT NULL DEFAULT 'test',
         remote_source_info TEXT,
+        local_asset_id TEXT,
+        capture_time INTEGER,
+        location_data TEXT,
+        deletion_timestamp TEXT,
         arena_id TEXT AS (json_extract(remote_source_info, '$.arenaId'))
       );`);
       await transaction.runAsync(`CREATE UNIQUE INDEX blocks_arena_id
@@ -32,6 +48,7 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       await transaction.runAsync(`CREATE TABLE connections (
         block_id INTEGER NOT NULL,
         collection_id INTEGER NOT NULL,
+        created_by TEXT NOT NULL DEFAULT 'test',
         remote_created_at TEXT,
         PRIMARY KEY (block_id, collection_id)
       );`);
@@ -171,6 +188,59 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       "Pending connection deletion did not remove its row",
     );
     passedTests.push("conditional delete");
+
+    await database.runAsync(
+      `UPDATE collections
+       SET remote_source_type = ?, remote_source_info = ?
+       WHERE id = ?;`,
+      [
+        RemoteSourceType.Arena,
+        JSON.stringify({ arenaId: "channel-1", arenaClass: "Collection" }),
+        collectionId,
+      ],
+    );
+    const arenaPullStore = createArenaPullStore(database);
+    const remoteCollections = await arenaPullStore.getCollections();
+    ensureTestResult(
+      remoteCollections.length === 1 &&
+        remoteCollections[0].channelId === "channel-1",
+      "Background pull store did not load the remote collection",
+    );
+    const remoteBlock = {
+      title: "Remote block",
+      description: "Remote description",
+      content: "Remote content",
+      type: BlockType.Text,
+      createdBy: "Arena:::creator",
+      remoteSourceType: RemoteSourceType.Arena,
+      remoteSourceInfo: { arenaId: "block-3", arenaClass: "Block" as const },
+      remoteConnectedAt: "2026-08-11T01:00:00Z",
+      connectedBy: "Arena:::connector",
+    };
+    const firstImportCount = await arenaPullStore.insertBlocks(
+      collectionId.toString(),
+      [remoteBlock],
+    );
+    const repeatedImportCount = await arenaPullStore.insertBlocks(
+      collectionId.toString(),
+      [remoteBlock],
+    );
+    const importedConnection = await database.getFirstAsync<{
+      remote_created_at: string;
+    }>(
+      `SELECT connections.remote_created_at
+       FROM connections
+       INNER JOIN blocks ON blocks.id = connections.block_id
+       WHERE blocks.arena_id = ? AND connections.collection_id = ?;`,
+      ["block-3", collectionId],
+    );
+    ensureTestResult(
+      firstImportCount === 1 &&
+        repeatedImportCount === 0 &&
+        importedConnection?.remote_created_at === "2026-08-11T01:00:00Z",
+      "Background pull store did not preserve idempotent remote imports",
+    );
+    passedTests.push("background pull store");
 
     return passedTests;
   } finally {
