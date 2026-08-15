@@ -1,40 +1,118 @@
-// TODO: define background task for syncing remote data
-// @ts-ignore
-import * as BackgroundFetch from "expo-background-fetch";
-// @ts-ignore
+// ABOUTME: Registers Gather's battery-aware background task for pulling new Are.na items.
+// ABOUTME: Records aggregate diagnostics and exposes a development trigger for device validation.
+import * as BackgroundTask from "expo-background-task";
+import * as SecureStore from "expo-secure-store";
 import * as TaskManager from "expo-task-manager";
-// @ts-ignore
-import { ArenaSyncManagerSingleton } from "./arena";
+import { ArenaTokenStorageKey } from "./arena";
+import { ArenaPullResult, runArenaPull } from "./arenaPull";
+import {
+  createArenaPullStore,
+  openArenaPullDatabase,
+} from "./arenaPullDatabase";
+import {
+  ArenaBackgroundStatusKey,
+  arenaPullClient,
+  createArenaPullState,
+  markArenaBackgroundChanges,
+} from "./arenaPullRuntime";
+import { getItem, setItem } from "./mmkv";
 
-const BACKGROUND_FETCH_TASK = "update-remote-items";
+export const ArenaBackgroundTaskName = "arena-background-pull-v1";
+export const ArenaBackgroundMinimumIntervalMinutes = 12 * 60;
 
-TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
-  try {
-    // fetch data here
-    console.log("[background] fetching");
-    ArenaSyncManagerSingleton.sync();
-    console.log("[background] fetch done!");
+export interface ArenaBackgroundStatus {
+  startedAt: string;
+  completedAt: string;
+  result?: ArenaPullResult;
+  error?: string;
+}
 
-    return BackgroundFetch.BackgroundFetchResult.NewData;
-  } catch (err) {
-    return BackgroundFetch.BackgroundFetchResult.Failed;
+if (!TaskManager.isTaskDefined(ArenaBackgroundTaskName)) {
+  TaskManager.defineTask(ArenaBackgroundTaskName, runArenaBackgroundPull);
+}
+
+export async function registerArenaBackgroundPullAsync(): Promise<boolean> {
+  const status = await BackgroundTask.getStatusAsync();
+  if (status !== BackgroundTask.BackgroundTaskStatus.Available) {
+    return false;
   }
-});
+  if (!(await TaskManager.isTaskRegisteredAsync(ArenaBackgroundTaskName))) {
+    await BackgroundTask.registerTaskAsync(ArenaBackgroundTaskName, {
+      minimumInterval: ArenaBackgroundMinimumIntervalMinutes,
+    });
+  }
+  return true;
+}
 
-// 2. Register the task at some point in your app by providing the same name,
-// and some configuration options for how the background fetch should behave
-// Note: This does NOT need to be in the global scope and CAN be used in your React components!
-export async function registerBackgroundFetchAsync() {
-  return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
-    minimumInterval: 60 * 15, // 15 minutes
-    stopOnTerminate: false, // android only,
-    startOnBoot: true, // android only
+export async function unregisterArenaBackgroundPullAsync(): Promise<void> {
+  if (await TaskManager.isTaskRegisteredAsync(ArenaBackgroundTaskName)) {
+    await BackgroundTask.unregisterTaskAsync(ArenaBackgroundTaskName);
+  }
+}
+
+export function getArenaBackgroundStatus(): ArenaBackgroundStatus | null {
+  return getItem<ArenaBackgroundStatus>(ArenaBackgroundStatusKey);
+}
+
+export async function triggerArenaBackgroundPullForTestingAsync(): Promise<boolean> {
+  return BackgroundTask.triggerTaskWorkerForTestingAsync();
+}
+
+async function runArenaBackgroundPull(): Promise<BackgroundTask.BackgroundTaskResult> {
+  const startedAt = new Date();
+  try {
+    let accessToken: string | null;
+    try {
+      accessToken = await SecureStore.getItemAsync(ArenaTokenStorageKey);
+    } catch (_error) {
+      recordStatus(startedAt, emptySkippedResult("token-unavailable"));
+      return BackgroundTask.BackgroundTaskResult.Success;
+    }
+    if (!accessToken) {
+      recordStatus(startedAt, emptySkippedResult("no-token"));
+      return BackgroundTask.BackgroundTaskResult.Success;
+    }
+
+    const database = openArenaPullDatabase();
+    const result = await runArenaPull({
+      accessToken,
+      client: arenaPullClient,
+      store: createArenaPullStore(database),
+      state: createArenaPullState(),
+    }).finally(() => database.closeAsync());
+    if (result.itemsAdded > 0 || result.collectionsUpdated > 0) {
+      markArenaBackgroundChanges();
+    }
+    recordStatus(startedAt, result);
+    return BackgroundTask.BackgroundTaskResult.Success;
+  } catch (error) {
+    setItem<ArenaBackgroundStatus>(ArenaBackgroundStatusKey, {
+      startedAt: startedAt.toISOString(),
+      completedAt: new Date().toISOString(),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return BackgroundTask.BackgroundTaskResult.Failed;
+  }
+}
+
+function recordStatus(startedAt: Date, result: ArenaPullResult): void {
+  setItem<ArenaBackgroundStatus>(ArenaBackgroundStatusKey, {
+    startedAt: startedAt.toISOString(),
+    completedAt: new Date().toISOString(),
+    result,
   });
 }
 
-// 3. (Optional) Unregister tasks by specifying the task name
-// This will cancel any future background fetch calls that match the given name
-// Note: This does NOT need to be in the global scope and CAN be used in your React components!
-export async function unregisterBackgroundFetchAsync() {
-  return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+function emptySkippedResult(
+  skippedReason: ArenaPullResult["skippedReason"],
+): ArenaPullResult {
+  return {
+    status: "skipped",
+    skippedReason,
+    collectionsAttempted: 0,
+    collectionsCompleted: 0,
+    itemsAdded: 0,
+    collectionsUpdated: 0,
+    requests: 0,
+  };
 }
