@@ -1,3 +1,5 @@
+// ABOUTME: Provides Gather's shared themed controls, text, links, and icons.
+// ABOUTME: Keeps Tamagui styling and application interaction patterns consistent.
 import {
   Text,
   Button as DefaultButton,
@@ -43,7 +45,7 @@ import {
 } from "react-native-reanimated";
 
 export type LinkButtonProps = Optional<ButtonProps, "onPress"> &
-  Pick<LinkProps<any>, "href">;
+  Pick<LinkProps, "href">;
 
 const TextVariants = {
   title: {
@@ -507,7 +509,7 @@ export const IconComponent = styled(CustomIcon, {
 } as any);
 
 export function Icon(props: GetProps<typeof IconComponent>) {
-  return <IconComponent size={18 || props.size} {...props} />;
+  return <IconComponent size={props.size || 18} {...props} />;
 }
 
 export const InputWithIcon = React.forwardRef(function InputWithIcon(

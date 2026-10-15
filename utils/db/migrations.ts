@@ -1,3 +1,5 @@
+// ABOUTME: Defines local SQLite schema migrations and data repair migrations.
+// ABOUTME: Applies durable database changes while preserving existing Basket data.
 import { SQLiteDatabase } from "expo-sqlite";
 import { storage } from "../mmkv";
 import { BlockType } from "../mimeTypes";
@@ -40,8 +42,8 @@ export async function migrateAmpersandEscape(db: SQLiteDatabase) {
   console.log("starting ampersand escape migration");
 
   try {
-    await db.transactionAsync(async (tx) => {
-      const { rows } = await tx.executeSqlAsync(`
+    await db.withExclusiveTransactionAsync(async (transaction) => {
+      const rows = await transaction.getAllAsync(`
         SELECT id, description, title, content, type
         FROM blocks
         WHERE description LIKE '%&amp;%' OR title LIKE '%&amp;%' OR (type = 'text' AND content LIKE '%&amp;%');
@@ -55,13 +57,13 @@ export async function migrateAmpersandEscape(db: SQLiteDatabase) {
         const updatedContent =
           type === BlockType.Text ? content?.replaceAll("&amp;", "&") : content;
 
-        tx.executeSqlAsync(
+        await transaction.runAsync(
           `UPDATE blocks
             SET   title = ?,
                   description = ?,
                   content = ?
             WHERE id = ?`,
-          [updatedTitle || null, updatedDescription || null, updatedContent, id]
+          [updatedTitle || null, updatedDescription || null, updatedContent, id],
         );
       }
     });

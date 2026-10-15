@@ -72,9 +72,7 @@ export function InternalDevTools({}: {}) {
   );
 
   useEffect(() => {
-    getPendingArenaBlocks().then((result: any) =>
-      setPendingArenaBlocks(result.rows)
-    );
+    getPendingArenaBlocks().then(setPendingArenaBlocks);
     getUnconnectedBlockCount().then(setUnconnectedBlockCount);
   }, []);
 

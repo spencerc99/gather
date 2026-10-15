@@ -1,3 +1,5 @@
+// ABOUTME: Configures Gather's primary tab navigation and shared header actions.
+// ABOUTME: Defines tab icons, safe-area behavior, and reusable linked header icons.
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { IconProps } from "@expo/vector-icons/build/createIconSet";
@@ -115,7 +117,7 @@ export function HeaderIcon({
   href,
   icon,
 }: {
-  href: LinkProps<any>["href"];
+  href: LinkProps["href"];
   icon: IconProps<any>["name"];
 }) {
   const theme = useTheme();

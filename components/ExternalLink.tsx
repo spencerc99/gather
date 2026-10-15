@@ -1,3 +1,5 @@
+// ABOUTME: Opens external URLs in a new web tab or the native in-app browser.
+// ABOUTME: Preserves Expo Router link behavior while handling platform navigation.
 import { Link } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
@@ -8,13 +10,10 @@ export function ExternalLink(
 ) {
   return (
     <Link
-      hrefAttrs={{
-        // On web, launch the link in a new tab.
-        target: '_blank',
-      }}
+      // On web, launch the link in a new tab.
+      target="_blank"
       {...props}
-      // @ts-expect-error: External URLs are not typed.
-      href={props.href}
+      href={props.href as React.ComponentProps<typeof Link>['href']}
       onPress={(e) => {
         if (Platform.OS !== 'web') {
           // Prevent the default behavior of linking to the default browser on native.
