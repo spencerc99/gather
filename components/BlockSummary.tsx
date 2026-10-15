@@ -229,7 +229,7 @@ export function BlockSummary({
         zoomable={zoomable}
       />
     ),
-    [block, isEditing, isVisible, zoomable],
+    [block, isEditing, isVisible, zoomable, style, blockStyle],
   );
 
   function renderMetadata() {

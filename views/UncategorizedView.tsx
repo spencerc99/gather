@@ -73,6 +73,11 @@ const OrganizeGridCell = memo(function OrganizeGridCell({
   return (
     <Pressable
       onPress={() => onToggle(block.id)}
+      onLongPress={() => onOpen(index)}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={block.title || `${block.type} block`}
+      accessibilityHint="Tap to select. Hold to open the expanded preview."
       style={{ width: cellSize, height: cellSize, margin: GridGap }}
     >
       <YStack
@@ -85,6 +90,7 @@ const OrganizeGridCell = memo(function OrganizeGridCell({
         borderColor={selected ? "$orange9" : "transparent"}
         justifyContent="center"
         alignItems="center"
+        pointerEvents="none"
       >
         <BlockSummary
           block={block}
@@ -99,7 +105,11 @@ const OrganizeGridCell = memo(function OrganizeGridCell({
             justifyContent: "center",
           }}
           style={{ width: "100%", height: "100%" }}
-          blockStyle={{ resizeMode: "cover" }}
+          blockStyle={{
+            width: cellSize - 4,
+            height: cellSize - 4,
+            resizeMode: "cover",
+          }}
         />
       </YStack>
       {/* Selection badge */}
@@ -246,17 +256,15 @@ export function UncategorizedView() {
       return;
     }
     Keyboard.dismiss();
-    await Promise.all(
-      Array.from(selectedBlockIds).map((blockId) =>
-        addConnections({
-          blockId,
-          connections: selectedCollections.map((c) => ({
-            collectionId: c,
-            createdBy: currentUser!.id,
-          })),
-        }),
-      ),
-    );
+    for (const blockId of selectedBlockIds) {
+      await addConnections({
+        blockId,
+        connections: selectedCollections.map((c) => ({
+          collectionId: c,
+          createdBy: currentUser!.id,
+        })),
+      });
+    }
     setSelectedBlockIds(new Set());
     setSelectedCollections([]);
     setSearchValue("");
