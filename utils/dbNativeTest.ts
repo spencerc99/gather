@@ -247,6 +247,10 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       "Background pull store did not preserve idempotent remote imports",
     );
     passedTests.push("background pull store");
+    const batchCollection = await database.runAsync(
+      "INSERT INTO collections (title) VALUES (?);",
+      ["Batch collection"],
+    );
     const batchContents = Array.from(
       { length: 12 },
       (_, index) => `Batch block ${index}`,
@@ -262,7 +266,7 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
         blockId = block.id;
         await transaction.runAsync(
           `INSERT INTO connections (block_id, collection_id) VALUES (?, ?);`,
-          [blockId, collectionId],
+          [blockId, batchCollection.lastInsertRowId],
         );
       });
       return blockId;
@@ -271,7 +275,7 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       `SELECT blocks.id, blocks.content FROM blocks
        JOIN connections ON connections.block_id = blocks.id
        WHERE connections.collection_id = ? ORDER BY blocks.id;`,
-      [collectionId],
+      [batchCollection.lastInsertRowId],
     );
     ensureTestResult(
       batchRows.length === batchContents.length &&

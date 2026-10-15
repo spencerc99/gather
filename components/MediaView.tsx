@@ -141,7 +141,22 @@ export function MediaView({
         }
       case BlockType.Video:
         if (!shouldPlay) {
-          return null;
+          return (
+            <StyledView
+              width={typeof style.width === "number" ? style.width : "100%"}
+              height={typeof style.height === "number" ? style.height : undefined}
+              aspectRatio={1}
+              testID="video-preview"
+              accessibilityLabel="Video preview"
+              backgroundColor="$gray4"
+              alignItems="center"
+              justifyContent="center"
+              gap="$1"
+            >
+              <Icon name="play-circle-outline" size={32} />
+              <StyledText metadata>Video</StyledText>
+            </StyledView>
+          );
         }
         return (
           // @ts-ignore

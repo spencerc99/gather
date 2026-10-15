@@ -60,6 +60,7 @@ export function SearchView() {
               block={item}
               shouldLink
               hideHoldMenu
+              isVisible={false}
               containerProps={{ width: "100%" }}
               blockStyle={{ resizeMode: "cover", maxHeight: 240 }}
             />
