@@ -1,3 +1,5 @@
+// ABOUTME: Displays Gather account settings, contributions, and import controls.
+// ABOUTME: Manages selected Are.na channel imports and local data export.
 import dayjs from "dayjs";
 import { zip } from "react-native-zip-archive";
 import * as Application from "expo-application";
@@ -55,14 +57,11 @@ export default function ProfileScreen() {
     // TODO: this would ideally do it in the background asynchronously
     setIsLoading(true);
     try {
-      await Promise.all(
-        selectedChannels.map(
-          async (channel) => await tryImportArenaChannel(channel.id.toString())
-        )
-      ).then(() => {
-        setSelectedChannels([]);
-        alert(`Imported ${selectedChannels.length} channels`);
-      });
+      for (const channel of selectedChannels) {
+        await tryImportArenaChannel(channel.id.toString());
+      }
+      setSelectedChannels([]);
+      alert(`Imported ${selectedChannels.length} channels`);
     } catch (error) {
       logError(error);
       // throw error;

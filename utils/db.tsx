@@ -1,6 +1,7 @@
 // ABOUTME: Provides Basket's local SQLite data access and React query bindings.
 // ABOUTME: Stores blocks, collections, and their connections while syncing remote sources.
 import { InteractionManager, Platform } from "react-native";
+import { getBlockSearchFilter } from "./blockSearch";
 import {
   InfiniteData,
   QueryClient,
@@ -196,12 +197,7 @@ export interface ArenaUploadRepairResult {
 }
 
 export interface ArenaUploadRepairProgress {
-  phase:
-    | "checking"
-    | "uploading"
-    | "processing"
-    | "cleaning"
-    | "complete";
+  phase: "checking" | "uploading" | "processing" | "cleaning" | "complete";
   current: number;
   total: number;
   found: number;
@@ -935,8 +931,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 AND blocks.remote_source_type IS NOT NULL
               GROUP BY blocks.id
               HAVING COUNT(connections.collection_id) = 0
-            );`,
-    );
+            );`);
     return result?.count ?? 0;
   };
 
@@ -948,8 +943,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             WHERE blocks.deletion_timestamp IS NULL
               AND blocks.remote_source_type IS NOT NULL
             GROUP BY blocks.id
-            HAVING COUNT(connections.collection_id) = 0;`,
-    );
+            HAVING COUNT(connections.collection_id) = 0;`);
 
     const blockIds = rows.map((row) => row.id.toString());
     if (blockIds.length === 0) {
@@ -1003,10 +997,10 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
 
         // Update the block's content to the remote URL
         const oldContent = block.content;
-        await db.runAsync(
-          `UPDATE blocks SET content = ? WHERE id = ?;`,
-          [remoteUrl, block.id],
-        );
+        await db.runAsync(`UPDATE blocks SET content = ? WHERE id = ?;`, [
+          remoteUrl,
+          block.id,
+        ]);
 
         // Delete the local file
         try {
@@ -1165,9 +1159,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     whereClause,
     sortType = SortType.Created,
     seed,
-  }: GetBlocksOptions = {}) =>
-    `${SelectBlockSql}
-    WHERE deletion_timestamp IS NULL${whereClause ? ` AND ${whereClause}` : ""}
+    search,
+  }: GetBlocksOptions = {}) => {
+    const { clause, params } = getBlockSearchFilter(search);
+    return {
+      params,
+      sql: `${SelectBlockSql}
+    WHERE deletion_timestamp IS NULL${
+      whereClause ? ` AND ${whereClause}` : ""
+    }${clause}
     ${getBlockSortClause(
       sortType,
       {
@@ -1181,17 +1181,25 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       page === null
         ? ""
         : `LIMIT ${BlockSelectLimit} OFFSET ${page * BlockSelectLimit}`
-    };`;
+    };`,
+    };
+  };
 
   async function getBlocks({
     page = 0,
     whereClause,
     sortType = SortType.Created,
     seed,
+    search,
   }: GetBlocksOptions = {}): Promise<Block[]> {
-    const rows = await db.getAllAsync<any>(
-      `${SelectBlocksSql({ page, sortType, seed, whereClause })};`,
-    );
+    const { sql, params } = SelectBlocksSql({
+      page,
+      sortType,
+      seed,
+      whereClause,
+      search,
+    });
+    const rows = await db.getAllAsync<any>(sql, params);
     try {
       return rows.map((block) => mapDbBlockToBlock(block));
     } catch (err) {
@@ -1874,7 +1882,9 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
     for (const failure of result.collectionErrors) {
       logError(
-        new Error(`Are.na collection ${failure.collectionId}: ${failure.error}`),
+        new Error(
+          `Are.na collection ${failure.collectionId}: ${failure.error}`,
+        ),
       );
     }
   }
@@ -1915,7 +1925,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   null;
                 if (blockMappedToCamelCase.collectionRemoteSourceInfos) {
                   const parsed = JSON.parse(
-                    blockMappedToCamelCase.collectionRemoteSourceInfos
+                    blockMappedToCamelCase.collectionRemoteSourceInfos,
                   );
                   // json_group_array may return items as JSON objects (not
                   // double-quoted strings) depending on SQLite version, so
@@ -1923,7 +1933,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   collectionRemoteSourceInfos = parsed.map((info: any) =>
                     typeof info === "string"
                       ? (JSON.parse(info) as RemoteSourceInfo)
-                      : (info as RemoteSourceInfo)
+                      : (info as RemoteSourceInfo),
                   );
                 }
 
@@ -1936,14 +1946,14 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                 } as BlockWithCollectionInfo;
               } catch (err) {
                 logError(
-                  `[Arena Sync] Failed to parse pending block row id=${block.id}: ${err}`
+                  `[Arena Sync] Failed to parse pending block row id=${block.id}: ${err}`,
                 );
                 return null;
               }
             })
             .filter(
               (b): b is BlockWithCollectionInfo =>
-                b !== null && !queuedBlocksToSync.current.has(b.id)
+                b !== null && !queuedBlocksToSync.current.has(b.id),
             );
 
           connectionsToSync.forEach((c) =>
@@ -2125,9 +2135,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }: {
     block: Block;
     arenaBlock: RawArenaBlock;
-    connections: Awaited<
-      ReturnType<typeof createBlockArena>
-    >["connections"];
+    connections: Awaited<ReturnType<typeof createBlockArena>>["connections"];
     collectionInfos: ArenaCollectionInfo[];
   }): Promise<void> {
     const { id: newBlockId, image } = arenaBlock;
@@ -2168,11 +2176,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
             block.id,
             collectionInfo.collectionId,
             conn?.user?.slug
-              ? getCreatedByForRemote(
-                  RemoteSourceType.Arena,
-                  conn.user.slug,
-                )
-              : currentUser?.id ?? "unknown",
+              ? getCreatedByForRemote(RemoteSourceType.Arena, conn.user.slug)
+              : (currentUser?.id ?? "unknown"),
             conn?.connected_at ?? new Date().toISOString(),
           ],
         };
@@ -2250,11 +2255,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   AND collections.remote_source_type = ?
                   AND collections.remote_source_info IS NOT NULL
                   AND connections.remote_created_at IS NOT NULL;`,
-      [
-        BlockType.Image,
-        RemoteSourceType.Arena,
-        RemoteSourceType.Arena,
-      ],
+      [BlockType.Image, RemoteSourceType.Arena, RemoteSourceType.Arena],
     );
 
     const blocks = rows.map(mapDbBlockToBlock);
@@ -2306,9 +2307,8 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         const localConnections = await getConnectionsForBlock(block.id, {
           filterRemoteOnly: true,
         });
-        const collectionInfos = getArenaRecoveryCollectionInfos(
-          localConnections,
-        );
+        const collectionInfos =
+          getArenaRecoveryCollectionInfos(localConnections);
         if (collectionInfos.length === 0) {
           throw new Error("No matching Are.na channel connections found");
         }
@@ -2510,9 +2510,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
                   arenaIds,
                 ),
               );
-              existingRows.forEach((row) =>
-                existingArenaIds.add(row.arena_id),
-              );
+              existingRows.forEach((row) => existingArenaIds.add(row.arena_id));
             }
           }
 
@@ -3105,8 +3103,7 @@ export function useUncategorizedBlocks() {
         WHERE blocks.deletion_timestamp IS NULL
         GROUP BY 1,2,3,4,5,6) AS c
         WHERE c.num_connections = 0
-        ORDER BY c.created_timestamp DESC;`,
-      );
+        ORDER BY c.created_timestamp DESC;`);
 
       const newEvents = events.map((event) => {
         const mapped = mapSnakeCaseToCamelCaseProperties(event);
@@ -3209,6 +3206,55 @@ export function useCollections({
     isLoading,
     debouncedFetchMoreCollections,
     isFetchingNextPage,
+  };
+}
+
+// Full-text-ish search across blocks (title, description, and text content).
+export function useBlockSearch(searchValue: string) {
+  const { getBlocks } = useContext(DatabaseContext);
+  const debouncedSearch = useDebounceValue(searchValue, 300);
+  const trimmedSearch = (debouncedSearch || "").trim();
+
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["blocks", { search: trimmedSearch }],
+    queryFn: async ({ pageParam: page, queryKey }) => {
+      const [_, { search }] = queryKey as [string, { search: string }];
+      const blocks = await getBlocks({ page, search });
+      return {
+        blocks,
+        nextId: blocks.length < BlockSelectLimit ? null : page + 1,
+        previousId: page === 0 ? null : page - 1,
+      };
+    },
+    initialPageParam: 0,
+    getPreviousPageParam: (firstPage) => firstPage?.previousId ?? undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextId ?? undefined,
+    enabled: trimmedSearch.length > 0,
+  });
+
+  const blocks = useMemo(() => data?.pages.flatMap((p) => p.blocks), [data]);
+
+  const fetchMore = useCallback(() => {
+    if (isFetchingNextPage || !hasNextPage) {
+      return;
+    }
+    fetchNextPage();
+  }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
+
+  return {
+    blocks: trimmedSearch.length > 0 ? blocks : undefined,
+    isLoading: isLoading && trimmedSearch.length > 0,
+    isFetching,
+    isFetchingNextPage,
+    fetchMore,
+    hasSearch: trimmedSearch.length > 0,
   };
 }
 

@@ -1,3 +1,5 @@
+// ABOUTME: Guides Gather onboarding and initial collection imports.
+// ABOUTME: Connects account setup, preferences, and selected Are.na channels.
 import { useRouter } from "expo-router";
 import * as NavigationBar from "expo-navigation-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -170,11 +172,9 @@ export default function IntroScreen() {
     // TODO: this would ideally do it in the background asynchronously
     setIsLoading(true);
     try {
-      await Promise.all(
-        selectedChannels.map(
-          async (channel) => await tryImportArenaChannel(channel.id.toString())
-        )
-      );
+      for (const channel of selectedChannels) {
+        await tryImportArenaChannel(channel.id.toString());
+      }
     } catch (error) {
       logError(error);
       // throw error;
