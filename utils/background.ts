@@ -80,11 +80,17 @@ async function runArenaBackgroundPull(): Promise<BackgroundTask.BackgroundTaskRe
       store: createArenaPullStore(database),
       state: createArenaPullState(),
     }).finally(() => database.closeAsync());
-    if (result.itemsAdded > 0 || result.collectionsUpdated > 0) {
+    if (
+      result.itemsAdded > 0 ||
+      result.connectionsChanged > 0 ||
+      result.collectionsUpdated > 0
+    ) {
       markArenaBackgroundChanges();
     }
     recordStatus(startedAt, result);
-    return BackgroundTask.BackgroundTaskResult.Success;
+    return result.status === "partial"
+      ? BackgroundTask.BackgroundTaskResult.Failed
+      : BackgroundTask.BackgroundTaskResult.Success;
   } catch (error) {
     setItem<ArenaBackgroundStatus>(ArenaBackgroundStatusKey, {
       startedAt: startedAt.toISOString(),
@@ -112,7 +118,9 @@ function emptySkippedResult(
     collectionsAttempted: 0,
     collectionsCompleted: 0,
     itemsAdded: 0,
+    connectionsChanged: 0,
     collectionsUpdated: 0,
+    collectionErrors: [],
     requests: 0,
   };
 }

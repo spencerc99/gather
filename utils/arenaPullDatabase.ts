@@ -82,6 +82,7 @@ export function createArenaPullStore(
 
     async insertBlocks(collectionId, blocks) {
       let itemsAdded = 0;
+      let connectionsChanged = 0;
       await database.withExclusiveTransactionAsync(async (transaction) => {
         for (const block of blocks) {
           const blockId = await insertBlock(transaction, block);
@@ -98,7 +99,7 @@ export function createArenaPullStore(
               `Remote block ${block.remoteSourceInfo?.arenaId} is missing its connecting user`,
             );
           }
-          await transaction.runAsync(
+          const connectionChange = await transaction.runAsync(
             `INSERT INTO connections (
                block_id,
                collection_id,
@@ -106,7 +107,8 @@ export function createArenaPullStore(
                remote_created_at
              ) VALUES (?, ?, ?, ?)
              ON CONFLICT(block_id, collection_id)
-             DO UPDATE SET remote_created_at = excluded.remote_created_at;`,
+             DO UPDATE SET remote_created_at = excluded.remote_created_at
+             WHERE connections.remote_created_at IS NOT excluded.remote_created_at;`,
             [
               blockId.id,
               collectionId,
@@ -114,9 +116,10 @@ export function createArenaPullStore(
               block.remoteConnectedAt,
             ],
           );
+          connectionsChanged += connectionChange.changes;
         }
       });
-      return itemsAdded;
+      return { itemsAdded, connectionsChanged };
     },
   };
 }
@@ -151,9 +154,7 @@ async function insertBlock(
       block.source || null,
       block.remoteSourceType || null,
       block.createdBy,
-      block.remoteSourceInfo
-        ? JSON.stringify(block.remoteSourceInfo)
-        : null,
+      block.remoteSourceInfo ? JSON.stringify(block.remoteSourceInfo) : null,
       block.localAssetId || null,
       block.captureTime || null,
       block.locationData ? JSON.stringify(block.locationData) : null,

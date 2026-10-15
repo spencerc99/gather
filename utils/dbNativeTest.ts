@@ -5,7 +5,10 @@ import { createArenaPullStore } from "./arenaPullDatabase";
 import { BlockType } from "./mimeTypes";
 import { RemoteSourceType } from "./dataTypes";
 
-function ensureTestResult(condition: unknown, message: string): asserts condition {
+function ensureTestResult(
+  condition: unknown,
+  message: string,
+): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
@@ -217,11 +220,11 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       remoteConnectedAt: "2026-08-11T01:00:00Z",
       connectedBy: "Arena:::connector",
     };
-    const firstImportCount = await arenaPullStore.insertBlocks(
+    const firstImport = await arenaPullStore.insertBlocks(
       collectionId.toString(),
       [remoteBlock],
     );
-    const repeatedImportCount = await arenaPullStore.insertBlocks(
+    const repeatedImport = await arenaPullStore.insertBlocks(
       collectionId.toString(),
       [remoteBlock],
     );
@@ -235,12 +238,41 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       ["block-3", collectionId],
     );
     ensureTestResult(
-      firstImportCount === 1 &&
-        repeatedImportCount === 0 &&
+      firstImport.itemsAdded === 1 &&
+        firstImport.connectionsChanged === 1 &&
+        repeatedImport.itemsAdded === 0 &&
+        repeatedImport.connectionsChanged === 0 &&
         importedConnection?.remote_created_at === "2026-08-11T01:00:00Z",
       "Background pull store did not preserve idempotent remote imports",
     );
     passedTests.push("background pull store");
+
+    const secondCollection = await database.runAsync(
+      `INSERT INTO collections (title) VALUES (?);`,
+      ["Second collection"],
+    );
+    const connectionOnlyImport = await arenaPullStore.insertBlocks(
+      secondCollection.lastInsertRowId.toString(),
+      [remoteBlock],
+    );
+    const changedConnectionImport = await arenaPullStore.insertBlocks(
+      secondCollection.lastInsertRowId.toString(),
+      [{ ...remoteBlock, remoteConnectedAt: "2026-08-11T02:00:00Z" }],
+    );
+    const secondConnection = await database.getFirstAsync<{
+      remote_created_at: string;
+    }>(`SELECT remote_created_at FROM connections WHERE collection_id = ?;`, [
+      secondCollection.lastInsertRowId,
+    ]);
+    ensureTestResult(
+      connectionOnlyImport.itemsAdded === 0 &&
+        connectionOnlyImport.connectionsChanged === 1 &&
+        changedConnectionImport.itemsAdded === 0 &&
+        changedConnectionImport.connectionsChanged === 1 &&
+        secondConnection?.remote_created_at === "2026-08-11T02:00:00Z",
+      "Background pull store did not report connection-only changes",
+    );
+    passedTests.push("background connection-only changes");
 
     return passedTests;
   } finally {
