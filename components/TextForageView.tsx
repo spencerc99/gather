@@ -66,6 +66,7 @@ import { useLocation, LocationProvider } from "../utils/location";
 import { CollectionSummary } from "./CollectionSummary";
 import { CollectionSelect } from "./CollectionSelect";
 import { CustomPhotoPicker } from "./CustomPhotoPicker";
+import type { PhotoSelection } from "../utils/photoSelection";
 
 const DefaultPlaceholders = [
   "Who do you love and why?",
@@ -501,7 +502,7 @@ function TextForageViewContent({
   const [pickerVisible, setPickerVisible] = useState(false);
 
   const handlePickerConfirm = useCallback(
-    async (assets: MediaLibrary.Asset[]) => {
+    async (assets: PhotoSelection[]) => {
       setPickerVisible(false);
       if (!assets.length) {
         return;
@@ -509,7 +510,11 @@ function TextForageViewContent({
       setIsLoadingAssets(true);
       try {
         const results = await Promise.allSettled(
-          assets.map(processPickedAsset),
+          assets.map((asset) =>
+            "mediaType" in asset
+              ? processPickedAsset(asset)
+              : processMediaAsset(asset),
+          ),
         );
         const mediaWithMetadata = results
           .filter(
