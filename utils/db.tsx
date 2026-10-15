@@ -79,6 +79,7 @@ import { convertDbTimestampToDate } from "./date";
 import { Indices, Migrations, migrateAmpersandEscape } from "./db/migrations";
 import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { hasPendingArenaConnections } from "./arenaSync";
+import { createBlockBatch } from "./blockBatch";
 import { isArenaNotFoundError } from "./arenaRequests";
 import { runArenaPull } from "./arenaPull";
 import { createArenaPullStore } from "./arenaPullDatabase";
@@ -618,9 +619,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     Array<{ blockId: string; created: boolean }>
   > => {
     // TODO: change to use insertBlocks
-    const blockInfos = await Promise.all(
-      blocksToInsert.map(async (block) => createBlock(block)),
-    );
+    const blockInfos = await createBlockBatch(blocksToInsert, createBlock);
     const blockIds = blockInfos.map(({ blockId }) => blockId);
 
     if (collectionId) {
