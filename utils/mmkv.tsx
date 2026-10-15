@@ -1,3 +1,5 @@
+// ABOUTME: Persists lightweight Gather settings and Are.na synchronization cursors in MMKV.
+// ABOUTME: Provides synchronous storage helpers and React bindings for shared app state.
 import { LastSyncedInfo } from "./dataTypes";
 import { useCallback, useEffect, useState } from "react";
 import { MMKV } from "react-native-mmkv";
@@ -41,11 +43,11 @@ export function getLastSyncedRemoteInfo(): LastSyncedRemoteInfo {
     ? { lastSyncedAt: null }
     : (JSON.parse(info) as LastSyncedRemoteInfo);
 }
-export function updateLastSyncedRemoteInfo(): void {
+export function updateLastSyncedRemoteInfo(date = new Date()): void {
   storage.set(
     LastSyncedAtKey,
     JSON.stringify({
-      lastSyncedAt: new Date().toISOString(),
+      lastSyncedAt: date.toISOString(),
     })
   );
 }

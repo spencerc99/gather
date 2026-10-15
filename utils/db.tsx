@@ -52,7 +52,6 @@ import {
   getLastSyncedInfoForChannel,
   getLastSyncedRemoteInfo,
   updateLastSyncedInfoForChannel,
-  updateLastSyncedRemoteInfo,
   useStickyValue,
 } from "./mmkv";
 import { PHOTOS_FOLDER, intializeFilesystemFolder } from "./blobs";
@@ -81,6 +80,13 @@ import { BlockType, FileBlockTypes } from "./mimeTypes";
 import { hasPendingArenaConnections } from "./arenaSync";
 import { createBlockBatch } from "./blockBatch";
 import { isArenaNotFoundError } from "./arenaRequests";
+import { runArenaPull } from "./arenaPull";
+import { createArenaPullStore } from "./arenaPullDatabase";
+import {
+  arenaPullClient,
+  consumeArenaBackgroundChanges,
+  createArenaPullState,
+} from "./arenaPullRuntime";
 import { UserContext } from "./user";
 import { ensure, ensureUnreachable } from "./react";
 import { NetworkContext } from "./network";
@@ -97,6 +103,7 @@ import {
   getArenaImageReplacementState,
   isArenaUploadErrorBlock,
 } from "./arenaRecovery";
+import { useIsAppActive } from "./appActivity";
 
 function openDatabase() {
   if (Platform.OS === "web") {
@@ -448,6 +455,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   const [selectedReviewCollection, setSelectedReviewCollection] =
     useStickyValue<string | null>(CollectionToReviewKey, null);
   const queuedBlocksToSync = useRef<Set<string>>(new Set<string>());
+  const isAppActive = useIsAppActive();
 
   // Ref to keep track of whether the sync is already running
   const isSyncingRef = useRef(false);
@@ -513,6 +521,15 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
   }, [arenaAccessToken, currentUser?.id]);
 
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!isAppActive || !consumeArenaBackgroundChanges()) {
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["collections"] });
+    invalidateAllBlockFeeds(queryClient);
+    queryClient.invalidateQueries({ queryKey: ["connections"] });
+  }, [isAppActive, queryClient]);
 
   async function initDatabases() {
     await db.withExclusiveTransactionAsync(async (transaction) => {
@@ -1828,27 +1845,38 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
       return;
     }
 
-    // Wrap in a promise so callers can await completion. Without this,
-    // InteractionManager.runAfterInteractions fires and forgets, meaning
-    // syncWithArena would proceed (or return) before pulling finishes.
-    await new Promise<void>((resolve) => {
-      InteractionManager.runAfterInteractions(async () => {
-        try {
-          const rows = await getArenaCollections();
-          const collectionsToSync = rows.map((collection) => ({
-            ...mapDbCollectionToCollection(collection),
-          }));
-          // Sync collections sequentially to avoid concurrent DB writes
-          // and ensure each collection's sync completes before the next starts.
-          for (const collectionToSync of collectionsToSync) {
-            await syncNewRemoteItemsForCollection(collectionToSync);
+    const result = await new Promise<Awaited<ReturnType<typeof runArenaPull>>>(
+      (resolve, reject) => {
+        InteractionManager.runAfterInteractions(async () => {
+          try {
+            resolve(
+              await runArenaPull({
+                accessToken: arenaAccessToken,
+                client: arenaPullClient,
+                store: createArenaPullStore(db),
+                state: createArenaPullState(),
+              }),
+            );
+          } catch (error) {
+            reject(error);
           }
-        } finally {
-          await updateLastSyncedRemoteInfo();
-          resolve();
-        }
-      });
-    });
+        });
+      },
+    );
+    if (
+      result.itemsAdded > 0 ||
+      result.connectionsChanged > 0 ||
+      result.collectionsUpdated > 0
+    ) {
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      invalidateAllBlockFeeds(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["connections"] });
+    }
+    for (const failure of result.collectionErrors) {
+      logError(
+        new Error(`Are.na collection ${failure.collectionId}: ${failure.error}`),
+      );
+    }
   }
 
   async function trySyncPendingArenaBlocks() {

@@ -39,11 +39,15 @@ import { TamaguiProvider, Theme } from "tamagui";
 import useShareIntent from "../hooks/useShareIntent";
 import { config } from "../tamagui.config";
 import { DatabaseContext, DatabaseProvider } from "../utils/db";
-import { UserProvider } from "../utils/user";
+import { UserContext, UserProvider } from "../utils/user";
 import { ErrorsProvider } from "../utils/errors";
 import { useMilestoneCheck } from "../utils/celebrations";
 import { AppActivityProvider } from "../utils/appActivity";
 import { TimeProvider } from "../hooks/useTime";
+import {
+  registerArenaBackgroundPullAsync,
+  unregisterArenaBackgroundPullAsync,
+} from "../utils/background";
 
 const client = new QueryClient();
 
@@ -127,19 +131,20 @@ export default function RootLayout() {
                               Keyboard.dismiss();
                             }
                           }}
-                        >
-                          <UserProvider>
-                            <DatabaseProvider>
-                              <RootLayoutNav />
-                              <StatusBar
-                                style="auto"
-                                // NOTE: idk why but "auto" doesn't properly change color on Android.
-                                backgroundColor={
-                                  colorScheme === "light" ? "white" : "black"
-                                }
-                              />
-                            </DatabaseProvider>
-                          </UserProvider>
+                          >
+                            <UserProvider>
+                              <ArenaBackgroundPullRegistration />
+                              <DatabaseProvider>
+                                <RootLayoutNav />
+                                <StatusBar
+                                  style="auto"
+                                  // NOTE: idk why "auto" doesn't properly change color on Android.
+                                  backgroundColor={
+                                    colorScheme === "light" ? "white" : "black"
+                                  }
+                                />
+                              </DatabaseProvider>
+                            </UserProvider>
                         </HoldMenuProvider>
                       </NetworkProvider>
                     </TimeProvider>
@@ -152,6 +157,21 @@ export default function RootLayout() {
       </ThemeProvider>
     </GestureHandlerRootView>
   );
+}
+
+function ArenaBackgroundPullRegistration() {
+  const { arenaAccessToken } = useContext(UserContext);
+
+  useEffect(() => {
+    const updateRegistration = arenaAccessToken
+      ? registerArenaBackgroundPullAsync()
+      : unregisterArenaBackgroundPullAsync();
+    void updateRegistration.catch((error) => {
+      console.error("Failed to update Are.na background pull", error);
+    });
+  }, [arenaAccessToken]);
+
+  return null;
 }
 
 const ParentStackComponent = Platform.OS === "android" ? JsStack : Stack;

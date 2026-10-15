@@ -1,9 +1,15 @@
 // ABOUTME: Exercises Gather's SQLite access patterns against the native Expo module.
 // ABOUTME: Verifies reads, writes, conflicts, batches, and transaction rollback on a device.
 import * as SQLite from "expo-sqlite";
+import { createArenaPullStore } from "./arenaPullDatabase";
+import { BlockType } from "./mimeTypes";
+import { RemoteSourceType } from "./dataTypes";
 import { createBlockBatch } from "./blockBatch";
 
-function ensureTestResult(condition: unknown, message: string): asserts condition {
+function ensureTestResult(
+  condition: unknown,
+  message: string,
+): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
@@ -19,13 +25,26 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       await transaction.runAsync(`CREATE TABLE collections (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
+        remote_source_type TEXT,
         remote_source_info TEXT,
+        updated_timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         arena_id TEXT AS (json_extract(remote_source_info, '$.arenaId'))
       );`);
       await transaction.runAsync(`CREATE TABLE blocks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        description TEXT,
         content TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'Text',
+        content_type TEXT,
+        source TEXT,
+        remote_source_type TEXT,
+        created_by TEXT NOT NULL DEFAULT 'test',
         remote_source_info TEXT,
+        local_asset_id TEXT,
+        capture_time INTEGER,
+        location_data TEXT,
+        deletion_timestamp TEXT,
         arena_id TEXT AS (json_extract(remote_source_info, '$.arenaId'))
       );`);
       await transaction.runAsync(`CREATE UNIQUE INDEX blocks_arena_id
@@ -33,6 +52,7 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       await transaction.runAsync(`CREATE TABLE connections (
         block_id INTEGER NOT NULL,
         collection_id INTEGER NOT NULL,
+        created_by TEXT NOT NULL DEFAULT 'test',
         remote_created_at TEXT,
         PRIMARY KEY (block_id, collection_id)
       );`);
@@ -173,6 +193,91 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
     );
     passedTests.push("conditional delete");
 
+    await database.runAsync(
+      `UPDATE collections
+       SET remote_source_type = ?, remote_source_info = ?
+       WHERE id = ?;`,
+      [
+        RemoteSourceType.Arena,
+        JSON.stringify({ arenaId: "channel-1", arenaClass: "Collection" }),
+        collectionId,
+      ],
+    );
+    const arenaPullStore = createArenaPullStore(database);
+    const remoteCollections = await arenaPullStore.getCollections();
+    ensureTestResult(
+      remoteCollections.length === 1 &&
+        remoteCollections[0].channelId === "channel-1",
+      "Background pull store did not load the remote collection",
+    );
+    const remoteBlock = {
+      title: "Remote block",
+      description: "Remote description",
+      content: "Remote content",
+      type: BlockType.Text,
+      createdBy: "Arena:::creator",
+      remoteSourceType: RemoteSourceType.Arena,
+      remoteSourceInfo: { arenaId: "block-3", arenaClass: "Block" as const },
+      remoteConnectedAt: "2026-08-11T01:00:00Z",
+      connectedBy: "Arena:::connector",
+    };
+    const firstImport = await arenaPullStore.insertBlocks(
+      collectionId.toString(),
+      [remoteBlock],
+    );
+    const repeatedImport = await arenaPullStore.insertBlocks(
+      collectionId.toString(),
+      [remoteBlock],
+    );
+    const importedConnection = await database.getFirstAsync<{
+      remote_created_at: string;
+    }>(
+      `SELECT connections.remote_created_at
+       FROM connections
+       INNER JOIN blocks ON blocks.id = connections.block_id
+       WHERE blocks.arena_id = ? AND connections.collection_id = ?;`,
+      ["block-3", collectionId],
+    );
+    ensureTestResult(
+      firstImport.itemsAdded === 1 &&
+        firstImport.connectionsChanged === 1 &&
+        repeatedImport.itemsAdded === 0 &&
+        repeatedImport.connectionsChanged === 0 &&
+        importedConnection?.remote_created_at === "2026-08-11T01:00:00Z",
+      "Background pull store did not preserve idempotent remote imports",
+    );
+    passedTests.push("background pull store");
+
+    const secondCollection = await database.runAsync(
+      `INSERT INTO collections (title) VALUES (?);`,
+      ["Second collection"],
+    );
+    const connectionOnlyImport = await arenaPullStore.insertBlocks(
+      secondCollection.lastInsertRowId.toString(),
+      [remoteBlock],
+    );
+    const changedConnectionImport = await arenaPullStore.insertBlocks(
+      secondCollection.lastInsertRowId.toString(),
+      [{ ...remoteBlock, remoteConnectedAt: "2026-08-11T02:00:00Z" }],
+    );
+    const secondConnection = await database.getFirstAsync<{
+      remote_created_at: string;
+    }>(`SELECT remote_created_at FROM connections WHERE collection_id = ?;`, [
+      secondCollection.lastInsertRowId,
+    ]);
+    ensureTestResult(
+      connectionOnlyImport.itemsAdded === 0 &&
+        connectionOnlyImport.connectionsChanged === 1 &&
+        changedConnectionImport.itemsAdded === 0 &&
+        changedConnectionImport.connectionsChanged === 1 &&
+        secondConnection?.remote_created_at === "2026-08-11T02:00:00Z",
+      "Background pull store did not report connection-only changes",
+    );
+    passedTests.push("background connection-only changes");
+    const batchCollection = await database.runAsync(
+      "INSERT INTO collections (title) VALUES (?);",
+      ["Batch collection"],
+    );
     const batchContents = Array.from(
       { length: 12 },
       (_, index) => `Batch block ${index}`,
@@ -188,7 +293,7 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
         blockId = block.id;
         await transaction.runAsync(
           `INSERT INTO connections (block_id, collection_id) VALUES (?, ?);`,
-          [blockId, collectionId],
+          [blockId, batchCollection.lastInsertRowId],
         );
       });
       return blockId;
@@ -197,7 +302,7 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       `SELECT blocks.id, blocks.content FROM blocks
        JOIN connections ON connections.block_id = blocks.id
        WHERE connections.collection_id = ? ORDER BY blocks.id;`,
-      [collectionId],
+      [batchCollection.lastInsertRowId],
     );
     ensureTestResult(
       batchRows.length === batchContents.length &&
