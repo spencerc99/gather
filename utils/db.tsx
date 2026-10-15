@@ -529,6 +529,7 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
     }
     queryClient.invalidateQueries({ queryKey: ["collections"] });
     invalidateAllBlockFeeds(queryClient);
+    queryClient.invalidateQueries({ queryKey: ["connections"] });
   }, [isAppActive, queryClient]);
 
   async function initDatabases() {
@@ -1868,9 +1869,19 @@ export function DatabaseProvider({ children }: PropsWithChildren<{}>) {
         });
       },
     );
-    if (result.itemsAdded > 0 || result.collectionsUpdated > 0) {
+    if (
+      result.itemsAdded > 0 ||
+      result.connectionsChanged > 0 ||
+      result.collectionsUpdated > 0
+    ) {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
       invalidateAllBlockFeeds(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["connections"] });
+    }
+    for (const failure of result.collectionErrors) {
+      logError(
+        new Error(`Are.na collection ${failure.collectionId}: ${failure.error}`),
+      );
     }
   }
 

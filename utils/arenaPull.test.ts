@@ -53,10 +53,7 @@ class MemoryPullState implements ArenaPullState {
 
 class MemoryPullStore implements ArenaPullStore {
   collections: ArenaPullCollection[] = [];
-  lastRemoteItems = new Map<
-    string,
-    { arenaId: string; connectedAt: string }
-  >();
+  lastRemoteItems = new Map<string, { arenaId: string; connectedAt: string }>();
   existingArenaIds = new Set<string>();
   insertedBlocks: DatabaseBlockInsert[] = [];
   titleUpdates: Array<{ collectionId: string; title: string }> = [];
@@ -79,7 +76,7 @@ class MemoryPullStore implements ArenaPullStore {
 
   async insertBlocks(_collectionId: string, blocks: DatabaseBlockInsert[]) {
     this.insertedBlocks.push(...blocks);
-    return blocks.length;
+    return { itemsAdded: blocks.length, connectionsChanged: blocks.length };
   }
 }
 
@@ -90,8 +87,15 @@ class MemoryPullClient implements ArenaPullClient {
   };
   items: RawArenaChannelItem[] = [];
   error: Error | null = null;
+  channelErrors = new Map<string, Error>();
+  channelsRequested: string[] = [];
 
-  async getChannel() {
+  async getChannel(channelId: string) {
+    this.channelsRequested.push(channelId);
+    const channelError = this.channelErrors.get(channelId);
+    if (channelError) {
+      throw channelError;
+    }
     if (this.error) {
       throw this.error;
     }
@@ -195,11 +199,14 @@ describe("runArenaPull", () => {
       collectionsAttempted: 1,
       collectionsCompleted: 1,
       itemsAdded: 1,
+      connectionsChanged: 1,
       collectionsUpdated: 1,
+      collectionErrors: [],
       requests: 2,
     });
-    expect(store.insertedBlocks.map((block) => block.remoteSourceInfo?.arenaId))
-      .toEqual(["remote-item"]);
+    expect(
+      store.insertedBlocks.map((block) => block.remoteSourceInfo?.arenaId),
+    ).toEqual(["remote-item"]);
     expect(store.titleUpdates).toEqual([
       { collectionId: "collection-1", title: "Remote title" },
     ]);
@@ -224,11 +231,67 @@ describe("runArenaPull", () => {
     const client = new MemoryPullClient();
     client.error = new Error("network failed");
 
-    await expect(
-      runArenaPull({ accessToken: "token", client, store, state }),
-    ).rejects.toThrow("network failed");
+    const result = await runArenaPull({
+      accessToken: "token",
+      client,
+      store,
+      state,
+    });
+    expect(result.status).toBe("partial");
+    expect(result.collectionErrors).toEqual([
+      { collectionId: "collection-1", error: "network failed" },
+    ]);
     expect(state.lastSuccessfulAt).toBeNull();
     expect(state.releasedLeases).toEqual(["lease"]);
+  });
+
+  it("keeps successful changes and continues after an inaccessible collection", async () => {
+    const state = new MemoryPullState();
+    const store = new MemoryPullStore();
+    store.collections = ["before", "unavailable", "after"].map((id) => ({
+      id,
+      channelId: id,
+      title: "Remote title",
+      updatedAt: new Date("2026-08-10T12:00:00.000Z"),
+    }));
+    const client = new MemoryPullClient();
+    client.channelErrors.set(
+      "unavailable",
+      new Error("404: channel not found"),
+    );
+    client.items = [
+      makeItem({
+        id: "remote-item",
+        connectedAt: "2026-08-11T10:00:00.000Z",
+        description: "remote",
+      }),
+    ];
+
+    const result = await runArenaPull({
+      accessToken: "token",
+      client,
+      store,
+      state,
+    });
+
+    expect(client.channelsRequested).toEqual([
+      "before",
+      "unavailable",
+      "after",
+    ]);
+    expect(result).toMatchObject({
+      status: "partial",
+      collectionsAttempted: 3,
+      collectionsCompleted: 2,
+      itemsAdded: 2,
+      connectionsChanged: 2,
+      collectionErrors: [
+        { collectionId: "unavailable", error: "404: channel not found" },
+      ],
+    });
+    expect([...state.cursors.keys()]).toEqual(["before", "after"]);
+    expect(state.lastSuccessfulAt).toBeNull();
+    expect(state.activeLease).toBeNull();
   });
 });
 

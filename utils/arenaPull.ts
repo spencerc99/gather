@@ -23,7 +23,7 @@ export interface ArenaPullStore {
   insertBlocks(
     collectionId: string,
     blocks: DatabaseBlockInsert[],
-  ): Promise<number>;
+  ): Promise<{ itemsAdded: number; connectionsChanged: number }>;
 }
 
 export interface ArenaPullClient {
@@ -50,16 +50,14 @@ export interface ArenaPullState {
 }
 
 export interface ArenaPullResult {
-  status: "completed" | "skipped";
-  skippedReason?:
-    | "no-token"
-    | "token-unavailable"
-    | "recent"
-    | "in-progress";
+  status: "completed" | "partial" | "skipped";
+  skippedReason?: "no-token" | "token-unavailable" | "recent" | "in-progress";
   collectionsAttempted: number;
   collectionsCompleted: number;
   itemsAdded: number;
+  connectionsChanged: number;
   collectionsUpdated: number;
+  collectionErrors: Array<{ collectionId: string; error: string }>;
   requests: number;
 }
 
@@ -98,69 +96,84 @@ export async function runArenaPull({
       collectionsAttempted: collections.length,
       collectionsCompleted: 0,
       itemsAdded: 0,
+      connectionsChanged: 0,
       collectionsUpdated: 0,
+      collectionErrors: [],
       requests: 0,
     };
 
     for (const collection of collections) {
-      let cursor = state.getChannelCursor(collection.channelId);
-      if (!cursor) {
-        const lastRemoteItem = await store.getLastRemoteItem(collection.id);
-        if (lastRemoteItem) {
-          cursor = {
-            lastSyncedAt: now.toISOString(),
-            lastSyncedBlockCreatedAt: lastRemoteItem.connectedAt,
-            lastSyncedBlockId: lastRemoteItem.arenaId,
-          };
+      try {
+        let cursor = state.getChannelCursor(collection.channelId);
+        if (!cursor) {
+          const lastRemoteItem = await store.getLastRemoteItem(collection.id);
+          if (lastRemoteItem) {
+            cursor = {
+              lastSyncedAt: now.toISOString(),
+              lastSyncedBlockCreatedAt: lastRemoteItem.connectedAt,
+              lastSyncedBlockId: lastRemoteItem.arenaId,
+            };
+          }
         }
-      }
 
-      const channel = await client.getChannel(
-        collection.channelId,
-        accessToken,
-      );
-      result.requests += 1;
-      if (
-        channel.title !== collection.title &&
-        new Date(channel.updatedAt).getTime() > collection.updatedAt.getTime()
-      ) {
-        await store.updateCollectionTitle(collection.id, channel.title);
-        result.collectionsUpdated += 1;
-      }
-
-      const descendingItems = await client.getItems(
-        collection.channelId,
-        accessToken,
-        cursor,
-      );
-      result.requests += 1;
-      const items = [...descendingItems].reverse();
-      const arenaIds = items.map((item) => item.id.toString());
-      const existingArenaIds = await store.getExistingArenaIds(arenaIds);
-      const itemsToInsert = items.filter((item) => {
-        const uploadedByGather = client.isGatherUpload(item);
-        return !uploadedByGather || existingArenaIds.has(item.id.toString());
-      });
-
-      if (itemsToInsert.length > 0) {
-        result.itemsAdded += await store.insertBlocks(
-          collection.id,
-          client.toBlockInserts(itemsToInsert),
+        const channel = await client.getChannel(
+          collection.channelId,
+          accessToken,
         );
-      }
+        result.requests += 1;
+        if (
+          channel.title !== collection.title &&
+          new Date(channel.updatedAt).getTime() > collection.updatedAt.getTime()
+        ) {
+          await store.updateCollectionTitle(collection.id, channel.title);
+          result.collectionsUpdated += 1;
+        }
 
-      const latestItem = items[items.length - 1];
-      if (latestItem) {
-        state.setChannelCursor(collection.channelId, {
-          lastSyncedAt: now.toISOString(),
-          lastSyncedBlockCreatedAt: latestItem.connected_at,
-          lastSyncedBlockId: latestItem.id,
+        const descendingItems = await client.getItems(
+          collection.channelId,
+          accessToken,
+          cursor,
+        );
+        result.requests += 1;
+        const items = [...descendingItems].reverse();
+        const arenaIds = items.map((item) => item.id.toString());
+        const existingArenaIds = await store.getExistingArenaIds(arenaIds);
+        const itemsToInsert = items.filter((item) => {
+          const uploadedByGather = client.isGatherUpload(item);
+          return !uploadedByGather || existingArenaIds.has(item.id.toString());
+        });
+
+        if (itemsToInsert.length > 0) {
+          const changes = await store.insertBlocks(
+            collection.id,
+            client.toBlockInserts(itemsToInsert),
+          );
+          result.itemsAdded += changes.itemsAdded;
+          result.connectionsChanged += changes.connectionsChanged;
+        }
+
+        const latestItem = items[items.length - 1];
+        if (latestItem) {
+          state.setChannelCursor(collection.channelId, {
+            lastSyncedAt: now.toISOString(),
+            lastSyncedBlockCreatedAt: latestItem.connected_at,
+            lastSyncedBlockId: latestItem.id,
+          });
+        }
+        result.collectionsCompleted += 1;
+      } catch (error) {
+        result.collectionErrors.push({
+          collectionId: collection.id,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
-      result.collectionsCompleted += 1;
     }
 
-    state.setLastSuccessfulAt(now);
+    if (result.collectionErrors.length === 0) {
+      state.setLastSuccessfulAt(now);
+    } else {
+      result.status = "partial";
+    }
     return result;
   } finally {
     state.releaseLease(leaseId);
@@ -176,7 +189,9 @@ function emptyResult(
     collectionsAttempted: 0,
     collectionsCompleted: 0,
     itemsAdded: 0,
+    connectionsChanged: 0,
     collectionsUpdated: 0,
+    collectionErrors: [],
     requests: 0,
   };
 }
