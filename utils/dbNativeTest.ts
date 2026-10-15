@@ -1,6 +1,7 @@
 // ABOUTME: Exercises Gather's SQLite access patterns against the native Expo module.
 // ABOUTME: Verifies reads, writes, conflicts, batches, and transaction rollback on a device.
 import * as SQLite from "expo-sqlite";
+import { createBlockBatch } from "./blockBatch";
 
 function ensureTestResult(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -171,6 +172,42 @@ export async function runNativeDatabaseTests(): Promise<string[]> {
       "Pending connection deletion did not remove its row",
     );
     passedTests.push("conditional delete");
+
+    const batchContents = Array.from(
+      { length: 12 },
+      (_, index) => `Batch block ${index}`,
+    );
+    const batchIds = await createBlockBatch(batchContents, async (content) => {
+      let blockId: number | undefined;
+      await database.withExclusiveTransactionAsync(async (transaction) => {
+        const block = await transaction.getFirstAsync<{ id: number }>(
+          `INSERT INTO blocks (content) VALUES (?) RETURNING id;`,
+          [content],
+        );
+        ensureTestResult(block, "Batch insert did not return its row");
+        blockId = block.id;
+        await transaction.runAsync(
+          `INSERT INTO connections (block_id, collection_id) VALUES (?, ?);`,
+          [blockId, collectionId],
+        );
+      });
+      return blockId;
+    });
+    const batchRows = await database.getAllAsync<{ id: number; content: string }>(
+      `SELECT blocks.id, blocks.content FROM blocks
+       JOIN connections ON connections.block_id = blocks.id
+       WHERE connections.collection_id = ? ORDER BY blocks.id;`,
+      [collectionId],
+    );
+    ensureTestResult(
+      batchRows.length === batchContents.length &&
+        batchRows.every(
+          (row, index) =>
+            row.id === batchIds[index] && row.content === batchContents[index],
+        ),
+      "Block batch did not preserve every block, connection, and input order",
+    );
+    passedTests.push("block batch transactions");
 
     return passedTests;
   } finally {
