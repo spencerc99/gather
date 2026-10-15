@@ -1,4 +1,7 @@
+// ABOUTME: Presents a saved-aware photo grid with access to the system photo search.
+// ABOUTME: Preserves selection order and filters known saved or staged library assets.
 import { Image as ExpoImage } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import {
   memo,
@@ -21,6 +24,7 @@ import {
 import { Spinner, XStack, YStack } from "tamagui";
 import { DatabaseContext } from "../utils/db";
 import { ErrorsContext } from "../utils/errors";
+import { mergePhotoSelections, PhotoSelection } from "../utils/photoSelection";
 import { Icon, IconType, StyledButton, StyledText, StyledView } from "./Themed";
 
 const PageSize = 90;
@@ -32,7 +36,7 @@ type FilterMode = "all" | "new" | "added";
 interface CustomPhotoPickerProps {
   visible: boolean;
   onClose: () => void;
-  onConfirm: (assets: MediaLibrary.Asset[]) => void;
+  onConfirm: (assets: PhotoSelection[]) => void;
   // Asset ids already staged in the composer this session. Treated the same as
   // assets already saved to Gather: shown as "added" and not selectable.
   alreadyPickedAssetIds?: (string | null | undefined)[];
@@ -57,6 +61,8 @@ export function CustomPhotoPicker({
   const [endCursor, setEndCursor] = useState<string | undefined>(undefined);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchingRef = useRef(false);
 
   // Asset ids that already exist in Gather (queried per page as photos load).
   const [existingAssetIds, setExistingAssetIds] = useState<Set<string>>(
@@ -219,6 +225,51 @@ export function CustomPhotoPicker({
     onClose();
   }, [resetState, onClose]);
 
+  const handleSearch = useCallback(async () => {
+    if (searchingRef.current) return;
+    searchingRef.current = true;
+    setIsSearching(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images", "videos"],
+        allowsMultipleSelection: true,
+        orderedSelection: true,
+        selectionLimit: 0,
+        exif: true,
+        quality: 1,
+      });
+      if (result.canceled) return;
+      const ids = result.assets
+        .map((asset) => asset.assetId)
+        .filter((id): id is string => !!id);
+      const savedIds = await getExistingAssetIds(ids);
+      const byId = new Map(assets.map((asset) => [asset.id, asset]));
+      const gridSelection = selectedIds
+        .map((id) => byId.get(id))
+        .filter((asset): asset is MediaLibrary.Asset => !!asset);
+      const picked = mergePhotoSelections(
+        [...gridSelection, ...result.assets],
+        new Set([...savedIds, ...existingAssetIds, ...sessionAddedSet]),
+      );
+      onConfirm(picked);
+      resetState();
+    } catch (error) {
+      logError(error);
+    } finally {
+      searchingRef.current = false;
+      setIsSearching(false);
+    }
+  }, [
+    assets,
+    selectedIds,
+    existingAssetIds,
+    sessionAddedSet,
+    getExistingAssetIds,
+    onConfirm,
+    resetState,
+    logError,
+  ]);
+
   const permissionDenied =
     permission && !permission.granted && !permission.canAskAgain;
 
@@ -240,12 +291,19 @@ export function CustomPhotoPicker({
         }
       >
         <YStack flex={1}>
-          {/* No top bar — swipe the sheet down to dismiss. Filters sit up top
-              with extra padding so they clear the sheet's grab handle. */}
+          <YStack paddingHorizontal="$3" paddingTop="$5">
+            <StyledButton
+              onPress={handleSearch}
+              disabled={isSearching}
+              accessibilityLabel="Search Photos"
+            >
+              {isSearching ? "Opening Photos…" : "Search Photos"}
+            </StyledButton>
+          </YStack>
           <XStack
             gap="$2"
             paddingHorizontal="$3"
-            paddingTop="$5"
+            paddingTop="$2"
             paddingBottom="$2.5"
             alignItems="center"
           >
@@ -283,7 +341,8 @@ export function CustomPhotoPicker({
               paddingHorizontal="$4"
             >
               <StyledText textAlign="center">
-                Gather needs access to your photos to add them.
+                Allow library access to browse this grid, or use Search Photos
+                to choose individual photos.
               </StyledText>
               <StyledButton
                 theme="orange"
